@@ -1,0 +1,2630 @@
+﻿<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>SIRH-Doc - Génération de Documents</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Amiri:wght@400;700&family=Cairo:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #f6f6f3;
+        --surface: #fff;
+        --surface2: #f8f8f5;
+        --surface3: #f0f0ec;
+        --border: #e2e2dc;
+        --border2: #d0d0ca;
+        --text: #1a1a18;
+        --text2: #5a5a55;
+        --text3: #9a9a93;
+        --accent: #2563eb;
+        --accent-bg: #eff6ff;
+        --accent-bdr: #bfdbfe;
+        --green: #16a34a;
+        --green-bg: #f0fdf4;
+        --green-bdr: #bbf7d0;
+        --amber: #d97706;
+        --amber-bg: #fffbeb;
+        --amber-bdr: #fde68a;
+        --red: #dc2626;
+        --red-bg: #fef2f2;
+        --r: 8px;
+        --rlg: 12px;
+        --rxl: 16px;
+        --sh: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 20px rgba(0, 0, 0, 0.06);
+        --shlg: 0 12px 40px rgba(0, 0, 0, 0.12);
+        --font: "Inter", sans-serif;
+        --page-w: 210mm;
+        --page-h: 297mm;
+        --page-mt: 20mm;
+        --page-mb: 20mm;
+        --page-ml: 25mm;
+        --page-mr: 25mm;
+        --page-header-top: 5mm;
+        --page-footer-bottom: 5mm;
+        --doc-font-body: "Times New Roman", Times, serif;
+        --doc-font-heading: "Times New Roman", Times, serif;
+        --doc-color-primary: #1d4ed8;
+        --doc-color-secondary: #475569;
+        --doc-color-text: #111111;
+        --doc-color-heading: #0f172a;
+        --doc-color-border: #c8cdd8;
+        --doc-table-header-bg: transparent;
+        --doc-table-row-alt-bg: #f8fafc;
+      }
+      html,
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        font-size: 13px;
+        min-height: 100%;
+        overflow-x: hidden;
+      }
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 3px;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ LOADING Ã¢â€â‚¬Ã¢â€â‚¬ */
+      #loading {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+      }
+      #loading.done {
+        display: none;
+      }
+      .ll {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+      }
+      .ll span {
+        color: var(--amber);
+      }
+      .lb {
+        width: 180px;
+        height: 3px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .lbf {
+        height: 100%;
+        background: var(--amber);
+        animation: lf 0.8s ease forwards;
+      }
+      @keyframes lf {
+        from {
+          width: 0;
+        }
+        to {
+          width: 100%;
+        }
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ TOP NAV Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .topnav {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .nav-logo {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .nav-logo span {
+        color: var(--amber);
+      }
+      .nav-sep {
+        width: 1px;
+        height: 22px;
+        background: var(--border);
+      }
+      .nav-chip {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        background: var(--amber-bg);
+        color: var(--amber);
+        border: 1px solid var(--amber-bdr);
+      }
+      .nav-right {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px;
+        border-radius: var(--r);
+        font-size: 11px;
+        font-family: inherit;
+        color: var(--text3);
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        text-decoration: none;
+        transition: all 0.12s;
+        cursor: pointer;
+      }
+      .nav-link:hover {
+        border-color: var(--border2);
+        color: var(--text);
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ HERO Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .hero {
+        background: linear-gradient(
+          135deg,
+          #1d4ed8 0%,
+          #2563eb 60%,
+          #3b82f6 100%
+        );
+        padding: 20px 24px;
+        margin: 20px auto;
+        border-radius: var(--rxl);
+        max-width: 1200px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .hero-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+      .hero h1 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 2px;
+      }
+      .hero p {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.75);
+      }
+      .hero-badge {
+        margin-left: auto;
+        padding: 4px 12px;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 20px;
+        font-size: 11px;
+        color: #fff;
+        white-space: nowrap;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ LAYOUT Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .main-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px 40px;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      .mode-switch {
+        max-width: 1200px;
+        margin: 0 auto 18px;
+        padding: 0 24px;
+        display: flex;
+        gap: 10px;
+      }
+      .mode-btn {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text2);
+        border-radius: 999px;
+        padding: 9px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .mode-btn.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .view-shell {
+        display: none;
+      }
+      .view-shell.active {
+        display: block;
+      }
+      .data-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        align-items: start;
+      }
+      .data-sidebar,
+      .data-main {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--rxl);
+        box-shadow: var(--sh);
+      }
+      .data-sidebar {
+        overflow: hidden;
+        width: 100%;
+      }
+      .data-main {
+        width: 100%;
+      }
+      .data-side-hdr,
+      .data-main-hdr {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .data-side-title,
+      .data-main-title {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .data-side-sub,
+      .data-main-sub {
+        font-size: 11px;
+        color: var(--text3);
+        margin-top: 4px;
+      }
+      .data-search {
+        padding: 12px 16px 0;
+        max-width: 360px;
+      }
+      .data-search input {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 9px 11px;
+        background: var(--surface2);
+        color: var(--text);
+        font: inherit;
+      }
+      .data-view-list {
+        padding: 12px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px;
+      }
+      .data-view-card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+        cursor: pointer;
+        background: var(--surface2);
+        transition: all 0.15s;
+      }
+      .data-view-card.active {
+        border-color: var(--accent-bdr);
+        background: var(--accent-bg);
+      }
+      .data-view-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .data-view-meta {
+        font-size: 10px;
+        color: var(--text3);
+        margin-top: 4px;
+      }
+      .data-main-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .data-main-actions input {
+        flex: 1;
+        min-width: 220px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 9px 11px;
+        background: var(--surface2);
+        color: var(--text);
+        font: inherit;
+      }
+      .data-grid {
+        padding: 16px;
+        display: grid;
+        grid-template-columns: minmax(360px, 0.9fr) minmax(620px, 1.35fr);
+        gap: 18px;
+        align-items: stretch;
+      }
+      .data-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--surface2);
+        min-height: 560px;
+        display: flex;
+        flex-direction: column;
+      }
+      .data-card-hdr {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .data-card-title {
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .data-card-body {
+        padding: 14px;
+        flex: 1;
+      }
+      .data-card-body--table {
+        padding: 0;
+        overflow: auto;
+      }
+      .data-detail-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .data-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .data-field-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text2);
+      }
+      .data-field-input {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #fff;
+        color: var(--text);
+        font: inherit;
+        min-height: 42px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s,
+          background 0.15s;
+      }
+      .data-field-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+      }
+      .data-field-readonly {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: var(--surface3);
+        color: var(--text);
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+      }
+      .data-detail-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+      }
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 100%;
+      }
+      .data-table th,
+      .data-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+      }
+      .data-table th {
+        font-size: 10px;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .data-table tr {
+        cursor: pointer;
+      }
+      .data-table tr.active {
+        background: var(--accent-bg);
+      }
+      .data-empty {
+        padding: 30px 16px;
+        text-align: center;
+        color: var(--text3);
+        font-size: 12px;
+      }
+      @media (max-width: 980px) {
+        .main-wrap,
+        .data-wrap,
+        .data-grid {
+          grid-template-columns: 1fr;
+        }
+        .stepper,
+        .data-sidebar {
+          position: static;
+        }
+        .data-grid {
+          grid-template-columns: 1fr;
+        }
+        .data-card {
+          min-height: 0;
+        }
+        .data-search {
+          max-width: none;
+        }
+        .data-view-list {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* STEPPER */
+      .stepper {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--rxl);
+        overflow: hidden;
+        position: sticky;
+        top: 68px;
+      }
+      .stepper-hdr {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .stepper-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .step-dots {
+        display: flex;
+        gap: 4px;
+      }
+      .step-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--border2);
+        transition: all 0.2s;
+      }
+      .step-dot.done {
+        background: var(--green);
+      }
+      .step-dot.cur {
+        background: var(--accent);
+        transform: scale(1.3);
+      }
+      .step-block {
+        border-bottom: 1px solid var(--border);
+      }
+      .step-block:last-child {
+        border-bottom: none;
+      }
+      .step-hdr {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px;
+        cursor: pointer;
+        transition: background 0.1s;
+        user-select: none;
+      }
+      .step-hdr:hover {
+        background: var(--surface2);
+      }
+      .step-num {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 2px solid var(--border2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text3);
+        flex-shrink: 0;
+        transition: all 0.2s;
+      }
+      .step-num.done {
+        border-color: var(--green);
+        background: var(--green-bg);
+        color: var(--green);
+      }
+      .step-num.cur {
+        border-color: var(--accent);
+        background: var(--accent-bg);
+        color: var(--accent);
+      }
+      .step-lbl {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text2);
+        flex: 1;
+      }
+      .step-lbl.cur {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .step-val {
+        font-size: 10px;
+        color: var(--text3);
+        max-width: 110px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .step-val.ok {
+        color: var(--accent);
+        font-weight: 500;
+      }
+      .step-chev {
+        color: var(--text3);
+        transition: transform 0.2s;
+        flex-shrink: 0;
+      }
+      .step-body {
+        display: none;
+        padding: 0 12px 12px;
+        border-top: 1px solid var(--border);
+        background: var(--surface2);
+      }
+      .step-body.open {
+        display: block;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ CARDS Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .fam-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        padding-top: 10px;
+      }
+      .fam-card {
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.12s;
+        background: var(--surface);
+      }
+      .fam-card:hover {
+        border-color: var(--border2);
+        background: var(--surface2);
+      }
+      .fam-card.sel {
+        border-color: var(--accent);
+        background: var(--accent-bg);
+      }
+      .fam-icon {
+        font-size: 20px;
+        margin-bottom: 4px;
+      }
+      .fam-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.3;
+      }
+      .fam-meta {
+        font-size: 10px;
+        color: var(--text3);
+        margin-top: 2px;
+      }
+      .tpl-list {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding-top: 10px;
+      }
+      .tpl-card {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 11px;
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        cursor: pointer;
+        background: var(--surface);
+        transition: all 0.12s;
+      }
+      .tpl-card:hover {
+        border-color: var(--border2);
+        background: var(--surface2);
+      }
+      .tpl-card.sel {
+        border-color: var(--green);
+        background: var(--green-bg);
+      }
+      .tpl-name {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        flex: 1;
+      }
+      .tpl-meta {
+        font-size: 10px;
+        color: var(--text3);
+      }
+      .tpl-chk {
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        border: 2px solid var(--border2);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        transition: all 0.12s;
+      }
+      .tpl-card.sel .tpl-chk {
+        border-color: var(--green);
+        background: var(--green);
+        color: #fff;
+      }
+      .person-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-top: 10px;
+      }
+      .person-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        cursor: pointer;
+        background: var(--surface);
+        transition: all 0.12s;
+      }
+      .person-item:hover {
+        border-color: var(--border2);
+        background: var(--surface2);
+      }
+      .person-item.sel {
+        border-color: var(--amber);
+        background: var(--amber-bg);
+      }
+      .p-av {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--accent-bg);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .p-name {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      .p-meta {
+        font-size: 10px;
+        color: var(--text3);
+        margin-top: 1px;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ DOC PANEL Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .doc-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--rxl);
+        overflow: hidden;
+      }
+      .doc-ph {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .doc-pt {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .doc-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .doc-pb {
+        padding: 0;
+        min-height: 400px;
+      }
+      .pbar {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 12px 16px 8px;
+        flex-wrap: wrap;
+      }
+      .pb-step {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        color: var(--text3);
+        padding: 3px 9px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+      }
+      .pb-step.done {
+        background: var(--green-bg);
+        border-color: var(--green-bdr);
+        color: var(--green);
+      }
+      .pb-step.cur {
+        background: var(--accent-bg);
+        border-color: var(--accent-bdr);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .pb-arr {
+        color: var(--border2);
+        font-size: 10px;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ A4 CANVAS Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .a4-canvas {
+        background: #c8cdd8;
+        overflow-y: auto;
+        padding: 20px 16px 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        min-height: 500px;
+        max-height: 80vh;
+      }
+      .zoom-scaler {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform-origin: top center;
+        transition: transform 0.1s;
+      }
+      .a4-page {
+        width: var(--page-w);
+        height: var(--page-h);
+        background-color: #fff;
+        background-image: var(--doc-page-bg-image, none);
+        background-size: var(--doc-page-bg-size, cover);
+        background-position: var(--doc-page-bg-position, center center);
+        background-repeat: var(--doc-page-bg-repeat, no-repeat);
+        box-shadow:
+          0 2px 12px rgba(0, 0, 0, 0.18),
+          0 0 0 1px rgba(0, 0, 0, 0.08);
+        position: relative;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .a4-header {
+        padding: var(--page-header-top) var(--page-mr) 3mm var(--page-ml);
+        border-bottom: 1px dashed var(--doc-color-border);
+        flex-shrink: 0;
+        position: relative;
+      }
+      .a4-footer {
+        padding: 3mm var(--page-mr) var(--page-footer-bottom) var(--page-ml);
+        border-top: 1px dashed var(--doc-color-border);
+        flex-shrink: 0;
+        position: relative;
+        margin-top: auto;
+      }
+      .a4-hf-label {
+        position: absolute;
+        right: 4px;
+        top: 4px;
+        font-size: 8px;
+        color: #bbb;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        pointer-events: none;
+      }
+      .a4-body {
+        flex: 1;
+        padding: var(--page-mt) var(--page-mr) var(--page-mb) var(--page-ml);
+        overflow: hidden;
+        position: relative;
+      }
+      .a4-body.no-header {
+        padding-top: var(--page-mt);
+      }
+      .a4-body.no-footer {
+        padding-bottom: var(--page-mb);
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ ZOOM BAR Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .zoom-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface2);
+      }
+      .zoom-lbl {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text2);
+        min-width: 38px;
+        text-align: center;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ CONTENU DOC Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .doc-content {
+        font-family: var(--doc-font-body);
+        font-size: 12pt;
+        line-height: 1.6;
+        color: var(--doc-color-text);
+        white-space: break-spaces;
+      }
+      .doc-content p {
+        margin: 0 0 0.4em;
+        white-space: inherit;
+      }
+      .doc-content p:last-child {
+        margin-bottom: 0;
+      }
+      .doc-content h1 {
+        font-family: var(--doc-font-heading);
+        font-size: 22pt;
+        font-weight: 700;
+        color: var(--doc-color-heading);
+        margin: 0.8em 0 0.4em;
+      }
+      .doc-content h2 {
+        font-family: var(--doc-font-heading);
+        font-size: 18pt;
+        font-weight: 700;
+        color: var(--doc-color-heading);
+        margin: 0.7em 0 0.3em;
+      }
+      .doc-content h3 {
+        font-family: var(--doc-font-heading);
+        font-size: 14pt;
+        font-weight: 700;
+        color: var(--doc-color-heading);
+        margin: 0.6em 0 0.3em;
+      }
+      .doc-content ul {
+        padding-left: 2em;
+        list-style-type: disc;
+        margin: 0.4em 0;
+      }
+      .doc-content ol {
+        padding-left: 2em;
+        list-style-type: decimal;
+        margin: 0.4em 0;
+      }
+      .doc-content li {
+        display: list-item;
+      }
+      .doc-content hr {
+        border: none;
+        border-top: 1.5px solid var(--doc-color-border);
+        margin: 10px 0;
+      }
+      .doc-content table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      .doc-content td,
+      .doc-content th {
+        border: 1px solid var(--doc-color-border);
+        padding: 7px 10px;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+      .doc-content th:not([style]) {
+        background: var(--doc-table-header-bg, transparent);
+        color: var(--doc-color-text);
+        font-weight: 700;
+        text-align: left;
+      }
+      .doc-content th {
+        font-weight: 700;
+      }
+      .doc-content td p,
+      .doc-content th p {
+        color: inherit !important;
+        white-space: inherit;
+      }
+      .var-resolved {
+        color: #2563eb;
+        font-weight: 500;
+        background: #eff6ff;
+        padding: 0 2px;
+        border-radius: 2px;
+      }
+      .var-missing {
+        color: #dc2626;
+        background: #fef2f2;
+        padding: 0 3px;
+        border-radius: 2px;
+        font-style: italic;
+        font-size: 0.9em;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ DOC WAIT Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .doc-wait {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 60px 20px;
+        text-align: center;
+        color: var(--text3);
+      }
+      .doc-wait svg {
+        width: 44px;
+        height: 44px;
+      }
+      .doc-wait h3 {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text2);
+      }
+      .doc-wait p {
+        font-size: 11px;
+        max-width: 220px;
+        line-height: 1.6;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ BUTTONS Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: var(--r);
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--text2);
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        transition: all 0.12s;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        border-color: var(--border2);
+        background: var(--surface3);
+        color: var(--text);
+      }
+      .btn svg {
+        width: 13px;
+        height: 13px;
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .btn.primary:hover {
+        background: #1d4ed8;
+      }
+      .btn.ghost {
+        border-color: transparent;
+        background: transparent;
+      }
+      .btn.ghost:hover {
+        background: var(--surface2);
+      }
+      .btn.sm {
+        padding: 4px 9px;
+        font-size: 11px;
+      }
+      .btn.xs {
+        padding: 2px 6px;
+        font-size: 10px;
+      }
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        padding: 20px;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal {
+        width: 100%;
+        max-width: 420px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--rxl);
+        box-shadow: var(--shlg);
+        padding: 18px;
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .modal-close {
+        border: none;
+        background: transparent;
+        color: var(--text3);
+        font-size: 18px;
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        color: var(--text);
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ TOAST Ã¢â€â‚¬Ã¢â€â‚¬ */
+      .toast-stack {
+        position: fixed;
+        bottom: 24px;
+        right: 20px;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .toast {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 15px;
+        background: var(--text);
+        color: #fff;
+        border-radius: var(--rlg);
+        font-size: 12px;
+        box-shadow: var(--shlg);
+        animation: ti 0.18s ease;
+        min-width: 200px;
+      }
+      .toast.success {
+        background: #166534;
+      }
+      .toast.error {
+        background: #b91c1c;
+      }
+      @keyframes ti {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading">
+      <div class="ll">SIRH-<span>Doc</span></div>
+      <div style="font-size: 11px; color: #888">Chargement...</div>
+      <div class="lb"><div class="lbf"></div></div>
+    </div>
+
+    <div
+      id="mainApp"
+      style="opacity: 0; transition: opacity 0.3s; min-height: 100vh"
+    >
+      <nav class="topnav">
+        <div class="nav-logo">SIRH-<span>Doc</span></div>
+        <div class="nav-sep"></div>
+        <span class="nav-chip">UTILISATEUR FINAL</span>
+        <span
+          id="navOrganization"
+          style="font-size: 12px; color: var(--text2)"
+        ></span>
+        <div class="nav-right">
+          <button class="nav-link" type="button" onclick="logoutAndRedirect()">
+            Déconnexion
+          </button>
+        </div>
+      </nav>
+
+      <div style="padding: 0 24px">
+        <div class="hero">
+          <div class="hero-icon" id="heroIcon">📄</div>
+          <div>
+            <h1 id="heroTitle">Génération de documents</h1>
+            <p id="heroText">
+              Sélectionnez une famille, un modèle et une personne
+            </p>
+          </div>
+          <div class="hero-badge" id="heroBadge">—</div>
+        </div>
+      </div>
+
+      <div class="mode-switch">
+        <button
+          class="mode-btn active"
+          id="modeDocumentsBtn"
+          type="button"
+          onclick="switchUserMode('documents')"
+        >
+          Documents
+        </button>
+        <button
+          class="mode-btn"
+          id="modeDataBtn"
+          type="button"
+          onclick="switchUserMode('data')"
+        >
+          Données
+        </button>
+      </div>
+
+      <div class="view-shell active" id="documentsView">
+        <div class="main-wrap">
+          <!-- STEPPER gauche -->
+          <div class="stepper">
+            <div class="stepper-hdr">
+              <span class="stepper-title">Étapes de génération</span>
+              <div class="step-dots">
+                <div class="step-dot cur" id="dot1"></div>
+                <div class="step-dot" id="dot2"></div>
+                <div class="step-dot" id="dot3"></div>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-hdr" onclick="toggleStep(1)">
+                <div class="step-num cur" id="sn1">1</div>
+                <span class="step-lbl cur" id="sl1">Famille de documents</span>
+                <span class="step-val" id="sv1">Non sélectionné</span>
+                <svg
+                  class="step-chev"
+                  id="sc1"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="step-body open" id="sb1">
+                <div class="fam-grid" id="famGrid"></div>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-hdr" onclick="toggleStep(2)">
+                <div class="step-num" id="sn2">2</div>
+                <span class="step-lbl" id="sl2">Modèle de document</span>
+                <span class="step-val" id="sv2">En attente</span>
+                <svg
+                  class="step-chev"
+                  id="sc2"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="step-body" id="sb2">
+                <div class="tpl-list" id="tplList"></div>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-hdr" onclick="toggleStep(3)">
+                <div class="step-num" id="sn3">3</div>
+                <span class="step-lbl" id="sl3">Personne concernée</span>
+                <span class="step-val" id="sv3">En attente</span>
+                <svg
+                  class="step-chev"
+                  id="sc3"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="step-body" id="sb3">
+                <div id="filterPanel" style="margin-bottom: 12px"></div>
+                <div class="person-list" id="personList"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DOC PANEL droit -->
+          <div class="doc-panel">
+            <div class="doc-ph">
+              <span class="doc-pt">Aperçu A4</span>
+              <div class="doc-actions" id="docActions"></div>
+            </div>
+            <div
+              id="userPreviewFiltersWrap"
+              style="width: 100%; padding: 10px 18px 0"
+            ></div>
+
+            <div class="zoom-bar" id="zoomBar" style="display: none">
+              <span
+                style="font-size: 11px; color: var(--text3); font-weight: 600"
+                >ZOOM</span
+              >
+              <button
+                class="btn xs ghost"
+                onclick="setZoom(-10)"
+                style="font-size: 14px; width: 22px; padding: 0"
+              >
+                -
+              </button>
+              <span class="zoom-lbl" id="zoomLbl">100%</span>
+              <button
+                class="btn xs ghost"
+                onclick="setZoom(10)"
+                style="font-size: 14px; width: 22px; padding: 0"
+              >
+                +
+              </button>
+              <button class="btn xs ghost" onclick="setZoom(0)">↺</button>
+            </div>
+
+            <div class="pbar" id="pbar">
+              <div class="pb-step cur" id="ps1">Famille</div>
+              <div class="pb-arr">›</div>
+              <div class="pb-step" id="ps2">Template</div>
+              <div class="pb-arr">›</div>
+              <div class="pb-step" id="ps3">Personne</div>
+            </div>
+
+            <div class="doc-pb" id="docPb">
+              <div class="doc-wait" id="docWait">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+                  />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                <h3>Document en attente</h3>
+                <p>Complétez les 3 étapes pour générer votre document</p>
+              </div>
+              <div class="a4-canvas" id="a4Canvas" style="display: none">
+                <div class="zoom-scaler" id="zoomScaler"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-shell" id="dataView">
+        <div class="data-wrap">
+          <div class="data-sidebar">
+            <div class="data-side-hdr">
+              <div class="data-side-title">Gestion des données</div>
+              <div class="data-side-sub">Choisissez un espace de données</div>
+            </div>
+            <div class="data-search">
+              <input
+                id="userDataViewSearch"
+                type="text"
+                placeholder="Rechercher..."
+                oninput="renderUserDataViewsSidebar()"
+              />
+            </div>
+            <div class="data-view-list" id="userDataViewList"></div>
+          </div>
+          <div class="data-main">
+            <div class="data-main-hdr">
+              <div class="data-main-title" id="userDataMainTitle">
+                Aucune vue sélectionnée
+              </div>
+              <div class="data-main-sub" id="userDataMainSub">
+                Les vues disponibles sont configurées par l’administrateur.
+              </div>
+              <div
+                class="data-main-actions"
+                id="userDataMainActions"
+                style="display: none"
+              >
+                <input
+                  id="userDataRowSearch"
+                  type="text"
+                  placeholder="Rechercher dans les lignes..."
+                  oninput="updateUserDataSearch(this.value)"
+                />
+                <button
+                  class="nav-link"
+                  type="button"
+                  onclick="createUserDataRow()"
+                >
+                  Ajouter
+                </button>
+                <button
+                  class="nav-link"
+                  type="button"
+                  onclick="reloadUserDataRows()"
+                >
+                  Rafraîchir
+                </button>
+              </div>
+            </div>
+            <div id="userDataContent" class="data-empty">
+              Sélectionnez une vue de données pour commencer.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="modalConfirm">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title" id="confirmTitle"
+            >Confirmer la suppression</span
+          >
+          <button
+            class="modal-close"
+            type="button"
+            onclick="closeModal('modalConfirm')"
+          >
+            ✕
+          </button>
+        </div>
+        <p
+          id="confirmMsg"
+          style="font-size: 13px; color: var(--text2); line-height: 1.6"
+        >
+          Cette action est irréversible.
+        </p>
+        <div class="modal-actions">
+          <button
+            class="nav-link"
+            type="button"
+            onclick="closeModal('modalConfirm')"
+          >
+            Annuler
+          </button>
+          <button
+            class="nav-link"
+            id="confirmBtn"
+            type="button"
+            style="
+              background: var(--red-bg);
+              color: var(--red);
+              border-color: rgba(220, 38, 38, 0.25);
+            "
+          >
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-stack" id="toastStack"></div>
+
+    <script src="shared.js"></script>
+
+    <script>
+      let ORGANIZATION_ID = null;
+      let selFamId = null,
+        selTplId = null,
+        selPersonId = null;
+      let currentBeneficiaries = [];
+      let userResolvedFilters = [];
+      let userFilterValues = {};
+      let openSteps = { 1: true, 2: false, 3: false };
+      let zoomLv = 100;
+      let userMode = "documents";
+      let selectedUserDataViewId = null;
+      let userDataRows = [];
+      let userDataSelectedRowId = null;
+      let userDataSelectedRecord = null;
+      let userDataSearch = "";
+      let userDataLookupOptionsCache = {};
+      let isCreatingUserDataRow = false;
+      let userDataSearchTimer = null;
+      let userDataNeedsReload = false;
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        const authUser = await requireAuth("user");
+        if (!authUser) return;
+        await DB.init();
+        ORGANIZATION_ID =
+          authUser.organizationId || DB.getOrganizations()[0]?.id || null;
+        const etab = DB.getOrganization(ORGANIZATION_ID);
+        if (etab) {
+          document.getElementById("navOrganization").textContent = etab.nom;
+          document.getElementById("heroBadge").textContent = etab.nom;
+        }
+        buildFamGrid();
+        renderUserDataViewsSidebar();
+        setTimeout(() => {
+          document.getElementById("loading").classList.add("done");
+          document.getElementById("mainApp").style.opacity = "1";
+        }, 500);
+      });
+
+      /* Ã¢â€â‚¬Ã¢â€â‚¬ STEPPER Ã¢â€â‚¬Ã¢â€â‚¬ */
+      function toggleStep(n) {
+        openSteps[n] = !openSteps[n];
+        syncStepBodies();
+      }
+      function openStep(n) {
+        openSteps[n] = true;
+        syncStepBodies();
+      }
+      function closeStep(n) {
+        openSteps[n] = false;
+        syncStepBodies();
+      }
+      function syncStepBodies() {
+        for (let i = 1; i <= 3; i++) {
+          document
+            .getElementById("sb" + i)
+            ?.classList.toggle("open", !!openSteps[i]);
+          const sc = document.getElementById("sc" + i);
+          if (sc) sc.style.transform = openSteps[i] ? "rotate(180deg)" : "";
+        }
+      }
+
+      function openModal(id) {
+        document.getElementById(id)?.classList.add("open");
+      }
+
+      function closeModal(id) {
+        document.getElementById(id)?.classList.remove("open");
+      }
+
+      function switchUserMode(mode) {
+        userMode = mode === "data" ? "data" : "documents";
+        document
+          .getElementById("modeDocumentsBtn")
+          ?.classList.toggle("active", userMode === "documents");
+        document
+          .getElementById("modeDataBtn")
+          ?.classList.toggle("active", userMode === "data");
+        document
+          .getElementById("documentsView")
+          ?.classList.toggle("active", userMode === "documents");
+        document
+          .getElementById("dataView")
+          ?.classList.toggle("active", userMode === "data");
+        document.getElementById("heroIcon").textContent =
+          userMode === "data" ? "🗂️" : "📄";
+        document.getElementById("heroTitle").textContent =
+          userMode === "data"
+            ? "Gestion des données"
+            : "Génération de documents";
+        document.getElementById("heroText").textContent =
+          userMode === "data"
+            ? "Consultez et mettez à jour les données mises à disposition"
+            : "Sélectionnez une famille, un modèle et une personne";
+        if (userMode === "data") {
+          renderUserDataViewsSidebar();
+          renderUserDataContent();
+        }
+      }
+      function setStepState(n, state) {
+        const num = document.getElementById("sn" + n),
+          lbl = document.getElementById("sl" + n),
+          dot = document.getElementById("dot" + n);
+        if (!num) return;
+        num.className =
+          "step-num" +
+          (state === "done" ? " done" : state === "cur" ? " cur" : "");
+        num.textContent = state === "done" ? "✓" : String(n);
+        if (lbl) lbl.className = "step-lbl" + (state === "cur" ? " cur" : "");
+        if (dot)
+          dot.className =
+            "step-dot" +
+            (state === "done" ? " done" : state === "cur" ? " cur" : "");
+      }
+      function updatePbar() {
+        const fam = selFamId ? DB.getFamily(selFamId) : null;
+        const tpl = selTplId ? DB.getTemplate(selTplId) : null;
+        const beneficiary = currentBeneficiaries.find(
+          (item) => String(item.id) === String(selPersonId),
+        );
+        const ps1 = document.getElementById("ps1"),
+          ps2 = document.getElementById("ps2"),
+          ps3 = document.getElementById("ps3");
+        const step3Default =
+          fam?.beneficiaryMode === "organization"
+            ? "Organization"
+            : "Bénéficiaire";
+        ps1.className = "pb-step" + (selFamId ? " done" : " cur");
+        ps1.textContent = fam
+          ? fam.icon + " " + fam.nom.substring(0, 16)
+          : "Famille";
+        ps2.className =
+          "pb-step" + (selTplId ? " done" : selFamId ? " cur" : "");
+        ps2.textContent = tpl ? tpl.nom.substring(0, 16) : "Template";
+        ps3.className =
+          "pb-step" + (selPersonId ? " done" : selTplId ? " cur" : "");
+        ps3.textContent = beneficiary
+          ? (
+              beneficiary._displayLabel ||
+              beneficiary.nom_prenom ||
+              beneficiary.nom ||
+              step3Default
+            ).substring(0, 14)
+          : step3Default;
+      }
+
+      function getUserDataViews() {
+        return DB.getTableViews();
+      }
+
+      function getSelectedUserDataView() {
+        return selectedUserDataViewId
+          ? DB.getTableView(selectedUserDataViewId)
+          : null;
+      }
+
+      function getUserDataLookupCacheKey(viewId, fieldName) {
+        return `${viewId}::${fieldName}`;
+      }
+
+      async function ensureUserDataLookupOptions(viewConfig, fieldName) {
+        const key = getUserDataLookupCacheKey(viewConfig.id, fieldName);
+        if (userDataLookupOptionsCache[key]) {
+          return userDataLookupOptionsCache[key];
+        }
+        const options = await DB.getTableViewLookupOptions(
+          viewConfig.id,
+          fieldName,
+          viewConfig,
+        );
+        userDataLookupOptionsCache[key] = options;
+        return options;
+      }
+
+      function getUserDataFieldSetting(viewConfig, fieldName) {
+        return (
+          viewConfig?.fieldSettings?.[String(fieldName || "").trim()] || {
+            displayMode: "raw",
+            lookupTable: "",
+            lookupValueColumn: "",
+            lookupLabelColumn: "",
+          }
+        );
+      }
+
+      function resolveUserDataDisplayValue(viewConfig, fieldName, rawValue) {
+        const config = getUserDataFieldSetting(viewConfig, fieldName);
+        if (config.displayMode !== "lookup") return rawValue ?? "";
+        const key = getUserDataLookupCacheKey(viewConfig.id, fieldName);
+        const options = userDataLookupOptionsCache[key] || [];
+        const match = options.find(
+          (option) => String(option.value || "") === String(rawValue ?? ""),
+        );
+        return match ? match.label : (rawValue ?? "");
+      }
+
+      function buildUserDataPreviewLabel(viewConfig, record = {}) {
+        return (viewConfig?.previewFields || [])
+          .map((field) =>
+            resolveUserDataDisplayValue(viewConfig, field, record?.[field]),
+          )
+          .map((value) => String(value ?? "").trim())
+          .filter(Boolean)
+          .join(" - ");
+      }
+
+      function renderUserDataViewsSidebar() {
+        const wrap = document.getElementById("userDataViewList");
+        if (!wrap) return;
+        const search = String(
+          document.getElementById("userDataViewSearch")?.value || "",
+        )
+          .trim()
+          .toLowerCase();
+        const views = getUserDataViews().filter(
+          (item) =>
+            !search ||
+            item.label.toLowerCase().includes(search) ||
+            item.tableName.toLowerCase().includes(search),
+        );
+        if (!views.length) {
+          wrap.innerHTML =
+            '<div class="data-empty">Aucune vue de données disponible.</div>';
+          return;
+        }
+        wrap.innerHTML = views
+          .map(
+            (
+              item,
+            ) => `<div class="data-view-card ${item.id === selectedUserDataViewId ? "active" : ""}" onclick="selectUserDataView('${escAttr(item.id)}')">
+              <div class="data-view-name">${escHtml(item.label || item.tableName)}</div>
+              <div class="data-view-meta">${escHtml((item.previewFields || []).join(" • ") || item.tableName)}</div>
+            </div>`,
+          )
+          .join("");
+      }
+
+      async function selectUserDataView(viewId) {
+        selectedUserDataViewId = viewId;
+        userDataSelectedRowId = null;
+        userDataSelectedRecord = null;
+        userDataRows = [];
+        userDataSearch = "";
+        isCreatingUserDataRow = false;
+        userDataNeedsReload = true;
+        const searchInput = document.getElementById("userDataRowSearch");
+        if (searchInput) searchInput.value = "";
+        renderUserDataViewsSidebar();
+        await renderUserDataContent();
+      }
+
+      async function updateUserDataSearch(value) {
+        userDataSearch = String(value || "").trim();
+        if (userDataSearchTimer) clearTimeout(userDataSearchTimer);
+        userDataSearchTimer = setTimeout(() => {
+          userDataNeedsReload = true;
+          renderUserDataContent();
+        }, 220);
+      }
+
+      async function reloadUserDataRows() {
+        const viewConfig = getSelectedUserDataView();
+        if (!viewConfig) return;
+        userDataRows = await DB.getTableViewRows(viewConfig.id, {
+          config: viewConfig,
+          search: userDataSearch,
+        });
+        if (
+          userDataSelectedRowId &&
+          !userDataRows.some((row) => {
+            const rowId = String(row.id ?? row.Id ?? Object.values(row)[0]);
+            return rowId === userDataSelectedRowId;
+          })
+        ) {
+          userDataSelectedRowId = userDataRows.length
+            ? String(
+                userDataRows[0].id ??
+                  userDataRows[0].Id ??
+                  Object.values(userDataRows[0])[0],
+              )
+            : null;
+        }
+        if (!userDataSelectedRowId && userDataRows.length) {
+          userDataSelectedRowId = String(
+            userDataRows[0].id ??
+              userDataRows[0].Id ??
+              Object.values(userDataRows[0])[0],
+          );
+        }
+        userDataSelectedRecord = userDataSelectedRowId
+          ? cloneData(
+              userDataRows.find((row) => {
+                const rowId = String(
+                  row.id ?? row.Id ?? Object.values(row)[0] ?? "",
+                );
+                return rowId === userDataSelectedRowId;
+              }) || null,
+            )
+          : null;
+        userDataNeedsReload = false;
+      }
+
+      function selectUserDataRow(rowId) {
+        isCreatingUserDataRow = false;
+        userDataSelectedRowId = rowId;
+        userDataSelectedRecord = cloneData(
+          userDataRows.find((row) => {
+            const currentRowId = String(
+              row.id ?? row.Id ?? Object.values(row)[0] ?? "",
+            );
+            return currentRowId === rowId;
+          }) || null,
+        );
+        renderUserDataContent();
+      }
+
+      async function createUserDataRow() {
+        const viewConfig = getSelectedUserDataView();
+        if (!viewConfig) return;
+        isCreatingUserDataRow = true;
+        userDataSelectedRowId = null;
+        userDataSelectedRecord = Object.fromEntries(
+          (viewConfig.visibleFields || []).map((field) => [field, ""]),
+        );
+        await renderUserDataContent();
+      }
+
+      async function saveUserDataRow() {
+        const viewConfig = getSelectedUserDataView();
+        if (!viewConfig) return;
+        const values = {};
+        (viewConfig.editableFields || []).forEach((field) => {
+          const input = document.getElementById(`user_data_field_${field}`);
+          if (input) values[field] = input.value;
+        });
+        if (isCreatingUserDataRow) {
+          const record = await DB.createTableViewRecord(
+            viewConfig.id,
+            values,
+            viewConfig,
+          );
+          userDataSelectedRecord = record;
+          userDataSelectedRowId = String(
+            record?.id ?? record?.Id ?? Object.values(record || {})[0] ?? "",
+          );
+          isCreatingUserDataRow = false;
+          toast("Ligne ajoutée", "success");
+        } else if (userDataSelectedRowId) {
+          userDataSelectedRecord = await DB.saveTableViewRecord(
+            viewConfig.id,
+            userDataSelectedRowId,
+            values,
+          );
+          toast("Ligne enregistrée", "success");
+        }
+        userDataNeedsReload = true;
+        await renderUserDataContent();
+      }
+
+      function deleteUserDataRow() {
+        const viewConfig = getSelectedUserDataView();
+        if (!viewConfig) return;
+        if (isCreatingUserDataRow) {
+          isCreatingUserDataRow = false;
+          userDataSelectedRecord = null;
+          renderUserDataContent();
+          return;
+        }
+        if (!userDataSelectedRowId) return;
+        const sourceRow =
+          userDataSelectedRecord ||
+          userDataRows.find((row) => {
+            const rowId = String(row.id ?? row.Id ?? Object.values(row)[0]);
+            return rowId === userDataSelectedRowId;
+          }) ||
+          {};
+        const label =
+          buildUserDataPreviewLabel(viewConfig, sourceRow) ||
+          userDataSelectedRowId;
+        document.getElementById("confirmTitle").textContent =
+          "Supprimer la ligne ?";
+        document.getElementById("confirmMsg").textContent =
+          `La ligne "${label}" sera supprimée.`;
+        document.getElementById("confirmBtn").onclick = () => {
+          withBusy("Suppression en cours...", async () => {
+            await DB.deleteTableViewRecord(
+              viewConfig.id,
+              userDataSelectedRowId,
+            );
+            userDataSelectedRowId = null;
+            userDataSelectedRecord = null;
+            userDataNeedsReload = true;
+            closeModal("modalConfirm");
+            toast("Ligne supprimée", "success");
+            await renderUserDataContent();
+          }).catch((error) => {
+            closeModal("modalConfirm");
+            toast(error.message || "Suppression impossible", "error");
+          });
+        };
+        openModal("modalConfirm");
+      }
+
+      async function renderUserDataContent() {
+        const content = document.getElementById("userDataContent");
+        const title = document.getElementById("userDataMainTitle");
+        const sub = document.getElementById("userDataMainSub");
+        const actions = document.getElementById("userDataMainActions");
+        const viewConfig = getSelectedUserDataView();
+        if (!content || !title || !sub || !actions) return;
+        if (!viewConfig) {
+          title.textContent = "Aucune vue sélectionnée";
+          sub.textContent =
+            "Les vues disponibles sont configurées par l’administrateur.";
+          actions.style.display = "none";
+          content.className = "data-empty";
+          content.innerHTML = "Sélectionnez une vue de données pour commencer.";
+          return;
+        }
+        title.textContent = viewConfig.label || viewConfig.tableName;
+        sub.textContent = viewConfig.previewFields?.length
+          ? `Aperçu: ${viewConfig.previewFields.join(", ")}`
+          : "Consultez les données disponibles.";
+        actions.style.display = "flex";
+        const searchInput = document.getElementById("userDataRowSearch");
+        if (searchInput && searchInput.value !== userDataSearch) {
+          searchInput.value = userDataSearch;
+        }
+        const lookupFields = Object.entries(viewConfig.fieldSettings || {})
+          .filter(([, config]) => config?.displayMode === "lookup")
+          .map(([field]) => field);
+        for (const fieldName of lookupFields) {
+          try {
+            await ensureUserDataLookupOptions(viewConfig, fieldName);
+          } catch (_) {}
+        }
+        if (
+          !isCreatingUserDataRow &&
+          (userDataNeedsReload || !userDataRows.length)
+        ) {
+          await withBusy("Chargement des données...", async () => {
+            await reloadUserDataRows();
+          });
+        }
+
+        const listHtml = !userDataRows.length
+          ? '<div class="data-empty">Aucune ligne disponible.</div>'
+          : `<table class="data-table"><thead><tr>${(
+              viewConfig.previewFields || []
+            )
+              .map((field) => `<th>${escHtml(field)}</th>`)
+              .join("")}</tr></thead><tbody>${userDataRows
+              .map((row) => {
+                const rowId = String(row.id ?? row.Id ?? Object.values(row)[0]);
+                return `<tr class="${rowId === userDataSelectedRowId ? "active" : ""}" onclick="selectUserDataRow('${escAttr(rowId)}')">${(
+                  viewConfig.previewFields || []
+                )
+                  .map(
+                    (field) =>
+                      `<td>${escHtml(resolveUserDataDisplayValue(viewConfig, field, row[field]))}</td>`,
+                  )
+                  .join("")}</tr>`;
+              })
+              .join("")}</tbody></table>`;
+
+        const detailRecord = userDataSelectedRecord;
+        const detailHtml = !detailRecord
+          ? '<div class="data-empty">Sélectionnez une ligne pour afficher le détail.</div>'
+          : `<div class="data-detail-form">${(viewConfig.visibleFields || [])
+              .map((field) => {
+                const editable = (viewConfig.editableFields || []).includes(
+                  field,
+                );
+                const value = detailRecord[field] ?? "";
+                const fieldConfig = getUserDataFieldSetting(viewConfig, field);
+                const lookupOptions =
+                  userDataLookupOptionsCache[
+                    getUserDataLookupCacheKey(viewConfig.id, field)
+                  ] || [];
+                return `<label class="data-field">
+                  <span class="data-field-label">${escHtml(field)}</span>
+                  ${
+                    editable
+                      ? fieldConfig.displayMode === "lookup"
+                        ? `<select class="data-field-input" id="user_data_field_${escAttr(field)}">
+                            <option value="">Choisir...</option>
+                            ${lookupOptions
+                              .map(
+                                (option) =>
+                                  `<option value="${escAttr(option.value)}" ${String(option.value) === String(value) ? "selected" : ""}>${escHtml(option.label)}</option>`,
+                              )
+                              .join("")}
+                          </select>`
+                        : `<input class="data-field-input" id="user_data_field_${escAttr(field)}" value="${escAttr(value)}">`
+                      : `<div class="data-field-readonly">${escHtml(resolveUserDataDisplayValue(viewConfig, field, value))}</div>`
+                  }
+                </label>`;
+              })
+              .join("")}
+            <div class="data-detail-actions">
+              <button class="nav-link" type="button" onclick="deleteUserDataRow()">Supprimer</button>
+              <button class="nav-link" type="button" onclick="saveUserDataRow()" ${!(viewConfig.editableFields || []).length ? "disabled" : ""}>Enregistrer</button>
+            </div></div>`;
+
+        content.className = "";
+        content.innerHTML = `
+          <div class="data-grid">
+            <div class="data-card">
+              <div class="data-card-hdr">
+                <div class="data-card-title">Liste</div>
+                <div class="data-main-sub">${userDataRows.length} ligne(s)</div>
+              </div>
+              <div class="data-card-body data-card-body--table">${listHtml}</div>
+            </div>
+            <div class="data-card">
+              <div class="data-card-hdr">
+                <div class="data-card-title">${isCreatingUserDataRow ? "Nouvelle ligne" : "Détail"}</div>
+                <div class="data-main-sub">${escHtml(isCreatingUserDataRow ? "Saisie" : buildUserDataPreviewLabel(viewConfig, detailRecord) || "Sélection")}</div>
+              </div>
+              <div class="data-card-body">${detailHtml}</div>
+            </div>
+          </div>`;
+      }
+
+      /* ETAPE 1 */
+      function refreshBeneficiaryLabels() {
+        const fam = selFamId ? DB.getFamily(selFamId) : null;
+        const sl3 = document.getElementById("sl3");
+        const ps3 = document.getElementById("ps3");
+        if (!sl3 || !ps3) return;
+        const hasFilters = !!(selTplId && userResolvedFilters.length);
+        if (fam?.beneficiaryMode === "organization") {
+          sl3.textContent = hasFilters
+            ? "Filtres du document"
+            : "Organization bénéficiaire";
+          if (!selPersonId) ps3.textContent = "Organization";
+          return;
+        }
+        const tableName = fam?.beneficiaryTable || "non défini";
+        sl3.textContent = hasFilters
+          ? `Filtres & bénéficiaire (${tableName})`
+          : `Bénéficiaire (${tableName})`;
+        if (!selPersonId) ps3.textContent = "Bénéficiaire";
+      }
+
+      function escAttr(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function escHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderUserFilterPanel() {
+        const panel = document.getElementById("filterPanel");
+        if (!panel) return;
+        if (!userResolvedFilters.length) {
+          panel.innerHTML = "";
+          return;
+        }
+        panel.innerHTML = `
+          <div style="border:1px solid var(--line);border-radius:16px;background:#fbfcfe;padding:12px;box-shadow:var(--shsm)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+              <div style="font-size:12px;font-weight:700;color:var(--text)">Filtres du document</div>
+              <span style="font-size:10px;color:var(--text3);background:#fff;padding:2px 8px;border-radius:999px;border:1px solid var(--line)">${userResolvedFilters.length} actif(s)</span>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
+              ${userResolvedFilters
+                .map((entry) => {
+                  const value = userFilterValues?.[entry.id] ?? "";
+                  const help = entry.helpText
+                    ? `<div style="font-size:10px;color:var(--text3);margin-top:4px">${escHtml(entry.helpText)}</div>`
+                    : "";
+                  if (entry.type === "select") {
+                    return `
+                      <label style="font-size:11px;color:var(--text2);font-weight:600;min-width:180px;flex:1">
+                        ${escHtml(entry.label)}${entry.profile.required ? " *" : ""}
+                        <select onchange="onUserFilterChange('${entry.id}', this.value)" ${
+                          entry.profile.locked ? "disabled" : ""
+                        } style="display:block;width:100%;margin-top:6px;font-size:12px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff;color:var(--text)">
+                          <option value="">— Toutes / vide —</option>
+                          ${(entry.options || [])
+                            .map(
+                              (option) =>
+                                `<option value="${escAttr(option.value)}" ${
+                                  String(value) === String(option.value)
+                                    ? "selected"
+                                    : ""
+                                }>${escHtml(option.label)}</option>`,
+                            )
+                            .join("")}
+                        </select>
+                        ${help}
+                      </label>`;
+                  }
+                  return `
+                    <label style="font-size:11px;color:var(--text2);font-weight:600;min-width:180px;flex:1">
+                      ${escHtml(entry.label)}${entry.profile.required ? " *" : ""}
+                      <input type="${
+                        entry.type === "number"
+                          ? "number"
+                          : entry.type === "date"
+                            ? "date"
+                            : "text"
+                      }" value="${escAttr(value)}" placeholder="${escAttr(entry.placeholder || "")}" onchange="onUserFilterChange('${entry.id}', this.value)" ${
+                        entry.profile.locked ? "readonly" : ""
+                      } style="display:block;width:100%;margin-top:6px;font-size:12px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff;color:var(--text)">
+                      ${help}
+                    </label>`;
+                })
+                .join("")}
+            </div>
+          </div>`;
+      }
+
+      function hasMissingRequiredUserFilters() {
+        return userResolvedFilters.some((entry) => {
+          if (!entry.profile.required) return false;
+          const value = userFilterValues?.[entry.id];
+          return (
+            value === undefined || value === null || String(value).trim() === ""
+          );
+        });
+      }
+
+      function buildUserFilterFieldsMarkup() {
+        return `
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;width:100%;margin-bottom:6px">
+            ${userResolvedFilters
+              .map((entry) => {
+                const value = userFilterValues?.[entry.id] ?? "";
+                const help = entry.helpText
+                  ? `<div style="font-size:10px;color:var(--text3);margin-top:4px">${escHtml(entry.helpText)}</div>`
+                  : "";
+                if (entry.type === "select") {
+                  return `
+                    <label style="font-size:11px;color:var(--text2);font-weight:600">
+                      ${escHtml(entry.label)}${entry.profile.required ? " *" : ""}
+                      <select onchange="onUserFilterChange('${entry.id}', this.value)" ${
+                        entry.profile.locked ? "disabled" : ""
+                      } style="display:block;width:100%;margin-top:6px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;background:var(--surface2);color:var(--text)">
+                        <option value="">-- Toutes / vide --</option>
+                        ${(entry.options || [])
+                          .map(
+                            (option) =>
+                              `<option value="${escAttr(option.value)}" ${
+                                String(value) === String(option.value)
+                                  ? "selected"
+                                  : ""
+                              }>${escHtml(option.label)}</option>`,
+                          )
+                          .join("")}
+                      </select>
+                      ${help}
+                    </label>`;
+                }
+                return `
+                  <label style="font-size:11px;color:var(--text2);font-weight:600">
+                    ${escHtml(entry.label)}${entry.profile.required ? " *" : ""}
+                    <input type="${
+                      entry.type === "number"
+                        ? "number"
+                        : entry.type === "date"
+                          ? "date"
+                          : "text"
+                    }" value="${escAttr(value)}" placeholder="${escAttr(entry.placeholder || "")}" onchange="onUserFilterChange('${entry.id}', this.value)" ${
+                      entry.profile.locked ? "readonly" : ""
+                    } style="display:block;width:100%;margin-top:6px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;background:var(--surface2);color:var(--text)">
+                    ${help}
+                  </label>`;
+              })
+              .join("")}
+          </div>`;
+      }
+
+      function renderUserFilterPanel() {
+        const panel = document.getElementById("filterPanel");
+        const previewWrap = document.getElementById("userPreviewFiltersWrap");
+        if (!panel && !previewWrap) return;
+        if (!userResolvedFilters.length) {
+          if (panel) panel.innerHTML = "";
+          if (previewWrap) previewWrap.innerHTML = "";
+          return;
+        }
+        const fieldsMarkup = buildUserFilterFieldsMarkup();
+        const etab = DB.getOrganization(ORGANIZATION_ID);
+        if (panel) panel.innerHTML = fieldsMarkup;
+        if (previewWrap) {
+          previewWrap.innerHTML = `
+            <div style="width:100%">
+              <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Filtres du document</div>
+              ${fieldsMarkup}
+              <div style="font-size:11px;color:var(--text2);margin-top:2px">
+                Organization :
+                <strong>${escHtml(etab?.nom || "Organization principale")}</strong>
+              </div>
+            </div>`;
+        }
+      }
+
+      async function refreshUserResolvedFilters(preserveValues = true) {
+        const fam = selFamId ? DB.getFamily(selFamId) : null;
+        const tpl = selTplId ? DB.getTemplate(selTplId) : null;
+        if (!fam || !tpl) {
+          userResolvedFilters = [];
+          userFilterValues = {};
+          renderUserFilterPanel();
+          return [];
+        }
+        const baseValues = preserveValues
+          ? userFilterValues
+          : getDefaultFilterValues(fam, tpl, "user");
+        userResolvedFilters = await resolveTemplateFiltersForRole(
+          selFamId,
+          selTplId,
+          "user",
+          ORGANIZATION_ID,
+          baseValues,
+        );
+        userFilterValues = validateRuntimeFilterValues(
+          userResolvedFilters,
+          baseValues,
+        );
+        userResolvedFilters.forEach((entry) => {
+          if (entry.profile.locked) {
+            userFilterValues[entry.id] = normalizeFilterInputValue(
+              entry,
+              entry.profile.defaultValue,
+            );
+          }
+        });
+        renderUserFilterPanel();
+        refreshBeneficiaryLabels();
+        return userResolvedFilters;
+      }
+
+      window.onUserFilterChange = async function (filterId, value) {
+        userFilterValues = {
+          ...userFilterValues,
+          [filterId]: value || null,
+        };
+        selPersonId = null;
+        await refreshUserResolvedFilters(true);
+        await buildPersonList();
+        updatePbar();
+      };
+
+      window.onUserFilterChange = async function (filterId, value) {
+        userFilterValues = {
+          ...userFilterValues,
+          [filterId]: value || null,
+        };
+        selPersonId = null;
+        await refreshUserResolvedFilters(true);
+        await buildPersonList();
+        const fam = selFamId ? DB.getFamily(selFamId) : null;
+        if (hasMissingRequiredUserFilters()) {
+          showWait("Renseignez les filtres pour continuer");
+          updatePbar();
+          return;
+        }
+        if (
+          fam?.beneficiaryMode === "organization" &&
+          currentBeneficiaries.length === 1
+        ) {
+          await selectPerson(currentBeneficiaries[0].id);
+          return;
+        }
+        showWait(
+          currentBeneficiaries.length
+            ? "Selectionnez le beneficiaire concerne"
+            : "Aucun beneficiaire disponible pour ces filtres",
+        );
+        updatePbar();
+      };
+
+      function buildFamGrid() {
+        const grid = document.getElementById("famGrid");
+        grid.innerHTML = "";
+        DB.getFamilies().forEach((fam) => {
+          const tplCount = DB.getTemplates(fam.id, ORGANIZATION_ID).length;
+          const card = document.createElement("div");
+          card.className = "fam-card" + (selFamId === fam.id ? " sel" : "");
+          if (!tplCount) {
+            card.style.opacity = ".4";
+            card.style.pointerEvents = "none";
+          }
+          card.innerHTML = `<div class="fam-icon">${fam.icon || "📋"}</div><div class="fam-name">${fam.nom}</div><div class="fam-meta">${tplCount} modèle(s)</div>`;
+          card.onclick = () => selectFamily(fam.id);
+          grid.appendChild(card);
+        });
+      }
+      function selectFamily(famId) {
+        selFamId = famId;
+        selTplId = null;
+        selPersonId = null;
+        currentBeneficiaries = [];
+        userResolvedFilters = [];
+        userFilterValues = {};
+        buildFamGrid();
+        renderUserFilterPanel();
+        refreshBeneficiaryLabels();
+        const fam = DB.getFamily(famId);
+        const sv1 = document.getElementById("sv1");
+        sv1.textContent = fam.icon + " " + fam.nom;
+        sv1.className = "step-val ok";
+        setStepState(1, "done");
+        setStepState(2, "cur");
+        setStepState(3, "idle");
+        buildTplList(famId);
+        openStep(2);
+        closeStep(1);
+        updatePbar();
+        showWait("Sélectionnez un modèle de document");
+      }
+
+      /* ETAPE 2 */
+      function buildTplList(famId) {
+        const c = document.getElementById("tplList");
+        c.innerHTML = "";
+        const tpls = DB.getTemplates(famId, ORGANIZATION_ID);
+        if (!tpls.length) {
+          c.innerHTML =
+            '<div style="font-size:11px;color:#aaa;text-align:center;padding:14px">Aucun modèle</div>';
+          return;
+        }
+        tpls.forEach((tpl) => {
+          const card = document.createElement("div");
+          card.className = "tpl-card" + (selTplId === tpl.id ? " sel" : "");
+          card.innerHTML = `<span style="font-size:16px">📄</span><div style="flex:1"><div class="tpl-name">${tpl.nom}</div><div class="tpl-meta">${new Date(tpl.updatedAt).toLocaleDateString("fr-FR")}${tpl.hasHeader ? " · 📋" : ""}${tpl.hasFooter ? " · 📑" : ""}</div></div><div class="tpl-chk">${selTplId === tpl.id ? "✓" : ""}</div>`;
+          card.onclick = () => selectTemplate(tpl.id);
+          c.appendChild(card);
+        });
+      }
+      async function selectTemplate(tplId) {
+        selTplId = tplId;
+        selPersonId = null;
+        currentBeneficiaries = [];
+        await refreshUserResolvedFilters(false);
+        buildTplList(selFamId);
+        const tpl = DB.getTemplate(tplId);
+        const fam = DB.getFamily(selFamId);
+        refreshBeneficiaryLabels();
+        const sv2 = document.getElementById("sv2");
+        sv2.textContent = tpl.nom;
+        sv2.className = "step-val ok";
+        setStepState(2, "done");
+        setStepState(3, "cur");
+        await buildPersonList();
+        openStep(3);
+        closeStep(2);
+        updatePbar();
+        showWait("Sélectionnez la personne concernée");
+      }
+
+      async function selectTemplate(tplId) {
+        selTplId = tplId;
+        selPersonId = null;
+        currentBeneficiaries = [];
+        await refreshUserResolvedFilters(false);
+        buildTplList(selFamId);
+        const tpl = DB.getTemplate(tplId);
+        const fam = DB.getFamily(selFamId);
+        refreshBeneficiaryLabels();
+        const sv2 = document.getElementById("sv2");
+        sv2.textContent = tpl.nom;
+        sv2.className = "step-val ok";
+        setStepState(2, "done");
+        setStepState(3, "cur");
+        await buildPersonList();
+        openStep(3);
+        closeStep(2);
+        updatePbar();
+        if (
+          fam?.beneficiaryMode === "organization" &&
+          currentBeneficiaries.length === 1
+        ) {
+          await selectPerson(currentBeneficiaries[0].id);
+          return;
+        }
+        showWait(
+          hasMissingRequiredUserFilters()
+            ? "Renseignez les filtres pour continuer"
+            : fam?.beneficiaryMode === "organization"
+              ? "Document lié à l'Organization"
+              : "Sélectionnez le bénéficiaire concerné",
+        );
+      }
+
+      async function buildPersonList() {
+        const c = document.getElementById("personList");
+        c.innerHTML = "";
+        if (hasMissingRequiredUserFilters()) {
+          c.innerHTML =
+            '<div style="font-size:11px;color:#9a3412;text-align:center;padding:14px">Renseignez les filtres obligatoires pour afficher les bénéficiaires.</div>';
+          return;
+        }
+        currentBeneficiaries = await DB.getBeneficiariesForFamily(
+          selFamId,
+          ORGANIZATION_ID,
+          userFilterValues,
+        );
+        if (!currentBeneficiaries.length) {
+          c.innerHTML =
+            '<div style="font-size:11px;color:#aaa;text-align:center;padding:14px">Aucun bénéficiaire disponible</div>';
+          return;
+        }
+        currentBeneficiaries.forEach((p) => {
+          const label =
+            p._displayLabel || p.nom_prenom || p.nom || "Bénéficiaire";
+          const subtitle =
+            p._displaySubtitle ||
+            (p._sourceTable === "organization"
+              ? "Document Organization"
+              : p._sourceTable || "");
+          const initials = label
+            .split(" ")
+            .map((n) => n[0] || "")
+            .join("")
+            .substring(0, 2)
+            .toUpperCase();
+          const item = document.createElement("div");
+          item.className =
+            "person-item" +
+            (String(selPersonId) === String(p.id) ? " sel" : "");
+          item.innerHTML = `<div class="p-av">${initials}</div><div><div class="p-name">${label}</div><div class="p-meta">${subtitle}</div></div>`;
+          item.onclick = () => selectPerson(p.id);
+          c.appendChild(item);
+        });
+      }
+
+      async function selectPerson(personId) {
+        selPersonId = personId;
+        await buildPersonList();
+        const beneficiary = currentBeneficiaries.find(
+          (item) => String(item.id) === String(personId),
+        );
+        const sv3 = document.getElementById("sv3");
+        sv3.textContent =
+          beneficiary?._displayLabel ||
+          beneficiary?.nom_prenom ||
+          beneficiary?.nom ||
+          "Bénéficiaire";
+        sv3.className = "step-val ok";
+        setStepState(3, "done");
+        closeStep(3);
+        updatePbar();
+        await generateDocument();
+      }
+
+      async function generateDocument() {
+        const tpl = DB.getTemplate(selTplId);
+        if (hasMissingRequiredUserFilters()) {
+          toast("Complétez les filtres obligatoires", "error");
+          return;
+        }
+        const person = await DB.getDocumentDataForFamily(
+          selFamId,
+          selPersonId,
+          ORGANIZATION_ID,
+          userFilterValues,
+        );
+        if (!tpl || !person) return;
+
+        buildA4Canvas(tpl, person);
+
+        document.getElementById("zoomBar").style.display = "flex";
+        const actions = document.getElementById("docActions");
+        actions.innerHTML = "";
+        const mkBtn = (label, cls, fn) => {
+          const b = document.createElement("button");
+          b.className = "btn " + cls;
+          b.textContent = label;
+          b.onclick = fn;
+          actions.appendChild(b);
+        };
+        mkBtn("Aperçu final", "primary", () => previewDocument(tpl, person));
+        mkBtn("Imprimer", "primary", () => printDocPaginated(tpl, person));
+        mkBtn("Nouveau", "ghost", resetAll);
+
+        toast("Document généré !", "success");
+      }
+
+      function buildA4Canvas(tpl, person) {
+        const wait = document.getElementById("docWait");
+        const canvas = document.getElementById("a4Canvas");
+        const scaler = document.getElementById("zoomScaler");
+        applyDocumentThemeToRoot(tpl);
+        const headerDir = getTemplateSectionDirection(tpl, "header");
+        const bodyDir = getTemplateSectionDirection(tpl, "body");
+        const footerDir = getTemplateSectionDirection(tpl, "footer");
+        const headerAlign = headerDir === "rtl" ? "right" : "left";
+        const bodyAlign = bodyDir === "rtl" ? "right" : "left";
+        const footerAlign = footerDir === "rtl" ? "right" : "left";
+        const margins = getTemplatePageMargins(tpl);
+        const distances = getTemplateHeaderFooterDistances(tpl);
+        wait.style.display = "none";
+        canvas.style.display = "flex";
+        scaler.innerHTML = "";
+        document.documentElement.style.setProperty(
+          "--page-mt",
+          margins.mt + "mm",
+        );
+        document.documentElement.style.setProperty(
+          "--page-mb",
+          margins.mb + "mm",
+        );
+        document.documentElement.style.setProperty(
+          "--page-ml",
+          margins.ml + "mm",
+        );
+        document.documentElement.style.setProperty(
+          "--page-mr",
+          margins.mr + "mm",
+        );
+        document.documentElement.style.setProperty(
+          "--page-header-top",
+          distances.headerTop + "mm",
+        );
+        document.documentElement.style.setProperty(
+          "--page-footer-bottom",
+          distances.footerBottom + "mm",
+        );
+
+        // Recuperer les pages paginees (avec variables en bleu)
+        const result = paginateWithVariablesBlue(tpl, person);
+        if (!result.pages.length) {
+          toast("Aucun contenu à afficher", "error");
+          return;
+        }
+
+        // Creer un conteneur pour toutes les pages
+        const allPages = document.createElement("div");
+        allPages.style.display = "flex";
+        allPages.style.flexDirection = "column";
+        allPages.style.gap = "20px";
+        allPages.style.alignItems = "center";
+
+        result.pages.forEach((page, idx) => {
+          const pageEl = document.createElement("div");
+          pageEl.className = "a4-page";
+          let pageHTML = "";
+
+          // En-tete
+          if (page.header) {
+            pageHTML += `<div class="a4-header" dir="${headerDir}" style="direction:${headerDir};text-align:${headerAlign}"><div class="a4-hf-label">EN-TÊTE</div><div class="doc-content" dir="${headerDir}" style="direction:${headerDir};text-align:${headerAlign}">${page.header}</div></div>`;
+          }
+
+          // Corps
+          const noHeaderClass = !page.header ? " no-header" : "";
+          const noFooterClass = !page.footer ? " no-footer" : "";
+          pageHTML += `<div class="a4-body doc-content${noHeaderClass}${noFooterClass}" dir="${bodyDir}" style="direction:${bodyDir};text-align:${bodyAlign}">${page.content}</div>`;
+
+          // Pied de page
+          if (page.footer) {
+            pageHTML += `<div class="a4-footer" dir="${footerDir}" style="direction:${footerDir};text-align:${footerAlign}"><div class="a4-hf-label">PIED DE PAGE</div><div class="doc-content" dir="${footerDir}" style="direction:${footerDir};text-align:${footerAlign}">${page.footer}</div></div>`;
+          }
+
+          pageEl.innerHTML = pageHTML;
+
+          // Ajouter un numero de page
+          const pageNum = document.createElement("div");
+          pageNum.style.cssText =
+            "text-align:center;color:#999;font-size:10px;margin-top:8px";
+          pageNum.textContent = `Page ${idx + 1}`;
+
+          allPages.appendChild(pageEl);
+          allPages.appendChild(pageNum);
+        });
+
+        scaler.appendChild(allPages);
+      }
+
+      /* ZOOM */
+      function setZoom(delta) {
+        if (delta === 0) zoomLv = 100;
+        else zoomLv = Math.max(40, Math.min(200, zoomLv + delta));
+        const sc = document.getElementById("zoomScaler");
+        sc.style.transform = `scale(${zoomLv / 100})`;
+        sc.style.marginBottom =
+          zoomLv < 100 ? ((100 - zoomLv) / 100) * -500 + "px" : "0";
+        document.getElementById("zoomLbl").textContent = zoomLv + "%";
+      }
+
+      /* HELPERS */
+      function showWait(msg) {
+        document.getElementById("docWait").innerHTML =
+          `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3>${msg}</h3>`;
+        document.getElementById("docWait").style.display = "flex";
+        document.getElementById("a4Canvas").style.display = "none";
+        document.getElementById("zoomBar").style.display = "none";
+        document.getElementById("docActions").innerHTML = "";
+      }
+      function resetAll() {
+        selFamId = null;
+        selTplId = null;
+        selPersonId = null;
+        currentBeneficiaries = [];
+        userResolvedFilters = [];
+        userFilterValues = {};
+        openSteps = { 1: true, 2: false, 3: false };
+        buildFamGrid();
+        document.getElementById("tplList").innerHTML = "";
+        document.getElementById("personList").innerHTML = "";
+        renderUserFilterPanel();
+        ["sv1", "sv2", "sv3"].forEach((id, i) => {
+          const el = document.getElementById(id);
+          el.textContent = ["Non sélectionné", "En attente", "En attente"][i];
+          el.className = "step-val";
+        });
+        setStepState(1, "cur");
+        setStepState(2, "idle");
+        setStepState(3, "idle");
+        showWait("Complétez les 3 étapes pour générer votre document");
+        updatePbar();
+        syncStepBodies();
+      }
+    </script>
+  </body>
+</html>

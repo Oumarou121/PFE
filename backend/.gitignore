@@ -1,0 +1,41 @@
+## Build outputs
+**/bin/
+**/obj/
+**/out/
+
+## Publish outputs
+**/publish/
+
+## Test results and coverage
+TestResults/
+coverage/
+
+## IDE settings
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+## Logs and temp
+*.log
+logs/
+Logs/
+tmp/
+temp/
+
+## NuGet and package caches
+.nuget/
+packages/
+*.nupkg
+
+## OS-specific files
+.DS_Store
+Thumbs.db
+
+## Local app settings (keep environment-specific local files out of VCS)
+appsettings.Local.json
+appsettings.*.Local.json
