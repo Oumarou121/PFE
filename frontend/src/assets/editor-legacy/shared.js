@@ -202,8 +202,23 @@ function getLegacyPageUrl(target = "/login.html") {
   return `${LEGACY_PAGE_BASE}/${normalizedFile}?${params.toString()}`;
 }
 
+function getAngularRouteUrl(target = "/login.html") {
+  const raw = String(target || "/login.html").trim();
+  const file = raw.split("?")[0].split("#")[0].replace(/^\/+/, "");
+
+  if (file === "superAdmin.html") return "/super-admin";
+  if (file === "admin.html") return "/admin";
+  if (file === "user.html") return "/user";
+  return "/login";
+}
+
 function navigateLegacy(target = "/login.html") {
-  window.location.href = getLegacyPageUrl(target);
+  const routeUrl = getAngularRouteUrl(target);
+  if (window.top && window.top !== window) {
+    window.top.location.href = routeUrl;
+    return;
+  }
+  window.location.href = routeUrl;
 }
 
 if (typeof window !== "undefined") {
