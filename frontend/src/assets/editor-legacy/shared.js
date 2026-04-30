@@ -3940,6 +3940,7 @@ function previewDocument(tpl, person) {
   const context = buildDocumentContext(tpl, person);
   const pageWidth = orientation === "landscape" ? "297mm" : "210mm";
   const pageHeight = orientation === "landscape" ? "210mm" : "297mm";
+  const printBottomGap = "8mm";
   const paddings = getPageSectionPaddings(margins, distances);
   const headerDir = getSectionDirectionAttrs(tpl, "header");
   const bodyDir = getSectionDirectionAttrs(tpl, "body");
@@ -4313,6 +4314,7 @@ function printDocPaginated(tpl, person, pages = null) {
     toast("Template ou personne manquant", "error");
     return;
   }
+  const printBottomGap = "8mm";
   const margins = getTemplatePageMargins(tpl);
   const distances = getTemplateHeaderFooterDistances(tpl);
   const orientation = getTemplateOrientation(tpl);
@@ -4412,7 +4414,7 @@ function printDocPaginated(tpl, person, pages = null) {
     .sirh-print-body {
       min-height: 0;
       box-sizing: border-box;
-      padding: ${margins.mt}mm ${margins.mr}mm ${margins.mb}mm ${margins.ml}mm;
+      padding: ${margins.mt}mm ${margins.mr}mm calc(${margins.mb}mm + ${printBottomGap}) ${margins.ml}mm;
       font-family: var(--doc-font-body, "Times New Roman", Times, serif);
       font-size: 12pt;
       line-height: 1.6;
@@ -4429,12 +4431,12 @@ function printDocPaginated(tpl, person, pages = null) {
 
     .preview-page-body.no-footer,
     .sirh-print-body.no-footer {
-      padding-bottom: ${margins.mb}mm;
+      padding-bottom: calc(${margins.mb}mm + ${printBottomGap});
     }
 
     .preview-page-body.no-header.no-footer,
     .sirh-print-body.no-header.no-footer {
-      padding: ${paddings.bodyNoHeaderFooter};
+      padding: ${margins.mt}mm ${margins.mr}mm calc(${margins.mb}mm + ${printBottomGap}) ${margins.ml}mm;
     }
 
     .preview-page-footer,
@@ -4451,6 +4453,10 @@ function printDocPaginated(tpl, person, pages = null) {
       overflow: hidden;
       white-space: normal;
       overflow-wrap: anywhere;
+    }
+
+    .sirh-print-footer-empty {
+      min-height: 1px;
     }
 
     .preview-page {
@@ -4581,14 +4587,16 @@ function printDocPaginated(tpl, person, pages = null) {
 
   const pagesHtml = pagesToPrint
     .map((page) => {
-      const noHdr = !page.header ? " no-header" : "";
-      const noFtr = !page.footer ? " no-footer" : "";
+      const headerHtml = String(page.header || "").trim();
+      const footerHtml = String(page.footer || "").trim();
+      const noHdr = headerHtml ? "" : " no-header";
+      const noFtr = footerHtml ? "" : " no-footer";
 
       return `
         <div class="preview-page sirh-print-page" style="${getDocumentThemeStyleAttr(tpl)}">
-          ${page.header ? `<div class="preview-page-header sirh-print-header" dir="${headerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${headerDir.style}">${page.header}</div>` : ""}
+          ${headerHtml ? `<div class="preview-page-header sirh-print-header" dir="${headerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${headerDir.style}">${headerHtml}</div>` : ""}
           <div class="preview-page-body sirh-print-body${noHdr}${noFtr}" dir="${bodyDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${bodyDir.style}">${page.content}</div>
-          ${page.footer ? `<div class="preview-page-footer sirh-print-footer" dir="${footerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${footerDir.style}">${page.footer}</div>` : ""}
+          <div class="preview-page-footer sirh-print-footer${footerHtml ? "" : " sirh-print-footer-empty"}" dir="${footerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${footerDir.style}">${footerHtml || "&nbsp;"}</div>
         </div>
       `;
     })
