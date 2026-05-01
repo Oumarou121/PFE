@@ -3818,6 +3818,22 @@
           >
             Bénéficiaire :
           </div>
+          <input
+            id="prevPersonSearch"
+            type="text"
+            placeholder="Rechercher un bénéficiaire..."
+            oninput="filterPreviewBeneficiaries()"
+            style="
+              font-size: 12px;
+              border: 1px solid var(--border);
+              border-radius: var(--r);
+              padding: 5px 10px;
+              outline: none;
+              background: var(--surface2);
+              color: var(--text);
+              min-width: 220px;
+            "
+          />
           <select
             id="prevPerson"
             onchange="refreshPrev()"
@@ -8341,10 +8357,30 @@
           label.textContent =
             fam.beneficiaryMode === "organization"
               ? "Organization :"
-              : `Bénéficiaire (${fam.beneficiaryTable || "non défini"}) :`;
+              : `${getFamilyBeneficiaryLabel(fam)} :`;
         }
         return beneficiaries;
       }
+
+      window.filterPreviewBeneficiaries = function () {
+        const sel = document.getElementById("prevPerson");
+        const search = String(
+          document.getElementById("prevPersonSearch")?.value || "",
+        )
+          .trim()
+          .toLowerCase();
+        if (!sel) return;
+        let firstVisible = null;
+        [...sel.options].forEach((option) => {
+          const visible = !search || option.textContent.toLowerCase().includes(search);
+          option.hidden = !visible;
+          if (visible && !firstVisible) firstVisible = option;
+        });
+        if (sel.selectedOptions[0]?.hidden && firstVisible) {
+          sel.value = firstVisible.value;
+          window.refreshPrev();
+        }
+      };
 
       window.openPreviewModal = async function () {
         if (!curTplId || !editorBody) {
@@ -8353,6 +8389,8 @@
         }
         await refreshAdminFilterRuntime(true);
         await populatePreviewBeneficiaries();
+        const search = document.getElementById("prevPersonSearch");
+        if (search) search.value = "";
         await window.refreshPrev();
         openModal("modalPreview");
       };

@@ -1315,6 +1315,9 @@
                 </svg>
               </div>
               <div class="step-body open" id="sb1">
+                <div class="data-search" style="margin-bottom:10px">
+                  <input id="familySearch" type="text" placeholder="Rechercher une famille..." oninput="updateFamilySearch(this.value)" />
+                </div>
                 <div class="fam-grid" id="famGrid"></div>
               </div>
             </div>
@@ -1338,6 +1341,9 @@
                 </svg>
               </div>
               <div class="step-body" id="sb2">
+                <div class="data-search" style="margin-bottom:10px">
+                  <input id="templateSearch" type="text" placeholder="Rechercher un modèle..." oninput="updateTemplateSearch(this.value)" />
+                </div>
                 <div class="tpl-list" id="tplList"></div>
               </div>
             </div>
@@ -1362,6 +1368,9 @@
               </div>
               <div class="step-body" id="sb3">
                 <div id="filterPanel" style="margin-bottom: 12px"></div>
+                <div class="data-search" style="margin-bottom:10px">
+                  <input id="beneficiarySearch" type="text" placeholder="Rechercher un bénéficiaire..." oninput="updateBeneficiarySearch(this.value)" />
+                </div>
                 <div class="person-list" id="personList"></div>
               </div>
             </div>
@@ -1557,6 +1566,9 @@
       let userDataSelectedRowId = null;
       let userDataSelectedRecord = null;
       let userDataSearch = "";
+      let familySearch = "";
+      let templateSearch = "";
+      let beneficiarySearch = "";
       let userDataLookupOptionsCache = {};
       let isCreatingUserDataRow = false;
       let userDataSearchTimer = null;
@@ -1731,8 +1743,13 @@
             lookupTable: "",
             lookupValueColumn: "",
             lookupLabelColumn: "",
+            lookupLabelColumn2: "",
           }
         );
+      }
+
+      function getUserDataFieldLabel(viewConfig, fieldName) {
+        return getTableViewFieldLabel(viewConfig, fieldName);
       }
 
       function resolveUserDataDisplayValue(viewConfig, fieldName, rawValue) {
@@ -1781,7 +1798,6 @@
               item,
             ) => `<div class="data-view-card ${item.id === selectedUserDataViewId ? "active" : ""}" onclick="selectUserDataView('${escAttr(item.id)}')">
               <div class="data-view-name">${escHtml(item.label || item.tableName)}</div>
-              <div class="data-view-meta">${escHtml((item.previewFields || []).join(" • ") || item.tableName)}</div>
             </div>`,
           )
           .join("");
@@ -1970,9 +1986,7 @@
           return;
         }
         title.textContent = viewConfig.label || viewConfig.tableName;
-        sub.textContent = viewConfig.previewFields?.length
-          ? `Aperçu: ${viewConfig.previewFields.join(", ")}`
-          : "Consultez les données disponibles.";
+        sub.textContent = "Consultez les données disponibles.";
         actions.style.display = "flex";
         const searchInput = document.getElementById("userDataRowSearch");
         if (searchInput && searchInput.value !== userDataSearch) {
@@ -2000,7 +2014,7 @@
           : `<table class="data-table"><thead><tr>${(
               viewConfig.previewFields || []
             )
-              .map((field) => `<th>${escHtml(field)}</th>`)
+              .map((field) => `<th>${escHtml(getUserDataFieldLabel(viewConfig, field))}</th>`)
               .join("")}</tr></thead><tbody>${userDataRows
               .map((row) => {
                 const rowId = String(row.id ?? row.Id ?? Object.values(row)[0]);
@@ -2030,7 +2044,7 @@
                     getUserDataLookupCacheKey(viewConfig.id, field)
                   ] || [];
                 return `<label class="data-field">
-                  <span class="data-field-label">${escHtml(field)}</span>
+                  <span class="data-field-label">${escHtml(getUserDataFieldLabel(viewConfig, field))}</span>
                   ${
                     editable
                       ? fieldConfig.displayMode === "lookup"
@@ -2088,10 +2102,10 @@
           if (!selPersonId) ps3.textContent = "Organization";
           return;
         }
-        const tableName = fam?.beneficiaryTable || "non défini";
+        const beneficiaryLabel = getFamilyBeneficiaryLabel(fam);
         sl3.textContent = hasFilters
-          ? `Filtres & bénéficiaire (${tableName})`
-          : `Bénéficiaire (${tableName})`;
+          ? `Filtres & bénéficiaire (${beneficiaryLabel})`
+          : beneficiaryLabel;
         if (!selPersonId) ps3.textContent = "Bénéficiaire";
       }
 
@@ -2338,7 +2352,10 @@
       function buildFamGrid() {
         const grid = document.getElementById("famGrid");
         grid.innerHTML = "";
-        DB.getFamilies().forEach((fam) => {
+        const search = familySearch.toLowerCase();
+        DB.getFamilies()
+          .filter((fam) => !search || String(fam.nom || "").toLowerCase().includes(search))
+          .forEach((fam) => {
           const tplCount = DB.getTemplates(fam.id, ORGANIZATION_ID).length;
           const card = document.createElement("div");
           card.className = "fam-card" + (selFamId === fam.id ? " sel" : "");
@@ -2351,11 +2368,29 @@
           grid.appendChild(card);
         });
       }
+      function updateFamilySearch(value) {
+        familySearch = String(value || "").trim();
+        buildFamGrid();
+      }
+      function updateTemplateSearch(value) {
+        templateSearch = String(value || "").trim();
+        buildTplList(selFamId);
+      }
+      function updateBeneficiarySearch(value) {
+        beneficiarySearch = String(value || "").trim();
+        renderCurrentBeneficiaries();
+      }
       function selectFamily(famId) {
         selFamId = famId;
         selTplId = null;
         selPersonId = null;
         currentBeneficiaries = [];
+        templateSearch = "";
+        beneficiarySearch = "";
+        const templateSearchInput = document.getElementById("templateSearch");
+        const beneficiarySearchInput = document.getElementById("beneficiarySearch");
+        if (templateSearchInput) templateSearchInput.value = "";
+        if (beneficiarySearchInput) beneficiarySearchInput.value = "";
         userResolvedFilters = [];
         userFilterValues = {};
         buildFamGrid();
@@ -2379,7 +2414,10 @@
       function buildTplList(famId) {
         const c = document.getElementById("tplList");
         c.innerHTML = "";
-        const tpls = DB.getTemplates(famId, ORGANIZATION_ID);
+        const search = templateSearch.toLowerCase();
+        const tpls = DB.getTemplates(famId, ORGANIZATION_ID).filter(
+          (tpl) => !search || String(tpl.nom || "").toLowerCase().includes(search),
+        );
         if (!tpls.length) {
           c.innerHTML =
             '<div style="font-size:11px;color:#aaa;text-align:center;padding:14px">Aucun modèle</div>';
@@ -2397,6 +2435,9 @@
         selTplId = tplId;
         selPersonId = null;
         currentBeneficiaries = [];
+        beneficiarySearch = "";
+        const beneficiarySearchInput = document.getElementById("beneficiarySearch");
+        if (beneficiarySearchInput) beneficiarySearchInput.value = "";
         await refreshUserResolvedFilters(false);
         buildTplList(selFamId);
         const tpl = DB.getTemplate(tplId);
@@ -2418,6 +2459,9 @@
         selTplId = tplId;
         selPersonId = null;
         currentBeneficiaries = [];
+        beneficiarySearch = "";
+        const beneficiarySearchInput = document.getElementById("beneficiarySearch");
+        if (beneficiarySearchInput) beneficiarySearchInput.value = "";
         await refreshUserResolvedFilters(false);
         buildTplList(selFamId);
         const tpl = DB.getTemplate(tplId);
@@ -2461,19 +2505,41 @@
           ORGANIZATION_ID,
           userFilterValues,
         );
+        renderCurrentBeneficiaries();
+      }
+
+      function renderCurrentBeneficiaries() {
+        const c = document.getElementById("personList");
+        if (!c) return;
+        c.innerHTML = "";
         if (!currentBeneficiaries.length) {
           c.innerHTML =
             '<div style="font-size:11px;color:#aaa;text-align:center;padding:14px">Aucun bénéficiaire disponible</div>';
           return;
         }
-        currentBeneficiaries.forEach((p) => {
+        const search = beneficiarySearch.toLowerCase();
+        const filteredBeneficiaries = currentBeneficiaries.filter((p) => {
+          const label = p._displayLabel || p.nom_prenom || p.nom || "Bénéficiaire";
+          const subtitle =
+            p._displaySubtitle ||
+            (p._sourceTable === "organization"
+              ? "Document Organization"
+              : getFamilyBeneficiaryLabel(DB.getFamily(selFamId), ""));
+          return !search || `${label} ${subtitle}`.toLowerCase().includes(search);
+        });
+        if (!filteredBeneficiaries.length) {
+          c.innerHTML =
+            '<div style="font-size:11px;color:#aaa;text-align:center;padding:14px">Aucun bénéficiaire trouvé</div>';
+          return;
+        }
+        filteredBeneficiaries.forEach((p) => {
           const label =
             p._displayLabel || p.nom_prenom || p.nom || "Bénéficiaire";
           const subtitle =
             p._displaySubtitle ||
             (p._sourceTable === "organization"
               ? "Document Organization"
-              : p._sourceTable || "");
+              : getFamilyBeneficiaryLabel(DB.getFamily(selFamId), ""));
           const initials = label
             .split(" ")
             .map((n) => n[0] || "")

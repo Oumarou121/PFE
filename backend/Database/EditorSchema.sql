@@ -6,6 +6,7 @@ CREATE TABLE [family] (
   description NVARCHAR(MAX) NULL,
   beneficiary_mode NVARCHAR(32) NULL,
   beneficiary_table NVARCHAR(128) NULL,
+  beneficiary_table_label NVARCHAR(255) NULL,
   beneficiary_link_column NVARCHAR(128) NULL,
   beneficiary_display_column_1 NVARCHAR(128) NULL,
   beneficiary_display_column_2 NVARCHAR(128) NULL,
@@ -20,6 +21,11 @@ END;
 IF COL_LENGTH('family', 'filter_catalog_json') IS NULL
 BEGIN
   ALTER TABLE [family] ADD filter_catalog_json NVARCHAR(MAX) NULL;
+END;
+
+IF COL_LENGTH('family', 'beneficiary_table_label') IS NULL
+BEGIN
+  ALTER TABLE [family] ADD beneficiary_table_label NVARCHAR(255) NULL;
 END;
 
 IF COL_LENGTH('family', 'beneficiary_display_column_1') IS NULL
@@ -74,6 +80,7 @@ CREATE TABLE [table_view_config] (
   visible_fields_json NVARCHAR(MAX) NOT NULL,
   editable_fields_json NVARCHAR(MAX) NOT NULL,
   preview_fields_json NVARCHAR(MAX) NOT NULL,
+  field_labels_json NVARCHAR(MAX) NOT NULL,
   field_settings_json NVARCHAR(MAX) NOT NULL,
   created_at NVARCHAR(64) NULL,
   updated_at NVARCHAR(64) NULL
@@ -83,6 +90,11 @@ END;
 IF COL_LENGTH('table_view_config', 'field_settings_json') IS NULL
 BEGIN
   ALTER TABLE [table_view_config] ADD field_settings_json NVARCHAR(MAX) NOT NULL DEFAULT '{}';
+END;
+
+IF COL_LENGTH('table_view_config', 'field_labels_json') IS NULL
+BEGIN
+  ALTER TABLE [table_view_config] ADD field_labels_json NVARCHAR(MAX) NOT NULL DEFAULT '{}';
 END;
 
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'template')

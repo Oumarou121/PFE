@@ -607,6 +607,12 @@ function normalizeFamilyRecord(record = {}) {
     next.beneficiaryMode === "table"
       ? String(next.beneficiaryTable || next.beneficiaireTable || "")
       : null;
+  next.beneficiaryTableLabel = String(
+    next.beneficiaryTableLabel ||
+      next.beneficiaryLabel ||
+      next.beneficiaryDisplayName ||
+      "",
+  ).trim();
   next.beneficiaryDisplayColumn1 = String(
     next.beneficiaryDisplayColumn1 ||
       next.beneficiaryDisplayColumn ||
@@ -633,6 +639,8 @@ function normalizeFamilyRecord(record = {}) {
     next.filterCatalog || next.filterCatalogJson || [],
   );
   delete next.beneficiaireTable;
+  delete next.beneficiaryLabel;
+  delete next.beneficiaryDisplayName;
   delete next.beneficiarySqlText;
   delete next.filterCatalogJson;
   delete next.beneficiaryDisplayColumn;
@@ -643,6 +651,16 @@ function normalizeFamilyRecord(record = {}) {
   delete next.beneficiarySecondaryDisplayColumn;
   delete next.beneficiarySubtitleColumn;
   return next;
+}
+
+function getFamilyBeneficiaryLabel(family, fallback = "Bénéficiaire") {
+  if (!family) return fallback;
+  if (family.beneficiaryMode === "organization") return "Organization";
+  return (
+    String(family.beneficiaryTableLabel || "").trim() ||
+    String(family.beneficiaryTable || "").trim() ||
+    fallback
+  );
 }
 
 function getSuperadminHiddenFamilyTables() {
@@ -712,7 +730,20 @@ function normalizeTableViewRecord(record = {}) {
             lookupTable: String(config?.lookupTable || "").trim(),
             lookupValueColumn: String(config?.lookupValueColumn || "").trim(),
             lookupLabelColumn: String(config?.lookupLabelColumn || "").trim(),
+            lookupLabelColumn2: String(config?.lookupLabelColumn2 || "").trim(),
           },
+        ])
+        .filter(([field]) => field),
+    );
+  };
+  const normalizeFieldLabels = (value) => {
+    const source =
+      value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    return Object.fromEntries(
+      Object.entries(source)
+        .map(([field, label]) => [
+          String(field || "").trim(),
+          String(label || "").trim(),
         ])
         .filter(([field]) => field),
     );
@@ -724,10 +755,25 @@ function normalizeTableViewRecord(record = {}) {
     visibleFields: normalizeFieldList(next.visibleFields),
     editableFields: normalizeFieldList(next.editableFields),
     previewFields: normalizeFieldList(next.previewFields, 3),
+    fieldLabels: normalizeFieldLabels(next.fieldLabels),
     fieldSettings: normalizeFieldSettings(next.fieldSettings),
     createdAt: next.createdAt || null,
     updatedAt: next.updatedAt || null,
   };
+}
+
+function getTableViewFieldLabel(viewConfig, fieldName) {
+  const key = String(fieldName || "").trim();
+  return (
+    String(viewConfig?.fieldLabels?.[key] || "").trim() ||
+    humanizeDataFieldName(key)
+  );
+}
+
+function humanizeDataFieldName(value) {
+  return String(value || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function notifySyncError(message, error) {

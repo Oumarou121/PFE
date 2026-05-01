@@ -43,6 +43,7 @@ namespace DocApi.Repositories
             if (!await TableExistsAsync("family")) return [];
             var hasBeneficiaryMode = await TableHasColumnAsync("family", "beneficiary_mode");
             var hasBeneficiaryTable = await TableHasColumnAsync("family", "beneficiary_table");
+            var hasBeneficiaryTableLabel = await TableHasColumnAsync("family", "beneficiary_table_label");
             var hasBeneficiaryLinkColumn = await TableHasColumnAsync("family", "beneficiary_link_column");
             var hasBeneficiaryDisplayColumn1 = await TableHasColumnAsync("family", "beneficiary_display_column_1");
             var hasBeneficiaryDisplayColumn2 = await TableHasColumnAsync("family", "beneficiary_display_column_2");
@@ -52,6 +53,7 @@ namespace DocApi.Repositories
                 SELECT id, nom, description,
                        {(hasBeneficiaryMode ? "beneficiary_mode" : "'table'")} AS beneficiary_mode,
                        {(hasBeneficiaryTable ? "beneficiary_table" : "NULL")} AS beneficiary_table,
+                       {(hasBeneficiaryTableLabel ? "beneficiary_table_label" : "NULL")} AS beneficiary_table_label,
                        {(hasBeneficiaryLinkColumn ? "beneficiary_link_column" : "NULL")} AS beneficiary_link_column,
                        {(hasBeneficiaryDisplayColumn1 ? "beneficiary_display_column_1" : "NULL")} AS beneficiary_display_column_1,
                        {(hasBeneficiaryDisplayColumn2 ? "beneficiary_display_column_2" : "NULL")} AS beneficiary_display_column_2,
@@ -73,6 +75,7 @@ namespace DocApi.Repositories
                     description = Str(item, "description"),
                     beneficiaryMode = Str(item, "beneficiary_mode") == "organization" ? "organization" : "table",
                     beneficiaryTable = Str(item, "beneficiary_mode") == "organization" ? null : Str(item, "beneficiary_table"),
+                    beneficiaryTableLabel = Str(item, "beneficiary_table_label"),
                     beneficiaryLinkColumn = Str(item, "beneficiary_link_column"),
                     beneficiaryDisplayColumn1 = Str(item, "beneficiary_display_column_1"),
                     beneficiaryDisplayColumn2 = Str(item, "beneficiary_display_column_2"),
@@ -99,16 +102,17 @@ namespace DocApi.Repositories
                 USING (SELECT @id AS id) AS src ON target.id = src.id
                                 WHEN MATCHED THEN UPDATE SET nom = @nom, description = @description,
                   beneficiary_mode = @beneficiary_mode, beneficiary_table = @beneficiary_table,
+                  beneficiary_table_label = @beneficiary_table_label,
                   beneficiary_link_column = @beneficiary_link_column,
                   beneficiary_display_column_1 = @beneficiary_display_column_1,
                   beneficiary_display_column_2 = @beneficiary_display_column_2,
                   beneficiary_sql_text = @beneficiary_sql_text, filter_catalog_json = @filter_catalog_json,
                   sql_text = @sql_text, classes_json = @classes_json
                                 WHEN NOT MATCHED THEN INSERT (id, nom, description, beneficiary_mode, beneficiary_table,
-                  beneficiary_link_column, beneficiary_display_column_1, beneficiary_display_column_2,
+                  beneficiary_table_label, beneficiary_link_column, beneficiary_display_column_1, beneficiary_display_column_2,
                   beneficiary_sql_text, filter_catalog_json, sql_text, created_at, classes_json)
                                     VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table,
-                  @beneficiary_link_column, @beneficiary_display_column_1, @beneficiary_display_column_2,
+                  @beneficiary_table_label, @beneficiary_link_column, @beneficiary_display_column_1, @beneficiary_display_column_2,
                   @beneficiary_sql_text, @filter_catalog_json, @sql_text, @created_at, @classes_json);
                 """, FamilyParams(family));
             return (await GetFamilyByIdAsync(JString(family, "id")!))!;
@@ -322,9 +326,11 @@ namespace DocApi.Repositories
         {
             if (!await TableExistsAsync("table_view_config")) return [];
             var hasFieldSettings = await TableHasColumnAsync("table_view_config", "field_settings_json");
+            var hasFieldLabels = await TableHasColumnAsync("table_view_config", "field_labels_json");
             var sql = $"""
                 SELECT id, table_name, label, visible_fields_json, editable_fields_json,
                        preview_fields_json,
+                       {(hasFieldLabels ? "field_labels_json" : "'{}'")} AS field_labels_json,
                        {(hasFieldSettings ? "field_settings_json" : "'{}'")} AS field_settings_json,
                        created_at, updated_at
                 FROM table_view_config
@@ -343,6 +349,7 @@ namespace DocApi.Repositories
                     visibleFields = JsonValue(item, "visible_fields_json", new JsonArray()),
                     editableFields = JsonValue(item, "editable_fields_json", new JsonArray()),
                     previewFields = JsonValue(item, "preview_fields_json", new JsonArray()),
+                    fieldLabels = JsonValue(item, "field_labels_json", new JsonObject()),
                     fieldSettings = JsonValue(item, "field_settings_json", new JsonObject()),
                     createdAt = Obj(item, "created_at"),
                     updatedAt = Obj(item, "updated_at")
@@ -556,12 +563,17 @@ namespace DocApi.Repositories
             var table = JString(field, "lookupTable");
             var valueColumn = JString(field, "lookupValueColumn");
             var labelColumn = JString(field, "lookupLabelColumn");
+            var labelColumn2 = JString(field, "lookupLabelColumn2");
             if (string.IsNullOrWhiteSpace(table) || string.IsNullOrWhiteSpace(valueColumn) || string.IsNullOrWhiteSpace(labelColumn)) return [];
             if (!await TableExistsAsync(table)) return [];
             var lookupColumns = (await GetColumnsAsync(table)).Select(column => column.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             if (!lookupColumns.Contains(valueColumn) || !lookupColumns.Contains(labelColumn)) return [];
+            if (!string.IsNullOrWhiteSpace(labelColumn2) && !lookupColumns.Contains(labelColumn2)) return [];
             using var connection = _connectionFactory.CreateConnection();
-            var rows = await connection.QueryAsync($"SELECT CONVERT(NVARCHAR(4000), {Quote(valueColumn)}) AS value, CONVERT(NVARCHAR(4000), {Quote(labelColumn)}) AS label FROM {Quote(table)} WHERE {Quote(valueColumn)} IS NOT NULL ORDER BY CONVERT(NVARCHAR(4000), {Quote(labelColumn)}) ASC");
+            var labelExpr = string.IsNullOrWhiteSpace(labelColumn2)
+                ? $"CONVERT(NVARCHAR(4000), {Quote(labelColumn)})"
+                : $"LTRIM(RTRIM(CONCAT(CONVERT(NVARCHAR(4000), {Quote(labelColumn)}), ' ', CONVERT(NVARCHAR(4000), {Quote(labelColumn2)}))))";
+            var rows = await connection.QueryAsync($"SELECT CONVERT(NVARCHAR(4000), {Quote(valueColumn)}) AS value, {labelExpr} AS label FROM {Quote(table)} WHERE {Quote(valueColumn)} IS NOT NULL ORDER BY {labelExpr} ASC");
             return rows.Select(CleanRow);
         }
 
@@ -574,9 +586,9 @@ namespace DocApi.Repositories
                 USING (SELECT @id AS id) AS src ON target.id = src.id
                 WHEN MATCHED THEN UPDATE SET table_name = @table_name, label = @label,
                   visible_fields_json = @visible_fields_json, editable_fields_json = @editable_fields_json,
-                  preview_fields_json = @preview_fields_json, field_settings_json = @field_settings_json, updated_at = @updated_at
-                WHEN NOT MATCHED THEN INSERT (id, table_name, label, visible_fields_json, editable_fields_json, preview_fields_json, field_settings_json, created_at, updated_at)
-                  VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json, @preview_fields_json, @field_settings_json, @created_at, @updated_at);
+                  preview_fields_json = @preview_fields_json, field_labels_json = @field_labels_json, field_settings_json = @field_settings_json, updated_at = @updated_at
+                WHEN NOT MATCHED THEN INSERT (id, table_name, label, visible_fields_json, editable_fields_json, preview_fields_json, field_labels_json, field_settings_json, created_at, updated_at)
+                  VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json, @preview_fields_json, @field_labels_json, @field_settings_json, @created_at, @updated_at);
                 """, TableViewParams(normalized));
             return normalized;
         }
@@ -742,10 +754,10 @@ namespace DocApi.Repositories
         private static Task InsertFamilyAsync(IDbConnection connection, IDbTransaction transaction, JsonObject family)
         {
             return connection.ExecuteAsync("""
-                                INSERT INTO family (id, nom, description, beneficiary_mode, beneficiary_table, beneficiary_link_column,
+                                INSERT INTO family (id, nom, description, beneficiary_mode, beneficiary_table, beneficiary_table_label, beneficiary_link_column,
                   beneficiary_display_column_1, beneficiary_display_column_2, beneficiary_sql_text, filter_catalog_json,
                   sql_text, created_at, classes_json)
-                                VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table, @beneficiary_link_column,
+                                VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table, @beneficiary_table_label, @beneficiary_link_column,
                   @beneficiary_display_column_1, @beneficiary_display_column_2, @beneficiary_sql_text, @filter_catalog_json,
                   @sql_text, @created_at, @classes_json)
                 """, new
@@ -755,6 +767,7 @@ namespace DocApi.Repositories
                 description = JString(family, "description") ?? "",
                 beneficiary_mode = JString(family, "beneficiaryMode") == "organization" ? "organization" : "table",
                 beneficiary_table = JString(family, "beneficiaryMode") == "organization" ? null : JString(family, "beneficiaryTable"),
+                beneficiary_table_label = JString(family, "beneficiaryTableLabel"),
                 beneficiary_link_column = JString(family, "beneficiaryLinkColumn"),
                 beneficiary_display_column_1 = JString(family, "beneficiaryDisplayColumn1"),
                 beneficiary_display_column_2 = JString(family, "beneficiaryDisplayColumn2"),
@@ -770,9 +783,9 @@ namespace DocApi.Repositories
         {
             return connection.ExecuteAsync("""
                 INSERT INTO table_view_config (id, table_name, label, visible_fields_json, editable_fields_json,
-                  preview_fields_json, field_settings_json, created_at, updated_at)
+                  preview_fields_json, field_labels_json, field_settings_json, created_at, updated_at)
                 VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json,
-                  @preview_fields_json, @field_settings_json, @created_at, @updated_at)
+                  @preview_fields_json, @field_labels_json, @field_settings_json, @created_at, @updated_at)
                 """, TableViewParams(NormalizeTableView(tableView)), transaction);
         }
 
@@ -843,6 +856,7 @@ namespace DocApi.Repositories
             visible_fields_json = JsonString(tableView, "visibleFields", "[]"),
             editable_fields_json = JsonString(tableView, "editableFields", "[]"),
             preview_fields_json = JsonString(tableView, "previewFields", "[]"),
+            field_labels_json = JsonString(tableView, "fieldLabels", "{}"),
             field_settings_json = JsonString(tableView, "fieldSettings", "{}"),
             created_at = JString(tableView, "createdAt") ?? DateTimeOffset.UtcNow.ToString("O"),
             updated_at = DateTimeOffset.UtcNow.ToString("O")
@@ -855,6 +869,7 @@ namespace DocApi.Repositories
             description = JString(family, "description") ?? "",
             beneficiary_mode = JString(family, "beneficiaryMode") == "organization" ? "organization" : "table",
             beneficiary_table = JString(family, "beneficiaryMode") == "organization" ? null : JString(family, "beneficiaryTable"),
+            beneficiary_table_label = JString(family, "beneficiaryTableLabel"),
             beneficiary_link_column = JString(family, "beneficiaryLinkColumn"),
             beneficiary_display_column_1 = JString(family, "beneficiaryDisplayColumn1"),
             beneficiary_display_column_2 = JString(family, "beneficiaryDisplayColumn2"),
@@ -894,6 +909,7 @@ namespace DocApi.Repositories
                 ["visibleFields"] = source["visibleFields"]?.DeepClone() ?? new JsonArray(),
                 ["editableFields"] = source["editableFields"]?.DeepClone() ?? new JsonArray(),
                 ["previewFields"] = source["previewFields"]?.DeepClone() ?? new JsonArray(),
+                ["fieldLabels"] = source["fieldLabels"]?.DeepClone() ?? new JsonObject(),
                 ["fieldSettings"] = source["fieldSettings"]?.DeepClone() ?? new JsonObject(),
                 ["createdAt"] = JString(source, "createdAt"),
                 ["updatedAt"] = JString(source, "updatedAt")

@@ -1981,6 +1981,10 @@
             .join("")}
         </select>
         <div style="margin-top:10px">
+          <label class="form-label" style="font-size:11px">Libellé affiché à l'admin et au user</label>
+          <input class="form-input" id="fBeneficiaryTableLabel" value="${escAttr(fam.beneficiaryTableLabel || "")}" placeholder="${escAttr(tableName ? humanizeSchemaName(tableName) : "Ex: Étudiant")}" oninput="updateFamilyDraftField('${famId}', 'beneficiaryTableLabel', this.value)">
+        </div>
+        <div style="margin-top:10px">
           <label class="form-label" style="font-size:11px">Colonne de liaison</label>
           <select class="form-input" id="fBeneficiaryLinkColumn" onchange="updateFamilyBeneficiaryLinkColumn('${famId}', this.value)">
             <option value="">Choisir une colonne</option>
@@ -2057,6 +2061,9 @@
         if (!fam) return;
         fam.beneficiaryMode = "table";
         fam.beneficiaryTable = tableName || "";
+        if (!fam.beneficiaryTableLabel && tableName) {
+          fam.beneficiaryTableLabel = humanizeSchemaName(tableName);
+        }
         fam.beneficiaryLinkColumn = "";
         fam.beneficiaryDisplayColumn1 = "";
         fam.beneficiaryDisplayColumn2 = "";
@@ -2644,7 +2651,11 @@
           block.innerHTML = `
 <div class="class-block-header">
   <div class="class-color-dot" style="background:${cls.couleur}"></div>
-  <input class="class-name-input" value="${cls.nom}" placeholder="Nom de la classe" onchange="updateClassProp('${famId}',${ci},'nom',this.value)">
+  <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px">
+    <label class="form-label" style="font-size:10px;margin:0">Libellé de classe affiché à l'admin</label>
+    <input class="class-name-input" value="${escAttr(cls.nom)}" placeholder="Libellé affiché" onchange="updateClassProp('${famId}',${ci},'nom',this.value)">
+    ${cls.sourceTable ? `<div class="text-muted" style="font-size:10px">Table SQL: ${escHtml(cls.sourceTable)}</div>` : ""}
+  </div>
   <select class="color-select" onchange="updateClassProp('${famId}',${ci},'couleur',this.value)">
     ${["#6c63ff", "#48bb78", "#9f7aea", "#f6ad55", "#fc5c5c", "#63b3ed", "#4fd1c5", "#ed8936", "#f97316"].map((c) => `<option value="${c}" ${cls.couleur === c ? "selected" : ""}>${c}</option>`).join("")}
   </select>
@@ -6140,17 +6151,35 @@
           ? columns
               .map((column) => {
                 const checked = selected.has(column.name);
+                const fieldLabel = getTableViewFieldLabel(item, column.name);
                 const disabled =
                   fieldKey === "previewFields" &&
                   !checked &&
                   (item.previewFields || []).length >= maxCount;
                 return `<label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;cursor:pointer">
   <input type="checkbox" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} onchange="toggleTableViewField('${item.id}','${fieldKey}','${escJs(column.name)}',this.checked)">
-  <span><strong>${escHtml(column.name)}</strong><br><span class="text-muted">${escHtml(column.comment || column.type || "")}</span></span>
+  <span style="flex:1;min-width:0"><strong>${escHtml(fieldLabel)}</strong><br><span class="text-muted">${escHtml(column.name)}${column.comment ? ` - ${escHtml(column.comment)}` : column.type ? ` - ${escHtml(column.type)}` : ""}</span>
+  ${
+    fieldKey === "visibleFields"
+      ? `<input class="form-input" value="${escAttr(item.fieldLabels?.[column.name] || "")}" placeholder="${escAttr(column.comment || humanizeSchemaName(column.name))}" oninput="event.stopPropagation();updateTableViewFieldLabel('${item.id}','${escJs(column.name)}',this.value)" onclick="event.stopPropagation()" style="margin-top:6px">`
+      : ""
+  }</span>
 </label>`;
               })
               .join("")
           : '<div class="text-muted">Aucune colonne disponible pour cette table.</div>';
+      }
+
+      function updateTableViewFieldLabel(id, fieldName, value) {
+        const item = DB.getTableView(id);
+        if (!item) return;
+        const key = String(fieldName || "").trim();
+        item.fieldLabels = {
+          ...(item.fieldLabels || {}),
+          [key]: String(value || "").trim(),
+        };
+        item.updatedAt = new Date().toISOString();
+        DB.saveTableView(item);
       }
 
       function getTableViewFieldSetting(item, fieldName) {
@@ -6160,6 +6189,7 @@
             lookupTable: "",
             lookupValueColumn: "",
             lookupLabelColumn: "",
+            lookupLabelColumn2: "",
           }
         );
       }
@@ -6181,6 +6211,7 @@
                   ${renderLookupTableField("schema", config.lookupTable, "updateTableViewFieldSetting", [item.id, fieldName, "lookupTable"])}
                   ${renderLookupColumnField("Colonne code", "schema", config.lookupTable, config.lookupValueColumn, "updateTableViewFieldSetting", [item.id, fieldName, "lookupValueColumn"])}
                   ${renderLookupColumnField("Colonne libellé", "schema", config.lookupTable, config.lookupLabelColumn, "updateTableViewFieldSetting", [item.id, fieldName, "lookupLabelColumn"])}
+                  ${renderLookupColumnField("Colonne libellé 2", "schema", config.lookupTable, config.lookupLabelColumn2 || "", "updateTableViewFieldSetting", [item.id, fieldName, "lookupLabelColumn2"], true)}
                 </div>`
               : ""
           }
@@ -6199,6 +6230,7 @@
           lookupTable: "",
           lookupValueColumn: "",
           lookupLabelColumn: "",
+          lookupLabelColumn2: "",
           ...(settings[key] || {}),
         };
         current[prop] = value || "";
@@ -6208,6 +6240,7 @@
         if (prop === "lookupTable") {
           current.lookupValueColumn = "";
           current.lookupLabelColumn = "";
+          current.lookupLabelColumn2 = "";
         }
         settings[key] = current;
         item.fieldSettings = settings;
@@ -6390,7 +6423,7 @@
           : `<table class="data-table"><thead><tr><th></th>${(
               item.previewFields || []
             )
-              .map((field) => `<th>${escHtml(field)}</th>`)
+              .map((field) => `<th>${escHtml(getTableViewFieldLabel(item, field))}</th>`)
               .join("")}</tr></thead><tbody>${tableViewRowsCache
               .map((row) => {
                 const rowId = String(row.id ?? row.Id ?? Object.values(row)[0]);
@@ -6423,7 +6456,7 @@
                     getTableViewLookupCacheKey(item, field)
                   ] || [];
                 return `<div class="form-row">
-  <label class="form-label">${escHtml(field)}</label>
+  <label class="form-label">${escHtml(getTableViewFieldLabel(item, field))}</label>
   ${
     editable
       ? fieldConfig.displayMode === "lookup"
@@ -6692,7 +6725,8 @@
             ? (item.visibleFields || [])
                 .map(
                   (fieldName) => `<div style="margin-bottom:12px">
-                    <div style="font-weight:600;color:var(--text)">${escHtml(fieldName)}</div>
+                    <div style="font-weight:600;color:var(--text)">${escHtml(getTableViewFieldLabel(item, fieldName))}</div>
+                    <div class="text-muted" style="font-size:10px;margin-top:2px">${escHtml(fieldName)}</div>
                     ${renderTableViewLookupEditor(item, fieldName)}
                   </div>`,
                 )
