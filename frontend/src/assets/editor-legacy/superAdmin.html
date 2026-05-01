@@ -1230,25 +1230,6 @@
           </svg>
           <span>Data</span>
         </button>
-        <button
-          class="icon-nav-btn"
-          id="nav-dashboard"
-          onclick="showSection('dashboard', this)"
-          title="Tableau de bord"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="3" width="7" height="7" />
-            <rect x="14" y="3" width="7" height="7" />
-            <rect x="14" y="14" width="7" height="7" />
-            <rect x="3" y="14" width="7" height="7" />
-          </svg>
-          <span>Board</span>
-        </button>
         <div class="icon-nav-bottom">
           <div class="icon-nav-sep" style="width: 32px"></div>
           <div class="user-avatar" title="Super Admin">SA</div>
@@ -1360,11 +1341,6 @@
           <div class="content-panel" id="panel-tableviews">
             <div class="section-heading">Explorateur de données</div>
             <div id="tableViewContent"></div>
-          </div>
-          <!-- Dashboard -->
-          <div class="content-panel" id="panel-dashboard">
-            <div class="section-heading">Vue d'ensemble</div>
-            <div id="dashboardContent"></div>
           </div>
         </div>
       </div>
@@ -1587,11 +1563,6 @@
           addLabel: "Nouvelle vue",
           topbar: "Configuration des vues de données",
         },
-        dashboard: {
-          panelTitle: "Tableau de bord",
-          addLabel: null,
-          topbar: "Tableau de bord",
-        },
       };
 
       // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1620,7 +1591,6 @@
         if (section === "organizations") renderOrganizationContent();
         if (section === "admins") renderAdminContent();
         if (section === "tableviews") renderTableViewsContent();
-        if (section === "dashboard") renderDashboard();
       }
 
       // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -6731,53 +6701,6 @@
   </div>
 </div>`;
         await reloadTableViewRows();
-      }
-
-      // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-      //  DASHBOARD
-      // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-      function renderDashboard() {
-        const fams = DB.getFamilies(),
-          tpls = DB.get().templates,
-          etabs = DB.getOrganizations(),
-          admins = DB.getAdmins(),
-          tableViews = DB.getTableViews();
-        document.getElementById("dashboardContent").innerHTML = `
-<div class="stats-grid">
-  <div class="stat-card purple"><div class="stat-num">${fams.length}</div><div class="stat-label">Familles de documents</div></div>
-  <div class="stat-card green"><div class="stat-num">${tpls.length}</div><div class="stat-label">Templates créés</div></div>
-  <div class="stat-card blue"><div class="stat-num">${etabs.length}</div><div class="stat-label">Organizations</div></div>
-  <div class="stat-card amber"><div class="stat-num">${admins.length}</div><div class="stat-label">Users admin</div></div>
-  <div class="stat-card" style="background:var(--teal-bg);border:1px solid var(--teal);color:var(--teal)"><div class="stat-num">${tableViews.length}</div><div class="stat-label">Vues de données</div></div>
-</div>
-<div class="card">
-  <div class="card-header"><div class="card-title">Familles et leurs templates</div></div>
-  <div class="card-body" style="padding:0">
-    <table class="data-table">
-      <thead><tr><th>Famille</th><th>Classes</th><th>Scalaires</th><th>Listes texte</th><th>Tableaux objet</th><th>Templates</th><th>Créée le</th></tr></thead>
-      <tbody>${fams
-        .map((f) => {
-          const allVars = (f.classes || []).flatMap((c) => c.vars || []);
-          const scalars = allVars.filter(
-            (v) => v.type !== "list" && v.type !== "list-object",
-          ).length;
-          const lists = allVars.filter((v) => v.type === "list").length;
-          const objs = allVars.filter((v) => v.type === "list-object").length;
-          return `<tr>
-          <td><span style="font-size:16px">${f.icon}</span> <strong>${f.nom}</strong></td>
-          <td>${f.classes?.length || 0}</td>
-          <td>${scalars}</td>
-          <td>${lists > 0 ? `<span class="chip chip-purple">${lists}</span>` : "0"}</td>
-          <td>${objs > 0 ? `<span class="chip chip-orange">${objs}</span>` : "0"}</td>
-          <td>${DB.getTemplates(f.id).length}</td>
-          <td>${new Date(f.createdAt).toLocaleDateString("fr-FR")}</td>
-        </tr>`;
-        })
-        .join("")}
-      </tbody>
-    </table>
-  </div>
-</div>`;
       }
 
       // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
