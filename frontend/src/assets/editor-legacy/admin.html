@@ -3833,13 +3833,6 @@
             "
           ></select>
           <button
-            id="prevPreviewBtn"
-            class="btn sm"
-            onclick="doPreviewFromPreview()"
-          >
-            • Aperçu
-          </button>
-          <button
             id="prevPrintBtn"
             class="btn sm primary"
             onclick="doPrintFromPreview()"
@@ -4890,10 +4883,7 @@
       window.insertVar = function (tech) {
         const ed = activeEditor || editorBody;
         if (!ed) return;
-        ed.chain()
-          .focus()
-          .insertContent(`{{${tech}}}`)
-          .run();
+        ed.chain().focus().insertContent(`{{${tech}}}`).run();
       };
 
       window.__getActiveEditor = () => activeEditor || editorBody;
@@ -5035,11 +5025,7 @@
               : "";
           const tableMarker = `{{#${varDef.tech}:table${columnSuffix}}}`;
           if (inCell) {
-            editor
-              .chain()
-              .focus()
-              .insertContent(tableMarker)
-              .run();
+            editor.chain().focus().insertContent(tableMarker).run();
             toast(
               "Marqueur :table inséré  - la ligne sera répétée par objet",
               "success",
@@ -6948,41 +6934,6 @@
         } catch (_) {}
       }
 
-      // -- Aperçu et Impression --
-      window.doPreviewFromPreview = async function () {
-        const pId = document.getElementById("prevPerson")?.value;
-        const person = pId
-          ? await DB.getPersonDataForFamily(curFamId, pId)
-          : null;
-        const liveTpl = buildLivePreviewTemplate();
-        if (!liveTpl) {
-          toast("Aucun template actif", "error");
-          return;
-        }
-        if (!person) {
-          toast("Sélectionnez un bénéficiaire pour afficher l'aperçu", "error");
-          return;
-        }
-        previewDocument(liveTpl, person);
-      };
-
-      window.doPrintFromPreview = async function () {
-        const pId = document.getElementById("prevPerson")?.value;
-        const person = pId
-          ? await DB.getPersonDataForFamily(curFamId, pId)
-          : null;
-        const liveTpl = buildLivePreviewTemplate();
-        if (!liveTpl) {
-          toast("Aucun template actif", "error");
-          return;
-        }
-        if (!person) {
-          toast("Sélectionnez un bénéficiaire pour imprimer", "error");
-          return;
-        }
-        printDocPaginated(liveTpl, person);
-      };
-
       // -- Save state --
       function setSaveState(msg, modified) {
         document.getElementById("saveSt").textContent = msg;
@@ -8438,30 +8389,6 @@
           "preview-page",
           { mode: "preview" },
         );
-      };
-
-      window.doPreviewFromPreview = async function () {
-        const beneficiaryId =
-          document.getElementById("prevPerson")?.value || null;
-        const person = await DB.getDocumentDataForFamily(
-          curFamId,
-          beneficiaryId,
-          getActiveOrganizationId(),
-          adminFilterValues,
-        );
-        const liveTpl = buildLivePreviewTemplate();
-        if (!liveTpl) {
-          toast("Aucun template actif", "error");
-          return;
-        }
-        if (!person) {
-          toast(
-            "Sélectionnez un bénéficiaire ou l'Organization pour afficher l'aperçu",
-            "error",
-          );
-          return;
-        }
-        previewDocument(liveTpl, person);
       };
 
       window.doPrintFromPreview = async function () {

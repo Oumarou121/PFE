@@ -2510,7 +2510,7 @@
         );
         if (!tpl || !person) return;
 
-        const renderedPages = buildA4Canvas(tpl, person);
+        buildA4Canvas(tpl, person);
 
         document.getElementById("zoomBar").style.display = "flex";
         const actions = document.getElementById("docActions");
@@ -2522,7 +2522,6 @@
           b.onclick = fn;
           actions.appendChild(b);
         };
-        mkBtn("Aperçu final", "primary", () => previewDocument(tpl, person));
         mkBtn("Imprimer", "primary", () => printDocPaginated(tpl, person));
         mkBtn("Nouveau", "ghost", resetAll);
 
