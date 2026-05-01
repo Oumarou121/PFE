@@ -86,8 +86,10 @@ builder.Services.Configure<EditorDatabaseOptions>(builder.Configuration.GetSecti
 builder.Services.AddScoped<IEditorDbConnectionFactory, EditorDbConnectionFactory>();
 
 builder.Services.AddScoped<IEditorRepository, EditorRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<IEditorService, EditorService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 

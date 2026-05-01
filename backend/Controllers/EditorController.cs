@@ -1,13 +1,8 @@
 using DocApi.DTOs;
-using DocApi.Common;
-using DocApi.Services;
 using DocApi.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 
 namespace DocApi.Controllers
 {
@@ -15,41 +10,41 @@ namespace DocApi.Controllers
     [Route("api")]
     public class EditorController : ControllerBase
     {
-        private const string SessionCookie = "sirhdoc_session";
         private readonly IEditorService _service;
-        private readonly JwtSettings _jwtSettings;
+        private readonly IAuthService _authService;
 
-        public EditorController(IEditorService service, IOptions<JwtSettings> jwtSettings)
+        public EditorController(IEditorService service, IAuthService authService)
         {
             _service = service;
-            _jwtSettings = jwtSettings.Value;
+            _authService = authService;
         }
 
         [HttpPost("login")]
-        [HttpPost("auth/login")]
         public async Task<ActionResult> Login([FromBody] EditorLoginRequest request)
         {
-            var user = await _service.LoginAsync(request);
-            if (user is null) return Unauthorized(new EditorApiResponse(false, Error: "Identifiants invalides"));
-
-            Response.Cookies.Append(SessionCookie, EditorService.CreateCookieValue(user), new CookieOptions
+            try
             {
-                HttpOnly = true,
-                SameSite = SameSiteMode.Lax,
-                Secure = Request.IsHttps,
-                Expires = DateTimeOffset.UtcNow.AddHours(8)
-            });
-            return Ok(new EditorApiResponse(true, User: user, Token: CreateJwt(user), RedirectTo: GetRoleHome(GetUserRole(user))));
+                var auth = await _authService.LoginAsync(new LoginRequest
+                {
+                    Username = request.Identifier ?? "",
+                    Password = request.Password ?? ""
+                });
+                return Ok(new EditorApiResponse(true, User: auth.User, Token: auth.Token, RedirectTo: auth.RedirectTo));
+            }
+            catch
+            {
+                return Unauthorized(new EditorApiResponse(false, Error: "Identifiants invalides"));
+            }
         }
 
         [HttpPost("logout")]
         public ActionResult Logout()
         {
-            Response.Cookies.Delete(SessionCookie);
             return Ok(new EditorApiResponse(true));
         }
 
         [HttpGet("me")]
+        [Authorize]
         public ActionResult Me()
         {
             var user = CurrentUser();
@@ -60,6 +55,7 @@ namespace DocApi.Controllers
 
         [HttpPost("bootstrap")]
         [HttpGet("state")]
+        [Authorize]
         public async Task<ActionResult> State()
         {
             var user = CurrentUser();
@@ -140,9 +136,16 @@ namespace DocApi.Controllers
 
         private object? CurrentUser()
         {
-            return Request.Cookies.TryGetValue(SessionCookie, out var cookie)
-                ? _service.GetUserFromCookie(cookie)
-                : null;
+            if (User.Identity?.IsAuthenticated != true) return null;
+            return new Dictionary<string, object?>
+            {
+                ["id"] = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                ["name"] = User.FindFirstValue(ClaimTypes.Name),
+                ["email"] = User.FindFirstValue(ClaimTypes.Email),
+                ["role"] = User.FindFirstValue(ClaimTypes.Role),
+                ["organizationId"] = User.FindFirstValue("organizationId"),
+                ["profile"] = ""
+            };
         }
 
         private static string GetRoleHome(string? role) => role switch
@@ -158,31 +161,5 @@ namespace DocApi.Controllers
             return user.GetType().GetProperty("role")?.GetValue(user)?.ToString();
         }
 
-        private string CreateJwt(object user)
-        {
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, GetUserValue(user, "id") ?? ""),
-                new Claim(ClaimTypes.Name, GetUserValue(user, "name") ?? ""),
-                new Claim(ClaimTypes.Email, GetUserValue(user, "email") ?? ""),
-                new Claim(ClaimTypes.Role, GetUserRole(user) ?? "user"),
-                new Claim("organizationId", GetUserValue(user, "organizationId") ?? "")
-            };
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var token = new JwtSecurityToken(
-                issuer: _jwtSettings.Issuer,
-                audience: _jwtSettings.Audience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
-                signingCredentials: credentials);
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        private static string? GetUserValue(object user, string key)
-        {
-            if (user is IDictionary<string, object?> dictionary && dictionary.TryGetValue(key, out var value)) return value?.ToString();
-            return user.GetType().GetProperty(key)?.GetValue(user)?.ToString();
-        }
     }
 }

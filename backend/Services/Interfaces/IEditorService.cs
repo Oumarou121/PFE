@@ -5,8 +5,6 @@ namespace DocApi.Services.Interfaces
 {
     public interface IEditorService
     {
-        Task<object?> LoginAsync(EditorLoginRequest request);
-        object? GetUserFromCookie(string? cookieValue);
         Task<IEnumerable<object>> GetFamiliesAsync();
         Task<object?> GetFamilyByIdAsync(string id);
         Task<object> UpsertFamilyAsync(JsonObject family);

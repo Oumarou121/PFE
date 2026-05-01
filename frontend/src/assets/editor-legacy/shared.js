@@ -21,6 +21,8 @@ const API_BASE = (() => {
 })();
 const API_ROOT = `${API_BASE}/api`;
 const LEGACY_PAGE_BASE = "/assets/editor-legacy";
+const AUTH_TOKEN_KEY = "auth_token";
+const AUTH_USER_KEY = "auth_user";
 let currentAuthUser = null;
 let busyOverlayState = {
   count: 0,
@@ -146,9 +148,18 @@ async function apiFetch(path, options = {}) {
     const sameOrigin =
       typeof window === "undefined" ||
       new URL(apiUrl, window.location.href).origin === window.location.origin;
+    const headers = new Headers(options.headers || {});
+    const token =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem(AUTH_TOKEN_KEY)
+        : null;
+    if (token && !headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
     const res = await fetch(`${API_ROOT}${path}`, {
       credentials: sameOrigin ? "same-origin" : "include",
       ...options,
+      headers,
     });
     return res;
   } finally {
@@ -190,6 +201,10 @@ async function logoutAndRedirect() {
   try {
     await apiFetch("/logout", { method: "POST" });
   } catch (_) {}
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+  }
   navigateLegacy("/login.html");
 }
 

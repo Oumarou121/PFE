@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using DocApi.DTOs;
@@ -15,32 +14,6 @@ namespace DocApi.Services
         public EditorService(IEditorRepository repository)
         {
             _repository = repository;
-        }
-
-        public Task<object?> LoginAsync(EditorLoginRequest request)
-        {
-            var identifier = (request.Identifier ?? "").Trim();
-            var password = request.Password ?? "";
-            var user = SeedUsers().FirstOrDefault(item =>
-                (string.Equals((string)item["email"]!, identifier, StringComparison.OrdinalIgnoreCase)
-                 || string.Equals((string)item["name"]!, identifier, StringComparison.OrdinalIgnoreCase))
-                && (string)item["password"]! == password);
-
-            return Task.FromResult<object?>(user is null ? null : PublicUser(user));
-        }
-
-        public object? GetUserFromCookie(string? cookieValue)
-        {
-            if (string.IsNullOrWhiteSpace(cookieValue)) return null;
-            try
-            {
-                var json = Encoding.UTF8.GetString(Convert.FromBase64String(cookieValue));
-                return JsonSerializer.Deserialize<Dictionary<string, object?>>(json, JsonOptions);
-            }
-            catch
-            {
-                return null;
-            }
         }
 
         public async Task<IEnumerable<object>> GetFamiliesAsync()
@@ -239,11 +212,6 @@ namespace DocApi.Services
             await _repository.DeleteTableViewConfigAsync(id);
         }
 
-        public static string CreateCookieValue(object user)
-        {
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(user, JsonOptions)));
-        }
-
         private static string? GetProperty(object item, string propertyName)
         {
             var property = item.GetType().GetProperty(propertyName);
@@ -262,21 +230,5 @@ namespace DocApi.Services
             return user?.GetType().GetProperty(key)?.GetValue(user)?.ToString();
         }
 
-        private static Dictionary<string, object?> PublicUser(Dictionary<string, object?> user) => new()
-        {
-            ["id"] = user["id"],
-            ["name"] = user["name"],
-            ["email"] = user["email"],
-            ["organizationId"] = user["organizationId"],
-            ["role"] = user["role"],
-            ["profile"] = user["profile"]
-        };
-
-        private static IEnumerable<Dictionary<string, object?>> SeedUsers() =>
-        [
-            new() { ["id"] = "1", ["name"] = "Super Admin", ["email"] = "super.admin@gmail.com", ["password"] = "azerty", ["role"] = "supAdmin", ["organizationId"] = "2", ["profile"] = "" },
-            new() { ["id"] = "2", ["name"] = "Admin", ["email"] = "admin@gmail.com", ["password"] = "azerty", ["role"] = "admin", ["organizationId"] = "2", ["profile"] = "" },
-            new() { ["id"] = "3", ["name"] = "User", ["email"] = "user@gmail.com", ["password"] = "azerty", ["role"] = "user", ["organizationId"] = "2", ["profile"] = "" }
-        ];
     }
 }

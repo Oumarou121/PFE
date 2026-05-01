@@ -193,14 +193,18 @@
           const errorEl = document.getElementById("loginError");
           errorEl.textContent = "";
           try {
-            const payload = await fetchJsonOrThrow("/login", {
+            const payload = await fetchJsonOrThrow("/auth/login", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                identifier: document.getElementById("identifier").value.trim(),
+                username: document.getElementById("identifier").value.trim(),
                 password: document.getElementById("password").value,
               }),
             });
+            localStorage.setItem("auth_token", payload.token);
+            if (payload.user) {
+              localStorage.setItem("auth_user", JSON.stringify(payload.user));
+            }
             navigateLegacy(payload.redirectTo || "/user.html");
           } catch (error) {
             errorEl.textContent = error.message || "Connexion impossible";
