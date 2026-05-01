@@ -4065,7 +4065,7 @@ function buildDocumentPagesHtml(
       const hasFooterSlot = page.hasFooter !== false;
       const emptyFooterStyle = footerHtml
         ? ""
-        : ";border-top-color:transparent;color:transparent";
+        : ";border-top-color:transparent!important;color:transparent!important;background:transparent!important";
       const noHeaderClass = headerHtml ? "" : " no-header";
       const noFooterClass = hasFooterSlot ? "" : " no-footer";
       return `
@@ -4500,7 +4500,7 @@ function printDocPaginated(tpl, person, pages = null) {
       font-size: 12pt;
       line-height: 1.6;
       color: var(--doc-color-text, #111);
-      background: #fff;
+      background: transparent;
       overflow: hidden;
       white-space: normal;
       overflow-wrap: anywhere;
@@ -4540,7 +4540,7 @@ function printDocPaginated(tpl, person, pages = null) {
       font-size: 12pt;
       line-height: 1.6;
       color: var(--doc-color-text, #111);
-      background: #fff;
+      background: transparent;
       position: relative;
       z-index: 1;
       overflow: hidden;
