@@ -1014,13 +1014,17 @@
       .preview-page table {
         border-collapse: collapse;
         width: 100%;
+        max-width: 100%;
+        table-layout: fixed;
+        margin: 6px 0;
+        box-sizing: border-box;
       }
       .doc-content td,
       .doc-content th,
       .preview-page td,
       .preview-page th {
         border: 1px solid var(--doc-color-border);
-        padding: 7px 10px;
+        padding: 6px 10px;
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
       }

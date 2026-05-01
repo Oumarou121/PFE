@@ -1886,16 +1886,15 @@ function applyTemplateHeaderFooterDisplay(pages = [], tpl = {}) {
       !!tpl.hasHeader &&
       !!page?.header &&
       shouldRenderTemplateSection(tpl.headerDisplay, pageNumber);
-    const showFooter =
+    const showFooterContent =
       !!tpl.hasFooter &&
-      !!page?.footer &&
       shouldRenderTemplateSection(tpl.footerDisplay, pageNumber);
     return {
       ...page,
       header: showHeader ? page.header : "",
-      footer: showFooter ? page.footer : "",
+      footer: showFooterContent ? page.footer || "" : "",
       hasHeader: showHeader,
-      hasFooter: showFooter,
+      hasFooter: true,
     };
   });
 }
@@ -2900,9 +2899,7 @@ function _stripVariableMarkerStylesHtml(html) {
     const hasAutoVariableColor =
       /color\s*:\s*#?(2563eb|1d4ed8|7c3aed|f97316)/i.test(styleText) ||
       /color\s*:\s*var\(--(accent|purple|orange)/i.test(styleText) ||
-      /background(?:-color)?\s*:\s*#?(eff6ff|f3e8ff|fff7ed)/i.test(
-        styleText,
-      );
+      /background(?:-color)?\s*:\s*#?(eff6ff|f3e8ff|fff7ed)/i.test(styleText);
     if (!hasVariableMarker || !hasAutoVariableColor) return;
 
     node.style.color = "";
@@ -3123,11 +3120,7 @@ async function insertListVar(editor, varDef) {
         .run();
       toast("Tableau objet inséré — cell-expand dans le tableau", "success");
     } else {
-      editor
-        .chain()
-        .focus()
-        .insertContent(`{{#${varDef.tech}:table}}`)
-        .run();
+      editor.chain().focus().insertContent(`{{#${varDef.tech}:table}}`).run();
       toast(
         `Tableau généré automatiquement pour « ${varDef.label} »`,
         "success",
@@ -3148,11 +3141,7 @@ async function insertListVar(editor, varDef) {
   } else {
     const mode = await _promptListMode(varDef.tech, varDef.label);
     if (!mode) return;
-    editor
-      .chain()
-      .focus()
-      .insertContent(`{{#${varDef.tech}:${mode}}}`)
-      .run();
+    editor.chain().focus().insertContent(`{{#${varDef.tech}:${mode}}}`).run();
     toast(`Liste insérée en mode « ${mode} »`, "success");
   }
 }
@@ -3375,6 +3364,11 @@ class PagePaginator {
     this.marginRightPx = this.mmToPx(this.marginRightMm);
     this.printSafetyBufferPx = this.mmToPx(8);
     this.tableSafetyBufferPx = this.mmToPx(4);
+    this.afterTableTextBufferPx = this.mmToPx(12);
+    this.footerTopPaddingMm = 3;
+    this.footerReserveHeightPx = this.mmToPx(
+      this.footerTopPaddingMm + this.footerBottomMm,
+    );
 
     // Hauteur disponible pour le contenu (sans headers/footers)
     this.contentHeightPx =
@@ -3382,9 +3376,7 @@ class PagePaginator {
 
     this.pages = [];
     this.headerHeight = 0;
-    this.footerHeight = 0;
-    this.headerHeight = 0;
-    this.footerHeight = 0;
+    this.footerHeight = this.footerReserveHeightPx;
   }
 
   _applyDirectionStyles(el, dir = "ltr") {
@@ -3543,16 +3535,20 @@ class PagePaginator {
     }
 
     // Mesurer hauteur du footer
-    if (footerHtml) {
-      const ftrEl = document.createElement("div");
-      ftrEl.innerHTML = footerHtml;
-      ftrEl.style.padding = `3mm ${this.marginRightMm}mm ${this.footerBottomMm}mm ${this.marginLeftMm}mm`;
-      this._applyDirectionStyles(ftrEl, this.footerDirection);
-      this._applyMeasureContentStyles(ftrEl);
-      tempContainer.appendChild(ftrEl);
-      this.footerHeight = ftrEl.offsetHeight;
-      tempContainer.removeChild(ftrEl);
-    }
+    const ftrEl = document.createElement("div");
+    ftrEl.innerHTML = footerHtml || "&nbsp;";
+    ftrEl.style.padding = `${this.footerTopPaddingMm}mm ${this.marginRightMm}mm ${this.footerBottomMm}mm ${this.marginLeftMm}mm`;
+    ftrEl.style.minHeight = this.footerReserveHeightPx + "px";
+    this._applyDirectionStyles(ftrEl, this.footerDirection);
+    this._applyMeasureContentStyles(ftrEl);
+    tempContainer.appendChild(ftrEl);
+    this.footerHeight = Math.max(
+      this.footerReserveHeightPx,
+      ftrEl.offsetHeight,
+      ftrEl.scrollHeight,
+      Math.ceil(ftrEl.getBoundingClientRect().height),
+    );
+    tempContainer.removeChild(ftrEl);
 
     if (tempContainer.parentNode) {
       tempContainer.parentNode.removeChild(tempContainer);
@@ -3599,6 +3595,7 @@ class PagePaginator {
   _distributeContent(elements, availableHeight) {
     let currentPageHTML = "";
     let currentPageHeight = 0;
+    let lastAddedWasTable = false;
 
     const tempMeasure = document.createElement("div");
     tempMeasure.style.position = "absolute";
@@ -3642,9 +3639,11 @@ class PagePaginator {
             this.pages.push(currentPageHTML);
             currentPageHTML = "";
             currentPageHeight = 0;
+            lastAddedWasTable = false;
           }
           currentPageHTML += part.outerHTML;
           currentPageHeight += partHeight;
+          lastAddedWasTable = true;
         }
         continue;
       }
@@ -3659,6 +3658,7 @@ class PagePaginator {
           this.pages.push(currentPageHTML);
           currentPageHTML = "";
           currentPageHeight = 0;
+          lastAddedWasTable = false;
         }
         const parts = this._splitTextElement(el, availableHeight, tempMeasure);
         for (const part of parts) {
@@ -3670,11 +3670,25 @@ class PagePaginator {
             this.pages.push(currentPageHTML);
             currentPageHTML = "";
             currentPageHeight = 0;
+            lastAddedWasTable = false;
           }
           currentPageHTML += part.outerHTML;
           currentPageHeight += partHeight;
+          lastAddedWasTable = false;
         }
         continue;
+      }
+
+      if (
+        lastAddedWasTable &&
+        currentPageHTML.trim() !== "" &&
+        currentPageHeight + elHeight >
+          availableHeight - this.afterTableTextBufferPx
+      ) {
+        this.pages.push(currentPageHTML);
+        currentPageHTML = "";
+        currentPageHeight = 0;
+        lastAddedWasTable = false;
       }
 
       // Si ça déborde ET la page n'est pas vide, créer une nouvelle page
@@ -3685,11 +3699,13 @@ class PagePaginator {
         this.pages.push(currentPageHTML);
         currentPageHTML = "";
         currentPageHeight = 0;
+        lastAddedWasTable = false;
       }
 
       // Ajouter l'élément à la page actuelle
       currentPageHTML += el.outerHTML;
       currentPageHeight += elHeight;
+      lastAddedWasTable = false;
     }
 
     // Ajouter la dernière page s'il y a du contenu
@@ -3937,7 +3953,9 @@ function paginateWithVariablesBlue(tpl, person) {
 //  Source de vérité pour la pagination preview + print
 // ═══════════════════════════════════════════════════════════════
 function getDocumentRenderMode(options = {}) {
-  const rawMode = String(options.mode || options.resolve || "print").toLowerCase();
+  const rawMode = String(
+    options.mode || options.resolve || "print",
+  ).toLowerCase();
   return rawMode === "preview" ? "preview" : "print";
 }
 
@@ -4025,7 +4043,12 @@ function renderDocumentPages(tpl, person, options = {}) {
 //  buildDocumentPagesHtml(tpl, pages, className)
 //  Source de vérité pour le DOM document preview + print
 // ═══════════════════════════════════════════════════════════════
-function buildDocumentPagesHtml(tpl, pages, className = "preview-page", options = {}) {
+function buildDocumentPagesHtml(
+  tpl,
+  pages,
+  className = "preview-page",
+  options = {},
+) {
   const headerDir = getSectionDirectionAttrs(tpl, "header");
   const bodyDir = getSectionDirectionAttrs(tpl, "body");
   const footerDir = getSectionDirectionAttrs(tpl, "footer");
@@ -4039,13 +4062,17 @@ function buildDocumentPagesHtml(tpl, pages, className = "preview-page", options 
     .map((page) => {
       const headerHtml = String(page.header || "").trim();
       const footerHtml = String(page.footer || "").trim();
+      const hasFooterSlot = page.hasFooter !== false;
+      const emptyFooterStyle = footerHtml
+        ? ""
+        : ";border-top-color:transparent;color:transparent";
       const noHeaderClass = headerHtml ? "" : " no-header";
-      const noFooterClass = footerHtml ? "" : " no-footer";
+      const noFooterClass = hasFooterSlot ? "" : " no-footer";
       return `
         <div class="${className} ${renderClass}" data-render-mode="${mode}" style="${themeStyle}">
           ${headerHtml ? `<div class="doc-page-header" dir="${headerDir.dir}" style="${themeStyle};${headerDir.style}">${headerHtml}</div>` : ""}
           <div class="doc-page-body${noHeaderClass}${noFooterClass}" dir="${bodyDir.dir}" style="${themeStyle};${bodyDir.style}">${page.content || ""}</div>
-          ${footerHtml ? `<div class="doc-page-footer" dir="${footerDir.dir}" style="${themeStyle};${footerDir.style}">${footerHtml}</div>` : ""}
+          ${hasFooterSlot ? `<div class="doc-page-footer${footerHtml ? "" : " is-empty"}" aria-hidden="${footerHtml ? "false" : "true"}" dir="${footerDir.dir}" style="${themeStyle};${footerDir.style}${emptyFooterStyle}">${footerHtml || "&nbsp;"}</div>` : ""}
         </div>
       `;
     })
