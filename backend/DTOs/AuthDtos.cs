@@ -5,7 +5,8 @@ namespace DocApi.DTOs
     public class LoginRequest
     {
         [Required]
-        public required string Username { get; set; }
+        [EmailAddress]
+        public required string Email { get; set; }
 
         [Required]
         public required string Password { get; set; }
@@ -34,7 +35,8 @@ namespace DocApi.DTOs
     public class AuthResponse
     {
         public required string Token { get; set; }
-        public required string Username { get; set; }
+        public required string Email { get; set; }
+        public required string Name { get; set; }
         public required string Role { get; set; }
         public DateTime ExpiresAt { get; set; }
         public AuthUserResponse? User { get; set; }
@@ -44,7 +46,6 @@ namespace DocApi.DTOs
     public class AuthUserResponse
     {
         public required string Id { get; set; }
-        public required string Username { get; set; }
         public required string Email { get; set; }
         public required string Name { get; set; }
         public required string Role { get; set; }
@@ -58,8 +59,8 @@ namespace DocApi.DTOs
     public class UserResponse
     {
         public int Id { get; set; }
-        public required string Username { get; set; }
         public required string Email { get; set; }
+        public required string Name { get; set; }
         public required string Role { get; set; }
         public string? OrganizationId { get; set; }
         public string? Profile { get; set; }

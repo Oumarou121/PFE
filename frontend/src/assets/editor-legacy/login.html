@@ -163,8 +163,8 @@
       <section class="card">
         <h2>Se connecter</h2>
         <form id="loginForm">
-          <label for="identifier">Nom ou e-mail</label>
-          <input id="identifier" autocomplete="username" required />
+          <label for="identifier">E-mail</label>
+          <input id="identifier" type="email" autocomplete="email" required />
           <label for="password">Mot de passe</label>
           <input
             id="password"
@@ -197,7 +197,7 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                username: document.getElementById("identifier").value.trim(),
+                email: document.getElementById("identifier").value.trim(),
                 password: document.getElementById("password").value,
               }),
             });

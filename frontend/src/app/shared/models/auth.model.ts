@@ -1,12 +1,13 @@
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 
 export interface LoginResponse {
   ok?: boolean;
   token: string;
-  username?: string;
+  email?: string;
+  name?: string;
   role?: string;
   expiresAt?: string;
   user?: AuthUser;
@@ -15,7 +16,6 @@ export interface LoginResponse {
 
 export interface AuthUser {
   id: string;
-  username?: string;
   email: string;
   name: string;
   organizationId?: string | null;

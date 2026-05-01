@@ -26,7 +26,7 @@ namespace DocApi.Controllers
             {
                 var auth = await _authService.LoginAsync(new LoginRequest
                 {
-                    Username = request.Identifier ?? "",
+                    Email = request.Identifier ?? "",
                     Password = request.Password ?? ""
                 });
                 return Ok(new EditorApiResponse(true, User: auth.User, Token: auth.Token, RedirectTo: auth.RedirectTo));

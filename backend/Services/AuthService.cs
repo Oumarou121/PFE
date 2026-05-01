@@ -26,11 +26,11 @@ namespace DocApi.Services
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            var user = await _userRepository.GetByUsernameAsync(request.Username);
+            var user = await _userRepository.GetByEmailAsync(request.Email);
 
             if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
             {
-                throw new ServiceException("Invalid username or password");
+                throw new ServiceException("Invalid email or password");
             }
 
             if (!user.IsActive)
@@ -44,7 +44,8 @@ namespace DocApi.Services
             return new AuthResponse
             {
                 Token = token,
-                Username = user.Username,
+                Email = user.Email,
+                Name = user.Username,
                 Role = user.Role,
                 ExpiresAt = expiresAt,
                 User = ToAuthUser(user),
@@ -83,7 +84,8 @@ namespace DocApi.Services
             return new AuthResponse
             {
                 Token = token,
-                Username = user.Username,
+                Email = user.Email,
+                Name = user.Username,
                 Role = user.Role,
                 ExpiresAt = expiresAt,
                 User = ToAuthUser(user),
@@ -103,8 +105,8 @@ namespace DocApi.Services
             return new UserResponse
             {
                 Id = user.Id,
-                Username = user.Username,
                 Email = user.Email,
+                Name = user.Username,
                 Role = user.Role,
                 OrganizationId = user.OrganizationId,
                 Profile = user.Profile,
@@ -159,7 +161,6 @@ namespace DocApi.Services
         private static AuthUserResponse ToAuthUser(User user) => new()
         {
             Id = user.Id.ToString(),
-            Username = user.Username,
             Email = user.Email,
             Name = user.Username,
             Role = user.Role,
