@@ -1629,7 +1629,7 @@
         color: var(--doc-color-text);
         white-space: break-spaces;
       }
-      .preview-page .var-resolved {
+      .document-render--preview .var-resolved {
         color: #2563eb;
         font-weight: 500;
         background: #eff6ff;
@@ -4892,11 +4892,7 @@
         if (!ed) return;
         ed.chain()
           .focus()
-          .insertContent({
-            type: "text",
-            text: `{{${tech}}}`,
-            marks: [{ type: "textStyle", attrs: { color: "#2563eb" } }],
-          })
+          .insertContent(`{{${tech}}}`)
           .run();
       };
 
@@ -5042,11 +5038,7 @@
             editor
               .chain()
               .focus()
-              .insertContent({
-                type: "text",
-                text: tableMarker,
-                marks: [{ type: "textStyle", attrs: { color: "#f97316" } }],
-              })
+              .insertContent(tableMarker)
               .run();
             toast(
               "Marqueur :table inséré  - la ligne sera répétée par objet",
@@ -5095,11 +5087,7 @@
           editor
             .chain()
             .focus()
-            .insertContent({
-              type: "text",
-              text: `{{#${varDef.tech}:cell-expand}}`,
-              marks: [{ type: "textStyle", attrs: { color: "#7c3aed" } }],
-            })
+            .insertContent(`{{#${varDef.tech}:cell-expand}}`)
             .run();
           toast(
             "Liste insérée  - 1 ligne par élément dans le tableau",
@@ -5111,11 +5099,7 @@
           editor
             .chain()
             .focus()
-            .insertContent({
-              type: "text",
-              text: `{{#${varDef.tech}:${mode}}}`,
-              marks: [{ type: "textStyle", attrs: { color: "#7c3aed" } }],
-            })
+            .insertContent(`{{#${varDef.tech}:${mode}}}`)
             .run();
           toast(`Liste insérée en mode ${mode}`, "success");
         }
@@ -5696,7 +5680,10 @@
       }
 
       function getEditorHTML(ed) {
-        return ed ? ed.getHTML() : "";
+        const html = ed ? ed.getHTML() : "";
+        return typeof _stripVariableMarkerStylesHtml === "function"
+          ? _stripVariableMarkerStylesHtml(html)
+          : html;
       }
       function setEditorHTML(ed, html) {
         if (ed && html) ed.commands.setContent(html, false);
@@ -6993,7 +6980,7 @@
           toast("Sélectionnez un bénéficiaire pour imprimer", "error");
           return;
         }
-        printDocPaginated(liveTpl, person, adminPreviewState?.pages || null);
+        printDocPaginated(liveTpl, person);
       };
 
       // -- Save state --
@@ -8431,7 +8418,7 @@
         prevPage.innerHTML = "";
         prevPage.className = "preview-pages";
 
-        const pages = renderDocumentPages(liveTpl, person);
+        const pages = renderDocumentPages(liveTpl, person, { mode: "preview" });
         adminPreviewState = null;
         if (!pages.length) {
           prevPage.innerHTML =
@@ -8449,6 +8436,7 @@
           liveTpl,
           pages,
           "preview-page",
+          { mode: "preview" },
         );
       };
 
@@ -8497,7 +8485,7 @@
           );
           return;
         }
-        printDocPaginated(liveTpl, person, adminPreviewState?.pages || null);
+        printDocPaginated(liveTpl, person);
       };
 
       // -- Zoom --

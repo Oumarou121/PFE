@@ -913,7 +913,7 @@
         color: var(--doc-color-text);
         white-space: break-spaces;
       }
-      .preview-page .var-resolved {
+      .document-render--preview .var-resolved {
         color: inherit;
         font-weight: inherit;
         background: none;
@@ -2523,9 +2523,7 @@
           actions.appendChild(b);
         };
         mkBtn("Aperçu final", "primary", () => previewDocument(tpl, person));
-        mkBtn("Imprimer", "primary", () =>
-          printDocPaginated(tpl, person, renderedPages),
-        );
+        mkBtn("Imprimer", "primary", () => printDocPaginated(tpl, person));
         mkBtn("Nouveau", "ghost", resetAll);
 
         toast("Document généré !", "success");
@@ -2566,7 +2564,7 @@
           distances.footerBottom + "mm",
         );
 
-        const pages = renderDocumentPages(tpl, person);
+        const pages = renderDocumentPages(tpl, person, { mode: "preview" });
         if (!pages.length) {
           toast("Aucun contenu à afficher", "error");
           return [];
@@ -2574,7 +2572,9 @@
 
         const allPages = document.createElement("div");
         allPages.className = "preview-pages";
-        allPages.innerHTML = buildDocumentPagesHtml(tpl, pages, "preview-page");
+        allPages.innerHTML = buildDocumentPagesHtml(tpl, pages, "preview-page", {
+          mode: "preview",
+        });
 
         scaler.appendChild(allPages);
         return pages;

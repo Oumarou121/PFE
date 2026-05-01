@@ -2885,6 +2885,34 @@ function _normalizeEditorSpacingHtml(html) {
   return root.innerHTML;
 }
 
+function _stripVariableMarkerStylesHtml(html) {
+  if (!html || typeof DOMParser === "undefined") return html || "";
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const root = doc.body.firstElementChild;
+  if (!root) return html;
+
+  root.querySelectorAll("[style]").forEach((node) => {
+    const text = String(node.textContent || "").trim();
+    const isVariableMarker = /^\{\{[#/]?[\w:,\-\s]+\}\}$/.test(text);
+    if (!isVariableMarker) return;
+
+    node.style.color = "";
+    node.style.background = "";
+    node.style.backgroundColor = "";
+    node.style.fontStyle = "";
+    node.style.fontWeight = "";
+    node.style.padding = "";
+    node.style.borderRadius = "";
+    node.style.opacity = "";
+    if (!String(node.getAttribute("style") || "").trim()) {
+      node.removeAttribute("style");
+    }
+  });
+
+  return root.innerHTML;
+}
+
 function _readResolvedTableWidths(table) {
   if (!table) return [];
 
@@ -2958,6 +2986,7 @@ function _normalizeResolvedTableWidthsHtml(html) {
 function _resolveAll(html, person, preview) {
   if (!html) return "";
   html = _normalizeEditorSpacingHtml(html);
+  if (!preview) html = _stripVariableMarkerStylesHtml(html);
   html = _resolveObjectTables(html, person, preview); // 0 - NOUVEAU
   html = _resolveCellExpand(html, person, preview); // 1
   html = _resolveListTags(html, person, preview); // 2
@@ -3082,22 +3111,14 @@ async function insertListVar(editor, varDef) {
       editor
         .chain()
         .focus()
-        .insertContent({
-          type: "text",
-          text: `{{#${varDef.tech}:cell-expand}}`,
-          marks: [{ type: "textStyle", attrs: { color: "#7c3aed" } }],
-        })
+        .insertContent(`{{#${varDef.tech}:cell-expand}}`)
         .run();
       toast("Tableau objet inséré — cell-expand dans le tableau", "success");
     } else {
       editor
         .chain()
         .focus()
-        .insertContent({
-          type: "text",
-          text: `{{#${varDef.tech}:table}}`,
-          marks: [{ type: "textStyle", attrs: { color: "#7c3aed" } }],
-        })
+        .insertContent(`{{#${varDef.tech}:table}}`)
         .run();
       toast(
         `Tableau généré automatiquement pour « ${varDef.label} »`,
@@ -3113,11 +3134,7 @@ async function insertListVar(editor, varDef) {
     editor
       .chain()
       .focus()
-      .insertContent({
-        type: "text",
-        text: `{{#${varDef.tech}:cell-expand}}`,
-        marks: [{ type: "textStyle", attrs: { color: "#7c3aed" } }],
-      })
+      .insertContent(`{{#${varDef.tech}:cell-expand}}`)
       .run();
     toast("Liste insérée — 1 ligne par élément dans le tableau", "success");
   } else {
@@ -3126,11 +3143,7 @@ async function insertListVar(editor, varDef) {
     editor
       .chain()
       .focus()
-      .insertContent({
-        type: "text",
-        text: `{{#${varDef.tech}:${mode}}}`,
-        marks: [{ type: "textStyle", attrs: { color: "#7c3aed" } }],
-      })
+      .insertContent(`{{#${varDef.tech}:${mode}}}`)
       .run();
     toast(`Liste insérée en mode « ${mode} »`, "success");
   }
@@ -3903,7 +3916,7 @@ class PagePaginator {
 //  Retourne: { pages: [...], hasHeader, hasFooter }
 // ═══════════════════════════════════════════════════════════════
 function paginateWithVariablesBlue(tpl, person) {
-  const pages = renderDocumentPages(tpl, person);
+  const pages = renderDocumentPages(tpl, person, { mode: "preview" });
   return {
     pages,
     hasHeader: !!tpl?.hasHeader,
@@ -3915,14 +3928,58 @@ function paginateWithVariablesBlue(tpl, person) {
 //  renderDocumentPages(tpl, person, options)
 //  Source de vérité pour la pagination preview + print
 // ═══════════════════════════════════════════════════════════════
+function getDocumentRenderMode(options = {}) {
+  const rawMode = String(options.mode || options.resolve || "print").toLowerCase();
+  return rawMode === "preview" ? "preview" : "print";
+}
+
+function sanitizeFinalRenderHtml(html) {
+  if (!html || typeof DOMParser === "undefined") return html || "";
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const root = doc.body.firstElementChild;
+  if (!root) return html;
+
+  root.querySelectorAll(".var-resolved").forEach((node) => {
+    node.replaceWith(doc.createTextNode(node.textContent || ""));
+  });
+  root.querySelectorAll(".var-missing").forEach((node) => {
+    node.replaceWith(doc.createTextNode(node.textContent || ""));
+  });
+  root.querySelectorAll("span[style]").forEach((node) => {
+    const text = String(node.textContent || "").trim();
+    const styleText = String(node.getAttribute("style") || "");
+    const looksLikeVariablePlaceholder =
+      /^\{\{[#/]?[\w:,\-]+\}\}$/.test(text) || /^\[[\w:,\-]+\]$/.test(text);
+    const looksLikePreviewStyle =
+      /color\s*:\s*#?(2563eb|1d4ed8|7c3aed)/i.test(styleText) ||
+      /background(?:-color)?\s*:\s*#?(eff6ff|f3e8ff)/i.test(styleText);
+    if (looksLikeVariablePlaceholder && looksLikePreviewStyle) {
+      node.replaceWith(doc.createTextNode(text));
+    }
+  });
+
+  return root.innerHTML;
+}
+
+function sanitizeFinalRenderPages(pages) {
+  return (Array.isArray(pages) ? pages : []).map((page) => ({
+    ...page,
+    header: sanitizeFinalRenderHtml(page.header),
+    content: sanitizeFinalRenderHtml(page.content),
+    footer: sanitizeFinalRenderHtml(page.footer),
+  }));
+}
+
 function renderDocumentPages(tpl, person, options = {}) {
   if (!tpl || !person) return [];
+  const mode = getDocumentRenderMode(options);
   const margins = getTemplatePageMargins(tpl);
   const distances = getTemplateHeaderFooterDistances(tpl);
   const charter = getTemplateGraphicCharter(tpl);
   const context = buildDocumentContext(tpl, person);
   const orientation = getTemplateOrientation(tpl);
-  const resolve = options.resolve === "preview" ? resolveVars : resolveVarsRaw;
+  const resolve = mode === "preview" ? resolveVars : resolveVarsRaw;
   const hdrHtml = tpl.hasHeader ? resolve(tpl.header || "", context) : "";
   const bHtml = resolve(tpl.body || "", context);
   const ftrHtml = tpl.hasFooter ? resolve(tpl.footer || "", context) : "";
@@ -3941,26 +3998,34 @@ function renderDocumentPages(tpl, person, options = {}) {
     theme: charter,
   });
 
-  return applyTemplateHeaderFooterDisplay(
+  const pages = applyTemplateHeaderFooterDisplay(
     paginator.paginate(bHtml, hdrHtml, ftrHtml),
     tpl,
   ).map((page, index) => ({
     index,
+    mode,
     header: String(page.header || "").trim(),
     content: String(page.content || ""),
     footer: String(page.footer || "").trim(),
   }));
+
+  return mode === "print" ? sanitizeFinalRenderPages(pages) : pages;
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  buildDocumentPagesHtml(tpl, pages, className)
 //  Source de vérité pour le DOM document preview + print
 // ═══════════════════════════════════════════════════════════════
-function buildDocumentPagesHtml(tpl, pages, className = "preview-page") {
+function buildDocumentPagesHtml(tpl, pages, className = "preview-page", options = {}) {
   const headerDir = getSectionDirectionAttrs(tpl, "header");
   const bodyDir = getSectionDirectionAttrs(tpl, "body");
   const footerDir = getSectionDirectionAttrs(tpl, "footer");
   const themeStyle = getDocumentThemeStyleAttr(tpl);
+  const mode = getDocumentRenderMode(options);
+  const renderClass =
+    mode === "preview"
+      ? "document-render document-render--preview"
+      : "document-render document-render--print";
   return (Array.isArray(pages) ? pages : [])
     .map((page) => {
       const headerHtml = String(page.header || "").trim();
@@ -3968,7 +4033,7 @@ function buildDocumentPagesHtml(tpl, pages, className = "preview-page") {
       const noHeaderClass = headerHtml ? "" : " no-header";
       const noFooterClass = footerHtml ? "" : " no-footer";
       return `
-        <div class="${className}" style="${themeStyle}">
+        <div class="${className} ${renderClass}" data-render-mode="${mode}" style="${themeStyle}">
           ${headerHtml ? `<div class="doc-page-header" dir="${headerDir.dir}" style="${themeStyle};${headerDir.style}">${headerHtml}</div>` : ""}
           <div class="doc-page-body${noHeaderClass}${noFooterClass}" dir="${bodyDir.dir}" style="${themeStyle};${bodyDir.style}">${page.content || ""}</div>
           ${footerHtml ? `<div class="doc-page-footer" dir="${footerDir.dir}" style="${themeStyle};${footerDir.style}">${footerHtml}</div>` : ""}
@@ -3993,7 +4058,7 @@ function previewDocument(tpl, person) {
   const pageWidth = orientation === "landscape" ? "297mm" : "210mm";
   const pageHeight = orientation === "landscape" ? "210mm" : "297mm";
   const paddings = getPageSectionPaddings(margins, distances);
-  const pages = renderDocumentPages(tpl, person);
+  const pages = renderDocumentPages(tpl, person, { mode: "preview" });
 
   if (!pages.length) {
     toast("Aucun contenu à afficher", "error");
@@ -4239,15 +4304,21 @@ function previewDocument(tpl, person) {
       page-break-inside: avoid;
     }
 
-    .var-resolved {
-      color: #111 !important;
-      font-weight: inherit !important;
-      background: none !important;
-      padding: 0 !important;
+    .document-render--preview .var-resolved {
+      color: #2563eb;
+      font-weight: 500;
+      background: #eff6ff;
+      padding: 0 3px;
+      border-radius: 2px;
     }
 
-    .var-missing {
-      color: #dc2626 !important;
+    .document-render--preview .var-missing {
+      color: #dc2626;
+      background: #fef2f2;
+      padding: 0 3px;
+      border-radius: 2px;
+      font-size: 0.9em;
+      font-style: italic;
     }
 
     .preview-close {
@@ -4292,7 +4363,7 @@ function previewDocument(tpl, person) {
         </div>
       </div>
       <div class="preview-container">
-        ${buildDocumentPagesHtml(tpl, [page], "preview-page")}
+        ${buildDocumentPagesHtml(tpl, [page], "preview-page", { mode: "preview" })}
       </div>
     `;
 
@@ -4312,7 +4383,7 @@ function previewDocument(tpl, person) {
     });
 
     document.getElementById("printAllBtn")?.addEventListener("click", () => {
-      printDocPaginated(tpl, person, pages);
+      printDocPaginated(tpl, person);
     });
 
     document
@@ -4342,7 +4413,7 @@ function printDocPaginated(tpl, person, pages = null) {
   const pageWidth = orientation === "landscape" ? "297mm" : "210mm";
   const pageHeight = orientation === "landscape" ? "210mm" : "297mm";
   const paddings = getPageSectionPaddings(margins, distances);
-  const pagesToPrint = pages || renderDocumentPages(tpl, person);
+  const pagesToPrint = renderDocumentPages(tpl, person, { mode: "print" });
 
   const printCSS = `
     @page { size: A4 ${orientation}; margin: 0; }
@@ -4357,6 +4428,7 @@ function printDocPaginated(tpl, person, pages = null) {
     }
     #sirh-print-area { display: block; }
 
+    .document-render--print,
     .preview-page,
     .sirh-print-page {
       width: ${pageWidth};
@@ -4377,6 +4449,7 @@ function printDocPaginated(tpl, person, pages = null) {
       break-after: page;
     }
 
+    .document-render--print:last-child,
     .preview-page:last-child,
     .sirh-print-page:last-child {
       page-break-after: auto;
@@ -4439,6 +4512,7 @@ function printDocPaginated(tpl, person, pages = null) {
       overflow-wrap: anywhere;
     }
 
+    .document-render--print,
     .preview-page {
       box-shadow: none;
       border-radius: 0;
@@ -4533,15 +4607,17 @@ function printDocPaginated(tpl, person, pages = null) {
       -webkit-print-color-adjust: exact;
     }
 
-    .preview-page .var-resolved,
-    .var-resolved {
+    .document-render--print .var-resolved,
+    #sirh-print-area .var-resolved {
       color: #111 !important;
       font-weight: inherit !important;
       background: none !important;
       padding: 0 !important;
+      border-radius: 0 !important;
     }
 
-    .var-missing { color: #dc2626 !important; }
+    .document-render--print .var-missing,
+    #sirh-print-area .var-missing { color: #dc2626 !important; }
   `;
 
   document.getElementById("sirh-print-area")?.remove();
@@ -4554,7 +4630,8 @@ function printDocPaginated(tpl, person, pages = null) {
   wrap.innerHTML = buildDocumentPagesHtml(
     tpl,
     pagesToPrint,
-    "preview-page sirh-print-page",
+    "sirh-print-page",
+    { mode: "print" },
   );
 
   const style = document.createElement("style");
