@@ -2894,8 +2894,16 @@ function _stripVariableMarkerStylesHtml(html) {
 
   root.querySelectorAll("[style]").forEach((node) => {
     const text = String(node.textContent || "").trim();
-    const isVariableMarker = /^\{\{[#/]?[\w:,\-\s]+\}\}$/.test(text);
-    if (!isVariableMarker) return;
+    const styleText = String(node.getAttribute("style") || "");
+    const hasVariableMarker = /\{\{[#/]?[\w:,\-\s]+\}\}/.test(text);
+    const isOnlyVariableMarker = /^\{\{[#/]?[\w:,\-\s]+\}\}$/.test(text);
+    const hasAutoVariableColor =
+      /color\s*:\s*#?(2563eb|1d4ed8|7c3aed|f97316)/i.test(styleText) ||
+      /color\s*:\s*var\(--(accent|purple|orange)/i.test(styleText) ||
+      /background(?:-color)?\s*:\s*#?(eff6ff|f3e8ff|fff7ed)/i.test(
+        styleText,
+      );
+    if (!hasVariableMarker || !hasAutoVariableColor) return;
 
     node.style.color = "";
     node.style.background = "";
@@ -3952,8 +3960,9 @@ function sanitizeFinalRenderHtml(html) {
     const looksLikeVariablePlaceholder =
       /^\{\{[#/]?[\w:,\-]+\}\}$/.test(text) || /^\[[\w:,\-]+\]$/.test(text);
     const looksLikePreviewStyle =
-      /color\s*:\s*#?(2563eb|1d4ed8|7c3aed)/i.test(styleText) ||
-      /background(?:-color)?\s*:\s*#?(eff6ff|f3e8ff)/i.test(styleText);
+      /color\s*:\s*#?(2563eb|1d4ed8|7c3aed|f97316)/i.test(styleText) ||
+      /color\s*:\s*var\(--(accent|purple|orange)/i.test(styleText) ||
+      /background(?:-color)?\s*:\s*#?(eff6ff|f3e8ff|fff7ed)/i.test(styleText);
     if (looksLikeVariablePlaceholder && looksLikePreviewStyle) {
       node.replaceWith(doc.createTextNode(text));
     }
@@ -4305,11 +4314,11 @@ function previewDocument(tpl, person) {
     }
 
     .document-render--preview .var-resolved {
-      color: #2563eb;
-      font-weight: 500;
-      background: #eff6ff;
-      padding: 0 3px;
-      border-radius: 2px;
+      color: #2563eb !important;
+      font-weight: 500 !important;
+      background: #eff6ff !important;
+      padding: 0 3px !important;
+      border-radius: 2px !important;
     }
 
     .document-render--preview .var-missing {
