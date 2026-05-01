@@ -2312,6 +2312,7 @@ function getDocumentThemeVars(tpl) {
   );
   const margins = getTemplatePageMargins(tpl);
   const distances = getTemplateHeaderFooterDistances(tpl);
+  const orientation = getTemplateOrientation(tpl);
   return {
     "--doc-font-body": charter.typography.bodyFont,
     "--doc-font-heading": charter.typography.headingFont,
@@ -2340,6 +2341,9 @@ function getDocumentThemeVars(tpl) {
     "--page-mr": `${margins.mr}mm`,
     "--page-header-top": `${distances.headerTop}mm`,
     "--page-footer-bottom": `${distances.footerBottom}mm`,
+    "--page-orientation": orientation,
+    "--page-w": orientation === "landscape" ? "297mm" : "210mm",
+    "--page-h": orientation === "landscape" ? "210mm" : "297mm",
   };
 }
 
@@ -3217,24 +3221,23 @@ body  { margin: 0; background: #fff; }
   font-size: 12pt; line-height: 1.6; color: #111;
 }
 .a4-body p,
-.preview-page-body p,
-.sirh-print-body p {
+.doc-page-body p {
   min-height: 1.6em;
 }
 .a4-body u,
 .a4-header u,
 .a4-footer u,
 .preview-page u,
-.sirh-print-header u,
-.sirh-print-body u,
-.sirh-print-footer u,
+.doc-page-header u,
+.doc-page-body u,
+.doc-page-footer u,
 .a4-body a,
 .a4-header a,
 .a4-footer a,
 .preview-page a,
-.sirh-print-header a,
-.sirh-print-body a,
-.sirh-print-footer a {
+.doc-page-header a,
+.doc-page-body a,
+.doc-page-footer a {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.14em;
   text-decoration-skip-ink: none;
@@ -3896,23 +3899,34 @@ class PagePaginator {
 
 // ═══════════════════════════════════════════════════════════════
 //  paginateWithVariablesBlue(tpl, person)
-//  Pagine le contenu avec variables en bleu (pas résolues)
+//  Compatibilité rétroactive : délègue au renderer final commun.
 //  Retourne: { pages: [...], hasHeader, hasFooter }
 // ═══════════════════════════════════════════════════════════════
 function paginateWithVariablesBlue(tpl, person) {
-  if (!tpl || !person) return { pages: [], hasHeader: false, hasFooter: false };
+  const pages = renderDocumentPages(tpl, person);
+  return {
+    pages,
+    hasHeader: !!tpl?.hasHeader,
+    hasFooter: !!tpl?.hasFooter,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  renderDocumentPages(tpl, person, options)
+//  Source de vérité pour la pagination preview + print
+// ═══════════════════════════════════════════════════════════════
+function renderDocumentPages(tpl, person, options = {}) {
+  if (!tpl || !person) return [];
   const margins = getTemplatePageMargins(tpl);
   const distances = getTemplateHeaderFooterDistances(tpl);
   const charter = getTemplateGraphicCharter(tpl);
   const context = buildDocumentContext(tpl, person);
-
-  // Résoudre les variables (avec classes .var-resolved pour le bleu)
-  const hdrHtml = tpl.hasHeader ? resolveVars(tpl.header || "", context) : "";
-  const bHtml = resolveVars(tpl.body || "", context);
-  const ftrHtml = tpl.hasFooter ? resolveVars(tpl.footer || "", context) : "";
-
-  // Paginer le contenu
   const orientation = getTemplateOrientation(tpl);
+  const resolve = options.resolve === "preview" ? resolveVars : resolveVarsRaw;
+  const hdrHtml = tpl.hasHeader ? resolve(tpl.header || "", context) : "";
+  const bHtml = resolve(tpl.body || "", context);
+  const ftrHtml = tpl.hasFooter ? resolve(tpl.footer || "", context) : "";
+
   const paginator = new PagePaginator({
     marginTop: margins.mt,
     marginBottom: margins.mb,
@@ -3927,16 +3941,41 @@ function paginateWithVariablesBlue(tpl, person) {
     theme: charter,
   });
 
-  const pages = applyTemplateHeaderFooterDisplay(
+  return applyTemplateHeaderFooterDisplay(
     paginator.paginate(bHtml, hdrHtml, ftrHtml),
     tpl,
-  );
+  ).map((page, index) => ({
+    index,
+    header: String(page.header || "").trim(),
+    content: String(page.content || ""),
+    footer: String(page.footer || "").trim(),
+  }));
+}
 
-  return {
-    pages: pages,
-    hasHeader: tpl.hasHeader,
-    hasFooter: tpl.hasFooter,
-  };
+// ═══════════════════════════════════════════════════════════════
+//  buildDocumentPagesHtml(tpl, pages, className)
+//  Source de vérité pour le DOM document preview + print
+// ═══════════════════════════════════════════════════════════════
+function buildDocumentPagesHtml(tpl, pages, className = "preview-page") {
+  const headerDir = getSectionDirectionAttrs(tpl, "header");
+  const bodyDir = getSectionDirectionAttrs(tpl, "body");
+  const footerDir = getSectionDirectionAttrs(tpl, "footer");
+  const themeStyle = getDocumentThemeStyleAttr(tpl);
+  return (Array.isArray(pages) ? pages : [])
+    .map((page) => {
+      const headerHtml = String(page.header || "").trim();
+      const footerHtml = String(page.footer || "").trim();
+      const noHeaderClass = headerHtml ? "" : " no-header";
+      const noFooterClass = footerHtml ? "" : " no-footer";
+      return `
+        <div class="${className}" style="${themeStyle}">
+          ${headerHtml ? `<div class="doc-page-header" dir="${headerDir.dir}" style="${themeStyle};${headerDir.style}">${headerHtml}</div>` : ""}
+          <div class="doc-page-body${noHeaderClass}${noFooterClass}" dir="${bodyDir.dir}" style="${themeStyle};${bodyDir.style}">${page.content || ""}</div>
+          ${footerHtml ? `<div class="doc-page-footer" dir="${footerDir.dir}" style="${themeStyle};${footerDir.style}">${footerHtml}</div>` : ""}
+        </div>
+      `;
+    })
+    .join("");
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3951,39 +3990,10 @@ function previewDocument(tpl, person) {
   const margins = getTemplatePageMargins(tpl);
   const distances = getTemplateHeaderFooterDistances(tpl);
   const orientation = getTemplateOrientation(tpl);
-  const charter = getTemplateGraphicCharter(tpl);
-  const context = buildDocumentContext(tpl, person);
   const pageWidth = orientation === "landscape" ? "297mm" : "210mm";
   const pageHeight = orientation === "landscape" ? "210mm" : "297mm";
-  const printBottomGap = "8mm";
   const paddings = getPageSectionPaddings(margins, distances);
-  const headerDir = getSectionDirectionAttrs(tpl, "header");
-  const bodyDir = getSectionDirectionAttrs(tpl, "body");
-  const footerDir = getSectionDirectionAttrs(tpl, "footer");
-
-  const hdrRaw = tpl.hasHeader ? resolveVars(tpl.header || "", context) : "";
-  const bRaw = resolveVars(tpl.body || "", context);
-  const ftrRaw = tpl.hasFooter ? resolveVars(tpl.footer || "", context) : "";
-
-  // Paginer le contenu
-  const paginator = new PagePaginator({
-    marginTop: margins.mt,
-    marginBottom: margins.mb,
-    marginLeft: margins.ml,
-    marginRight: margins.mr,
-    headerTop: distances.headerTop,
-    footerBottom: distances.footerBottom,
-    headerDirection: headerDir.dir,
-    bodyDirection: bodyDir.dir,
-    footerDirection: footerDir.dir,
-    orientation,
-    theme: charter,
-  });
-
-  const pages = applyTemplateHeaderFooterDisplay(
-    paginator.paginate(bRaw, hdrRaw, ftrRaw),
-    tpl,
-  );
+  const pages = renderDocumentPages(tpl, person);
 
   if (!pages.length) {
     toast("Aucun contenu à afficher", "error");
@@ -4101,7 +4111,7 @@ function previewDocument(tpl, person) {
       box-sizing: border-box;
     }
 
-    .preview-page-header {
+    .doc-page-header {
       grid-row: 1;
       flex-shrink: 0;
       padding: ${paddings.header};
@@ -4115,7 +4125,7 @@ function previewDocument(tpl, person) {
       box-sizing: border-box;
     }
 
-    .preview-page-body {
+    .doc-page-body {
       grid-row: 2;
       flex: 1;
       padding: ${margins.mt}mm ${margins.mr}mm ${margins.mb}mm ${margins.ml}mm;
@@ -4130,19 +4140,19 @@ function previewDocument(tpl, person) {
       min-height: 0;
     }
 
-    .preview-page-body.no-header {
+    .doc-page-body.no-header {
       padding-top: ${margins.mt}mm;
     }
 
-    .preview-page-body.no-footer {
+    .doc-page-body.no-footer {
       padding-bottom: ${margins.mb}mm;
     }
 
-    .preview-page-body.no-header.no-footer {
+    .doc-page-body.no-header.no-footer {
       padding: ${paddings.bodyNoHeaderFooter};
     }
 
-    .preview-page-footer {
+    .doc-page-footer {
       grid-row: 3;
       flex-shrink: 0;
       padding: ${paddings.footer};
@@ -4163,10 +4173,10 @@ function previewDocument(tpl, person) {
 
     .preview-page u,
     .preview-page a,
-    .preview-page-header u,
-    .preview-page-header a,
-    .preview-page-footer u,
-    .preview-page-footer a {
+    .doc-page-header u,
+    .doc-page-header a,
+    .doc-page-footer u,
+    .doc-page-footer a {
       text-decoration-thickness: 1px;
       text-underline-offset: 0.14em;
       text-decoration-skip-ink: none;
@@ -4267,8 +4277,6 @@ function previewDocument(tpl, person) {
 
   const render = () => {
     const page = pages[currentPage];
-    const noHdr = !page.header ? " no-header" : "";
-    const noFtr = !page.footer ? " no-footer" : "";
 
     modal.innerHTML = `
       <div class="preview-header">
@@ -4284,11 +4292,7 @@ function previewDocument(tpl, person) {
         </div>
       </div>
       <div class="preview-container">
-        <div class="preview-page">
-          ${page.header ? `<div class="preview-page-header" dir="${headerDir.dir}" style="${headerDir.style}">${page.header}</div>` : ""}
-          <div class="preview-page-body${noHdr}${noFtr}" dir="${bodyDir.dir}" style="${bodyDir.style}">${page.content}</div>
-          ${page.footer ? `<div class="preview-page-footer" dir="${footerDir.dir}" style="${footerDir.style}">${page.footer}</div>` : ""}
-        </div>
+        ${buildDocumentPagesHtml(tpl, [page], "preview-page")}
       </div>
     `;
 
@@ -4332,48 +4336,13 @@ function printDocPaginated(tpl, person, pages = null) {
     toast("Template ou personne manquant", "error");
     return;
   }
-  const printBottomGap = "8mm";
   const margins = getTemplatePageMargins(tpl);
   const distances = getTemplateHeaderFooterDistances(tpl);
   const orientation = getTemplateOrientation(tpl);
-  const charter = getTemplateGraphicCharter(tpl);
-  const context = buildDocumentContext(tpl, person);
   const pageWidth = orientation === "landscape" ? "297mm" : "210mm";
   const pageHeight = orientation === "landscape" ? "210mm" : "297mm";
   const paddings = getPageSectionPaddings(margins, distances);
-  const headerDir = getSectionDirectionAttrs(tpl, "header");
-  const bodyDir = getSectionDirectionAttrs(tpl, "body");
-  const footerDir = getSectionDirectionAttrs(tpl, "footer");
-
-  // Utiliser les pages déjà paginées ou les générer
-  let pagesToPrint = pages;
-  if (!pages) {
-    const hdrRaw = tpl.hasHeader
-      ? resolveVarsRaw(tpl.header || "", context)
-      : "";
-    const bRaw = resolveVarsRaw(tpl.body || "", context);
-    const ftrRaw = tpl.hasFooter
-      ? resolveVarsRaw(tpl.footer || "", context)
-      : "";
-
-    const paginator = new PagePaginator({
-      marginTop: margins.mt,
-      marginBottom: margins.mb,
-      marginLeft: margins.ml,
-      marginRight: margins.mr,
-      headerTop: distances.headerTop,
-      footerBottom: distances.footerBottom,
-      headerDirection: headerDir.dir,
-      bodyDirection: bodyDir.dir,
-      footerDirection: footerDir.dir,
-      orientation,
-      theme: charter,
-    });
-    pagesToPrint = applyTemplateHeaderFooterDisplay(
-      paginator.paginate(bRaw, hdrRaw, ftrRaw),
-      tpl,
-    );
-  }
+  const pagesToPrint = pages || renderDocumentPages(tpl, person);
 
   const printCSS = `
     @page { size: A4 ${orientation}; margin: 0; }
@@ -4414,8 +4383,7 @@ function printDocPaginated(tpl, person, pages = null) {
       break-after: auto;
     }
 
-    .preview-page-header,
-    .sirh-print-header {
+    .doc-page-header {
       grid-row: 1;
       box-sizing: border-box;
       padding: ${paddings.header};
@@ -4429,12 +4397,11 @@ function printDocPaginated(tpl, person, pages = null) {
       overflow-wrap: anywhere;
     }
 
-    .preview-page-body,
-    .sirh-print-body {
+    .doc-page-body {
       grid-row: 2;
       min-height: 0;
       box-sizing: border-box;
-      padding: ${margins.mt}mm ${margins.mr}mm calc(${margins.mb}mm + ${printBottomGap}) ${margins.ml}mm;
+      padding: ${paddings.body};
       font-family: var(--doc-font-body, "Times New Roman", Times, serif);
       font-size: 12pt;
       line-height: 1.6;
@@ -4444,23 +4411,19 @@ function printDocPaginated(tpl, person, pages = null) {
       overflow-wrap: anywhere;
     }
 
-    .preview-page-body.no-header,
-    .sirh-print-body.no-header {
+    .doc-page-body.no-header {
       padding-top: ${margins.mt}mm;
     }
 
-    .preview-page-body.no-footer,
-    .sirh-print-body.no-footer {
-      padding-bottom: calc(${margins.mb}mm + ${printBottomGap});
+    .doc-page-body.no-footer {
+      padding-bottom: ${margins.mb}mm;
     }
 
-    .preview-page-body.no-header.no-footer,
-    .sirh-print-body.no-header.no-footer {
-      padding: ${margins.mt}mm ${margins.mr}mm calc(${margins.mb}mm + ${printBottomGap}) ${margins.ml}mm;
+    .doc-page-body.no-header.no-footer {
+      padding: ${paddings.bodyNoHeaderFooter};
     }
 
-    .preview-page-footer,
-    .sirh-print-footer {
+    .doc-page-footer {
       grid-row: 3;
       box-sizing: border-box;
       padding: ${paddings.footer};
@@ -4482,28 +4445,19 @@ function printDocPaginated(tpl, person, pages = null) {
       flex-shrink: 0;
     }
 
-    .preview-page-header p,
-    .preview-page-body p,
-    .preview-page-footer p,
-    .sirh-print-header p,
-    .sirh-print-body p,
-    .sirh-print-footer p {
+    .doc-page-header p,
+    .doc-page-body p,
+    .doc-page-footer p {
       margin: 0 0 0.4em;
       white-space: inherit;
     }
 
-    .preview-page-header u,
-    .preview-page-body u,
-    .preview-page-footer u,
-    .preview-page-header a,
-    .preview-page-body a,
-    .preview-page-footer a,
-    .sirh-print-header u,
-    .sirh-print-body u,
-    .sirh-print-footer u,
-    .sirh-print-header a,
-    .sirh-print-body a,
-    .sirh-print-footer a {
+    .doc-page-header u,
+    .doc-page-body u,
+    .doc-page-footer u,
+    .doc-page-header a,
+    .doc-page-body a,
+    .doc-page-footer a {
       text-decoration-thickness: 1px;
       text-underline-offset: 0.14em;
       text-decoration-skip-ink: none;
@@ -4511,12 +4465,12 @@ function printDocPaginated(tpl, person, pages = null) {
 
     .preview-page ul,
     .preview-page ol,
-    .sirh-print-header ul,
-    .sirh-print-body ul,
-    .sirh-print-footer ul,
-    .sirh-print-header ol,
-    .sirh-print-body ol,
-    .sirh-print-footer ol {
+    .doc-page-header ul,
+    .doc-page-body ul,
+    .doc-page-footer ul,
+    .doc-page-header ol,
+    .doc-page-body ol,
+    .doc-page-footer ol {
       padding-left: 2em;
       list-style: revert;
     }
@@ -4537,8 +4491,6 @@ function printDocPaginated(tpl, person, pages = null) {
 
     .preview-page td,
     .preview-page th,
-    .sirh-print-page td,
-    .sirh-print-page th,
     td, th {
       border: 1px solid var(--doc-color-border, #c8cdd8);
       padding: 6px 10px;
@@ -4554,12 +4506,9 @@ function printDocPaginated(tpl, person, pages = null) {
 
     .preview-page td p,
     .preview-page th p,
-    .sirh-print-page td p,
-    .sirh-print-page th p,
     td p, th p { color: inherit; margin: 0; white-space: inherit; }
 
     .preview-page th:not([style]),
-    .sirh-print-page th:not([style]),
     th:not([style]) {
       background: var(--doc-table-header-bg, transparent);
       color: var(--doc-color-text, #111);
@@ -4602,24 +4551,11 @@ function printDocPaginated(tpl, person, pages = null) {
   wrap.style.display = "none";
   wrap.style.cssText += ";" + getDocumentThemeStyleAttr(tpl);
 
-  const pagesHtml = pagesToPrint
-    .map((page) => {
-      const headerHtml = String(page.header || "").trim();
-      const footerHtml = String(page.footer || "").trim();
-      const noHdr = headerHtml ? "" : " no-header";
-      const noFtr = footerHtml ? "" : " no-footer";
-
-      return `
-        <div class="preview-page sirh-print-page" style="${getDocumentThemeStyleAttr(tpl)}">
-          ${headerHtml ? `<div class="preview-page-header sirh-print-header" dir="${headerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${headerDir.style}">${headerHtml}</div>` : ""}
-          <div class="preview-page-body sirh-print-body${noHdr}${noFtr}" dir="${bodyDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${bodyDir.style}">${page.content}</div>
-          ${footerHtml ? `<div class="preview-page-footer sirh-print-footer" dir="${footerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${footerDir.style}">${footerHtml}</div>` : ""}
-        </div>
-      `;
-    })
-    .join("");
-
-  wrap.innerHTML = pagesHtml;
+  wrap.innerHTML = buildDocumentPagesHtml(
+    tpl,
+    pagesToPrint,
+    "preview-page sirh-print-page",
+  );
 
   const style = document.createElement("style");
   style.id = "sirh-print-css";

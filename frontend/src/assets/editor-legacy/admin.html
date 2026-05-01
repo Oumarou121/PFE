@@ -103,8 +103,8 @@
         inset: 0;
         background: #fff;
         z-index: 9999;
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
         align-items: center;
         justify-content: center;
         gap: 16px;
@@ -1581,7 +1581,7 @@
         background-repeat: var(--doc-page-bg-repeat, no-repeat);
         border-radius: 2px;
         width: var(--page-w);
-        min-height: var(--page-h);
+        height: var(--page-h);
         margin: 0 auto;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
         display: flex;
@@ -1589,7 +1589,8 @@
         position: relative;
         overflow: hidden;
       }
-      .preview-page .prev-header {
+      .preview-page .doc-page-header {
+        grid-row: 1;
         padding: var(--page-header-top) var(--page-mr) 3mm var(--page-ml);
         border-bottom: 1px solid var(--doc-color-border);
         flex-shrink: 0;
@@ -1599,7 +1600,8 @@
         color: var(--doc-color-text);
         white-space: break-spaces;
       }
-      .preview-page .prev-body {
+      .preview-page .doc-page-body {
+        grid-row: 2;
         flex: 1;
         padding: var(--page-mt) var(--page-mr) var(--page-mb) var(--page-ml);
         overflow: hidden;
@@ -1609,13 +1611,14 @@
         color: var(--doc-color-text);
         white-space: break-spaces;
       }
-      .preview-page .prev-body.no-header {
+      .preview-page .doc-page-body.no-header {
         padding-top: var(--page-mt);
       }
-      .preview-page .prev-body.no-footer {
+      .preview-page .doc-page-body.no-footer {
         padding-bottom: var(--page-mb);
       }
-      .preview-page .prev-footer {
+      .preview-page .doc-page-footer {
+        grid-row: 3;
         padding: 3mm var(--page-mr) var(--page-footer-bottom) var(--page-ml);
         border-top: 1px solid var(--doc-color-border);
         flex-shrink: 0;
@@ -6990,7 +6993,7 @@
           toast("Sélectionnez un bénéficiaire pour imprimer", "error");
           return;
         }
-        printDocPaginated(liveTpl, person);
+        printDocPaginated(liveTpl, person, adminPreviewState?.pages || null);
       };
 
       // -- Save state --
@@ -8428,9 +8431,9 @@
         prevPage.innerHTML = "";
         prevPage.className = "preview-pages";
 
-        const result = paginateWithVariablesBlue(liveTpl, person);
+        const pages = renderDocumentPages(liveTpl, person);
         adminPreviewState = null;
-        if (!result.pages.length) {
+        if (!pages.length) {
           prevPage.innerHTML =
             '<div style="font-size:12px;color:var(--text3);text-align:center;padding:30px 20px">Aucun contenu  - afficher</div>';
           return;
@@ -8439,38 +8442,14 @@
         adminPreviewState = {
           tplId: curTplId,
           beneficiaryId,
-          pages: result.pages,
+          pages,
         };
 
-        result.pages.forEach((page, idx) => {
-          const pageEl = document.createElement("div");
-          pageEl.className = "preview-page";
-          pageEl.style.cssText += ";" + getDocumentThemeStyleAttr(liveTpl);
-          const headerDir = getSectionDirectionAttrs(liveTpl, "header");
-          const bodyDir = getSectionDirectionAttrs(liveTpl, "body");
-          const footerDir = getSectionDirectionAttrs(liveTpl, "footer");
-          const noHeaderClass = !page.header ? " no-header" : "";
-          const noFooterClass = !page.footer ? " no-footer" : "";
-          let pageHtml = "";
-
-          if (result.hasHeader && page.header) {
-            pageHtml += `<div class="prev-header" dir="${headerDir.dir}" style="${headerDir.style}">${page.header}</div>`;
-          }
-
-          pageHtml += `<div class="prev-body${noHeaderClass}${noFooterClass}" dir="${bodyDir.dir}" style="${bodyDir.style}">${page.content}</div>`;
-
-          if (result.hasFooter && page.footer) {
-            pageHtml += `<div class="prev-footer" dir="${footerDir.dir}" style="${footerDir.style}">${page.footer}</div>`;
-          }
-
-          pageEl.innerHTML = pageHtml;
-          prevPage.appendChild(pageEl);
-
-          const pageNum = document.createElement("div");
-          pageNum.className = "preview-page-num";
-          pageNum.textContent = `Page ${idx + 1}`;
-          prevPage.appendChild(pageNum);
-        });
+        prevPage.innerHTML = buildDocumentPagesHtml(
+          liveTpl,
+          pages,
+          "preview-page",
+        );
       };
 
       window.doPreviewFromPreview = async function () {
@@ -8518,7 +8497,7 @@
           );
           return;
         }
-        printDocPaginated(liveTpl, person);
+        printDocPaginated(liveTpl, person, adminPreviewState?.pages || null);
       };
 
       // -- Zoom --
