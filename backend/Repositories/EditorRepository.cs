@@ -125,7 +125,7 @@ namespace DocApi.Repositories
             try
             {
                 using var connection = _connectionFactory.CreateConnection();
-                var rows = await connection.QueryAsync($"SELECT * FROM [{_options.AuthDatabaseName}].[dbo].[Organization] ORDER BY 1");
+                var rows = await connection.QueryAsync($"SELECT * FROM {AuthTable("Organization")} ORDER BY 1");
                 return rows.Select(row =>
                 {
                     var item = Row(row);
@@ -150,19 +150,41 @@ namespace DocApi.Repositories
             }
         }
 
-        public Task<IEnumerable<object>> LoadAdminsAsync()
+        public async Task<IEnumerable<object>> LoadAdminsAsync()
         {
-            var admins = SeedUsers().Where(user => (string)user["role"]! == "admin").Select(user => new
+            try
             {
-                id = user["id"],
-                organizationId = user["organizationId"],
-                nom = user["name"],
-                email = user["email"],
-                role = user["role"],
-                profile = user["profile"],
-                raw = user
-            });
-            return Task.FromResult<IEnumerable<object>>(admins);
+                using var connection = _connectionFactory.CreateConnection();
+                var rows = await connection.QueryAsync($"""
+                    SELECT *
+                    FROM {AuthTable("User")}
+                    WHERE LOWER(Role) IN ('admin', 'supadmin', 'superadmin')
+                    ORDER BY Name
+                    """);
+
+                return rows.Select(row =>
+                {
+                    var item = Row(row);
+                    return new
+                    {
+                        id = FirstString(item, "Id", "ID", "id"),
+                        organizationId = FirstString(item, "IdOrganization", "OrganizationId", "organizationId"),
+                        nom = FirstString(item, "Name", "Nom", "Username") ?? "",
+                        email = FirstString(item, "Email", "Mail") ?? "",
+                        role = FirstString(item, "Role", "role") ?? "admin",
+                        profile = FirstString(item, "Profil", "Profile"),
+                        profileDetail = FirstString(item, "ProfilDetail", "ProfileDetail"),
+                        accessAllYears = FirstObject(item, "AccessAllYears"),
+                        accessYearList = FirstString(item, "AccessYearList"),
+                        createdAt = FirstObject(item, "AccountCreationDate", "CreatedAt"),
+                        raw = item
+                    };
+                });
+            }
+            catch
+            {
+                return [];
+            }
         }
 
         public async Task<IEnumerable<object>> LoadGraphicChartersAsync()
@@ -921,13 +943,8 @@ namespace DocApi.Repositories
         private static string? FirstString(IDictionary<string, object?> row, params string[] keys) => keys.Select(key => Str(row, key)).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
         private static object? FirstObject(IDictionary<string, object?> row, params string[] keys) => keys.Select(key => Obj(row, key)).FirstOrDefault(value => value is not null);
         private static string? GetAnonymousProperty(object item, string propertyName) => item.GetType().GetProperty(propertyName)?.GetValue(item)?.ToString();
-
-        private static IEnumerable<Dictionary<string, object?>> SeedUsers() =>
-        [
-            new() { ["id"] = "1", ["name"] = "Super Admin", ["email"] = "super.admin@gmail.com", ["password"] = "azerty", ["role"] = "supAdmin", ["organizationId"] = "2", ["profile"] = "" },
-            new() { ["id"] = "2", ["name"] = "Admin", ["email"] = "admin@gmail.com", ["password"] = "azerty", ["role"] = "admin", ["organizationId"] = "2", ["profile"] = "" },
-            new() { ["id"] = "3", ["name"] = "User", ["email"] = "user@gmail.com", ["password"] = "azerty", ["role"] = "user", ["organizationId"] = "2", ["profile"] = "" }
-        ];
+        private string AuthTable(string tableName) => $"[{EscapeIdentifier(_options.AuthDatabaseName)}].[dbo].[{EscapeIdentifier(tableName)}]";
+        private static string EscapeIdentifier(string value) => value.Replace("]", "]]");
 
         private sealed class ColumnInfo
         {
