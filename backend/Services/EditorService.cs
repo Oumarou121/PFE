@@ -40,10 +40,42 @@ namespace DocApi.Services
             await _repository.DeleteFamilyAsync(id);
         }
 
-        public async Task<IEnumerable<object>> GetTemplatesAsync()
+        public async Task<IEnumerable<object>> GetOrganizationsAsync()
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.LoadTemplatesAsync();
+            var graphicCharters = (await _repository.LoadGraphicChartersAsync()).ToArray();
+            return (await _repository.LoadOrganizationsAsync())
+                .Select(organization => new
+                {
+                    id = GetProperty(organization, "id"),
+                    nom = GetProperty(organization, "nom"),
+                    ville = GetProperty(organization, "ville"),
+                    adresse = GetProperty(organization, "adresse"),
+                    tel = GetProperty(organization, "tel"),
+                    email = GetProperty(organization, "email"),
+                    raw = GetObjectProperty(organization, "raw"),
+                    graphicCharters = graphicCharters.Where(item => GetProperty(item, "organizationId") == GetProperty(organization, "id")).ToArray(),
+                    createdAt = GetObjectProperty(organization, "createdAt"),
+                    updatedAt = GetObjectProperty(organization, "updatedAt")
+                })
+                .ToArray();
+        }
+
+        public async Task<IEnumerable<object>> GetAdminsAsync()
+        {
+            await _repository.EnsureSchemaAsync();
+            return await _repository.LoadAdminsAsync();
+        }
+
+        public async Task<IEnumerable<object>> GetTemplatesAsync(object? currentUser = null)
+        {
+            await _repository.EnsureSchemaAsync();
+            var templates = (await _repository.LoadTemplatesAsync()).ToArray();
+            var role = GetUserString(currentUser, "role");
+            if (string.IsNullOrWhiteSpace(role) || role == "supAdmin") return templates;
+
+            var organizationId = GetUserString(currentUser, "organizationId");
+            return templates.Where(item => GetProperty(item, "organizationId") == organizationId).ToArray();
         }
 
         public async Task<object?> GetTemplateByIdAsync(string id)
@@ -104,21 +136,7 @@ namespace DocApi.Services
         {
             await _repository.EnsureSchemaAsync();
             var graphicCharters = (await _repository.LoadGraphicChartersAsync()).ToArray();
-            var organizations = (await _repository.LoadOrganizationsAsync())
-                .Select(organization => new
-                {
-                    id = GetProperty(organization, "id"),
-                    nom = GetProperty(organization, "nom"),
-                    ville = GetProperty(organization, "ville"),
-                    adresse = GetProperty(organization, "adresse"),
-                    tel = GetProperty(organization, "tel"),
-                    email = GetProperty(organization, "email"),
-                    raw = GetObjectProperty(organization, "raw"),
-                    graphicCharters = graphicCharters.Where(item => GetProperty(item, "organizationId") == GetProperty(organization, "id")).ToArray(),
-                    createdAt = GetObjectProperty(organization, "createdAt"),
-                    updatedAt = GetObjectProperty(organization, "updatedAt")
-                })
-                .ToArray();
+            var organizations = (await GetOrganizationsAsync()).ToArray();
             var state = new
             {
                 organizations,

@@ -1565,7 +1565,7 @@
       window.addEventListener("DOMContentLoaded", async () => {
         const authUser = await requireAuth("user");
         if (!authUser) return;
-        await DB.init();
+        await DB.ensureResources(["organizations", "families", "templates"]);
         ORGANIZATION_ID =
           authUser.organizationId || DB.getOrganizations()[0]?.id || null;
         const etab = DB.getOrganization(ORGANIZATION_ID);
@@ -1574,7 +1574,6 @@
           document.getElementById("heroBadge").textContent = etab.nom;
         }
         buildFamGrid();
-        renderUserDataViewsSidebar();
         setTimeout(() => {
           document.getElementById("loading").classList.add("done");
           document.getElementById("mainApp").style.opacity = "1";
@@ -1612,7 +1611,17 @@
         document.getElementById(id)?.classList.remove("open");
       }
 
-      function switchUserMode(mode) {
+      async function ensureUserDataViewsLoaded() {
+        if (DB._cache?._loaded?.tableViews) return;
+        const wrap = document.getElementById("userDataViewList");
+        if (wrap) {
+          wrap.innerHTML =
+            '<div class="data-empty">Chargement des vues de données...</div>';
+        }
+        await DB.ensureResources(["tableViews"]);
+      }
+
+      async function switchUserMode(mode) {
         userMode = mode === "data" ? "data" : "documents";
         document
           .getElementById("modeDocumentsBtn")
@@ -1637,6 +1646,7 @@
             ? "Consultez et mettez à jour les données mises à disposition"
             : "Sélectionnez une famille, un modèle et une personne";
         if (userMode === "data") {
+          await ensureUserDataViewsLoaded();
           renderUserDataViewsSidebar();
           renderUserDataContent();
         }

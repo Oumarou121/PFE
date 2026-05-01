@@ -69,6 +69,20 @@ namespace DocApi.Controllers
             return Ok(new EditorApiResponse(true, Schema: await _service.LoadSchemaAsync()));
         }
 
+        [HttpGet("organizations")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<object>>> Organizations()
+        {
+            return Ok(await _service.GetOrganizationsAsync());
+        }
+
+        [HttpGet("admins")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<object>>> Admins()
+        {
+            return Ok(await _service.GetAdminsAsync());
+        }
+
         [HttpPut("state")]
         public async Task<ActionResult> ReplaceState([FromBody] EditorStateRequest request)
         {

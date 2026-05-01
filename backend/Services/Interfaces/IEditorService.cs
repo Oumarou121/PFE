@@ -9,7 +9,9 @@ namespace DocApi.Services.Interfaces
         Task<object?> GetFamilyByIdAsync(string id);
         Task<object> UpsertFamilyAsync(JsonObject family);
         Task DeleteFamilyAsync(string id);
-        Task<IEnumerable<object>> GetTemplatesAsync();
+        Task<IEnumerable<object>> GetOrganizationsAsync();
+        Task<IEnumerable<object>> GetAdminsAsync();
+        Task<IEnumerable<object>> GetTemplatesAsync(object? currentUser = null);
         Task<object?> GetTemplateByIdAsync(string id);
         Task<object> UpsertTemplateAsync(JsonObject template);
         Task DeleteTemplateAsync(string id);

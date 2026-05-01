@@ -7426,16 +7426,26 @@
 
       function populateFamilySelect() {
         const sel = document.getElementById("famSelAdmin");
+        const previousFamId = curFamId;
+        sel.innerHTML = "";
         DB.getFamilies().forEach((f) => {
           const o = document.createElement("option");
           o.value = f.id;
           o.textContent = (f.icon || "") + " " + f.nom;
           sel.appendChild(o);
         });
+        if (previousFamId && DB.getFamily(previousFamId)) {
+          sel.value = previousFamId;
+        }
+        curFamId = sel.value || null;
         const etab = DB.getOrganization(getActiveOrganizationId());
         if (etab)
           document.getElementById("organizationLabel").textContent = etab.nom;
         populateGraphicCharterSelect();
+        if (curFamId) {
+          buildVarsPanel(curFamId);
+          renderTplList(curFamId);
+        }
       }
       window.onFamChange = function () {
         curFamId = document.getElementById("famSelAdmin").value;

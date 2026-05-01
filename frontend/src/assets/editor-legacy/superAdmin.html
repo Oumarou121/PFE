@@ -1568,7 +1568,22 @@
       // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
       //  SECTIONS
       // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-      function showSection(section, btn) {
+      async function ensureSectionData(section) {
+        const resourcesBySection = {
+          families: ["families", "templates"],
+          organizations: ["organizations"],
+          admins: ["admins", "organizations"],
+          tableviews: ["tableViews"],
+        };
+        const resources = resourcesBySection[section] || [];
+        const missing = resources.filter((name) => !DB._cache?._loaded?.[name]);
+        if (!missing.length) return;
+        document.getElementById("panelList").innerHTML =
+          '<div class="text-muted" style="padding:12px">Chargement de cette section...</div>';
+        await DB.ensureResources(missing);
+      }
+
+      async function showSection(section, btn) {
         currentSection = section;
         document
           .querySelectorAll(".icon-nav-btn")
@@ -1587,6 +1602,7 @@
           ? ""
           : "none";
         document.getElementById("searchInput").value = "";
+        await ensureSectionData(section);
         renderLeftPanel();
         if (section === "organizations") renderOrganizationContent();
         if (section === "admins") renderAdminContent();
@@ -6709,7 +6725,7 @@
       window.addEventListener("DOMContentLoaded", async () => {
         const authUser = await requireAuth("supAdmin");
         if (!authUser) return;
-        await DB.init();
+        await DB.ensureResources(["families", "templates"]);
         renderLeftPanel();
         setTimeout(() => {
           document.getElementById("loading").classList.add("done");

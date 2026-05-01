@@ -142,7 +142,8 @@ if (typeof window !== "undefined") {
 }
 
 async function apiFetch(path, options = {}) {
-  startBusy(options?.busyText || "Chargement...");
+  const showBusy = options?.busy !== false;
+  if (showBusy) startBusy(options?.busyText || "Chargement...");
   try {
     const apiUrl = `${API_ROOT}${path}`;
     const sameOrigin =
@@ -163,7 +164,7 @@ async function apiFetch(path, options = {}) {
     });
     return res;
   } finally {
-    stopBusy();
+    if (showBusy) stopBusy();
   }
 }
 
@@ -864,6 +865,7 @@ const DB = {
   _cache: normalizeState(),
   _readyPromise: null,
   _schemaPromise: null,
+  _resourcePromises: {},
   _saveTimer: null,
   _syncPromise: null,
   _pendingSnapshot: null,
@@ -883,6 +885,13 @@ const DB = {
         const payload = await res.json();
         currentAuthUser = payload.user || currentAuthUser;
         this._cache = normalizeState(payload.state);
+        this._cache._loaded = {
+          families: true,
+          templates: true,
+          organizations: true,
+          admins: true,
+          tableViews: true,
+        };
         return this.get();
       } catch (error) {
         this._cache = normalizeState();
@@ -895,6 +904,67 @@ const DB = {
 
   get() {
     return cloneData(this._cache);
+  },
+
+  async ensureResources(resources = [], options = {}) {
+    const requested = [
+      ...new Set((Array.isArray(resources) ? resources : [resources]).filter(Boolean)),
+    ];
+    const missing = requested.filter((name) => options.force || !this._cache?._loaded?.[name]);
+    if (!missing.length) return this.get();
+    await Promise.all(missing.map((name) => this._loadResource(name, options)));
+    return this.get();
+  },
+
+  async _loadResource(name, options = {}) {
+    if (this._resourcePromises[name] && !options.force) {
+      return this._resourcePromises[name];
+    }
+    const endpoints = {
+      families: "/families",
+      templates: "/templates",
+      organizations: "/organizations",
+      admins: "/admins",
+      tableViews: "/table-view-configs",
+    };
+    const endpoint = endpoints[name];
+    if (!endpoint) return null;
+    this._resourcePromises[name] = apiFetch(endpoint, { busy: false })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`${name} failed with status ${res.status}`);
+        return res.json();
+      })
+      .then((payload) => {
+        const rows = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.items)
+            ? payload.items
+            : [];
+        if (name === "families") {
+          this._cache.families = rows.map((item) => normalizeFamilyRecord(item));
+        } else if (name === "templates") {
+          this._cache.templates = rows.map((item) => normalizeTemplateRecord(item));
+        } else if (name === "organizations") {
+          this._cache.organizations = rows.map((item) => normalizeOrganizationRecord(item));
+        } else if (name === "admins") {
+          this._cache.admins = cloneData(rows);
+        } else if (name === "tableViews") {
+          this._cache.tableViews = rows.map((item) => normalizeTableViewRecord(item));
+        }
+        this._cache._loaded = {
+          ...(this._cache._loaded || {}),
+          [name]: true,
+        };
+        return this.get();
+      })
+      .catch((error) => {
+        notifySyncError(`Impossible de charger ${name}.`, error);
+        return this.get();
+      })
+      .finally(() => {
+        this._resourcePromises[name] = null;
+      });
+    return this._resourcePromises[name];
   },
 
   async getSchema(force = false) {
@@ -1261,7 +1331,9 @@ const DB = {
   },
 
   save(d, options = {}) {
+    const loaded = this._cache?._loaded || {};
     this._cache = normalizeState(d);
+    this._cache._loaded = { ...loaded };
     this._pendingSnapshot = this.get();
     const runSync = () => {
       const payload = this._pendingSnapshot;
@@ -1336,63 +1408,104 @@ const DB = {
 
   // ── Mutateurs ───────────────────────────────────────────────
   saveFamily(fam) {
-    const s = DB.get();
     const normalized = normalizeFamilyRecord(fam);
-    const i = s.families.findIndex((f) => f.id === fam.id);
-    i >= 0 ? (s.families[i] = normalized) : s.families.push(normalized);
-    DB.save(s);
+    const i = DB._cache.families.findIndex((f) => f.id === fam.id);
+    i >= 0
+      ? (DB._cache.families[i] = cloneData(normalized))
+      : DB._cache.families.push(cloneData(normalized));
+    apiFetch(`/families/${encodeURIComponent(normalized.id)}`, {
+      method: "PUT",
+      busy: false,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(normalized),
+    }).catch((error) => {
+      notifySyncError("Impossible de synchroniser la famille.", error);
+    });
     return normalized;
   },
   deleteFamily(id) {
-    const s = DB.get();
-    s.families = s.families.filter((f) => f.id !== id);
-    s.templates = s.templates.filter((t) => t.familyId !== id);
-    DB.save(s, { immediate: true });
+    DB._cache.families = DB._cache.families.filter((f) => f.id !== id);
+    DB._cache.templates = DB._cache.templates.filter((t) => t.familyId !== id);
+    apiFetch(`/families/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      busy: false,
+    }).catch((error) => {
+      notifySyncError("Impossible de supprimer la famille.", error);
+    });
   },
   saveTemplate(t) {
-    const s = DB.get();
     const normalized = normalizeTemplateRecord(t);
-    const i = s.templates.findIndex((x) => x.id === t.id);
-    i >= 0 ? (s.templates[i] = normalized) : s.templates.push(normalized);
-    DB.save(s);
+    const i = DB._cache.templates.findIndex((x) => x.id === t.id);
+    i >= 0
+      ? (DB._cache.templates[i] = cloneData(normalized))
+      : DB._cache.templates.push(cloneData(normalized));
+    apiFetch(`/templates/${encodeURIComponent(normalized.id)}`, {
+      method: "PUT",
+      busy: false,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(normalized),
+    }).catch((error) => {
+      notifySyncError("Impossible de synchroniser le template.", error);
+    });
     return normalized;
   },
   deleteTemplate(id) {
-    const s = DB.get();
-    s.templates = s.templates.filter((t) => t.id !== id);
-    DB.save(s, { immediate: true });
+    DB._cache.templates = DB._cache.templates.filter((t) => t.id !== id);
+    apiFetch(`/templates/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      busy: false,
+    }).catch((error) => {
+      notifySyncError("Impossible de supprimer le template.", error);
+    });
   },
   saveOrganization(org) {
-    const s = DB.get();
     const normalized = normalizeOrganizationRecord(org);
-    const i = s.organizations.findIndex((x) => x.id === normalized.id);
+    const i = DB._cache.organizations.findIndex((x) => x.id === normalized.id);
     i >= 0
-      ? (s.organizations[i] = normalized)
-      : s.organizations.push(normalized);
-    DB.save(s);
+      ? (DB._cache.organizations[i] = cloneData(normalized))
+      : DB._cache.organizations.push(cloneData(normalized));
+    DB.init(true).then(() => {
+      const idx = DB._cache.organizations.findIndex((x) => x.id === normalized.id);
+      idx >= 0
+        ? (DB._cache.organizations[idx] = cloneData(normalized))
+        : DB._cache.organizations.push(cloneData(normalized));
+      DB.save(DB.get());
+    });
     return normalized;
   },
   deleteOrganization(id) {
-    const s = DB.get();
-    s.organizations = s.organizations.filter((e) => e.id !== id);
-    s.admins = s.admins.filter((a) => getScopedOrganizationId(a) !== id);
-    DB.save(s, { immediate: true });
+    DB._cache.organizations = DB._cache.organizations.filter((e) => e.id !== id);
+    DB._cache.admins = DB._cache.admins.filter((a) => getScopedOrganizationId(a) !== id);
+    DB.init(true).then(() => {
+      DB._cache.organizations = DB._cache.organizations.filter((e) => e.id !== id);
+      DB._cache.admins = DB._cache.admins.filter((a) => getScopedOrganizationId(a) !== id);
+      DB.save(DB.get(), { immediate: true });
+    });
   },
   saveAdmin(a) {
-    const s = DB.get();
     const normalized = {
       ...a,
       organizationId: getScopedOrganizationId(a),
     };
-    const i = s.admins.findIndex((x) => x.id === normalized.id);
-    i >= 0 ? (s.admins[i] = normalized) : s.admins.push(normalized);
-    DB.save(s);
+    const i = DB._cache.admins.findIndex((x) => x.id === normalized.id);
+    i >= 0
+      ? (DB._cache.admins[i] = cloneData(normalized))
+      : DB._cache.admins.push(cloneData(normalized));
+    DB.init(true).then(() => {
+      const idx = DB._cache.admins.findIndex((x) => x.id === normalized.id);
+      idx >= 0
+        ? (DB._cache.admins[idx] = cloneData(normalized))
+        : DB._cache.admins.push(cloneData(normalized));
+      DB.save(DB.get());
+    });
     return normalized;
   },
   deleteAdmin(id) {
-    const s = DB.get();
-    s.admins = s.admins.filter((a) => a.id !== id);
-    DB.save(s, { immediate: true });
+    DB._cache.admins = DB._cache.admins.filter((a) => a.id !== id);
+    DB.init(true).then(() => {
+      DB._cache.admins = DB._cache.admins.filter((a) => a.id !== id);
+      DB.save(DB.get(), { immediate: true });
+    });
   },
   saveTableView(tableView) {
     const normalized = normalizeTableViewRecord(tableView);
