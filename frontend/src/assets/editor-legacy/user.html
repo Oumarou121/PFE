@@ -901,6 +901,88 @@
       .a4-body.no-footer {
         padding-bottom: var(--page-mb);
       }
+      .preview-pages {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+      .preview-page {
+        width: var(--page-w);
+        min-height: var(--page-h);
+        margin: 0 auto;
+        background-color: #fff;
+        background-image: var(--doc-page-bg-image, none);
+        background-size: var(--doc-page-bg-size, cover);
+        background-position: var(--doc-page-bg-position, center center);
+        background-repeat: var(--doc-page-bg-repeat, no-repeat);
+        border-radius: 2px;
+        box-shadow:
+          0 2px 12px rgba(0, 0, 0, 0.18),
+          0 0 0 1px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+      }
+      .preview-page .prev-header {
+        padding: var(--page-header-top) var(--page-mr) 3mm var(--page-ml);
+        border-bottom: 1px solid var(--doc-color-border);
+        flex-shrink: 0;
+        font-family: var(--doc-font-body);
+        font-size: 12pt;
+        line-height: 1.6;
+        color: var(--doc-color-text);
+        white-space: break-spaces;
+      }
+      .preview-page .prev-body {
+        flex: 1;
+        padding: var(--page-mt) var(--page-mr) var(--page-mb) var(--page-ml);
+        overflow: hidden;
+        font-family: var(--doc-font-body);
+        font-size: 12pt;
+        line-height: 1.6;
+        color: var(--doc-color-text);
+        white-space: break-spaces;
+      }
+      .preview-page .prev-body.no-header {
+        padding-top: var(--page-mt);
+      }
+      .preview-page .prev-body.no-footer {
+        padding-bottom: var(--page-mb);
+      }
+      .preview-page .prev-footer {
+        padding: 3mm var(--page-mr) var(--page-footer-bottom) var(--page-ml);
+        border-top: 1px solid var(--doc-color-border);
+        flex-shrink: 0;
+        margin-top: auto;
+        font-family: var(--doc-font-body);
+        font-size: 12pt;
+        line-height: 1.6;
+        color: var(--doc-color-text);
+        white-space: break-spaces;
+      }
+      .preview-page .var-resolved {
+        color: #2563eb;
+        font-weight: 500;
+        background: #eff6ff;
+        padding: 0 3px;
+        border-radius: 2px;
+      }
+      .preview-page .var-missing {
+        color: #dc2626;
+        background: #fef2f2;
+        padding: 0 3px;
+        border-radius: 2px;
+        font-size: 0.9em;
+        font-style: italic;
+      }
+      .preview-page-num {
+        text-align: center;
+        color: #999;
+        font-size: 10px;
+        margin-top: 8px;
+      }
 
       /* Ã¢â€â‚¬Ã¢â€â‚¬ ZOOM BAR Ã¢â€â‚¬Ã¢â€â‚¬ */
       .zoom-bar {
@@ -955,46 +1037,57 @@
         color: var(--doc-color-heading);
         margin: 0.6em 0 0.3em;
       }
-      .doc-content ul {
+      .doc-content ul,
+      .preview-page ul {
         padding-left: 2em;
         list-style-type: disc;
         margin: 0.4em 0;
       }
-      .doc-content ol {
+      .doc-content ol,
+      .preview-page ol {
         padding-left: 2em;
         list-style-type: decimal;
         margin: 0.4em 0;
       }
-      .doc-content li {
+      .doc-content li,
+      .preview-page li {
         display: list-item;
       }
-      .doc-content hr {
+      .doc-content hr,
+      .preview-page hr {
         border: none;
         border-top: 1.5px solid var(--doc-color-border);
         margin: 10px 0;
       }
-      .doc-content table {
+      .doc-content table,
+      .preview-page table {
         border-collapse: collapse;
         width: 100%;
       }
       .doc-content td,
-      .doc-content th {
+      .doc-content th,
+      .preview-page td,
+      .preview-page th {
         border: 1px solid var(--doc-color-border);
         padding: 7px 10px;
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
       }
-      .doc-content th:not([style]) {
+      .doc-content th:not([style]),
+      .preview-page th:not([style]) {
         background: var(--doc-table-header-bg, transparent);
         color: var(--doc-color-text);
         font-weight: 700;
         text-align: left;
       }
-      .doc-content th {
+      .doc-content th,
+      .preview-page th {
         font-weight: 700;
       }
       .doc-content td p,
-      .doc-content th p {
+      .doc-content th p,
+      .preview-page td p,
+      .preview-page th p {
         color: inherit !important;
         white-space: inherit;
       }
@@ -2490,12 +2583,9 @@
         const canvas = document.getElementById("a4Canvas");
         const scaler = document.getElementById("zoomScaler");
         applyDocumentThemeToRoot(tpl);
-        const headerDir = getTemplateSectionDirection(tpl, "header");
-        const bodyDir = getTemplateSectionDirection(tpl, "body");
-        const footerDir = getTemplateSectionDirection(tpl, "footer");
-        const headerAlign = headerDir === "rtl" ? "right" : "left";
-        const bodyAlign = bodyDir === "rtl" ? "right" : "left";
-        const footerAlign = footerDir === "rtl" ? "right" : "left";
+        const headerDir = getSectionDirectionAttrs(tpl, "header");
+        const bodyDir = getSectionDirectionAttrs(tpl, "body");
+        const footerDir = getSectionDirectionAttrs(tpl, "footer");
         const margins = getTemplatePageMargins(tpl);
         const distances = getTemplateHeaderFooterDistances(tpl);
         wait.style.display = "none";
@@ -2533,39 +2623,31 @@
           return;
         }
 
-        // Creer un conteneur pour toutes les pages
         const allPages = document.createElement("div");
-        allPages.style.display = "flex";
-        allPages.style.flexDirection = "column";
-        allPages.style.gap = "20px";
-        allPages.style.alignItems = "center";
+        allPages.className = "preview-pages";
 
         result.pages.forEach((page, idx) => {
           const pageEl = document.createElement("div");
-          pageEl.className = "a4-page";
-          let pageHTML = "";
-
-          // En-tete
-          if (page.header) {
-            pageHTML += `<div class="a4-header" dir="${headerDir}" style="direction:${headerDir};text-align:${headerAlign}"><div class="a4-hf-label">EN-TÊTE</div><div class="doc-content" dir="${headerDir}" style="direction:${headerDir};text-align:${headerAlign}">${page.header}</div></div>`;
-          }
-
-          // Corps
+          pageEl.className = "preview-page";
+          pageEl.style.cssText += ";" + getDocumentThemeStyleAttr(tpl);
           const noHeaderClass = !page.header ? " no-header" : "";
           const noFooterClass = !page.footer ? " no-footer" : "";
-          pageHTML += `<div class="a4-body doc-content${noHeaderClass}${noFooterClass}" dir="${bodyDir}" style="direction:${bodyDir};text-align:${bodyAlign}">${page.content}</div>`;
+          let pageHTML = "";
 
-          // Pied de page
-          if (page.footer) {
-            pageHTML += `<div class="a4-footer" dir="${footerDir}" style="direction:${footerDir};text-align:${footerAlign}"><div class="a4-hf-label">PIED DE PAGE</div><div class="doc-content" dir="${footerDir}" style="direction:${footerDir};text-align:${footerAlign}">${page.footer}</div></div>`;
+          if (result.hasHeader && page.header) {
+            pageHTML += `<div class="prev-header" dir="${headerDir.dir}" style="${headerDir.style}">${page.header}</div>`;
+          }
+
+          pageHTML += `<div class="prev-body${noHeaderClass}${noFooterClass}" dir="${bodyDir.dir}" style="${bodyDir.style}">${page.content}</div>`;
+
+          if (result.hasFooter && page.footer) {
+            pageHTML += `<div class="prev-footer" dir="${footerDir.dir}" style="${footerDir.style}">${page.footer}</div>`;
           }
 
           pageEl.innerHTML = pageHTML;
 
-          // Ajouter un numero de page
           const pageNum = document.createElement("div");
-          pageNum.style.cssText =
-            "text-align:center;color:#999;font-size:10px;margin-top:8px";
+          pageNum.className = "preview-page-num";
           pageNum.textContent = `Page ${idx + 1}`;
 
           allPages.appendChild(pageEl);

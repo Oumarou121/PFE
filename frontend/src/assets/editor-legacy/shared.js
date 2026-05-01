@@ -4102,6 +4102,7 @@ function previewDocument(tpl, person) {
     }
 
     .preview-page-header {
+      grid-row: 1;
       flex-shrink: 0;
       padding: ${paddings.header};
       font-family: var(--doc-font-body, "Times New Roman", Times, serif);
@@ -4115,6 +4116,7 @@ function previewDocument(tpl, person) {
     }
 
     .preview-page-body {
+      grid-row: 2;
       flex: 1;
       padding: ${margins.mt}mm ${margins.mr}mm ${margins.mb}mm ${margins.ml}mm;
       font-family: var(--doc-font-body, "Times New Roman", Times, serif);
@@ -4141,6 +4143,7 @@ function previewDocument(tpl, person) {
     }
 
     .preview-page-footer {
+      grid-row: 3;
       flex-shrink: 0;
       padding: ${paddings.footer};
       font-family: var(--doc-font-body, "Times New Roman", Times, serif);
@@ -4413,6 +4416,7 @@ function printDocPaginated(tpl, person, pages = null) {
 
     .preview-page-header,
     .sirh-print-header {
+      grid-row: 1;
       box-sizing: border-box;
       padding: ${paddings.header};
       font-family: var(--doc-font-body, "Times New Roman", Times, serif);
@@ -4427,6 +4431,7 @@ function printDocPaginated(tpl, person, pages = null) {
 
     .preview-page-body,
     .sirh-print-body {
+      grid-row: 2;
       min-height: 0;
       box-sizing: border-box;
       padding: ${margins.mt}mm ${margins.mr}mm calc(${margins.mb}mm + ${printBottomGap}) ${margins.ml}mm;
@@ -4456,6 +4461,7 @@ function printDocPaginated(tpl, person, pages = null) {
 
     .preview-page-footer,
     .sirh-print-footer {
+      grid-row: 3;
       box-sizing: border-box;
       padding: ${paddings.footer};
       font-family: var(--doc-font-body, "Times New Roman", Times, serif);
@@ -4468,10 +4474,6 @@ function printDocPaginated(tpl, person, pages = null) {
       overflow: hidden;
       white-space: normal;
       overflow-wrap: anywhere;
-    }
-
-    .sirh-print-footer-empty {
-      min-height: 1px;
     }
 
     .preview-page {
@@ -4611,7 +4613,7 @@ function printDocPaginated(tpl, person, pages = null) {
         <div class="preview-page sirh-print-page" style="${getDocumentThemeStyleAttr(tpl)}">
           ${headerHtml ? `<div class="preview-page-header sirh-print-header" dir="${headerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${headerDir.style}">${headerHtml}</div>` : ""}
           <div class="preview-page-body sirh-print-body${noHdr}${noFtr}" dir="${bodyDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${bodyDir.style}">${page.content}</div>
-          <div class="preview-page-footer sirh-print-footer${footerHtml ? "" : " sirh-print-footer-empty"}" dir="${footerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${footerDir.style}">${footerHtml || "&nbsp;"}</div>
+          ${footerHtml ? `<div class="preview-page-footer sirh-print-footer" dir="${footerDir.dir}" style="${getDocumentThemeStyleAttr(tpl)};${footerDir.style}">${footerHtml}</div>` : ""}
         </div>
       `;
     })

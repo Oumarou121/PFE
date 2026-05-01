@@ -6990,13 +6990,7 @@
           toast("Sélectionnez un bénéficiaire pour imprimer", "error");
           return;
         }
-        const cachedPages =
-          adminPreviewState &&
-          adminPreviewState.tplId === curTplId &&
-          adminPreviewState.personId === person.id
-            ? adminPreviewState.pages
-            : null;
-        printDocPaginated(liveTpl, person, cachedPages);
+        printDocPaginated(liveTpl, person);
       };
 
       // -- Save state --
@@ -8524,13 +8518,7 @@
           );
           return;
         }
-        const cachedPages =
-          adminPreviewState &&
-          adminPreviewState.tplId === curTplId &&
-          adminPreviewState.beneficiaryId === beneficiaryId
-            ? adminPreviewState.pages
-            : null;
-        printDocPaginated(liveTpl, person, cachedPages);
+        printDocPaginated(liveTpl, person);
       };
 
       // -- Zoom --
