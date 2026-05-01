@@ -3,7 +3,6 @@ BEGIN
 CREATE TABLE [family] (
   id NVARCHAR(64) PRIMARY KEY,
   nom NVARCHAR(255) NOT NULL,
-  icon NVARCHAR(32) DEFAULT '',
   description NVARCHAR(MAX) NULL,
   beneficiary_mode NVARCHAR(32) NULL,
   beneficiary_table NVARCHAR(128) NULL,

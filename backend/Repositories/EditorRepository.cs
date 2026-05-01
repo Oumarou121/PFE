@@ -49,7 +49,7 @@ namespace DocApi.Repositories
             var hasBeneficiarySql = await TableHasColumnAsync("family", "beneficiary_sql_text");
             var hasFilterCatalog = await TableHasColumnAsync("family", "filter_catalog_json");
             var sql = $"""
-                SELECT id, nom, icon, description,
+                SELECT id, nom, description,
                        {(hasBeneficiaryMode ? "beneficiary_mode" : "'table'")} AS beneficiary_mode,
                        {(hasBeneficiaryTable ? "beneficiary_table" : "NULL")} AS beneficiary_table,
                        {(hasBeneficiaryLinkColumn ? "beneficiary_link_column" : "NULL")} AS beneficiary_link_column,
@@ -70,7 +70,6 @@ namespace DocApi.Repositories
                 {
                     id = Str(item, "id"),
                     nom = Str(item, "nom"),
-                    icon = Str(item, "icon"),
                     description = Str(item, "description"),
                     beneficiaryMode = Str(item, "beneficiary_mode") == "organization" ? "organization" : "table",
                     beneficiaryTable = Str(item, "beneficiary_mode") == "organization" ? null : Str(item, "beneficiary_table"),
@@ -98,17 +97,17 @@ namespace DocApi.Repositories
             await connection.ExecuteAsync("""
                 MERGE family AS target
                 USING (SELECT @id AS id) AS src ON target.id = src.id
-                WHEN MATCHED THEN UPDATE SET nom = @nom, icon = @icon, description = @description,
+                                WHEN MATCHED THEN UPDATE SET nom = @nom, description = @description,
                   beneficiary_mode = @beneficiary_mode, beneficiary_table = @beneficiary_table,
                   beneficiary_link_column = @beneficiary_link_column,
                   beneficiary_display_column_1 = @beneficiary_display_column_1,
                   beneficiary_display_column_2 = @beneficiary_display_column_2,
                   beneficiary_sql_text = @beneficiary_sql_text, filter_catalog_json = @filter_catalog_json,
                   sql_text = @sql_text, classes_json = @classes_json
-                WHEN NOT MATCHED THEN INSERT (id, nom, icon, description, beneficiary_mode, beneficiary_table,
+                                WHEN NOT MATCHED THEN INSERT (id, nom, description, beneficiary_mode, beneficiary_table,
                   beneficiary_link_column, beneficiary_display_column_1, beneficiary_display_column_2,
                   beneficiary_sql_text, filter_catalog_json, sql_text, created_at, classes_json)
-                  VALUES (@id, @nom, @icon, @description, @beneficiary_mode, @beneficiary_table,
+                                    VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table,
                   @beneficiary_link_column, @beneficiary_display_column_1, @beneficiary_display_column_2,
                   @beneficiary_sql_text, @filter_catalog_json, @sql_text, @created_at, @classes_json);
                 """, FamilyParams(family));
@@ -721,17 +720,16 @@ namespace DocApi.Repositories
         private static Task InsertFamilyAsync(IDbConnection connection, IDbTransaction transaction, JsonObject family)
         {
             return connection.ExecuteAsync("""
-                INSERT INTO family (id, nom, icon, description, beneficiary_mode, beneficiary_table, beneficiary_link_column,
+                                INSERT INTO family (id, nom, description, beneficiary_mode, beneficiary_table, beneficiary_link_column,
                   beneficiary_display_column_1, beneficiary_display_column_2, beneficiary_sql_text, filter_catalog_json,
                   sql_text, created_at, classes_json)
-                VALUES (@id, @nom, @icon, @description, @beneficiary_mode, @beneficiary_table, @beneficiary_link_column,
+                                VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table, @beneficiary_link_column,
                   @beneficiary_display_column_1, @beneficiary_display_column_2, @beneficiary_sql_text, @filter_catalog_json,
                   @sql_text, @created_at, @classes_json)
                 """, new
             {
                 id = JString(family, "id"),
                 nom = JString(family, "nom") ?? "",
-                icon = JString(family, "icon") ?? "",
                 description = JString(family, "description") ?? "",
                 beneficiary_mode = JString(family, "beneficiaryMode") == "organization" ? "organization" : "table",
                 beneficiary_table = JString(family, "beneficiaryMode") == "organization" ? null : JString(family, "beneficiaryTable"),
@@ -832,7 +830,6 @@ namespace DocApi.Repositories
         {
             id = JString(family, "id"),
             nom = JString(family, "nom") ?? "",
-            icon = JString(family, "icon") ?? "",
             description = JString(family, "description") ?? "",
             beneficiary_mode = JString(family, "beneficiaryMode") == "organization" ? "organization" : "table",
             beneficiary_table = JString(family, "beneficiaryMode") == "organization" ? null : JString(family, "beneficiaryTable"),

@@ -6,7 +6,6 @@ namespace DocApi.Domain.Entities
     {
         public string Id { get; set; } = string.Empty;
         public string Nom { get; set; } = string.Empty;
-        public string Icon { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string BeneficiaryMode { get; set; } = "table";
         public string? BeneficiaryTable { get; set; }

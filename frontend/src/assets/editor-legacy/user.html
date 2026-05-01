@@ -653,10 +653,6 @@
         border-color: var(--accent);
         background: var(--accent-bg);
       }
-      .fam-icon {
-        font-size: 20px;
-        margin-bottom: 4px;
-      }
       .fam-name {
         font-size: 11px;
         font-weight: 600;
@@ -1627,9 +1623,7 @@
             ? "Organization"
             : "Bénéficiaire";
         ps1.className = "pb-step" + (selFamId ? " done" : " cur");
-        ps1.textContent = fam
-          ? fam.icon + " " + fam.nom.substring(0, 16)
-          : "Famille";
+        ps1.textContent = fam ? fam.nom.substring(0, 16) : "Famille";
         ps2.className =
           "pb-step" + (selTplId ? " done" : selFamId ? " cur" : "");
         ps2.textContent = tpl ? tpl.nom.substring(0, 16) : "Template";
@@ -2295,7 +2289,7 @@
             card.style.opacity = ".4";
             card.style.pointerEvents = "none";
           }
-          card.innerHTML = `<div class="fam-icon">${fam.icon || "📋"}</div><div class="fam-name">${fam.nom}</div><div class="fam-meta">${tplCount} modèle(s)</div>`;
+          card.innerHTML = `<div class="fam-name">${fam.nom}</div><div class="fam-meta">${tplCount} modèle(s)</div>`;
           card.onclick = () => selectFamily(fam.id);
           grid.appendChild(card);
         });
@@ -2312,7 +2306,7 @@
         refreshBeneficiaryLabels();
         const fam = DB.getFamily(famId);
         const sv1 = document.getElementById("sv1");
-        sv1.textContent = fam.icon + " " + fam.nom;
+        sv1.textContent = fam.nom;
         sv1.className = "step-val ok";
         setStepState(1, "done");
         setStepState(2, "cur");

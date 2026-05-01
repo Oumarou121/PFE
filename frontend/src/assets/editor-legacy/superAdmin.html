@@ -1644,7 +1644,7 @@
               const item = document.createElement("div");
               item.className =
                 "list-item" + (selectedFamId === fam.id ? " active" : "");
-              item.innerHTML = `<div class="list-item-icon">${fam.icon}</div><div class="list-item-body"><div class="list-item-name">${fam.nom}</div><div class="list-item-meta">${fam.classes?.length || 0} classes · ${tplCount} templates · ${beneficiaryMeta}</div></div><span class="list-item-badge">${tplCount}</span>`;
+              item.innerHTML = `<div class="list-item-body"><div class="list-item-name">${fam.nom}</div><div class="list-item-meta">${fam.classes?.length || 0} classes · ${tplCount} templates · ${beneficiaryMeta}</div></div><span class="list-item-badge">${tplCount}</span>`;
               item.onclick = () => {
                 selectedFamId = fam.id;
                 renderLeftPanel();
@@ -1724,7 +1724,6 @@
         DB.saveFamily({
           id,
           nom: "Nouvelle famille",
-          icon: "📄",
           description: "",
           beneficiaryMode: "organization",
           beneficiaryTable: null,
@@ -1754,12 +1753,9 @@
         wrap.innerHTML = `
 <div class="flex gap-8" style="margin-bottom:20px">
   <div>
-    <div class="flex gap-8">
-      <span style="font-size:24px">${fam.icon}</span>
-      <div>
-        <div style="font-size:18px;font-weight:700;color:var(--text)">${fam.nom}</div>
-        <div class="text-muted">${fam.id} · créé le ${new Date(fam.createdAt).toLocaleDateString("fr-FR")}</div>
-      </div>
+    <div>
+      <div style="font-size:18px;font-weight:700;color:var(--text)">${fam.nom}</div>
+      <div class="text-muted">${fam.id} · créé le ${new Date(fam.createdAt).toLocaleDateString("fr-FR")}</div>
     </div>
   </div>
   <div class="ml-auto flex gap-8">
@@ -1802,7 +1798,6 @@
     <div class="form-grid c3">
       <div class="form-row" style="margin:0"><label class="form-label">Nom <span class="req">*</span></label><input class="form-input" id="fNom" value="${escAttr(fam.nom)}" placeholder="Ex: Attestation de travail" oninput="updateFamilyDraftField('${famId}', 'nom', this.value)"></div>
       <div class="form-row" style="margin:0"><label class="form-label">Description</label><input class="form-input" id="fDesc" value="${escAttr(fam.description || "")}" placeholder="Description courte" oninput="updateFamilyDraftField('${famId}', 'description', this.value)"></div>
-      <div class="form-row" style="margin:0"><label class="form-label">Icône (emoji)</label><input class="form-input" id="fIcon" value="${escAttr(fam.icon)}" placeholder="📋" style="text-align:center;font-size:20px" oninput="updateFamilyDraftField('${famId}', 'icon', this.value)"></div>
     </div>
     <div class="form-grid c3" style="margin-top:14px">
       <div class="form-row" style="margin:0">
@@ -5312,7 +5307,7 @@
       window.updateFamilyDraftField = function (famId, field, value) {
         const fam = DB.getFamily(famId);
         if (!fam) return;
-        fam[field] = field === "icon" ? value || "📄" : value;
+        fam[field] = value;
         if (field === "sql") {
           fam.customMainSql = true;
         }
@@ -5363,7 +5358,6 @@
         }
         fam.nom = document.getElementById("fNom")?.value || fam.nom;
         fam.description = document.getElementById("fDesc")?.value || "";
-        fam.icon = document.getElementById("fIcon")?.value || "📄";
         fam.beneficiaryMode =
           beneficiaryModeValue === "organization" ? "organization" : "table";
         fam.beneficiaryTable =
@@ -6269,7 +6263,9 @@
 
       function buildTableViewPreviewLabel(item, record = {}) {
         const parts = (item?.previewFields || [])
-          .map((field) => resolveTableViewDisplayValue(item, field, record?.[field]))
+          .map((field) =>
+            resolveTableViewDisplayValue(item, field, record?.[field]),
+          )
           .map((value) => String(value ?? "").trim())
           .filter(Boolean);
         return parts.join(" - ").trim();
@@ -6628,7 +6624,8 @@
           }) ||
           {};
         const previewLabel =
-          buildTableViewPreviewLabel(item, selectedRow) || selectedTableViewRowId;
+          buildTableViewPreviewLabel(item, selectedRow) ||
+          selectedTableViewRowId;
         document.getElementById("confirmMsg").textContent =
           `La ligne "${previewLabel}" sera supprimée de ${item.tableName}.`;
         document.getElementById("confirmBtn").onclick = async () => {
