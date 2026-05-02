@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal QualityOS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #F5F6F7;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: 1px solid #217346;
+            border-radius: 2px;
+            background: #217346;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            background: #185C37;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .status.success {
+            background: #EAF5EE;
+            color: #107C41;
+            border: 1px solid #A8D5B8;
+        }
+        
+        .status.error {
+            background: #FEF2F2;
+            color: #9B1C1C;
+            border: 1px solid #F4AAAA;
+        }
+        
+        .instructions {
+            background: #EBF5FB;
+            color: #1A5276;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border: 1px solid #A9CCE3;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+        }
+        
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test des Fonctionnalités QualityOS</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instructions de Test</h3>
+            <ol>
+                <li>Assurez-vous que l'application Angular est démarrée sur <strong>http://localhost:4200</strong></li>
+                <li>Connectez-vous avec les identifiants : <strong>admin@test.com</strong> / <strong>admin123</strong></li>
+                <li>Naviguez vers la page <strong>Processus</strong> dans le menu</li>
+                <li>Testez les fonctionnalités suivantes :</li>
+            </ol>
+        </div>
+        
+        <h2>🔧 Fonctionnalités à Tester</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <h3>✅ Ajout de Processus</h3>
+                <ul>
+                    <li>Cliquer sur "Nouveau processus"</li>
+                    <li>Remplir le formulaire</li>
+                    <li>Sélectionner un pilote</li>
+                    <li>Ajuster le score de conformité</li>
+                    <li>Sauvegarder</li>
+                </ul>
+                <div class="status success">
+                    ✓ Modal doit s'ouvrir et permettre la création
+                </div>
+            </div>
+            
+            <div>
+                <h3>✏️ Modification de Processus</h3>
+                <ul>
+                    <li>Cliquer sur une carte de processus</li>
+                    <li>Ou utiliser le bouton "Modifier" (icône crayon)</li>
+                    <li>Modifier les informations</li>
+                    <li>Sauvegarder les changements</li>
+                </ul>
+                <div class="status success">
+                    ✓ Modal doit s'ouvrir avec les données pré-remplies
+                </div>
+            </div>
+            
+            <div>
+                <h3>🗑️ Suppression de Processus</h3>
+                <ul>
+                    <li>Cliquer sur le bouton "Supprimer" (icône poubelle)</li>
+                    <li>Confirmer la suppression</li>
+                </ul>
+                <div class="status success">
+                    ✓ Modal de confirmation doit apparaître
+                </div>
+            </div>
+            
+            <div>
+                <h3>🔔 Messages Toast</h3>
+                <ul>
+                    <li>Après chaque action (création, modification, suppression)</li>
+                    <li>Messages de succès ou d'erreur</li>
+                </ul>
+                <div class="status success">
+                    ✓ Toast doit apparaître en bas à droite
+                </div>
+            </div>
+        </div>
+        
+        <h2>🚀 Liens Rapides</h2>
+        <a href="http://localhost:4200" class="btn" target="_blank">
+            🌐 Ouvrir l'Application
+        </a>
+        <a href="http://localhost:4200/processus" class="btn" target="_blank">
+            📊 Page Processus
+        </a>
+        <a href="http://localhost:3001" class="btn" target="_blank">
+            🔧 API Mock (JSON Server)
+        </a>
+        
+        <h2>🐛 Problèmes Courants et Solutions</h2>
+        
+        <div style="background: #FEF9E7; padding: 15px; border-radius: 4px; border: 1px solid #F0D060; margin: 20px 0;">
+            <h4 style="color: #7D6608; margin-top: 0;">⚠️ Si les modales ne s'ouvrent pas :</h4>
+            <ul style="color: #7D6608;">
+                <li>Vérifiez la console du navigateur (F12) pour les erreurs</li>
+                <li>Assurez-vous que Angular Material est correctement importé</li>
+                <li>Redémarrez le serveur de développement</li>
+            </ul>
+        </div>
+        
+        <div style="background: #FEF2F2; padding: 15px; border-radius: 4px; border: 1px solid #F4AAAA; margin: 20px 0;">
+            <h4 style="color: #9B1C1C; margin-top: 0;">❌ Si les données ne se sauvegardent pas :</h4>
+            <ul style="color: #9B1C1C;">
+                <li>Vérifiez que le serveur JSON (port 3001) fonctionne</li>
+                <li>Contrôlez les appels API dans l'onglet Network</li>
+                <li>Vérifiez les logs de la console</li>
+            </ul>
+        </div>
+        
+        <h2>📊 État des Services</h2>
+        <div id="service-status">
+            <div class="status error">❌ Vérification en cours...</div>
+        </div>
+    </div>
+    
+    <script>
+        // Test de connectivité des services
+        async function checkServices() {
+            const statusDiv = document.getElementById('service-status');
+            let html = '';
+            
+            try {
+                // Test Angular
+                const angularResponse = await fetch('http://localhost:4200');
+                if (angularResponse.ok) {
+                    html += '<div class="status success">✅ Angular App (Port 4200) - Actif</div>';
+                } else {
+                    html += '<div class="status error">❌ Angular App (Port 4200) - Erreur</div>';
+                }
+            } catch (e) {
+                html += '<div class="status error">❌ Angular App (Port 4200) - Non accessible</div>';
+            }
+            
+            try {
+                // Test API
+                const apiResponse = await fetch('http://localhost:3001');
+                if (apiResponse.ok) {
+                    html += '<div class="status success">✅ API Mock (Port 3001) - Actif</div>';
+                } else {
+                    html += '<div class="status error">❌ API Mock (Port 3001) - Erreur</div>';
+                }
+            } catch (e) {
+                html += '<div class="status error">❌ API Mock (Port 3001) - Non accessible</div>';
+            }
+            
+            statusDiv.innerHTML = html;
+        }
+        
+        // Vérifier les services au chargement
+        checkServices();
+        
+        // Revérifier toutes les 30 secondes
+        setInterval(checkServices, 30000);
+    </script>
+</body>
+</html>

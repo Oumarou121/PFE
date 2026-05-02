@@ -1,0 +1,18 @@
+
+<div class="topbar-user">
+  <div class="user-info">
+    <div class="topbar-user-name">{{currentUser?.name || 'Utilisateur'}}</div>
+    <div class="topbar-user-role">Responsable Qualité</div>
+  </div>
+  <div class="user-menu">
+    <div class="topbar-user-av">{{getInitials()}}</div>
+    <div class="user-dropdown">
+      <button class="dropdown-item" (click)="logout()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/>
+        </svg>
+        Se déconnecter
+      </button>
+    </div>
+  </div>
+</div>

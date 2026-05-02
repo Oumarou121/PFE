@@ -1,0 +1,179 @@
+<div class="modal-header">
+  <div class="modal-title">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M12 4v16m8-8H4"/>
+    </svg>
+    {{data.isEdit ? 'Modifier le processus' : 'Nouveau processus'}}
+  </div>
+  <button class="modal-close" (click)="onCancel()">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+  </button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="processForm" (ngSubmit)="onSave()">
+    <div class="form-section">
+      <div class="form-section-title">Informations générales</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Code <span class="req">*</span></label>
+          <input type="text" formControlName="code" placeholder="Ex : P-19">
+          <div *ngIf="processForm.get('code')?.invalid && processForm.get('code')?.touched" 
+               class="error-message">
+            Le code est requis
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Intitulé <span class="req">*</span></label>
+          <input type="text" formControlName="name" placeholder="Ex : Gestion des ressources humaines">
+          <div *ngIf="processForm.get('name')?.invalid && processForm.get('name')?.touched" 
+               class="error-message">
+            L'intitulé est requis
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Type <span class="req">*</span></label>
+          <select formControlName="type">
+            <option value="">— Sélectionner —</option>
+            <option [value]="ProcessType.PILOTAGE">{{ProcessType.PILOTAGE}}</option>
+            <option [value]="ProcessType.OPERATIONNEL">{{ProcessType.OPERATIONNEL}}</option>
+            <option [value]="ProcessType.SUPPORT">{{ProcessType.SUPPORT}}</option>
+            <option [value]="ProcessType.MESURE">{{ProcessType.MESURE}}</option>
+          </select>
+          <div *ngIf="processForm.get('type')?.invalid && processForm.get('type')?.touched" 
+               class="error-message">
+            Le type est requis
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Clause ISO 9001</label>
+          <select formControlName="clauseISO">
+            <option value="">— Sélectionner —</option>
+            <option value="§4 - Contexte">§4 - Contexte</option>
+            <option value="§5 - Leadership">§5 - Leadership</option>
+            <option value="§6 - Planification">§6 - Planification</option>
+            <option value="§7 - Support">§7 - Support</option>
+            <option value="§8 - Réalisation">§8 - Réalisation</option>
+            <option value="§9 - Évaluation">§9 - Évaluation</option>
+            <option value="§10 - Amélioration">§10 - Amélioration</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Objectif <span class="req">*</span></label>
+          <textarea formControlName="objective" placeholder="Décrire l'objectif principal de ce processus..."></textarea>
+          <div *ngIf="processForm.get('objective')?.invalid && processForm.get('objective')?.touched" 
+               class="error-message">
+            L'objectif est requis
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Responsabilité</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Pilote <span class="req">*</span></label>
+          <div class="owner-chips">
+            <div class="owner-chip" 
+                 [class.sel]="processForm.get('pilot')?.value === 'A. Mansouri'"
+                 (click)="selectPilot('A. Mansouri')">
+              <div class="owner-av" style="background:var(--xl-green-mid)">AM</div>
+              A. Mansouri
+            </div>
+            <div class="owner-chip" 
+                 [class.sel]="processForm.get('pilot')?.value === 'K. Mrad'"
+                 (click)="selectPilot('K. Mrad')">
+              <div class="owner-av" style="background:#6C3483">KM</div>
+              K. Mrad
+            </div>
+            <div class="owner-chip" 
+                 [class.sel]="processForm.get('pilot')?.value === 'S. Ben Ali'"
+                 (click)="selectPilot('S. Ben Ali')">
+              <div class="owner-av" style="background:#1A5276">SB</div>
+              S. Ben Ali
+            </div>
+            <div class="owner-chip" 
+                 [class.sel]="processForm.get('pilot')?.value === 'R. Haddad'"
+                 (click)="selectPilot('R. Haddad')">
+              <div class="owner-av" style="background:#9B1C1C">RH</div>
+              R. Haddad
+            </div>
+          </div>
+          <div *ngIf="processForm.get('pilot')?.invalid && processForm.get('pilot')?.touched" 
+               class="error-message">
+            Le pilote est requis
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Fréquence de revue</label>
+          <select formControlName="reviewFrequency">
+            <option [value]="ReviewFrequency.MENSUELLE">{{ReviewFrequency.MENSUELLE}}</option>
+            <option [value]="ReviewFrequency.TRIMESTRIELLE">{{ReviewFrequency.TRIMESTRIELLE}}</option>
+            <option [value]="ReviewFrequency.SEMESTRIELLE">{{ReviewFrequency.SEMESTRIELLE}}</option>
+            <option [value]="ReviewFrequency.ANNUELLE">{{ReviewFrequency.ANNUELLE}}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date de création</label>
+          <input type="date" formControlName="createdDate">
+        </div>
+        <div class="form-group">
+          <label>Prochaine revue</label>
+          <input type="date" formControlName="nextReview">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Indicateurs (KPI)</div>
+      <div class="kpi-list">
+        <div *ngFor="let kpi of kpis; let i = index" class="kpi-row">
+          <svg fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px;flex-shrink:0">
+            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/>
+          </svg>
+          <input type="text" [(ngModel)]="kpis[i]" [ngModelOptions]="{standalone: true}">
+          <button type="button" class="rm-btn" (click)="removeKPI(i)">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <button type="button" class="add-kpi" (click)="addKPI()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 4v16m8-8H4"/>
+        </svg>
+        Ajouter un indicateur
+      </button>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Score de conformité initial</div>
+      <div style="max-width:360px">
+        <label style="display:block;margin-bottom:8px">Auto-évaluation du pilote</label>
+        <div class="score-row">
+          <input type="range" 
+                 class="word-slider" 
+                 min="0" 
+                 max="100" 
+                 formControlName="conformityScore"
+                 (input)="updateScoreDisplay()">
+          <div class="score-val" [style.color]="getScoreColor()">
+            {{processForm.get('conformityScore')?.value}}%
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-ghost" (click)="onCancel()">Annuler</button>
+  <button type="button" class="btn btn-secondary">Enregistrer brouillon</button>
+  <button type="button" class="btn btn-primary" (click)="onSave()" [disabled]="processForm.invalid">
+    ✓ {{data.isEdit ? 'Modifier' : 'Créer'}} le processus
+  </button>
+</div>

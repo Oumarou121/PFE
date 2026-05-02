@@ -1,0 +1,102 @@
+{
+  "auth": {
+    "email": "admin@test.com",
+    "password": "admin123",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIFVzZXIiLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+  },
+  "processes": [
+    {
+      "id": 1,
+      "code": "P-01",
+      "name": "Gestion des ressources humaines",
+      "type": "OPERATIONNEL",
+      "objective": "Assurer le recrutement, la formation et la gestion du personnel",
+      "pilot": "A. Mansouri",
+      "clauseISO": "§7 - Support",
+      "reviewFrequency": "TRIMESTRIELLE",
+      "conformityScore": 85,
+      "status": "CONFORME",
+      "createdDate": "2024-01-15",
+      "nextReview": "2024-04-15",
+      "proceduresCount": 3,
+      "documentsCount": 12
+    },
+    {
+      "id": 2,
+      "code": "P-02",
+      "name": "Gestion de la qualité",
+      "type": "PILOTAGE",
+      "objective": "Piloter et améliorer le système qualité",
+      "pilot": "K. Mrad",
+      "clauseISO": "§5 - Leadership",
+      "reviewFrequency": "MENSUELLE",
+      "conformityScore": 92,
+      "status": "CONFORME",
+      "createdDate": "2024-01-10",
+      "nextReview": "2024-04-10",
+      "proceduresCount": 5,
+      "documentsCount": 18
+    },
+    {
+      "id": 3,
+      "code": "P-03",
+      "name": "Maintenance des équipements",
+      "type": "SUPPORT",
+      "objective": "Maintenir les équipements en état de fonctionnement",
+      "pilot": "S. Ben Ali",
+      "clauseISO": "§7 - Support",
+      "reviewFrequency": "MENSUELLE",
+      "conformityScore": 68,
+      "status": "A_SURVEILLER",
+      "createdDate": "2024-01-20",
+      "nextReview": "2024-04-20",
+      "proceduresCount": 2,
+      "documentsCount": 8
+    },
+    {
+      "id": 4,
+      "code": "P-04",
+      "name": "Contrôle qualité produits",
+      "type": "MESURE",
+      "objective": "Contrôler la conformité des produits",
+      "pilot": "R. Haddad",
+      "clauseISO": "§9 - Évaluation",
+      "reviewFrequency": "MENSUELLE",
+      "conformityScore": 45,
+      "status": "NON_CONFORME",
+      "createdDate": "2024-01-25",
+      "nextReview": "2024-04-25",
+      "proceduresCount": 4,
+      "documentsCount": 15
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john.doe@example.com",
+      "role": "Admin",
+      "status": "Active",
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": 2,
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane.smith@example.com",
+      "role": "User",
+      "status": "Active",
+      "createdAt": "2024-01-16T14:20:00Z"
+    },
+    {
+      "id": 3,
+      "firstName": "Bob",
+      "lastName": "Johnson",
+      "email": "bob.johnson@example.com",
+      "role": "User",
+      "status": "Inactive",
+      "createdAt": "2024-01-17T09:15:00Z"
+    }
+  ]
+}

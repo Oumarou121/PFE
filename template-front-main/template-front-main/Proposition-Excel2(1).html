@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QualityOS — Plateforme ISO</title>
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Excel Modern Green */
+    --xl-green:        #185C37;
+    --xl-green-mid:    #217346;
+    --xl-green-light:  #1E8449;
+    --xl-green-xlight: #E9F5EE;
+    --xl-green-hover:  #D5EAE0;
+
+    /* Gris froid Office 365 */
+    --bg-body:    #F5F6F7;
+    --bg-white:   #FFFFFF;
+    --bg-sidebar: #F0F1F2;
+    --bg-raised:  #F8F9FA;
+    --border:     #E1E3E5;
+    --border-mid: #C8CDD0;
+
+    /* Texte */
+    --text-primary:   #1A1A1A;
+    --text-secondary: #505860;
+    --text-muted:     #8F959C;
+
+    /* Statuts */
+    --s-green:        #107C41;
+    --s-green-bg:     #EAF5EE;
+    --s-green-border: #A8D5B8;
+    --s-yellow:       #7D6608;
+    --s-yellow-bg:    #FEF9E7;
+    --s-yellow-border:#F0D060;
+    --s-red:          #9B1C1C;
+    --s-red-bg:       #FEF2F2;
+    --s-red-border:   #F4AAAA;
+    --s-blue:         #1A5276;
+    --s-blue-bg:      #EBF5FB;
+    --s-blue-border:  #A9CCE3;
+
+    --topbar-h: 48px;
+    --sidebar-w: 220px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.06);
+    --radius: 2px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg-body);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  /* ═══ TOPBAR ═══ */
+  .topbar {
+    height: var(--topbar-h);
+    background: var(--xl-green);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    flex-shrink: 0;
+    gap: 12px;
+  }
+
+  .topbar-brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .brand-icon svg { width: 15px; height: 15px; }
+  .brand-name { font-size: 15px; font-weight: 700; color: white; letter-spacing: -0.1px; }
+  .brand-name span { color: #90EE90; }
+  .brand-tag {
+    font-size: 10px; font-weight: 600;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.8);
+    padding: 2px 7px; border-radius: 2px;
+    letter-spacing: 0.4px;
+  }
+
+  .topbar-sep { flex: 1; }
+
+  .topbar-notif {
+    width: 32px; height: 32px; border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+    color: rgba(255,255,255,0.8); transition: background 0.1s;
+  }
+  .topbar-notif:hover { background: rgba(255,255,255,0.12); color: white; }
+  .topbar-notif svg { width: 17px; height: 17px; }
+  .notif-dot {
+    position: absolute; top: 5px; right: 5px;
+    width: 7px; height: 7px; background: #E74C3C;
+    border-radius: 50%; border: 1.5px solid var(--xl-green);
+  }
+
+  .topbar-user {
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; padding: 5px 10px; border-radius: var(--radius);
+    transition: background 0.1s;
+  }
+  .topbar-user:hover { background: rgba(255,255,255,0.1); }
+  .topbar-user-av {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.22);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: white;
+  }
+  .topbar-user-name { font-size: 12.5px; font-weight: 600; color: white; }
+  .topbar-user-role { font-size: 10.5px; color: rgba(255,255,255,0.65); }
+
+  /* ═══ APP BODY ═══ */
+  .app-body { flex: 1; display: flex; overflow: hidden; }
+
+  /* ═══ SIDEBAR ═══ */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    flex-shrink: 0; overflow-y: auto;
+  }
+
+  .nav-section { padding: 16px 0 4px; }
+  .nav-section-title {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); padding: 0 16px 6px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 16px; cursor: pointer;
+    font-size: 13px; color: var(--text-secondary);
+    transition: background 0.1s, color 0.1s;
+    border-left: 3px solid transparent;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--xl-green-hover); color: var(--xl-green); }
+  .nav-item.active {
+    background: var(--xl-green-xlight);
+    border-left-color: var(--xl-green-mid);
+    color: var(--xl-green);
+    font-weight: 600;
+  }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; background: var(--s-red);
+    color: white; font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 10px;
+  }
+
+  .sidebar-footer {
+    margin-top: auto; padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted); text-align: center;
+  }
+
+  /* ═══ CONTENT ═══ */
+  .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .page-header-bar {
+    background: var(--bg-white);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .page-header-bar h1 { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .page-header-bar .sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .ph-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border: 1px solid;
+    border-radius: var(--radius); cursor: pointer;
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    transition: all 0.1s;
+  }
+  .btn svg { width: 13px; height: 13px; }
+  .btn-primary { background: var(--xl-green-mid); color: white; border-color: var(--xl-green-mid); }
+  .btn-primary:hover { background: var(--xl-green); border-color: var(--xl-green); }
+  .btn-secondary { background: white; color: var(--xl-green); border-color: var(--xl-green-mid); }
+  .btn-secondary:hover { background: var(--xl-green-xlight); }
+  .btn-ghost { background: white; color: var(--text-secondary); border-color: var(--border-mid); }
+  .btn-ghost:hover { background: var(--bg-raised); border-color: var(--border-mid); }
+
+  .content-scroll { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* ═══ VIEWS ═══ */
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ═══ TAGS ═══ */
+  .tag {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 2px;
+    font-size: 11px; font-weight: 600; border: 1px solid;
+  }
+  .tag.conforme { background: var(--s-green-bg);  color: var(--s-green);  border-color: var(--s-green-border); }
+  .tag.revision { background: var(--s-yellow-bg); color: var(--s-yellow); border-color: var(--s-yellow-border); }
+  .tag.perime   { background: var(--s-red-bg);    color: var(--s-red);    border-color: var(--s-red-border); }
+  .tag.blue     { background: var(--s-blue-bg);   color: var(--s-blue);   border-color: var(--s-blue-border); }
+  .tag.purple   { background: #F4EEF9; color: #6C3483; border-color: #C39BD3; }
+  .tag.orange   { background: #FEF5E7; color: #935116; border-color: #F0B27A; }
+  .tag.green-t  { background: var(--s-green-bg);  color: var(--s-green);  border-color: var(--s-green-border); }
+  .tag.xl       { background: var(--xl-green-xlight); color: var(--xl-green); border-color: #A8D5B8; }
+
+  /* ═══ TABLE ═══ */
+  .table-wrap { background: var(--bg-white); border: 1px solid var(--border); margin-bottom: 20px; box-shadow: var(--shadow); }
+
+  .table-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: var(--bg-raised);
+    border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .tb-search {
+    display: flex; align-items: center; gap: 6px;
+    background: white; border: 1px solid var(--border-mid);
+    padding: 4px 8px; border-radius: var(--radius); width: 220px;
+  }
+  .tb-search:focus-within { border-color: var(--xl-green-mid); }
+  .tb-search svg { width: 12px; height: 12px; color: var(--text-muted); flex-shrink: 0; }
+  .tb-search input { border: none; outline: none; font-family: inherit; font-size: 12px; width: 100%; color: var(--text-primary); }
+  .tb-search input::placeholder { color: var(--text-muted); }
+
+  .tb-filter {
+    padding: 4px 10px; border: 1px solid var(--border);
+    background: white; border-radius: var(--radius); cursor: pointer;
+    font-size: 12px; font-family: inherit; color: var(--text-secondary);
+    transition: all 0.1s;
+  }
+  .tb-filter:hover { border-color: var(--xl-green-mid); color: var(--xl-green); background: var(--xl-green-xlight); }
+  .tb-filter.active { background: var(--xl-green-mid); color: white; border-color: var(--xl-green-mid); }
+
+  .word-table { width: 100%; border-collapse: collapse; }
+  .word-table th {
+    background: var(--bg-raised);
+    color: var(--text-secondary);
+    text-align: left; padding: 8px 14px;
+    font-size: 11.5px; font-weight: 700;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--border);
+  }
+  .word-table th.sort { cursor: pointer; }
+  .word-table th.sort:hover { color: var(--xl-green); background: var(--xl-green-xlight); }
+  .word-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px; vertical-align: middle;
+  }
+  .word-table tr:nth-child(even) td { background: #FAFBFC; }
+  .word-table tr:hover td { background: var(--xl-green-xlight) !important; }
+  .word-table tr:last-child td { border-bottom: none; }
+
+  .doc-cell { display: flex; align-items: center; gap: 9px; }
+  .doc-icon {
+    width: 28px; height: 28px; border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .doc-icon svg { width: 15px; height: 15px; }
+  .doc-icon.proc   { background: var(--s-blue-bg);  color: var(--s-blue); }
+  .doc-icon.manuel { background: #F4EEF9; color: #6C3483; }
+  .doc-icon.enreg  { background: #FEF5E7; color: #935116; }
+  .doc-icon.form   { background: var(--s-green-bg); color: var(--s-green); }
+
+  .doc-name { font-weight: 600; font-size: 12.5px; color: var(--text-primary); }
+  .doc-ref  { font-size: 10.5px; color: var(--text-muted); font-family: 'Courier New', monospace; }
+
+  .row-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
+  .word-table tr:hover .row-actions { opacity: 1; }
+  .row-btn {
+    width: 24px; height: 24px; border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border: none; background: transparent;
+    color: var(--text-muted); transition: all 0.1s;
+  }
+  .row-btn:hover { background: var(--xl-green-hover); color: var(--xl-green); }
+  .row-btn.del:hover { background: var(--s-red-bg); color: var(--s-red); }
+  .row-btn svg { width: 13px; height: 13px; }
+
+  .table-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: var(--bg-raised);
+    border-top: 1px solid var(--border);
+    font-size: 11.5px; color: var(--text-muted);
+  }
+  .page-btns { display: flex; gap: 3px; }
+  .page-btn {
+    width: 26px; height: 26px; border: 1px solid var(--border);
+    background: white; border-radius: var(--radius); cursor: pointer;
+    font-size: 11.5px; font-weight: 600; color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.1s;
+  }
+  .page-btn:hover { border-color: var(--xl-green-mid); color: var(--xl-green); }
+  .page-btn.active { background: var(--xl-green-mid); color: white; border-color: var(--xl-green-mid); }
+
+  /* ═══ PROCESS CARDS ═══ */
+  .proc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .proc-card {
+    background: var(--bg-white); border: 1px solid var(--border);
+    border-top: 3px solid var(--xl-green-mid);
+    padding: 16px; cursor: pointer;
+    transition: box-shadow 0.15s;
+    box-shadow: var(--shadow);
+  }
+  .proc-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  .proc-card.clr-green  { border-top-color: var(--s-green); }
+  .proc-card.clr-yellow { border-top-color: var(--s-yellow); }
+  .proc-card.clr-red    { border-top-color: var(--s-red); }
+  .proc-card.add {
+    border-style: dashed; border-top-style: dashed;
+    border-color: var(--border-mid); box-shadow: none;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 6px; min-height: 130px;
+    color: var(--text-muted);
+  }
+  .proc-card.add:hover { border-color: var(--xl-green-mid); color: var(--xl-green); background: var(--xl-green-xlight); }
+
+  .pc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .pc-code { font-size: 10px; font-family: 'Courier New', monospace; background: var(--bg-raised); border: 1px solid var(--border); padding: 1px 5px; color: var(--text-muted); }
+  .pc-score { font-size: 20px; font-weight: 700; }
+  .pc-name  { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+  .pc-type  { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+  .pc-bar   { height: 4px; background: var(--border); margin-bottom: 10px; }
+  .pc-bar-fill { height: 100%; }
+  .pc-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 8px; }
+
+  /* ═══ FORM ═══ */
+  .form-panel { background: var(--bg-white); border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow); }
+  .form-header {
+    background: var(--xl-green); color: white;
+    padding: 12px 18px; display: flex; align-items: center; gap: 8px;
+  }
+  .form-header svg { width: 16px; height: 16px; }
+  .form-header-title { font-size: 13.5px; font-weight: 600; }
+  .form-header-sub   { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+  .form-body { padding: 20px 22px; }
+  .form-section { margin-bottom: 22px; }
+  .form-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.7px; color: var(--xl-green);
+    margin-bottom: 14px; padding-bottom: 7px;
+    border-bottom: 1px solid var(--xl-green-xlight);
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 11.5px; font-weight: 600; color: var(--text-secondary); }
+  .req  { color: var(--s-red); }
+  input[type="text"], input[type="date"], select, textarea {
+    width: 100%; padding: 6px 9px;
+    border: 1px solid var(--border-mid); border-radius: var(--radius);
+    font-family: inherit; font-size: 12.5px; color: var(--text-primary);
+    background: white; outline: none;
+    transition: border 0.1s, box-shadow 0.1s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--xl-green-mid);
+    box-shadow: 0 0 0 2px rgba(33,115,70,0.15);
+  }
+  textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238F959C' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; padding-right: 26px; }
+
+  .owner-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .owner-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border: 1px solid var(--border-mid);
+    cursor: pointer; font-size: 12px; color: var(--text-secondary);
+    background: white; transition: all 0.1s;
+  }
+  .owner-chip:hover { border-color: var(--xl-green-mid); color: var(--xl-green); background: var(--xl-green-xlight); }
+  .owner-chip.sel { border-color: var(--xl-green-mid); background: var(--xl-green-xlight); color: var(--xl-green); font-weight: 600; }
+  .owner-av { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: white; }
+
+  .kpi-list { display: flex; flex-direction: column; gap: 6px; }
+  .kpi-row { display: flex; align-items: center; gap: 7px; padding: 6px 10px; background: var(--bg-raised); border: 1px solid var(--border); }
+  .kpi-row input { flex: 1; border: none; background: transparent; outline: none; font-family: inherit; font-size: 12.5px; color: var(--text-primary); }
+  .rm-btn { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; background: transparent; color: var(--text-muted); }
+  .rm-btn:hover { color: var(--s-red); }
+  .rm-btn svg { width: 11px; height: 11px; }
+  .add-kpi {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 10px; border: 1px dashed var(--border-mid);
+    background: transparent; cursor: pointer;
+    font-size: 12px; color: var(--text-muted); font-family: inherit; width: 100%;
+    margin-top: 6px; transition: all 0.1s;
+  }
+  .add-kpi:hover { border-color: var(--xl-green-mid); color: var(--xl-green); background: var(--xl-green-xlight); }
+  .add-kpi svg { width: 12px; height: 12px; }
+
+  .score-row { display: flex; align-items: center; gap: 12px; }
+  .word-slider {
+    -webkit-appearance: none; appearance: none;
+    flex: 1; height: 4px; background: var(--border);
+    outline: none; border: none; padding: 0;
+  }
+  .word-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--xl-green-mid);
+    cursor: pointer; border: 2px solid white;
+    box-shadow: 0 0 0 1px var(--xl-green-mid);
+  }
+  .score-val { font-size: 16px; font-weight: 700; min-width: 42px; text-align: right; }
+
+  .form-actions {
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    padding: 12px 22px; background: var(--bg-raised);
+    border-top: 1px solid var(--border);
+  }
+
+  .prog-bar { height: 4px; background: var(--border); width: 80px; }
+  .prog-fill { height: 100%; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    color: white; padding: 10px 16px;
+    font-size: 12.5px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: var(--shadow); border-radius: var(--radius);
+    transform: translateY(70px); opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast svg { width: 14px; height: 14px; }
+
+  ::-webkit-scrollbar { width: 7px; }
+  ::-webkit-scrollbar-track { background: var(--bg-raised); }
+  ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--xl-green-mid); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">
+      <svg fill="none" stroke="white" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24">
+        <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+      </svg>
+    </div>
+    <span class="brand-name">Quality<span>OS</span></span>
+    <span class="brand-tag">ISO 9001:2015</span>
+  </div>
+  <span class="topbar-sep"></span>
+  <div class="topbar-notif">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+    <span class="notif-dot"></span>
+  </div>
+  <div class="topbar-user">
+    <div style="text-align:right">
+      <div class="topbar-user-name">Amine Mansouri</div>
+      <div class="topbar-user-role">Responsable Qualité</div>
+    </div>
+    <div class="topbar-user-av">AM</div>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-section">
+      <div class="nav-section-title">Général</div>
+      <div class="nav-item active" onclick="nav(this,'dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        Vue d'ensemble
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Gestion qualité</div>
+      <div class="nav-item" onclick="nav(this,'processus')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+        Processus
+      </div>
+      <div class="nav-item" onclick="nav(this,'dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6"/><path d="M9 12l2 2 4-4"/></svg>
+        Procédures
+      </div>
+      <div class="nav-item" onclick="nav(this,'documents')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        Documents
+      </div>
+      <div class="nav-item" onclick="nav(this,'dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        Non-Conformités
+        <span class="nav-badge">7</span>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Pilotage</div>
+      <div class="nav-item" onclick="nav(this,'dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Indicateurs
+      </div>
+      <div class="nav-item" onclick="nav(this,'dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Audits
+      </div>
+      <div class="nav-item" onclick="nav(this,'dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        Paramètres
+      </div>
+    </div>
+    <div class="sidebar-footer">QualityOS v2.1 · 28 fév. 2026</div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+    <div class="page-header-bar">
+      <div>
+        <h1 id="ph-title">Vue d'ensemble</h1>
+        <div class="sub" id="ph-sub">Système de Management de la Qualité — ISO 9001:2015</div>
+      </div>
+      <div class="ph-actions" id="ph-actions"></div>
+    </div>
+
+    <div class="content-scroll">
+
+      <!-- DASHBOARD -->
+      <div id="view-dashboard" class="view active">
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <span style="font-size:12.5px;font-weight:600;color:var(--text-primary)">Processus clés</span>
+            <div style="margin-left:auto">
+              <button class="btn btn-ghost" style="font-size:11.5px;padding:4px 10px" onclick="nav(document.querySelectorAll('.nav-item')[1],'processus')">Voir tout →</button>
+            </div>
+          </div>
+          <table class="word-table">
+            <thead><tr><th>Processus</th><th>Type</th><th>Conformité</th><th>Statut</th><th>Pilote</th></tr></thead>
+            <tbody>
+              <tr><td><div style="font-weight:600">Management de la qualité</div><div class="doc-ref">P-01</div></td><td style="color:var(--text-muted);font-size:12px">Pilotage</td><td><div class="prog-bar"><div class="prog-fill" style="width:94%;background:var(--s-green)"></div></div><div style="font-size:10.5px;color:var(--s-green);font-weight:700;margin-top:3px">94%</div></td><td><span class="tag conforme">● Conforme</span></td><td style="font-size:12px;color:var(--text-secondary)">A. Mansouri</td></tr>
+              <tr><td><div style="font-weight:600">Réalisation du produit</div><div class="doc-ref">P-04</div></td><td style="color:var(--text-muted);font-size:12px">Opérationnel</td><td><div class="prog-bar"><div class="prog-fill" style="width:82%;background:var(--s-green)"></div></div><div style="font-size:10.5px;color:var(--s-green);font-weight:700;margin-top:3px">82%</div></td><td><span class="tag conforme">● Conforme</span></td><td style="font-size:12px;color:var(--text-secondary)">S. Ben Ali</td></tr>
+              <tr><td><div style="font-weight:600">Achats & fournisseurs</div><div class="doc-ref">P-02</div></td><td style="color:var(--text-muted);font-size:12px">Opérationnel</td><td><div class="prog-bar"><div class="prog-fill" style="width:71%;background:var(--s-yellow)"></div></div><div style="font-size:10.5px;color:var(--s-yellow);font-weight:700;margin-top:3px">71%</div></td><td><span class="tag revision">⚠ À surveiller</span></td><td style="font-size:12px;color:var(--text-secondary)">K. Mrad</td></tr>
+              <tr><td><div style="font-weight:600">Étalonnage & métrologie</div><div class="doc-ref">P-07</div></td><td style="color:var(--text-muted);font-size:12px">Support</td><td><div class="prog-bar"><div class="prog-fill" style="width:58%;background:var(--s-red)"></div></div><div style="font-size:10.5px;color:var(--s-red);font-weight:700;margin-top:3px">58%</div></td><td><span class="tag perime">✕ Non conforme</span></td><td style="font-size:12px;color:var(--text-secondary)">R. Haddad</td></tr>
+              <tr><td><div style="font-weight:600">Satisfaction client</div><div class="doc-ref">P-11</div></td><td style="color:var(--text-muted);font-size:12px">Mesure</td><td><div class="prog-bar"><div class="prog-fill" style="width:89%;background:var(--s-green)"></div></div><div style="font-size:10.5px;color:var(--s-green);font-weight:700;margin-top:3px">89%</div></td><td><span class="tag conforme">● Conforme</span></td><td style="font-size:12px;color:var(--text-secondary)">A. Mansouri</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <span style="font-size:12.5px;font-weight:600;color:var(--text-primary)">Non-Conformités ouvertes</span>
+            <div style="margin-left:auto">
+              <button class="btn btn-ghost" style="font-size:11.5px;padding:4px 10px">Voir tout →</button>
+            </div>
+          </div>
+          <table class="word-table">
+            <thead><tr><th>Référence</th><th>Description</th><th>Processus</th><th>Priorité</th><th>Avancement</th><th>Responsable</th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">NC-031</td><td style="font-weight:600">Écart de traçabilité</td><td><span class="tag xl">P-04</span></td><td><span class="tag perime">Élevée</span></td><td><div class="prog-bar"><div class="prog-fill" style="width:20%;background:var(--s-red)"></div></div><div style="font-size:10px;color:var(--text-muted);margin-top:3px">20%</div></td><td style="font-size:12px;color:var(--text-secondary)">R. Haddad</td></tr>
+              <tr><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">NC-028</td><td style="font-weight:600">Calibration non conforme</td><td><span class="tag xl">P-07</span></td><td><span class="tag perime">Élevée</span></td><td><div class="prog-bar"><div class="prog-fill" style="width:55%;background:var(--s-yellow)"></div></div><div style="font-size:10px;color:var(--text-muted);margin-top:3px">55%</div></td><td style="font-size:12px;color:var(--text-secondary)">A. Mansouri</td></tr>
+              <tr><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">NC-025</td><td style="font-weight:600">Délai fournisseur dépassé</td><td><span class="tag xl">P-02</span></td><td><span class="tag revision">Moyenne</span></td><td><div class="prog-bar"><div class="prog-fill" style="width:70%;background:var(--s-yellow)"></div></div><div style="font-size:10px;color:var(--text-muted);margin-top:3px">70%</div></td><td style="font-size:12px;color:var(--text-secondary)">K. Mrad</td></tr>
+              <tr><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">NC-022</td><td style="font-weight:600">Formation manquante</td><td><span class="tag xl">P-11</span></td><td><span class="tag conforme">Faible</span></td><td><div class="prog-bar"><div class="prog-fill" style="width:90%;background:var(--s-green)"></div></div><div style="font-size:10px;color:var(--text-muted);margin-top:3px">90%</div></td><td style="font-size:12px;color:var(--text-secondary)">S. Ben Ali</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PROCESSUS -->
+      <div id="view-processus" class="view">
+        <div id="proc-list">
+          <div class="proc-grid">
+            <div class="proc-card clr-green"><div class="pc-header"><div class="pc-code">P-01</div><div class="pc-score" style="color:var(--s-green)">94%</div></div><div class="pc-name">Management de la qualité</div><div class="pc-type">Processus de pilotage</div><div class="pc-bar"><div class="pc-bar-fill" style="width:94%;background:var(--s-green)"></div></div><div class="pc-footer"><span>5 procédures · 3 docs</span><span style="color:var(--s-green);font-weight:700">● Conforme</span></div></div>
+            <div class="proc-card clr-green"><div class="pc-header"><div class="pc-code">P-04</div><div class="pc-score" style="color:var(--s-green)">82%</div></div><div class="pc-name">Réalisation du produit</div><div class="pc-type">Processus opérationnel</div><div class="pc-bar"><div class="pc-bar-fill" style="width:82%;background:var(--s-green)"></div></div><div class="pc-footer"><span>8 procédures · 12 docs</span><span style="color:var(--s-green);font-weight:700">● Conforme</span></div></div>
+            <div class="proc-card clr-yellow"><div class="pc-header"><div class="pc-code">P-02</div><div class="pc-score" style="color:var(--s-yellow)">71%</div></div><div class="pc-name">Achats et fournisseurs</div><div class="pc-type">Processus opérationnel</div><div class="pc-bar"><div class="pc-bar-fill" style="width:71%;background:var(--s-yellow)"></div></div><div class="pc-footer"><span>4 procédures · 6 docs</span><span style="color:var(--s-yellow);font-weight:700">⚠ À surveiller</span></div></div>
+            <div class="proc-card clr-red"><div class="pc-header"><div class="pc-code">P-07</div><div class="pc-score" style="color:var(--s-red)">58%</div></div><div class="pc-name">Étalonnage & métrologie</div><div class="pc-type">Processus support</div><div class="pc-bar"><div class="pc-bar-fill" style="width:58%;background:var(--s-red)"></div></div><div class="pc-footer"><span>3 procédures · 4 docs</span><span style="color:var(--s-red);font-weight:700">✕ Non conforme</span></div></div>
+            <div class="proc-card clr-green"><div class="pc-header"><div class="pc-code">P-11</div><div class="pc-score" style="color:var(--s-green)">89%</div></div><div class="pc-name">Satisfaction client</div><div class="pc-type">Processus de mesure</div><div class="pc-bar"><div class="pc-bar-fill" style="width:89%;background:var(--s-green)"></div></div><div class="pc-footer"><span>3 procédures · 5 docs</span><span style="color:var(--s-green);font-weight:700">● Conforme</span></div></div>
+            <div class="proc-card add" onclick="showProcForm()">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M12 4v16m8-8H4"/></svg>
+              <div style="font-size:12.5px;font-weight:600">Nouveau processus</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="proc-form" style="display:none">
+          <div class="form-panel">
+            <div class="form-header">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+              <div>
+                <div class="form-header-title">Nouveau processus</div>
+                <div class="form-header-sub">Approche processus — ISO 9001:2015</div>
+              </div>
+            </div>
+            <div class="form-body">
+              <div class="form-section">
+                <div class="form-section-title">Informations générales</div>
+                <div class="form-grid">
+                  <div class="form-group"><label>Code <span class="req">*</span></label><input type="text" id="f-code" placeholder="Ex : P-19"></div>
+                  <div class="form-group"><label>Intitulé <span class="req">*</span></label><input type="text" id="f-name" placeholder="Ex : Gestion des ressources humaines"></div>
+                  <div class="form-group"><label>Type <span class="req">*</span></label><select id="f-type"><option value="">— Sélectionner —</option><option>Processus de pilotage</option><option>Processus opérationnel</option><option>Processus support</option><option>Processus de mesure</option></select></div>
+                  <div class="form-group"><label>Clause ISO 9001</label><select><option value="">— Sélectionner —</option><option>§4 - Contexte</option><option>§5 - Leadership</option><option>§6 - Planification</option><option>§7 - Support</option><option>§8 - Réalisation</option><option>§9 - Évaluation</option><option>§10 - Amélioration</option></select></div>
+                  <div class="form-group full"><label>Objectif <span class="req">*</span></label><textarea id="f-obj" placeholder="Décrire l'objectif principal de ce processus..."></textarea></div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-section-title">Responsabilité</div>
+                <div class="form-grid">
+                  <div class="form-group"><label>Pilote <span class="req">*</span></label>
+                    <div class="owner-chips">
+                      <div class="owner-chip sel" onclick="this.classList.toggle('sel')"><div class="owner-av" style="background:var(--xl-green-mid)">AM</div>A. Mansouri</div>
+                      <div class="owner-chip" onclick="this.classList.toggle('sel')"><div class="owner-av" style="background:#6C3483">KM</div>K. Mrad</div>
+                      <div class="owner-chip" onclick="this.classList.toggle('sel')"><div class="owner-av" style="background:#1A5276">SB</div>S. Ben Ali</div>
+                      <div class="owner-chip" onclick="this.classList.toggle('sel')"><div class="owner-av" style="background:#9B1C1C">RH</div>R. Haddad</div>
+                    </div>
+                  </div>
+                  <div class="form-group"><label>Fréquence de revue</label><select><option>Mensuelle</option><option>Trimestrielle</option><option selected>Semestrielle</option><option>Annuelle</option></select></div>
+                  <div class="form-group"><label>Date de création</label><input type="date" value="2026-02-28"></div>
+                  <div class="form-group"><label>Prochaine revue</label><input type="date" value="2026-08-28"></div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-section-title">Indicateurs (KPI)</div>
+                <div class="kpi-list" id="kpi-list">
+                  <div class="kpi-row"><svg fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px;flex-shrink:0"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/></svg><input type="text" value="Taux de conformité produit"><button class="rm-btn" onclick="this.closest('.kpi-row').remove()"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+                  <div class="kpi-row"><svg fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px;flex-shrink:0"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/></svg><input type="text" value="Délai moyen de traitement"><button class="rm-btn" onclick="this.closest('.kpi-row').remove()"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+                </div>
+                <button class="add-kpi" onclick="addKPI()"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>Ajouter un indicateur</button>
+              </div>
+              <div class="form-section">
+                <div class="form-section-title">Score de conformité initial</div>
+                <div style="max-width:360px">
+                  <label style="display:block;margin-bottom:8px">Auto-évaluation du pilote</label>
+                  <div class="score-row">
+                    <input type="range" class="word-slider" min="0" max="100" value="75" oninput="updScore(this.value)">
+                    <div class="score-val" id="score-val" style="color:var(--s-yellow)">75%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost" onclick="showProcList()">Annuler</button>
+              <button class="btn btn-secondary">Enregistrer brouillon</button>
+              <button class="btn btn-primary" onclick="saveProc()">✓ Créer le processus</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS -->
+      <div id="view-documents" class="view">
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <div class="tb-search"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" placeholder="Rechercher..." oninput="filterDocs(this.value)"></div>
+            <div id="type-fg" style="display:flex;gap:4px">
+              <button class="tb-filter active" onclick="setF(this,'t','all')">Tous</button>
+              <button class="tb-filter" onclick="setF(this,'t','Manuel')">Manuels</button>
+              <button class="tb-filter" onclick="setF(this,'t','Procédure')">Procédures</button>
+              <button class="tb-filter" onclick="setF(this,'t','Enregistrement')">Enregistrements</button>
+              <button class="tb-filter" onclick="setF(this,'t','Formulaire')">Formulaires</button>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:5px;align-items:center">
+              <span style="font-size:11.5px;color:var(--text-muted)">Statut :</span>
+              <div id="stat-fg" style="display:flex;gap:4px">
+                <button class="tb-filter active" onclick="setF(this,'s','all')">Tous</button>
+                <button class="tb-filter" onclick="setF(this,'s','Approuvé')">Approuvés</button>
+                <button class="tb-filter" onclick="setF(this,'s','En révision')">En révision</button>
+                <button class="tb-filter" onclick="setF(this,'s','Périmé')">Périmés</button>
+              </div>
+            </div>
+          </div>
+          <table class="word-table">
+            <thead><tr><th class="sort">Document ↕</th><th>Type</th><th>Processus</th><th>Statut</th><th class="sort">Révision ↕</th><th class="sort">Mis à jour ↕</th><th>Responsable</th><th style="width:90px"></th></tr></thead>
+            <tbody id="doc-tbody"></tbody>
+          </table>
+          <div class="table-footer">
+            <span id="doc-lbl">Affichage 1–10 sur 47 documents</span>
+            <div class="page-btns">
+              <button class="page-btn">‹</button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn">4</button>
+              <button class="page-btn">5</button>
+              <button class="page-btn">›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span id="toast-txt"></span></div>
+
+<script>
+const pageHeaders={
+  dashboard:{title:"Vue d'ensemble",sub:"Système de Management de la Qualité — ISO 9001:2015",actions:""},
+  processus:{title:"Processus",sub:"Cartographie — 18 processus actifs",actions:`<button class="btn btn-primary" onclick="showProcForm()"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 4v16m8-8H4"/></svg>Nouveau processus</button>`},
+  documents:{title:"Documents",sub:"Gestion documentaire — 47 documents",actions:`<button class="btn btn-ghost"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Importer</button><button class="btn btn-primary" style="margin-left:4px"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 4v16m8-8H4"/></svg>Nouveau document</button>`}
+};
+function nav(el,v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  if(el)el.classList.add('active');
+  const h=pageHeaders[v];
+  document.getElementById('ph-title').textContent=h.title;
+  document.getElementById('ph-sub').textContent=h.sub;
+  document.getElementById('ph-actions').innerHTML=h.actions;
+  if(v==='documents')renderDocs();
+  if(v==='processus')showProcList();
+}
+function showProcForm(){
+  document.getElementById('proc-list').style.display='none';
+  document.getElementById('proc-form').style.display='block';
+  document.getElementById('ph-title').textContent='Nouveau processus';
+  document.getElementById('ph-sub').textContent='Renseignez les informations du processus';
+  document.getElementById('ph-actions').innerHTML=`<button class="btn btn-ghost" onclick="showProcList()">← Retour</button>`;
+}
+function showProcList(){
+  document.getElementById('proc-list').style.display='block';
+  document.getElementById('proc-form').style.display='none';
+  document.getElementById('ph-title').textContent='Processus';
+  document.getElementById('ph-sub').textContent='Cartographie — 18 processus actifs';
+  document.getElementById('ph-actions').innerHTML=`<button class="btn btn-primary" onclick="showProcForm()"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 4v16m8-8H4"/></svg>Nouveau processus</button>`;
+}
+function addKPI(){
+  const l=document.getElementById('kpi-list');
+  const r=document.createElement('div');r.className='kpi-row';
+  r.innerHTML=`<svg fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px;flex-shrink:0"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/></svg><input type="text" placeholder="Nom de l'indicateur..."><button class="rm-btn" onclick="this.closest('.kpi-row').remove()"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>`;
+  l.appendChild(r);r.querySelector('input').focus();
+}
+function updScore(v){
+  v=parseInt(v);
+  const d=document.getElementById('score-val');
+  d.textContent=v+'%';
+  d.style.color=v>=80?'var(--s-green)':v>=60?'var(--s-yellow)':'var(--s-red)';
+}
+function saveProc(){
+  const code=document.getElementById('f-code').value.trim();
+  const name=document.getElementById('f-name').value.trim();
+  const type=document.getElementById('f-type').value;
+  if(!code||!name||!type){showToast('Veuillez remplir les champs obligatoires (*)',false);return;}
+  showToast(`Processus "${name}" (${code}) créé avec succès !`,true);
+  setTimeout(showProcList,1500);
+}
+const docs=[
+  {ref:'MQ-001',name:'Manuel Qualité',type:'Manuel',proc:'P-01',status:'Approuvé',v:'v3.2',date:'15/01/2026',owner:'A. Mansouri'},
+  {ref:'PRO-001',name:'Maîtrise des documents',type:'Procédure',proc:'P-01',status:'Approuvé',v:'v2.0',date:'10/01/2026',owner:'A. Mansouri'},
+  {ref:'PRO-002',name:'Maîtrise des enregistrements',type:'Procédure',proc:'P-01',status:'Approuvé',v:'v1.8',date:'10/01/2026',owner:'K. Mrad'},
+  {ref:'PRO-003',name:'Audit interne',type:'Procédure',proc:'P-01',status:'En révision',v:'v2.1',date:'05/01/2026',owner:'A. Mansouri'},
+  {ref:'PRO-004',name:'Actions correctives',type:'Procédure',proc:'P-01',status:'Approuvé',v:'v3.0',date:'20/12/2025',owner:'S. Ben Ali'},
+  {ref:'PRO-005',name:'Planification qualité',type:'Procédure',proc:'P-01',status:'Approuvé',v:'v1.5',date:'15/12/2025',owner:'A. Mansouri'},
+  {ref:'PRO-006',name:'Revue de direction',type:'Procédure',proc:'P-01',status:'Approuvé',v:'v2.3',date:'10/12/2025',owner:'R. Haddad'},
+  {ref:'PRO-007',name:'Qualification fournisseurs',type:'Procédure',proc:'P-02',status:'Approuvé',v:'v1.2',date:'08/12/2025',owner:'K. Mrad'},
+  {ref:'PRO-008',name:'Gestion des fournisseurs',type:'Procédure',proc:'P-02',status:'Approuvé',v:'v1.5',date:'01/12/2025',owner:'K. Mrad'},
+  {ref:'PRO-009',name:'Évaluation fournisseurs',type:'Procédure',proc:'P-02',status:'En révision',v:'v2.0',date:'25/11/2025',owner:'K. Mrad'},
+  {ref:'PRO-010',name:"Commandes d'achat",type:'Procédure',proc:'P-02',status:'Approuvé',v:'v1.1',date:'20/11/2025',owner:'S. Ben Ali'},
+  {ref:'PRO-011',name:'Réception et inspection',type:'Procédure',proc:'P-04',status:'Approuvé',v:'v2.2',date:'15/11/2025',owner:'S. Ben Ali'},
+  {ref:'PRO-012',name:'Contrôle des équipements',type:'Procédure',proc:'P-04',status:'En révision',v:'v2.1',date:'10/11/2025',owner:'S. Ben Ali'},
+  {ref:'PRO-013',name:'Gestion des NC produits',type:'Procédure',proc:'P-04',status:'Approuvé',v:'v3.1',date:'05/11/2025',owner:'R. Haddad'},
+  {ref:'PRO-014',name:'Traçabilité produits',type:'Procédure',proc:'P-04',status:'En révision',v:'v1.9',date:'01/11/2025',owner:'R. Haddad'},
+  {ref:'PRO-015',name:'Étalonnage instruments',type:'Procédure',proc:'P-07',status:'En révision',v:'v1.3',date:'25/10/2025',owner:'A. Mansouri'},
+  {ref:'PRO-016',name:"Plan d'étalonnage annuel",type:'Procédure',proc:'P-07',status:'Approuvé',v:'v2.0',date:'20/10/2025',owner:'A. Mansouri'},
+  {ref:'PRO-017',name:'Enquête satisfaction client',type:'Procédure',proc:'P-11',status:'Approuvé',v:'v1.7',date:'15/10/2025',owner:'K. Mrad'},
+  {ref:'ENR-001',name:'Registre des audits',type:'Enregistrement',proc:'P-01',status:'Approuvé',v:'v1.0',date:'01/02/2026',owner:'A. Mansouri'},
+  {ref:'ENR-002',name:'PV revue de direction',type:'Enregistrement',proc:'P-01',status:'Approuvé',v:'v1.0',date:'28/01/2026',owner:'R. Haddad'},
+  {ref:'ENR-003',name:'Tableau de bord qualité',type:'Enregistrement',proc:'P-01',status:'En révision',v:'v2.1',date:'20/01/2026',owner:'A. Mansouri'},
+  {ref:'ENR-024',name:'Enregistrements audits internes',type:'Enregistrement',proc:'P-01',status:'Périmé',v:'v1.0',date:'15/06/2025',owner:'K. Mrad'},
+  {ref:'ENR-010',name:'Fiches NC produits',type:'Enregistrement',proc:'P-04',status:'Périmé',v:'v1.2',date:'12/05/2025',owner:'S. Ben Ali'},
+  {ref:'FOR-001',name:"Fiche d'action corrective",type:'Formulaire',proc:'P-01',status:'Approuvé',v:'v2.0',date:'01/01/2026',owner:'A. Mansouri'},
+  {ref:'FOR-002',name:'Fiche de non-conformité',type:'Formulaire',proc:'P-04',status:'Approuvé',v:'v3.0',date:'01/01/2026',owner:'S. Ben Ali'},
+  {ref:'FOR-003',name:'Bon de commande standard',type:'Formulaire',proc:'P-02',status:'En révision',v:'v1.4',date:'15/12/2025',owner:'K. Mrad'},
+  {ref:'FOR-004',name:"Rapport d'audit",type:'Formulaire',proc:'P-01',status:'Approuvé',v:'v2.1',date:'10/12/2025',owner:'A. Mansouri'},
+  {ref:'FOR-005',name:'Évaluation fournisseur',type:'Formulaire',proc:'P-02',status:'Approuvé',v:'v1.0',date:'01/11/2025',owner:'K. Mrad'},
+  {ref:'PRO-018',name:'Formation du personnel',type:'Procédure',proc:'P-07',status:'En révision',v:'v1.1',date:'15/10/2025',owner:'R. Haddad'},
+  {ref:'PRO-019',name:'Gestion des compétences',type:'Procédure',proc:'P-07',status:'Approuvé',v:'v1.3',date:'01/10/2025',owner:'R. Haddad'},
+  {ref:'FOR-006',name:"Demande d'action préventive",type:'Formulaire',proc:'P-01',status:'Approuvé',v:'v1.0',date:'01/09/2025',owner:'A. Mansouri'},
+  {ref:'PRO-020',name:'Identification des risques',type:'Procédure',proc:'P-01',status:'Approuvé',v:'v2.0',date:'01/08/2025',owner:'A. Mansouri'},
+  {ref:'FOR-007',name:'Check-list audit qualité',type:'Formulaire',proc:'P-01',status:'Approuvé',v:'v1.2',date:'01/10/2025',owner:'K. Mrad'},
+  {ref:'PRO-021',name:'Livraison et expédition',type:'Procédure',proc:'P-04',status:'Approuvé',v:'v1.0',date:'15/08/2025',owner:'S. Ben Ali'},
+  {ref:'FOR-008',name:'Ordre de travail',type:'Formulaire',proc:'P-04',status:'En révision',v:'v2.0',date:'01/12/2025',owner:'R. Haddad'},
+  {ref:'PRO-022',name:'Contrôle qualité final',type:'Procédure',proc:'P-04',status:'Approuvé',v:'v1.8',date:'01/01/2026',owner:'S. Ben Ali'},
+  {ref:'ENR-017',name:"Fiches d'inspection",type:'Enregistrement',proc:'P-04',status:'Approuvé',v:'v1.4',date:'15/01/2026',owner:'R. Haddad'},
+  {ref:'FOR-009',name:'Plan de surveillance',type:'Formulaire',proc:'P-04',status:'Approuvé',v:'v1.0',date:'01/02/2026',owner:'A. Mansouri'},
+  {ref:'PRO-023',name:'Gestion des réclamations',type:'Procédure',proc:'P-11',status:'Approuvé',v:'v2.0',date:'15/11/2025',owner:'K. Mrad'},
+  {ref:'ENR-018',name:'Registre des réclamations',type:'Enregistrement',proc:'P-11',status:'Approuvé',v:'v1.0',date:'01/12/2025',owner:'K. Mrad'},
+  {ref:'PRO-024',name:'Actions préventives',type:'Procédure',proc:'P-01',status:'Approuvé',v:'v1.2',date:'10/02/2026',owner:'A. Mansouri'},
+  {ref:'ENR-015',name:'Matrice des risques',type:'Enregistrement',proc:'P-01',status:'En révision',v:'v1.5',date:'15/09/2025',owner:'A. Mansouri'},
+  {ref:'PRO-031',name:'Satisfaction client',type:'Procédure',proc:'P-11',status:'Approuvé',v:'v2.0',date:'10/10/2025',owner:'A. Mansouri'},
+  {ref:'ENR-012',name:'Résultats satisfaction client',type:'Enregistrement',proc:'P-11',status:'Approuvé',v:'v1.5',date:'05/02/2026',owner:'K. Mrad'},
+  {ref:'ENR-013',name:'Suivi indicateurs processus',type:'Enregistrement',proc:'P-01',status:'Approuvé',v:'v1.0',date:'01/02/2026',owner:'A. Mansouri'},
+  {ref:'ENR-014',name:'Registre équipements',type:'Enregistrement',proc:'P-07',status:'Périmé',v:'v1.1',date:'15/03/2025',owner:'S. Ben Ali'},
+];
+const icons={Manuel:{cls:'manuel',svg:'<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>'},Procédure:{cls:'proc',svg:'<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6m-3 4v6m-3-3h6"/>'},Enregistrement:{cls:'enreg',svg:'<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>'},Formulaire:{cls:'form',svg:'<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6m-5 6l2 2 4-4"/>'}};
+const stTag={'Approuvé':'<span class="tag conforme">● Approuvé</span>','En révision':'<span class="tag revision">⏳ En révision</span>','Périmé':'<span class="tag perime">✕ Périmé</span>'};
+const tCls={Manuel:'purple',Procédure:'blue',Enregistrement:'orange',Formulaire:'green-t'};
+const avCol={'A. Mansouri':'var(--xl-green-mid)','K. Mrad':'#6C3483','S. Ben Ali':'#1A5276','R. Haddad':'#9B1C1C'};
+let flt={t:'all',s:'all',q:''};
+function renderDocs(){
+  const filtered=docs.filter(d=>(flt.t==='all'||d.type===flt.t)&&(flt.s==='all'||d.status===flt.s)&&(!flt.q||d.name.toLowerCase().includes(flt.q)||d.ref.toLowerCase().includes(flt.q)));
+  const shown=filtered.slice(0,10);
+  document.getElementById('doc-tbody').innerHTML=shown.map(d=>{
+    const ic=icons[d.type]||icons['Procédure'];
+    const init=d.owner.split(' ').map(n=>n[0]).join('');
+    const col=avCol[d.owner]||'var(--xl-green-mid)';
+    return `<tr><td><div class="doc-cell"><div class="doc-icon ${ic.cls}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${ic.svg}</svg></div><div><div class="doc-name">${d.name}</div><div class="doc-ref">${d.ref}</div></div></div></td><td><span class="tag ${tCls[d.type]}">${d.type}</span></td><td><span class="tag xl">${d.proc}</span></td><td>${stTag[d.status]}</td><td style="font-family:'Courier New',monospace;font-size:11.5px;color:var(--text-muted)">${d.v}</td><td style="font-size:11.5px;color:var(--text-muted)">${d.date}</td><td><div style="display:flex;align-items:center;gap:6px"><div style="width:20px;height:20px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white">${init}</div><span style="font-size:12px;color:var(--text-secondary)">${d.owner}</span></div></td><td><div class="row-actions"><button class="row-btn" title="Voir"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button><button class="row-btn" title="Modifier"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button><button class="row-btn" title="Télécharger"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button><button class="row-btn del" title="Supprimer"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div></td></tr>`;
+  }).join('');
+  document.getElementById('doc-lbl').textContent=`Affichage 1–${Math.min(10,filtered.length)} sur ${filtered.length} document${filtered.length>1?'s':''}`;
+}
+function filterDocs(v){flt.q=v.toLowerCase();renderDocs();}
+function setF(btn,k,val){flt[k]=val;const gid=k==='t'?'type-fg':'stat-fg';document.querySelectorAll('#'+gid+' .tb-filter').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderDocs();}
+function showToast(msg,ok=true){const t=document.getElementById('toast');t.style.background=ok?'var(--xl-green-mid)':'var(--s-red)';document.getElementById('toast-txt').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+</script>
+</body>
+</html>

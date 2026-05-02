@@ -1,0 +1,201 @@
+
+    <div class="page-header-bar">
+      <div>
+        <h1>Processus</h1>
+        <div class="sub">Cartographie — {{filteredProcesses.length}} processus actifs</div>
+      </div>
+      <div class="ph-actions">
+        <div class="view-toggle">
+          <button 
+            class="toggle-btn" 
+            [class.active]="viewMode === 'cards'"
+            (click)="viewMode = 'cards'"
+            title="Vue cartes">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </button>
+          <button 
+            class="toggle-btn" 
+            [class.active]="viewMode === 'table'"
+            (click)="viewMode = 'table'"
+            title="Vue tableau">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M3 6h18M3 12h18M3 18h18"></path>
+            </svg>
+          </button>
+        </div>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 4v16m8-8H4"/>
+          </svg>
+          Nouveau processus
+        </button>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="search-box">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Rechercher par nom ou code..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange(searchTerm)">
+      </div>
+      
+      <div class="filter-group">
+        <select [(ngModel)]="selectedType" (change)="onTypeFilterChange(selectedType)">
+          <option value="">Tous les types</option>
+          <option [value]="ProcessType.PILOTAGE">{{ProcessType.PILOTAGE}}</option>
+          <option [value]="ProcessType.OPERATIONNEL">{{ProcessType.OPERATIONNEL}}</option>
+          <option [value]="ProcessType.SUPPORT">{{ProcessType.SUPPORT}}</option>
+          <option [value]="ProcessType.MESURE">{{ProcessType.MESURE}}</option>
+        </select>
+        
+        <select [(ngModel)]="selectedStatus" (change)="onStatusFilterChange(selectedStatus)">
+          <option value="">Tous les statuts</option>
+          <option [value]="ProcessStatus.CONFORME">{{ProcessStatus.CONFORME}}</option>
+          <option [value]="ProcessStatus.A_SURVEILLER">{{ProcessStatus.A_SURVEILLER}}</option>
+          <option [value]="ProcessStatus.NON_CONFORME">{{ProcessStatus.NON_CONFORME}}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="content-scroll">
+      <!-- Vue Cards -->
+      <div *ngIf="viewMode === 'cards'" class="proc-grid">
+        <div 
+          *ngFor="let process of filteredProcesses" 
+          class="proc-card"
+          [ngClass]="getCardClass(process.status)">
+          <div class="pc-header">
+            <div class="pc-code">{{process.code}}</div>
+            <div class="pc-score" [style.color]="getScoreColor(process.conformityScore)">
+              {{process.conformityScore}}%
+            </div>
+          </div>
+          <div class="pc-name">{{process.name}}</div>
+          <div class="pc-type">{{process.type}}</div>
+          <div class="pc-bar">
+            <div class="pc-bar-fill" 
+                 [style.width.%]="process.conformityScore"
+                 [style.background]="getScoreColor(process.conformityScore)">
+            </div>
+          </div>
+          <div class="pc-footer">
+            <span>{{process.proceduresCount || 0}} procédures · {{process.documentsCount || 0}} docs</span>
+            <span [style.color]="getScoreColor(process.conformityScore)" style="font-weight:700">
+              {{getStatusIcon(process.status)}} {{process.status}}
+            </span>
+          </div>
+          <div class="card-actions" (click)="$event.stopPropagation()">
+            <button class="row-btn" (click)="openEditModal(process)" title="Modifier">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </button>
+            <button class="row-btn del" (click)="confirmDelete(process)" title="Supprimer">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="proc-card add" (click)="openCreateModal()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:22px;height:22px">
+            <path d="M12 4v16m8-8H4"/>
+          </svg>
+          <div style="font-size:12.5px;font-weight:600">Nouveau processus</div>
+        </div>
+      </div>
+
+      <!-- Vue Tableau -->
+      <div *ngIf="viewMode === 'table'" class="table-container">
+        <table class="proc-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Nom</th>
+              <th>Type</th>
+              <th>Pilote</th>
+              <th>Score</th>
+              <th>Statut</th>
+              <th>Prochaine revue</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let process of filteredProcesses" [ngClass]="getCardClass(process.status)">
+              <td>
+                <span class="table-code">{{process.code}}</span>
+              </td>
+              <td>
+                <div class="table-name">{{process.name}}</div>
+                <div class="table-objective">{{process.objective}}</div>
+              </td>
+              <td>
+                <span class="table-type">{{process.type}}</span>
+              </td>
+              <td>
+                <div class="table-pilot">{{process.pilot}}</div>
+              </td>
+              <td>
+                <div class="score-cell">
+                  <span class="table-score" [style.color]="getScoreColor(process.conformityScore)">
+                    {{process.conformityScore}}%
+                  </span>
+                  <div class="mini-bar">
+                    <div class="mini-bar-fill" 
+                         [style.width.%]="process.conformityScore"
+                         [style.background]="getScoreColor(process.conformityScore)">
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="table-status" [style.color]="getScoreColor(process.conformityScore)">
+                  {{getStatusIcon(process.status)}} {{process.status}}
+                </span>
+              </td>
+              <td>
+                <span class="table-date">{{process.nextReview | date:'dd/MM/yyyy'}}</span>
+              </td>
+              <td>
+                <div class="table-actions">
+                  <button class="row-btn" (click)="openEditModal(process)" title="Modifier">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button class="row-btn del" (click)="confirmDelete(process)" title="Supprimer">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div *ngIf="filteredProcesses.length === 0" class="empty-state">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <h3>Aucun processus trouvé</h3>
+          <p>Aucun processus ne correspond à vos critères de recherche.</p>
+          <button class="btn btn-primary" (click)="openCreateModal()">
+            Créer un nouveau processus
+          </button>
+        </div>
+      </div>
+    </div>
+  
