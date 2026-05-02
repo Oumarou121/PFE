@@ -687,13 +687,114 @@ const CACHE_RESOURCE_KEYS = [
   "tableViews",
   "settings",
 ];
+const STRICT_RESOURCES = [
+  "tableViews",
+  "templates",
+  "families",
+  "organizations",
+];
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const DB_DEBUG_CACHE = true;
+const DB_DEBUG_MIGRATION = true;
+const DB_DEBUG_SAFETY = true;
+const DB_CONTEXT = {
+  organizationId: null,
+  role: null,
+};
 
-function createCacheResourceState(status = "idle", count = 0, error = null) {
+function cacheDebug(...args) {
+  if (DB_DEBUG_CACHE) console.debug(...args);
+}
+
+function cacheWarn(...args) {
+  if (DB_DEBUG_CACHE) console.warn(...args);
+}
+
+function migrationDebug(...args) {
+  if (DB_DEBUG_MIGRATION) console.debug(...args);
+}
+
+function safetyDebug(...args) {
+  if (DB_DEBUG_SAFETY) console.debug(...args);
+}
+
+function normalizeDbRole(role) {
+  const value = String(role || "").trim().toLowerCase();
+  if (value === "supadmin" || value === "super-admin") return "superadmin";
+  return value || null;
+}
+
+function getDbContextFingerprint(context = DB_CONTEXT) {
+  return JSON.stringify({
+    organizationId:
+      context.organizationId === undefined || context.organizationId === null
+        ? null
+        : String(context.organizationId),
+    role: normalizeDbRole(context.role),
+  });
+}
+
+function getRecordUpdatedAtValue(item = {}) {
+  const raw =
+    item.updatedAt ||
+    item.updated_at ||
+    item.modifiedAt ||
+    item.modified_at ||
+    item.createdAt ||
+    item.created_at ||
+    "";
+  const time = Date.parse(raw);
+  return Number.isFinite(time) ? time : String(raw || "").length;
+}
+
+function getRecordScopeValue(item = {}) {
+  return String(
+    item.organizationId ||
+      item.organisationId ||
+      item.tenantId ||
+      item.raw?.IdOrganization ||
+      item.raw?.organizationId ||
+      "",
+  );
+}
+
+function computeResourceFingerprintValue(data, name, context = DB_CONTEXT) {
+  const contextFingerprint = getDbContextFingerprint(context);
+  if (name === "settings") {
+    return `${name}|${contextFingerprint}|settings:${stableStringHash(JSON.stringify(data || {}))}`;
+  }
+  const rows = Array.isArray(data) ? data : [];
+  const maxUpdatedAt = rows.reduce(
+    (max, item) => Math.max(max, Number(getRecordUpdatedAtValue(item)) || 0),
+    0,
+  );
+  const scope = [...new Set(rows.map((item) => getRecordScopeValue(item)).filter(Boolean))]
+    .sort()
+    .join(",");
+  const idHash = stableStringHash(
+    rows
+      .map((item) => String(item.id || item.Id || item.nom || item.label || ""))
+      .sort()
+      .join("|"),
+  );
+  return `${name}|${contextFingerprint}|len:${rows.length}|updated:${maxUpdatedAt}|scope:${scope}|hash:${idHash}`;
+}
+
+function stableStringHash(value = "") {
+  let hash = 0;
+  const text = String(value);
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(36);
+}
+
+function createCacheResourceState(status = "idle", count = 0, error = null, hydrated = false) {
   const state = {
     status,
     lastFetchedAt: status === "success" || status === "error" ? Date.now() : null,
     count: Number.isFinite(Number(count)) ? Number(count) : 0,
+    hydrated: status === "success" && hydrated === true,
   };
   if (error) state.error = String(error);
   return state;
@@ -706,17 +807,39 @@ function getCacheResourceCount(cache, key) {
   return Array.isArray(value) ? value.length : 0;
 }
 
+function isCacheResourcePayloadValid(cache, key, options = {}) {
+  if (!cache || !key) return false;
+  if (key === "settings") {
+    return cache.settings !== null && typeof cache.settings === "object";
+  }
+  const value = cache[key];
+  if (!Array.isArray(value)) return false;
+  const allowEmpty = options.allowEmpty === true || !STRICT_RESOURCES.includes(key);
+  return allowEmpty || value.length > 0;
+}
+
+function isCacheResourceDataValid(cache, key, options = {}) {
+  if (!cache || !key) return false;
+  const state = normalizeCacheState(cache)[key] || createCacheResourceState();
+  return state.status === "success" &&
+    state.hydrated === true &&
+    isCacheResourcePayloadValid(cache, key, options);
+}
+
 function normalizeCacheState(cache) {
   const source = cache?.state && typeof cache.state === "object" ? cache.state : {};
   const loaded = cache?._loaded && typeof cache._loaded === "object" ? cache._loaded : {};
   const state = {};
   CACHE_RESOURCE_KEYS.forEach((key) => {
     const current = source[key] && typeof source[key] === "object" ? source[key] : {};
-    const status = ["idle", "loading", "success", "error"].includes(current.status)
+    const status = ["idle", "loading", "success", "error", "revalidating"].includes(current.status)
       ? current.status
       : loaded[key]
         ? "success"
         : "idle";
+    const hydrated = typeof current.hydrated === "boolean"
+      ? current.hydrated
+      : status === "success" && isCacheResourcePayloadValid(cache, key);
     state[key] = {
       status,
       lastFetchedAt: Number.isFinite(Number(current.lastFetchedAt))
@@ -727,6 +850,7 @@ function normalizeCacheState(cache) {
       count: Number.isFinite(Number(current.count))
         ? Number(current.count)
         : getCacheResourceCount(cache, key),
+      hydrated,
     };
     if (current.error) state[key].error = String(current.error);
   });
@@ -735,19 +859,36 @@ function normalizeCacheState(cache) {
 
 function syncLoadedCompat(cache) {
   cache._loaded = Object.fromEntries(
-    CACHE_RESOURCE_KEYS.map((key) => [key, cache.state?.[key]?.status === "success"]),
+    CACHE_RESOURCE_KEYS.map((key) => [key, isCacheResourceDataValid(cache, key)]),
   );
 }
 
 function setCacheResourceState(cache, key, status, error = null) {
   cache.state = normalizeCacheState(cache);
+  const hydrated = status === "success" && isCacheResourcePayloadValid(cache, key);
   cache.state[key] = createCacheResourceState(
     status,
     getCacheResourceCount(cache, key),
     error,
+    hydrated,
   );
+  if (hydrated) {
+    cache._stable = cache._stable && typeof cache._stable === "object" ? cache._stable : {};
+    cache._stable[key] = cloneData(cache[key]);
+    cache._stableMeta =
+      cache._stableMeta && typeof cache._stableMeta === "object"
+        ? cache._stableMeta
+        : {};
+    cache._stableMeta[key] = {
+      context: cloneData(DB_CONTEXT),
+      contextFingerprint: getDbContextFingerprint(),
+      fingerprint: computeResourceFingerprintValue(cache[key], key),
+      capturedAt: Date.now(),
+    };
+    cacheDebug("[cache-hydration]", key, cache.state[key]);
+  }
   syncLoadedCompat(cache);
-  console.debug("[DB cache]", key, cache.state[key], cache.state[key].count);
+  cacheDebug("[cache-state] transition", key, cache.state[key], cache.state[key].count);
 }
 
 function isCacheResourceFresh(cache, key, ttlMs = CACHE_TTL_MS) {
@@ -790,6 +931,14 @@ function normalizeState(state) {
     settings:
       next.settings && typeof next.settings === "object"
         ? cloneData(next.settings)
+        : {},
+    _stable:
+      next._stable && typeof next._stable === "object"
+        ? cloneData(next._stable)
+        : {},
+    _stableMeta:
+      next._stableMeta && typeof next._stableMeta === "object"
+        ? cloneData(next._stableMeta)
         : {},
   };
   normalized.state = normalizeCacheState(normalized);
@@ -1004,6 +1153,7 @@ const DB = {
   _readyPromise: null,
   _schemaPromise: null,
   _resourcePromises: {},
+  _inflightRequests: new Map(),
   _saveTimer: null,
   _syncPromise: null,
   _pendingSnapshot: null,
@@ -1040,7 +1190,168 @@ const DB = {
   },
 
   get() {
-    return cloneData(this._cache);
+    const snapshot = cloneData(this._cache);
+    delete snapshot._stable;
+    delete snapshot._stableMeta;
+    return snapshot;
+  },
+
+  setContext(context = {}) {
+    const previous = getDbContextFingerprint();
+    DB_CONTEXT.organizationId =
+      context.organizationId === undefined
+        ? DB_CONTEXT.organizationId
+        : context.organizationId;
+    DB_CONTEXT.role =
+      context.role === undefined ? DB_CONTEXT.role : normalizeDbRole(context.role);
+    const next = getDbContextFingerprint();
+    if (previous !== next) {
+      safetyDebug("[safety-context-change]", { previous, next, context: cloneData(DB_CONTEXT) });
+      this.invalidateStableCache("context-change");
+    }
+    return cloneData(DB_CONTEXT);
+  },
+
+  getContext() {
+    return cloneData(DB_CONTEXT);
+  },
+
+  invalidateStableCache(reason = "manual") {
+    this._cache._stable = {};
+    this._cache._stableMeta = {};
+    this._cache.state = normalizeCacheState(this._cache);
+    CACHE_RESOURCE_KEYS.forEach((key) => {
+      if (this._cache.state[key]?.hydrated) {
+        this._cache.state[key] = {
+          ...this._cache.state[key],
+          hydrated: false,
+        };
+      }
+    });
+    syncLoadedCompat(this._cache);
+    safetyDebug("[safety-cache-invalidated]", reason);
+  },
+
+  getResourceState(name) {
+    const state = normalizeCacheState(this._cache)[name] || createCacheResourceState();
+    return cloneData(state);
+  },
+
+  isResourceValid(name, options = {}) {
+    return isCacheResourceDataValid(this._cache, name, options);
+  },
+
+  isResourceLoaded(name) {
+    const loaded = this.getResourceState(name).status === "success" &&
+      this.isResourceValid(name);
+    if (!loaded && this._cache?.state?.[name]?.status === "success") {
+      this._cache.state[name] = createCacheResourceState("idle");
+      syncLoadedCompat(this._cache);
+      cacheWarn(`[cache-recovery] invalid loaded flag corrected for ${name}`);
+    }
+    return loaded;
+  },
+
+  isResourceHydrated(name) {
+    const state = this.getResourceState(name);
+    const hydrated = state.status === "success" &&
+      state.hydrated === true &&
+      this.isResourceValid(name) &&
+      !this._inflightRequests.has(name);
+    migrationDebug("[hydration-state]", name, {
+      hydrated,
+      state,
+      inflight: this._inflightRequests.has(name),
+    });
+    return hydrated;
+  },
+
+  getResourceFingerprint(name) {
+    const data =
+      this._cache?._stable?.[name] !== undefined
+        ? this._cache._stable[name]
+        : this._cache?.[name];
+    const fingerprint = computeResourceFingerprintValue(data, name);
+    safetyDebug("[safety-fingerprint-check]", name, {
+      fingerprint,
+      context: cloneData(DB_CONTEXT),
+    });
+    return fingerprint;
+  },
+
+  getStableResource(name) {
+    const stable = this._cache?._stable?.[name];
+    if (stable !== undefined && stable !== null) {
+      const meta = this._cache?._stableMeta?.[name] || {};
+      const currentContextFingerprint = getDbContextFingerprint();
+      const currentFingerprint = computeResourceFingerprintValue(stable, name);
+      safetyDebug("[safety-fingerprint-check]", name, {
+        stable: meta.fingerprint,
+        current: currentFingerprint,
+        stableContext: meta.contextFingerprint,
+        currentContext: currentContextFingerprint,
+      });
+      if (
+        meta.contextFingerprint !== currentContextFingerprint ||
+        meta.fingerprint !== currentFingerprint
+      ) {
+        safetyDebug("[safety-stale-blocked]", name, {
+          reason: "fingerprint-or-context-mismatch",
+          meta,
+          currentFingerprint,
+          currentContextFingerprint,
+        });
+        return null;
+      }
+      const state = this.getResourceState(name);
+      if (state.status === "revalidating" && state.critical === true) {
+        safetyDebug("[safety-stale-blocked]", name, {
+          reason: "critical-revalidation",
+          state,
+        });
+        return null;
+      }
+      migrationDebug("[stale-render-used]", name);
+      return cloneData(stable);
+    }
+    return null;
+  },
+
+  setResourceState(name, newState, data = undefined, error = null) {
+    const previous = this._cache.state?.[name]?.status || "idle";
+    if (data !== undefined) {
+      const incoming = Array.isArray(data) ? data : data;
+      const replacingWithEmptyArray = Array.isArray(incoming) && !incoming.length;
+      if (
+        newState === "loading" ||
+        newState === "revalidating" ||
+        (replacingWithEmptyArray && this.isResourceValid(name))
+      ) {
+        cacheDebug("[cache-stale-used]", name, previous, newState);
+      } else {
+        this._cache[name] = cloneData(incoming);
+      }
+    }
+    setCacheResourceState(this._cache, name, newState, error);
+    return this.getResourceState(name);
+  },
+
+  _getResourceArray(name) {
+    const rows = Array.isArray(this._cache?.[name]) ? this._cache[name] : [];
+    const state = this.getResourceState(name);
+    const isUnstable = state.status === "loading" || state.status === "revalidating";
+    const stableRows = Array.isArray(this._cache?._stable?.[name])
+      ? this._cache._stable[name]
+      : [];
+    if (isUnstable && stableRows.length) {
+      cacheDebug("[cache-stale-used]", name, state.status);
+      return cloneData(stableRows);
+    }
+    if (state.status === "success" && !state.hydrated && stableRows.length) {
+      cacheDebug("[cache-stale-used]", name, "not-hydrated");
+      return cloneData(stableRows);
+    }
+    return cloneData(rows);
   },
 
   async ensureResources(resources = [], options = {}) {
@@ -1056,6 +1367,10 @@ const DB = {
       if (options.force) return true;
       const state = this._cache.state?.[name] || createCacheResourceState();
       if (state.status === "loading") return true;
+      if (state.status === "success" && !this.isResourceValid(name)) {
+        cacheWarn(`[cache-recovery] invalid state detected for ${name}`);
+        return true;
+      }
       if (state.status === "success" && isCacheResourceFresh(this._cache, name, ttlMs)) {
         return false;
       }
@@ -1067,8 +1382,9 @@ const DB = {
   },
 
   async _loadResource(name, options = {}) {
-    if (this._resourcePromises[name] && !options.force) {
-      return this._resourcePromises[name];
+    if (this._inflightRequests.has(name)) {
+      cacheDebug("[cache-retry-blocked (inflight)]", name);
+      return this._inflightRequests.get(name);
     }
     const endpoints = {
       families: "/families",
@@ -1078,15 +1394,44 @@ const DB = {
       tableViews: "/table-view-configs",
     };
     const endpoint = endpoints[name];
-    if (!endpoint) return null;
-    setCacheResourceState(this._cache, name, "loading");
-    this._resourcePromises[name] = apiFetch(endpoint, { busy: false })
+    if (!endpoint) {
+      if (name === "settings") {
+        cacheDebug("[cache] load start", name);
+        const hasStableData = isCacheResourcePayloadValid(this._cache, name);
+        this.setResourceState(name, hasStableData ? "revalidating" : "loading");
+        const request = this.init(true).then(() => this.get());
+        this._resourcePromises[name] = request;
+        this._inflightRequests.set(name, request);
+        return request.finally(() => {
+          this._resourcePromises[name] = null;
+          this._inflightRequests.delete(name);
+        });
+      }
+      return null;
+    }
+    cacheDebug("[cache] load start", name);
+    const hasStableData = isCacheResourcePayloadValid(this._cache, name);
+    this.setResourceState(name, hasStableData ? "revalidating" : "loading");
+    const request = apiFetch(endpoint, { busy: false })
       .then(async (res) => {
         if (!res.ok) throw new Error(`${name} failed with status ${res.status}`);
         return res.json();
       })
       .then((payload) => {
         const rows = extractResourceRows(payload, name);
+        if (STRICT_RESOURCES.includes(name) && !rows.length) {
+          cacheWarn("[DB cache] empty dataset warning", name);
+          if (!options._recoveryRetry) {
+            cacheWarn(`[cache-recovery] invalid state detected for ${name}`);
+            this._inflightRequests.delete(name);
+            this._resourcePromises[name] = null;
+            return this._loadResource(name, {
+              ...options,
+              force: true,
+              _recoveryRetry: true,
+            });
+          }
+        }
         if (name === "families") {
           this._cache.families = rows.map((item) => normalizeFamilyRecord(item));
         } else if (name === "templates") {
@@ -1098,7 +1443,17 @@ const DB = {
         } else if (name === "tableViews") {
           this._cache.tableViews = rows.map((item) => normalizeTableViewRecord(item));
         }
+        if (STRICT_RESOURCES.includes(name) && !getCacheResourceCount(this._cache, name)) {
+          setCacheResourceState(
+            this._cache,
+            name,
+            "error",
+            "Empty dataset after cache recovery",
+          );
+          return this.get();
+        }
         setCacheResourceState(this._cache, name, "success");
+        cacheDebug("[cache] load end", name, this._cache.state?.[name]);
         return this.get();
       })
       .catch((error) => {
@@ -1108,8 +1463,11 @@ const DB = {
       })
       .finally(() => {
         this._resourcePromises[name] = null;
+        this._inflightRequests.delete(name);
       });
-    return this._resourcePromises[name];
+    this._resourcePromises[name] = request;
+    this._inflightRequests.set(name, request);
+    return request;
   },
 
   async getSchema(force = false) {
@@ -1477,7 +1835,11 @@ const DB = {
 
   save(d, options = {}) {
     const previousState = normalizeCacheState(this._cache);
+    const previousStable = cloneData(this._cache?._stable || {});
+    const previousStableMeta = cloneData(this._cache?._stableMeta || {});
     this._cache = normalizeState(d);
+    this._cache._stable = previousStable;
+    this._cache._stableMeta = previousStableMeta;
     this._cache.state = normalizeCacheState(this._cache);
     CACHE_RESOURCE_KEYS.forEach((key) => {
       this._cache.state[key] = {
@@ -1531,18 +1893,18 @@ const DB = {
   },
 
   // ── Accesseurs ──────────────────────────────────────────────
-  getFamilies: () => cloneData(DB._cache?.families || []),
+  getFamilies: () => DB._getResourceArray("families"),
   getFamily: (id) =>
     cloneData((DB._cache?.families || []).find((f) => f.id === id) || null),
   getTemplates: (fId, eId) => {
-    let t = DB._cache?.templates || [];
+    let t = DB._getResourceArray("templates");
     if (fId) t = t.filter((x) => x.familyId === fId);
     if (eId) t = t.filter((x) => getScopedOrganizationId(x) === eId);
     return cloneData(t);
   },
   getTemplate: (id) =>
     cloneData((DB._cache?.templates || []).find((t) => t.id === id) || null),
-  getOrganizations: () => cloneData(DB._cache?.organizations || []),
+  getOrganizations: () => DB._getResourceArray("organizations"),
   getOrganization: (id) =>
     cloneData(
       (DB._cache?.organizations || []).find((e) => e.id === id) || null,
@@ -1552,8 +1914,22 @@ const DB = {
     cloneData((DB._cache?.admins || []).find((a) => a.id === id) || null),
   getTemplatesByOrganization: (familyId, organizationId) =>
     DB.getTemplates(familyId, organizationId),
-  getTableViews: () =>
-    cloneData(Array.isArray(DB._cache?.tableViews) ? DB._cache.tableViews : []),
+  getTableViews: () => {
+    const rows = DB._getResourceArray("tableViews");
+    const state = DB.getResourceState("tableViews");
+    if (
+      state.status === "success" &&
+      !state.hydrated &&
+      !rows.length &&
+      !DB._inflightRequests.has("tableViews")
+    ) {
+      cacheWarn("[cache-recovery] invalid state detected for tableViews");
+      DB.ensureResources(["tableViews"], { force: true }).catch((error) => {
+        cacheWarn("[cache-recovery] tableViews retry failed", error);
+      });
+    }
+    return cloneData(rows);
+  },
   getTableView: (id) =>
     cloneData(
       (DB._cache?.tableViews || []).find((item) => item.id === id) || null,

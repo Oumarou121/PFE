@@ -1751,6 +1751,45 @@
       // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
       //  SECTIONS
       // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      const DB_MIGRATION_MODE_ADMIN = true;
+      const SUPERADMIN_BOOT_RESOURCES = [
+        "families",
+        "templates",
+        "organizations",
+        "tableViews",
+        "admins",
+        "settings",
+      ];
+      function superadminMigrationLog(...args) {
+        if (DB_MIGRATION_MODE_ADMIN)
+          console.debug("[superadmin-migration]", ...args);
+      }
+      function isSuperadminResourceReady(name) {
+        const state = DB.getResourceState(name);
+        const ready = state.status === "success" && DB.isResourceHydrated(name);
+        console.debug("[migration-final] superadmin", name, { ready, state });
+        return ready;
+      }
+      function canRenderSuperadminResource(name) {
+        const state = DB.getResourceState(name);
+        const stable = DB.getStableResource(name);
+        if (stable) {
+          console.debug("[stale-render-used]", name);
+          return true;
+        }
+        return state.status === "loading" || state.status === "revalidating";
+      }
+      function logResourceHydration(prefix, resources) {
+        resources.forEach((name) => {
+          const state = DB.getResourceState(name);
+          superadminMigrationLog(prefix, name, state);
+          console.debug("[cache-hydration-check]", name, {
+            hydrated: DB.isResourceHydrated(name),
+            ready: isSuperadminResourceReady(name),
+            state,
+          });
+        });
+      }
       async function ensureSectionData(section) {
         const resourcesBySection = {
           families: ["families", "templates"],
@@ -1758,18 +1797,24 @@
           admins: ["admins", "organizations"],
           tableviews: ["tableViews"],
         };
-        if (section === "organizations" && !DB._cache?._loaded?.settings) {
-          document.getElementById("panelList").innerHTML =
-            '<div class="text-muted" style="padding:12px">Chargement de cette section...</div>';
-          await DB.init(true);
-          return;
-        }
         const resources = resourcesBySection[section] || [];
-        const missing = resources.filter((name) => !DB._cache?._loaded?.[name]);
-        if (!missing.length) return;
-        document.getElementById("panelList").innerHTML =
-          '<div class="text-muted" style="padding:12px">Chargement de cette section...</div>';
-        await DB.ensureResources(missing);
+        if (!resources.length) return true;
+        const isHydrated = resources.every((name) => isSuperadminResourceReady(name));
+        const canRenderStale = resources.every((name) =>
+          isSuperadminResourceReady(name) || canRenderSuperadminResource(name),
+        );
+        if (!isHydrated) {
+          if (!canRenderStale) {
+            document.getElementById("panelList").innerHTML =
+              '<div class="text-muted" style="padding:12px">Chargement de cette section...</div>';
+          }
+        }
+        superadminMigrationLog("ensureResources call", resources);
+        await DB.ensureResources(resources);
+        logResourceHydration("resource state", resources);
+        return resources.every((name) =>
+          isSuperadminResourceReady(name) || canRenderSuperadminResource(name),
+        );
       }
 
       async function showSection(section, btn) {
@@ -6955,12 +7000,22 @@
       window.addEventListener("DOMContentLoaded", async () => {
         const authUser = await requireAuth("supAdmin");
         if (!authUser) return;
+        DB.setContext({
+          organizationId: authUser.organizationId || null,
+          role: "superadmin",
+        });
         await DB.init();
+        const isHydrated = SUPERADMIN_BOOT_RESOURCES.every((name) =>
+          isSuperadminResourceReady(name),
+        );
+        if (!isHydrated) {
+          superadminMigrationLog("ensureResources call", SUPERADMIN_BOOT_RESOURCES);
+          await DB.ensureResources(SUPERADMIN_BOOT_RESOURCES);
+        }
+        logResourceHydration("bootstrap state", SUPERADMIN_BOOT_RESOURCES);
         renderLeftPanel();
-        setTimeout(() => {
-          document.getElementById("loading").classList.add("done");
-          document.getElementById("app").style.opacity = "1";
-        }, 700);
+        document.getElementById("loading").classList.add("done");
+        document.getElementById("app").style.opacity = "1";
       });
 
       document.addEventListener("click", (e) => {

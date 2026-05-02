@@ -1,0 +1,56 @@
+<main class="super-shell">
+  <aside class="super-sidebar">
+    <div class="brand">SUPERADMIN</div>
+    <button type="button" class="nav-btn" [class.active]="activeSection === 'families'" (click)="setSection('families')">
+      Familles
+    </button>
+    <button type="button" class="nav-btn" [class.active]="activeSection === 'organizations'" (click)="setSection('organizations')">
+      Organizations
+    </button>
+    <button type="button" class="nav-btn" [class.active]="activeSection === 'admins'" (click)="setSection('admins')">
+      Admins
+    </button>
+    <button type="button" class="nav-btn" [class.active]="activeSection === 'tableViews'" (click)="setSection('tableViews')">
+      Données
+    </button>
+  </aside>
+
+  <section class="super-main">
+    <header class="super-topbar">
+      <div>
+        <h1>{{ activeTitle }}</h1>
+        <p>Console Angular progressive</p>
+      </div>
+      <span class="state-chip">{{ states[activeSection]?.status || 'idle' }}</span>
+    </header>
+
+    <div class="loading-panel" *ngIf="loading">Chargement de l’espace superadmin...</div>
+    <div class="error-panel" *ngIf="!loading && error">{{ error }}</div>
+
+    <section class="content-panel" *ngIf="!loading && !error">
+      <div class="panel-head">
+        <h2>{{ activeTitle }}</h2>
+        <span>{{ activeRows.length }} élément(s)</span>
+      </div>
+
+      <table class="data-table" *ngIf="activeRows.length">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Identifiant</th>
+            <th>Mis à jour</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of activeRows">
+            <td>{{ displayName(row) }}</td>
+            <td>{{ row.id }}</td>
+            <td>{{ row.updatedAt | date: 'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="empty" *ngIf="!activeRows.length">Aucune donnée stable disponible.</div>
+    </section>
+  </section>
+</main>

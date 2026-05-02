@@ -1,0 +1,70 @@
+<main class="admin-shell">
+  <aside class="admin-sidebar">
+    <div class="brand">ADMIN</div>
+    <button class="nav-btn active" type="button">Familles</button>
+    <button class="nav-btn" type="button">Templates</button>
+  </aside>
+
+  <section class="admin-main">
+    <header class="admin-topbar">
+      <div>
+        <h1>Gestion des documents</h1>
+        <p>Migration Angular progressive</p>
+      </div>
+      <span class="state-chip" [class.loading]="states['families']?.status === 'loading'">
+        {{ states['families']?.status || 'idle' }}
+      </span>
+    </header>
+
+    <div class="loading-panel" *ngIf="loading">Chargement de l’espace admin...</div>
+    <div class="error-panel" *ngIf="!loading && error">{{ error }}</div>
+
+    <div class="admin-grid" *ngIf="!loading && !error">
+      <section class="panel list-panel">
+        <div class="panel-head">
+          <h2>Familles de documents</h2>
+          <span>{{ families.length }}</span>
+        </div>
+
+        <button
+          class="family-item"
+          type="button"
+          *ngFor="let family of families"
+          [class.active]="family.id === selectedFamilyId"
+          (click)="selectFamily(family)"
+        >
+          <span>{{ family.nom }}</span>
+          <small>{{ family.classes?.length || 0 }} classes</small>
+        </button>
+
+        <div class="empty" *ngIf="!families.length">Aucune famille disponible.</div>
+      </section>
+
+      <section class="panel detail-panel">
+        <div class="panel-head">
+          <h2>{{ selectedFamily?.nom || 'Sélectionnez une famille' }}</h2>
+          <span>{{ visibleTemplates.length }} templates</span>
+        </div>
+
+        <table class="data-table" *ngIf="visibleTemplates.length">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Mis à jour</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let template of visibleTemplates">
+              <td>{{ template.nom }}</td>
+              <td>{{ template.updatedAt | date: 'dd/MM/yyyy' }}</td>
+              <td><span class="status">Publié</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="empty" *ngIf="!visibleTemplates.length">Aucun template pour cette famille.</div>
+      </section>
+    </div>
+  </section>
+</main>

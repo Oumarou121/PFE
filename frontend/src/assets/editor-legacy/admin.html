@@ -8899,10 +8899,34 @@
       buildSwatches("sw-bg", BG_COLORS, (c) => window.applyHighlight(c));
       buildTableGrid();
       buildTblColorSwatches();
+      const DB_MIGRATION_MODE_ADMIN = true;
+      function adminMigrationLog(...args) {
+        if (DB_MIGRATION_MODE_ADMIN) console.debug("[admin-migration]", ...args);
+      }
+      function isAdminResourceReady(name) {
+        const state = DB.getResourceState(name);
+        const ready = state.status === "success" && DB.isResourceHydrated(name);
+        console.debug("[migration-final] admin", name, { ready, state });
+        return ready;
+      }
       (async () => {
         const authUser = await requireAuth("admin");
         if (!authUser) return;
+        DB.setContext({
+          organizationId: authUser.organizationId || null,
+          role: "admin",
+        });
         await DB.init();
+        await DB.ensureResources(["families", "templates", "organizations"]);
+        ["families", "templates", "organizations"].forEach((name) => {
+          const state = DB.getResourceState(name);
+          adminMigrationLog("resource state", name, state);
+          console.debug("[cache-hydration-check]", name, {
+            hydrated: DB.isResourceHydrated(name),
+            ready: isAdminResourceReady(name),
+            state,
+          });
+        });
         populateFamilySelect();
         document.getElementById("loading").classList.add("done");
         document.getElementById("app").style.opacity = "1";

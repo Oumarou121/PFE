@@ -20,6 +20,16 @@ export const routes: Routes = [
     data: { page: 'admin' }
   },
   {
+    path: 'super-admin-angular',
+    loadComponent: () => import('./superadmin/superadmin.component').then(m => m.SuperadminComponent),
+    data: { page: 'superAdmin' }
+  },
+  {
+    path: 'admin-angular',
+    loadComponent: () => import('./admin/admin.component').then(m => m.AdminComponent),
+    data: { page: 'admin' }
+  },
+  {
     path: 'user',
     loadComponent: () => import('./features/user/user-page/user-page.component').then(m => m.UserPageComponent),
     data: { page: 'user' }
