@@ -1142,6 +1142,189 @@
         padding-bottom: 8px;
         border-bottom: 1px solid var(--border);
       }
+
+      @media (max-width: 1180px) {
+        html,
+        body {
+          height: auto;
+          min-height: 100%;
+          overflow: auto;
+        }
+        #app {
+          min-height: 100vh;
+          height: auto;
+          flex-direction: column;
+        }
+        .icon-sidebar {
+          width: 100%;
+          min-height: 64px;
+          flex-direction: row;
+          align-items: center;
+          padding: 8px 12px;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+          overflow-x: auto;
+        }
+        .app-logo {
+          width: 36px;
+          height: 36px;
+          margin: 0 8px 0 0;
+        }
+        .icon-nav-sep {
+          width: 1px;
+          height: 32px;
+          margin: 0 4px;
+          flex: 0 0 auto;
+        }
+        .icon-nav-bottom {
+          margin-top: 0;
+          margin-left: auto;
+          flex-direction: row;
+        }
+        .left-panel {
+          width: 100%;
+          max-height: 320px;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+        .panel-scroll {
+          max-height: 220px;
+        }
+        .main {
+          min-height: 70vh;
+          overflow: visible;
+        }
+        .content {
+          padding: 18px;
+          overflow-x: hidden;
+        }
+        .topbar,
+        .card-header,
+        .modal-actions,
+        .flex {
+          flex-wrap: wrap;
+        }
+        .form-grid.c2,
+        .form-grid.c3,
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .card-body,
+        .table-wrap,
+        .sql-wrap {
+          overflow-x: auto;
+        }
+        .data-table {
+          min-width: 560px;
+        }
+        .modal {
+          max-width: min(900px, calc(100vw - 24px));
+          max-height: calc(100vh - 24px);
+          overflow: auto;
+        }
+      }
+
+      @media (max-width: 760px) {
+        :root {
+          --sidebar: 60px;
+          --panel: 100%;
+        }
+        .icon-sidebar {
+          gap: 6px;
+        }
+        .icon-nav-btn {
+          width: 42px;
+          height: 42px;
+          flex: 0 0 auto;
+        }
+        .icon-nav-btn span {
+          display: none;
+        }
+        .left-panel {
+          max-height: 260px;
+        }
+        .panel-header {
+          padding: 12px;
+        }
+        .content {
+          padding: 12px;
+        }
+        .topbar {
+          height: auto;
+          min-height: 44px;
+          padding: 10px 12px;
+        }
+        .topbar-title {
+          width: 100%;
+        }
+        .form-grid.c2,
+        .form-grid.c3,
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+        .card {
+          border-radius: var(--radius);
+        }
+        .card-header {
+          align-items: flex-start;
+          gap: 10px;
+          padding: 12px;
+        }
+        .card-body {
+          padding: 12px;
+        }
+        .class-block-header,
+        .var-add-row,
+        .col-add-row {
+          flex-wrap: wrap;
+        }
+        .class-name-input,
+        .form-input,
+        .var-input-sm,
+        .var-input-sm.label,
+        .type-select,
+        .btn {
+          width: 100%;
+        }
+        .stat-card {
+          padding: 14px;
+        }
+        .stat-num {
+          font-size: 24px;
+        }
+        .modal-overlay {
+          padding: 12px;
+          align-items: flex-end;
+        }
+        .modal-actions {
+          flex-direction: column-reverse;
+          align-items: stretch;
+        }
+        .toast-stack {
+          left: 12px;
+          right: 12px;
+          bottom: 12px;
+        }
+        .toast {
+          min-width: 0;
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .left-panel {
+          max-height: 230px;
+        }
+        .panel-search {
+          margin: 8px;
+        }
+        .list-item {
+          padding: 8px;
+        }
+        .modal {
+          border-radius: var(--radius-lg);
+        }
+      }
     </style>
   </head>
   <body>
@@ -1575,6 +1758,12 @@
           admins: ["admins", "organizations"],
           tableviews: ["tableViews"],
         };
+        if (section === "organizations" && !DB._cache?._loaded?.settings) {
+          document.getElementById("panelList").innerHTML =
+            '<div class="text-muted" style="padding:12px">Chargement de cette section...</div>';
+          await DB.init(true);
+          return;
+        }
         const resources = resourcesBySection[section] || [];
         const missing = resources.filter((name) => !DB._cache?._loaded?.[name]);
         if (!missing.length) return;
@@ -5827,7 +6016,7 @@
       }
 
       function getOrganizationVariableCandidates() {
-        const labelSettings = DB.getSettings().organizationVariableLabels || {};
+        const labelSettings = getOrganizationVariableSettings().labels || {};
         const configured = Array.isArray(
           DB.getSettings().organizationVisibleVarKeys,
         );
@@ -5856,7 +6045,7 @@
           }));
       }
 
-      function saveOrganizationVariableSelection() {
+      async function saveOrganizationVariableSelection() {
         const checked = [
           ...document.querySelectorAll("[data-org-visible-var]:checked"),
         ].map((input) => normalizeFilterParamName(input.value, ""));
@@ -5871,7 +6060,14 @@
         DB.saveSettings({
           organizationVisibleVarKeys: checked,
           organizationVariableLabels: labels,
+        }, {
+          immediate: true,
         });
+        if (DB._syncPromise) {
+          await DB._syncPromise.catch(() => {});
+        }
+        await DB.init(true);
+        renderOrganizationContent();
         toast("Variables Organization mises à jour", "success");
       }
 
@@ -6759,7 +6955,7 @@
       window.addEventListener("DOMContentLoaded", async () => {
         const authUser = await requireAuth("supAdmin");
         if (!authUser) return;
-        await DB.ensureResources(["families", "templates"]);
+        await DB.init();
         renderLeftPanel();
         setTimeout(() => {
           document.getElementById("loading").classList.add("done");

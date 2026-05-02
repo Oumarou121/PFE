@@ -937,6 +937,7 @@ const DB = {
           organizations: true,
           admins: true,
           tableViews: true,
+          settings: true,
         };
         return this.get();
       } catch (error) {
@@ -1610,13 +1611,13 @@ const DB = {
   getSettings() {
     return cloneData(DB._cache?.settings || {});
   },
-  saveSettings(partialSettings = {}) {
+  saveSettings(partialSettings = {}, options = {}) {
     const s = DB.get();
     s.settings = {
       ...(s.settings || {}),
       ...(cloneData(partialSettings || {}) || {}),
     };
-    DB.save(s);
+    DB.save(s, { immediate: options.immediate !== false });
     return cloneData(s.settings);
   },
   // ── Résolution des colonnes d'une variable list-object ───────
@@ -2415,7 +2416,15 @@ function getOrganizationVariableSettings() {
     typeof settings.organizationVariableLabels === "object"
       ? cloneData(settings.organizationVariableLabels)
       : {};
-  return { visibleKeys, configured, labels };
+  const normalizedLabels = Object.fromEntries(
+    Object.entries(labels)
+      .map(([key, label]) => [
+        normalizeFilterParamName(String(key || "").replace(/^org_/, ""), ""),
+        String(label || "").trim(),
+      ])
+      .filter(([key]) => key),
+  );
+  return { visibleKeys, configured, labels: normalizedLabels };
 }
 
 function getOrganizationVariableDisplayLabel(key, fallback = "") {
