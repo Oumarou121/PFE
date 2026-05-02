@@ -11,9 +11,6 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Effectue une requête GET
-   */
   get<T>(endpoint: string, params?: any): Observable<T> {
     let httpParams = new HttpParams();
     
@@ -28,30 +25,19 @@ export class ApiService {
     return this.http.get<T>(`${this.baseUrl}/${endpoint}`, { params: httpParams });
   }
 
-  /**
-   * Effectue une requête POST
-   */
+
   post<T>(endpoint: string, data: any): Observable<T> {
     return this.http.post<T>(`${this.baseUrl}/${endpoint}`, data);
   }
 
-  /**
-   * Effectue une requête PUT
-   */
   put<T>(endpoint: string, data: any): Observable<T> {
     return this.http.put<T>(`${this.baseUrl}/${endpoint}`, data);
   }
 
-  /**
-   * Effectue une requête PATCH
-   */
   patch<T>(endpoint: string, data: any): Observable<T> {
     return this.http.patch<T>(`${this.baseUrl}/${endpoint}`, data);
   }
 
-  /**
-   * Effectue une requête DELETE
-   */
   delete<T>(endpoint: string): Observable<T> {
     return this.http.delete<T>(`${this.baseUrl}/${endpoint}`);
   }

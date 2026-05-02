@@ -1,6 +1,6 @@
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { inject } from "@angular/core";
+import { Router } from "@angular/router";
+import { AuthService } from "../services/auth.service";
 
 export const authGuard = () => {
   const authService = inject(AuthService);
@@ -10,8 +10,7 @@ export const authGuard = () => {
     return true;
   }
 
-  // Redirection vers la page de connexion si non authentifié
-  router.navigate(['/login']);
+  router.navigate(["/login"]);
   return false;
 };
 
@@ -23,7 +22,6 @@ export const loginGuard = () => {
     return true;
   }
 
-  // Redirection vers le dashboard si déjà authentifié
-  router.navigate(['/dashboard']);
+  router.navigate(["/dashboard"]);
   return false;
 };

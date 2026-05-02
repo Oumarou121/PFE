@@ -10,17 +10,11 @@ export class LoadingService {
 
   private requestCount = 0;
 
-  /**
-   * Affiche le loader
-   */
   show(): void {
     this.requestCount++;
     this.loadingSubject.next(true);
   }
 
-  /**
-   * Cache le loader
-   */
   hide(): void {
     this.requestCount--;
     if (this.requestCount <= 0) {
@@ -29,9 +23,6 @@ export class LoadingService {
     }
   }
 
-  /**
-   * Force l'arrêt du loader
-   */
   forceHide(): void {
     this.requestCount = 0;
     this.loadingSubject.next(false);
