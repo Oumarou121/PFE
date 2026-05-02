@@ -679,6 +679,95 @@ function getVisibleFamilySchemaTables(schema, extraTables = []) {
   );
 }
 
+const CACHE_RESOURCE_KEYS = [
+  "families",
+  "templates",
+  "organizations",
+  "admins",
+  "tableViews",
+  "settings",
+];
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function createCacheResourceState(status = "idle", count = 0, error = null) {
+  const state = {
+    status,
+    lastFetchedAt: status === "success" || status === "error" ? Date.now() : null,
+    count: Number.isFinite(Number(count)) ? Number(count) : 0,
+  };
+  if (error) state.error = String(error);
+  return state;
+}
+
+function getCacheResourceCount(cache, key) {
+  if (!cache) return 0;
+  if (key === "settings") return Object.keys(cache.settings || {}).length;
+  const value = cache[key];
+  return Array.isArray(value) ? value.length : 0;
+}
+
+function normalizeCacheState(cache) {
+  const source = cache?.state && typeof cache.state === "object" ? cache.state : {};
+  const loaded = cache?._loaded && typeof cache._loaded === "object" ? cache._loaded : {};
+  const state = {};
+  CACHE_RESOURCE_KEYS.forEach((key) => {
+    const current = source[key] && typeof source[key] === "object" ? source[key] : {};
+    const status = ["idle", "loading", "success", "error"].includes(current.status)
+      ? current.status
+      : loaded[key]
+        ? "success"
+        : "idle";
+    state[key] = {
+      status,
+      lastFetchedAt: Number.isFinite(Number(current.lastFetchedAt))
+        ? Number(current.lastFetchedAt)
+        : status === "success"
+          ? Date.now()
+          : null,
+      count: Number.isFinite(Number(current.count))
+        ? Number(current.count)
+        : getCacheResourceCount(cache, key),
+    };
+    if (current.error) state[key].error = String(current.error);
+  });
+  return state;
+}
+
+function syncLoadedCompat(cache) {
+  cache._loaded = Object.fromEntries(
+    CACHE_RESOURCE_KEYS.map((key) => [key, cache.state?.[key]?.status === "success"]),
+  );
+}
+
+function setCacheResourceState(cache, key, status, error = null) {
+  cache.state = normalizeCacheState(cache);
+  cache.state[key] = createCacheResourceState(
+    status,
+    getCacheResourceCount(cache, key),
+    error,
+  );
+  syncLoadedCompat(cache);
+  console.debug("[DB cache]", key, cache.state[key], cache.state[key].count);
+}
+
+function isCacheResourceFresh(cache, key, ttlMs = CACHE_TTL_MS) {
+  const state = normalizeCacheState(cache)[key];
+  if (!state || state.status !== "success") return false;
+  if (!Number.isFinite(Number(state.lastFetchedAt))) return false;
+  return Date.now() - Number(state.lastFetchedAt) < ttlMs;
+}
+
+function extractResourceRows(payload, key) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (key === "tableViews") {
+    if (Array.isArray(payload?.tableViews)) return payload.tableViews;
+    if (Array.isArray(payload?.table_views)) return payload.table_views;
+    if (Array.isArray(payload?.views)) return payload.views;
+  }
+  return [];
+}
+
 function normalizeState(state) {
   const next = state && typeof state === "object" ? state : {};
   const normalizedOrganizations = Array.isArray(next.organizations)
@@ -686,7 +775,7 @@ function normalizeState(state) {
         normalizeOrganizationRecord(cloneData(org)),
       )
     : [];
-  return {
+  const normalized = {
     organizations: cloneData(normalizedOrganizations),
     admins: Array.isArray(next.admins) ? cloneData(next.admins) : [],
     families: Array.isArray(next.families)
@@ -703,6 +792,9 @@ function normalizeState(state) {
         ? cloneData(next.settings)
         : {},
   };
+  normalized.state = normalizeCacheState(normalized);
+  syncLoadedCompat(normalized);
+  return normalized;
 }
 
 function normalizeTableViewRecord(record = {}) {
@@ -931,17 +1023,15 @@ const DB = {
         const payload = await res.json();
         currentAuthUser = payload.user || currentAuthUser;
         this._cache = normalizeState(payload.state);
-        this._cache._loaded = {
-          families: true,
-          templates: true,
-          organizations: true,
-          admins: true,
-          tableViews: true,
-          settings: true,
-        };
+        CACHE_RESOURCE_KEYS.forEach((key) =>
+          setCacheResourceState(this._cache, key, "success"),
+        );
         return this.get();
       } catch (error) {
         this._cache = normalizeState();
+        CACHE_RESOURCE_KEYS.forEach((key) =>
+          setCacheResourceState(this._cache, key, "error", error.message || error),
+        );
         notifySyncError("Connexion SQL Server indisponible.", error);
         return this.get();
       }
@@ -957,7 +1047,20 @@ const DB = {
     const requested = [
       ...new Set((Array.isArray(resources) ? resources : [resources]).filter(Boolean)),
     ];
-    const missing = requested.filter((name) => options.force || !this._cache?._loaded?.[name]);
+    this._cache.state = normalizeCacheState(this._cache);
+    syncLoadedCompat(this._cache);
+    const ttlMs = Number.isFinite(Number(options.ttlMs))
+      ? Number(options.ttlMs)
+      : CACHE_TTL_MS;
+    const missing = requested.filter((name) => {
+      if (options.force) return true;
+      const state = this._cache.state?.[name] || createCacheResourceState();
+      if (state.status === "loading") return true;
+      if (state.status === "success" && isCacheResourceFresh(this._cache, name, ttlMs)) {
+        return false;
+      }
+      return true;
+    });
     if (!missing.length) return this.get();
     await Promise.all(missing.map((name) => this._loadResource(name, options)));
     return this.get();
@@ -976,17 +1079,14 @@ const DB = {
     };
     const endpoint = endpoints[name];
     if (!endpoint) return null;
+    setCacheResourceState(this._cache, name, "loading");
     this._resourcePromises[name] = apiFetch(endpoint, { busy: false })
       .then(async (res) => {
         if (!res.ok) throw new Error(`${name} failed with status ${res.status}`);
         return res.json();
       })
       .then((payload) => {
-        const rows = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.items)
-            ? payload.items
-            : [];
+        const rows = extractResourceRows(payload, name);
         if (name === "families") {
           this._cache.families = rows.map((item) => normalizeFamilyRecord(item));
         } else if (name === "templates") {
@@ -998,13 +1098,11 @@ const DB = {
         } else if (name === "tableViews") {
           this._cache.tableViews = rows.map((item) => normalizeTableViewRecord(item));
         }
-        this._cache._loaded = {
-          ...(this._cache._loaded || {}),
-          [name]: true,
-        };
+        setCacheResourceState(this._cache, name, "success");
         return this.get();
       })
       .catch((error) => {
+        setCacheResourceState(this._cache, name, "error", error.message || error);
         notifySyncError(`Impossible de charger ${name}.`, error);
         return this.get();
       })
@@ -1378,9 +1476,16 @@ const DB = {
   },
 
   save(d, options = {}) {
-    const loaded = this._cache?._loaded || {};
+    const previousState = normalizeCacheState(this._cache);
     this._cache = normalizeState(d);
-    this._cache._loaded = { ...loaded };
+    this._cache.state = normalizeCacheState(this._cache);
+    CACHE_RESOURCE_KEYS.forEach((key) => {
+      this._cache.state[key] = {
+        ...previousState[key],
+        count: getCacheResourceCount(this._cache, key),
+      };
+    });
+    syncLoadedCompat(this._cache);
     this._pendingSnapshot = this.get();
     const runSync = () => {
       const payload = this._pendingSnapshot;
@@ -1447,7 +1552,8 @@ const DB = {
     cloneData((DB._cache?.admins || []).find((a) => a.id === id) || null),
   getTemplatesByOrganization: (familyId, organizationId) =>
     DB.getTemplates(familyId, organizationId),
-  getTableViews: () => cloneData(DB._cache?.tableViews || []),
+  getTableViews: () =>
+    cloneData(Array.isArray(DB._cache?.tableViews) ? DB._cache.tableViews : []),
   getTableView: (id) =>
     cloneData(
       (DB._cache?.tableViews || []).find((item) => item.id === id) || null,

@@ -1,0 +1,321 @@
+<div id="loading">
+      <div class="ll">SIRH-<span>Doc</span></div>
+      <div style="font-size: 11px; color: #888">Chargement...</div>
+      <div class="lb"><div class="lbf"></div></div>
+    </div>
+
+    <div
+      id="mainApp"
+      style="opacity: 0; transition: opacity 0.3s; min-height: 100vh"
+    >
+      <nav class="topnav">
+        <div class="nav-logo">SIRH-<span>Doc</span></div>
+        <div class="nav-sep"></div>
+        <span class="nav-chip">UTILISATEUR FINAL</span>
+        <span
+          id="navOrganization"
+          style="font-size: 12px; color: var(--text2)"
+        ></span>
+        <div class="nav-right">
+          <button class="nav-link" type="button" onclick="logoutAndRedirect()">
+            Déconnexion
+          </button>
+        </div>
+      </nav>
+
+      <div style="padding: 0 24px">
+        <div class="hero">
+          <div class="hero-icon" id="heroIcon">📄</div>
+          <div>
+            <h1 id="heroTitle">Génération de documents</h1>
+            <p id="heroText">
+              Sélectionnez une famille, un modèle et une personne
+            </p>
+          </div>
+          <div class="hero-badge" id="heroBadge">—</div>
+        </div>
+      </div>
+
+      <div class="mode-switch">
+        <button
+          class="mode-btn active"
+          id="modeDocumentsBtn"
+          type="button"
+          onclick="switchUserMode('documents')"
+        >
+          Documents
+        </button>
+        <button
+          class="mode-btn"
+          id="modeDataBtn"
+          type="button"
+          onclick="switchUserMode('data')"
+        >
+          Données
+        </button>
+      </div>
+
+      <div class="view-shell active" id="documentsView">
+        <div class="main-wrap">
+          <!-- STEPPER gauche -->
+          <div class="stepper">
+            <div class="stepper-hdr">
+              <span class="stepper-title">Étapes de génération</span>
+              <div class="step-dots">
+                <div class="step-dot cur" id="dot1"></div>
+                <div class="step-dot" id="dot2"></div>
+                <div class="step-dot" id="dot3"></div>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-hdr" onclick="toggleStep(1)">
+                <div class="step-num cur" id="sn1">1</div>
+                <span class="step-lbl cur" id="sl1">Famille de documents</span>
+                <span class="step-val" id="sv1">Non sélectionné</span>
+                <svg
+                  class="step-chev"
+                  id="sc1"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="step-body open" id="sb1">
+                <div class="data-search" style="margin-bottom:10px">
+                  <input id="familySearch" type="text" placeholder="Rechercher une famille..." oninput="updateFamilySearch(this.value)" />
+                </div>
+                <div class="fam-grid" id="famGrid"></div>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-hdr" onclick="toggleStep(2)">
+                <div class="step-num" id="sn2">2</div>
+                <span class="step-lbl" id="sl2">Modèle de document</span>
+                <span class="step-val" id="sv2">En attente</span>
+                <svg
+                  class="step-chev"
+                  id="sc2"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="step-body" id="sb2">
+                <div class="data-search" style="margin-bottom:10px">
+                  <input id="templateSearch" type="text" placeholder="Rechercher un modèle..." oninput="updateTemplateSearch(this.value)" />
+                </div>
+                <div class="tpl-list" id="tplList"></div>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-hdr" onclick="toggleStep(3)">
+                <div class="step-num" id="sn3">3</div>
+                <span class="step-lbl" id="sl3">Personne concernée</span>
+                <span class="step-val" id="sv3">En attente</span>
+                <svg
+                  class="step-chev"
+                  id="sc3"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="step-body" id="sb3">
+                <div id="filterPanel" style="margin-bottom: 12px"></div>
+                <div class="data-search" style="margin-bottom:10px">
+                  <input id="beneficiarySearch" type="text" placeholder="Rechercher un bénéficiaire..." oninput="updateBeneficiarySearch(this.value)" />
+                </div>
+                <div class="person-list" id="personList"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DOC PANEL droit -->
+          <div class="doc-panel">
+            <div class="doc-ph">
+              <span class="doc-pt">Aperçu A4</span>
+              <div class="doc-actions" id="docActions"></div>
+            </div>
+            <div
+              id="userPreviewFiltersWrap"
+              style="width: 100%; padding: 10px 18px 0"
+            ></div>
+
+            <div class="zoom-bar" id="zoomBar" style="display: none">
+              <span
+                style="font-size: 11px; color: var(--text3); font-weight: 600"
+                >ZOOM</span
+              >
+              <button
+                class="btn xs ghost"
+                onclick="setZoom(-10)"
+                style="font-size: 14px; width: 22px; padding: 0"
+              >
+                -
+              </button>
+              <span class="zoom-lbl" id="zoomLbl">100%</span>
+              <button
+                class="btn xs ghost"
+                onclick="setZoom(10)"
+                style="font-size: 14px; width: 22px; padding: 0"
+              >
+                +
+              </button>
+              <button class="btn xs ghost" onclick="setZoom(0)">↺</button>
+            </div>
+
+            <div class="pbar" id="pbar">
+              <div class="pb-step cur" id="ps1">Famille</div>
+              <div class="pb-arr">›</div>
+              <div class="pb-step" id="ps2">Template</div>
+              <div class="pb-arr">›</div>
+              <div class="pb-step" id="ps3">Personne</div>
+            </div>
+
+            <div class="doc-pb" id="docPb">
+              <div class="doc-wait" id="docWait">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+                  />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                <h3>Document en attente</h3>
+                <p>Complétez les 3 étapes pour générer votre document</p>
+              </div>
+              <div class="a4-canvas" id="a4Canvas" style="display: none">
+                <div class="zoom-scaler" id="zoomScaler"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-shell" id="dataView">
+        <div class="data-wrap">
+          <div class="data-sidebar">
+            <div class="data-side-hdr">
+              <div class="data-side-title">Gestion des données</div>
+              <div class="data-side-sub">Choisissez un espace de données</div>
+            </div>
+            <div class="data-search">
+              <input
+                id="userDataViewSearch"
+                type="text"
+                placeholder="Rechercher..."
+                oninput="renderUserDataViewsSidebar()"
+              />
+            </div>
+            <div class="data-view-list" id="userDataViewList"></div>
+          </div>
+          <div class="data-main">
+            <div class="data-main-hdr">
+              <div class="data-main-title" id="userDataMainTitle">
+                Aucune vue sélectionnée
+              </div>
+              <div class="data-main-sub" id="userDataMainSub">
+                Les vues disponibles sont configurées par l’administrateur.
+              </div>
+              <div
+                class="data-main-actions"
+                id="userDataMainActions"
+                style="display: none"
+              >
+                <input
+                  id="userDataRowSearch"
+                  type="text"
+                  placeholder="Rechercher dans les lignes..."
+                  oninput="updateUserDataSearch(this.value)"
+                />
+                <button
+                  class="nav-link"
+                  type="button"
+                  onclick="createUserDataRow()"
+                >
+                  Ajouter
+                </button>
+                <button
+                  class="nav-link"
+                  type="button"
+                  onclick="reloadUserDataRows()"
+                >
+                  Rafraîchir
+                </button>
+              </div>
+            </div>
+            <div id="userDataContent" class="data-empty">
+              Sélectionnez une vue de données pour commencer.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="modalConfirm">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title" id="confirmTitle"
+            >Confirmer la suppression</span
+          >
+          <button
+            class="modal-close"
+            type="button"
+            onclick="closeModal('modalConfirm')"
+          >
+            ✕
+          </button>
+        </div>
+        <p
+          id="confirmMsg"
+          style="font-size: 13px; color: var(--text2); line-height: 1.6"
+        >
+          Cette action est irréversible.
+        </p>
+        <div class="modal-actions">
+          <button
+            class="nav-link"
+            type="button"
+            onclick="closeModal('modalConfirm')"
+          >
+            Annuler
+          </button>
+          <button
+            class="nav-link"
+            id="confirmBtn"
+            type="button"
+            style="
+              background: var(--red-bg);
+              color: var(--red);
+              border-color: rgba(220, 38, 38, 0.25);
+            "
+          >
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-stack" id="toastStack"></div>

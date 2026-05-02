@@ -1,0 +1,37 @@
+<div class="shell">
+  <section class="hero">
+    <div>
+      <div class="badge">SIRH DOC â€¢ AccÃ¨s sÃ©curisÃ©</div>
+      <h1>Connexion par rÃ´le</h1>
+      <p>
+        Authentifiez-vous avant dâ€™accÃ©der aux modules. Vous serez redirigÃ©
+        automatiquement vers lâ€™espace correspondant Ã  votre rÃ´le.
+      </p>
+    </div>
+  </section>
+  <section class="card">
+    <h2>Se connecter</h2>
+    <form id="loginForm" (ngSubmit)="onSubmit()">
+      <label for="identifier">E-mail</label>
+      <input
+        id="identifier"
+        name="identifier"
+        type="email"
+        autocomplete="email"
+        required
+        [(ngModel)]="credentials.email"
+      />
+      <label for="password">Mot de passe</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+        [(ngModel)]="credentials.password"
+      />
+      <button type="submit">Ouvrir la session</button>
+      <div class="error" id="loginError">{{ loginError }}</div>
+    </form>
+  </section>
+</div>

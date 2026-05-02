@@ -5,6 +5,11 @@ import { Router } from '@angular/router';
 import { ApiService } from './api.service';
 import { LoginRequest, LoginResponse, AuthUser } from '../../shared/models/auth.model';
 
+interface AuthStateResponse {
+  user?: AuthUser;
+  redirectTo?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -24,6 +29,38 @@ export class AuthService {
     return this.apiService.post<LoginResponse>('auth/login', credentials).pipe(
       tap(response => this.setSession(response))
     );
+  }
+
+  validateSession(): Observable<AuthStateResponse> {
+    return this.apiService.get<AuthStateResponse>('me').pipe(
+      tap(response => {
+        if (response.user) {
+          localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
+          this.currentUserSubject.next(response.user);
+        }
+      })
+    );
+  }
+
+  navigateToLegacyTarget(target: string = '/login.html'): void {
+    const file = String(target || '/login.html').split('?')[0].split('#')[0].replace(/^\/+/, '');
+
+    if (file === 'superAdmin.html') {
+      this.router.navigateByUrl('/super-admin');
+      return;
+    }
+
+    if (file === 'admin.html') {
+      this.router.navigateByUrl('/admin');
+      return;
+    }
+
+    if (file === 'user.html') {
+      this.router.navigateByUrl('/user');
+      return;
+    }
+
+    this.router.navigateByUrl('/login');
   }
 
   logout(): void {

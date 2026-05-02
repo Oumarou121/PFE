@@ -6,7 +6,7 @@ const legacyPage = () =>
 export const routes: Routes = [
   {
     path: 'login',
-    loadComponent: legacyPage,
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent),
     data: { page: 'login' }
   },
   {
@@ -21,7 +21,7 @@ export const routes: Routes = [
   },
   {
     path: 'user',
-    loadComponent: legacyPage,
+    loadComponent: () => import('./features/user/user-page/user-page.component').then(m => m.UserPageComponent),
     data: { page: 'user' }
   },
   {
