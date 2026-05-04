@@ -1,70 +1,228 @@
-<main class="admin-shell">
-  <aside class="admin-sidebar">
-    <div class="brand">ADMIN</div>
-    <button class="nav-btn active" type="button">Familles</button>
-    <button class="nav-btn" type="button">Templates</button>
-  </aside>
+﻿<div class="tnav">
+  <div class="tlogo">
+    <div class="tlogo-icon">SD</div>
+    <div class="tlogo-text">SIRH-<span>Doc</span></div>
+  </div>
+  <div class="tdiv"></div>
+  <span class="tchip">ADMIN</span>
+  <span class="tetab">{{ organizationLabel }}</span>
 
-  <section class="admin-main">
-    <header class="admin-topbar">
-      <div>
-        <h1>Gestion des documents</h1>
-        <p>Migration Angular progressive</p>
-      </div>
-      <span class="state-chip" [class.loading]="states['families']?.status === 'loading'">
-        {{ states['families']?.status || 'idle' }}
-      </span>
-    </header>
-
-    <div class="loading-panel" *ngIf="loading">Chargement de l’espace admin...</div>
-    <div class="error-panel" *ngIf="!loading && error">{{ error }}</div>
-
-    <div class="admin-grid" *ngIf="!loading && !error">
-      <section class="panel list-panel">
-        <div class="panel-head">
-          <h2>Familles de documents</h2>
-          <span>{{ families.length }}</span>
-        </div>
-
-        <button
-          class="family-item"
-          type="button"
-          *ngFor="let family of families"
-          [class.active]="family.id === selectedFamilyId"
-          (click)="selectFamily(family)"
-        >
-          <span>{{ family.nom }}</span>
-          <small>{{ family.classes?.length || 0 }} classes</small>
-        </button>
-
-        <div class="empty" *ngIf="!families.length">Aucune famille disponible.</div>
-      </section>
-
-      <section class="panel detail-panel">
-        <div class="panel-head">
-          <h2>{{ selectedFamily?.nom || 'Sélectionnez une famille' }}</h2>
-          <span>{{ visibleTemplates.length }} templates</span>
-        </div>
-
-        <table class="data-table" *ngIf="visibleTemplates.length">
-          <thead>
-            <tr>
-              <th>Nom</th>
-              <th>Mis à jour</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let template of visibleTemplates">
-              <td>{{ template.nom }}</td>
-              <td>{{ template.updatedAt | date: 'dd/MM/yyyy' }}</td>
-              <td><span class="status">Publié</span></td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="empty" *ngIf="!visibleTemplates.length">Aucun template pour cette famille.</div>
-      </section>
+  <div class="tright">
+    <div class="nlink" (click)="toggleSidebar()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        style="width: 16px; height: 16px"
+      >
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+      Panneau
     </div>
-  </section>
-</main>
+
+    <div class="nlink" (click)="toggleVarsPanel()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        style="width: 16px; height: 16px"
+      >
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <line x1="15" y1="4" x2="15" y2="20" />
+      </svg>
+      Variables
+    </div>
+
+    <div class="nlink" (click)="logout()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        style="width: 16px; height: 16px"
+      >
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        <polyline points="10 17 15 12 10 7" />
+        <line x1="15" y1="12" x2="3" y2="12" />
+      </svg>
+      Déconnexion
+    </div>
+  </div>
+</div>
+
+<div class="main-area">
+  <!-- SIDEBAR (DOM Dynamique via ngClass / ngIf) -->
+  <div class="sidebar" [style.display]="isSidebarOpen ? 'flex' : 'none'">
+    <ng-container *ngIf="data$ | async as data">
+      <div class="sbsec">
+        <div class="sblabel">Famille de documents</div>
+        <!-- Select géré par Angular FormsModule [(ngModel)] -->
+        <select
+          class="famsel"
+          [(ngModel)]="selectedFamilyId"
+          (change)="onFamChange()"
+        >
+          <option [ngValue]="null">— Choisir une famille —</option>
+          <option *ngFor="let fam of data.families" [value]="fam.id">
+            {{ fam.nom || fam.name }}
+          </option>
+        </select>
+        <div
+          class="state-chip"
+          *ngIf="(state$ | async)?.['families']?.status === 'loading'"
+        >
+          Chargement...
+        </div>
+      </div>
+
+      <div class="sbsec" style="padding-bottom: 4px; border-bottom: none">
+        <div class="sblabel">Templates</div>
+        <div class="tpl-add" (click)="newTemplate()">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            style="width: 11px; height: 11px; margin-right: 4px"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Nouveau
+        </div>
+      </div>
+
+      <div class="tpl-scroll">
+        <div
+          *ngIf="!selectedFamilyId"
+          style="
+            padding: 18px;
+            font-size: 11px;
+            color: var(--text3);
+            text-align: center;
+            line-height: 1.6;
+          "
+        >
+          Sélectionnez une famille<br />pour voir les templates
+        </div>
+
+        <ng-container *ngIf="selectedFamilyId">
+          <div
+            *ngFor="let tpl of visibleTemplates"
+            class="tpl-item"
+            [class.active]="tpl.id === selectedTemplateId"
+            (click)="selectTemplate(tpl)"
+            style="
+              padding: 8px;
+              border-bottom: 1px solid var(--border);
+              cursor: pointer;
+              transition: background 0.2s;
+            "
+          >
+            <div style="font-weight: 500; margin-bottom: 2px">
+              {{ tpl.nom || tpl.name || "Sans Nom" }}
+            </div>
+            <div style="font-size: 11px; color: var(--text3)">
+              Version: {{ tpl.version || "1.0" }}
+            </div>
+          </div>
+
+          <div
+            *ngIf="visibleTemplates.length === 0"
+            style="
+              padding: 18px;
+              text-align: center;
+              color: var(--text3);
+              font-size: 11px;
+            "
+          >
+            Aucun template dans cette famille.
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- ZONE EDITEUR : Pour l'instant un bloc statique, qui va accueillir Tiptap via Angular plus tard -->
+  <div class="ed-zone">
+    <!-- Place holder quand rien n'est sélectionné -->
+    <div class="empty-state" *ngIf="!selectedTemplateId">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        style="
+          width: 48px;
+          height: 48px;
+          color: var(--text3);
+          margin-bottom: 12px;
+        "
+      >
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+        <polyline points="10 9 9 9 8 9" />
+      </svg>
+      <div style="font-weight: 600; color: var(--text); margin-bottom: 4px">
+        Éditeur de document
+      </div>
+      <div style="font-size: 13px; color: var(--text3)">
+        Sélectionnez un modèle ou créez-en un nouveau
+      </div>
+    </div>
+
+    <div *ngIf="selectedTemplateId">
+      <app-admin-editor
+        [templateId]="selectedTemplateId"
+        [templateName]="selectedTemplateName"
+      >
+      </app-admin-editor>
+    </div>
+  </div>
+
+  <!-- PANNEAU VARIABLES (Si on veut le garder) -->
+  <div class="vars-panel" [style.display]="isVarsPanelOpen ? 'flex' : 'none'">
+    <div class="vars-head">
+      <div>
+        <div class="vars-title">Variables disponibles</div>
+        <div class="vars-sub">Cliquez pour copier</div>
+      </div>
+      <button class="varsBtnClose" (click)="toggleVarsPanel()">×</button>
+    </div>
+    <div class="vars-body" id="varsListUI">
+      <div style="font-size: 11px; padding: 10px">
+        Les variables de l'organisation seront listées ici dynamiquement
+      </div>
+    </div>
+  </div>
+</div>
+<!-- MODAL ANGULAR NEW TEMPLATE -->
+<div class="modal-overlay" *ngIf="isTemplateModalOpen">
+  <div class="modal modal-sm">
+    <div class="mhdr">
+      <span class="mtitle">{{ modalTitle }}</span>
+      <button class="mclose" (click)="cancelNewTemplate()">×</button>
+    </div>
+    <div style="font-size: 12px; color: var(--text2); margin-bottom: 12px">
+      Créez un nouveau modèle de document pour cette famille.
+    </div>
+    <div class="frow">
+      <label class="flabel">Nom du template</label>
+      <input
+        class="finput"
+        [(ngModel)]="draftTemplateName"
+        placeholder="Ex: Contrat de travail CADRE"
+      />
+    </div>
+    <div class="mactions">
+      <button class="btn" (click)="cancelNewTemplate()">Annuler</button>
+      <button class="btn primary" (click)="saveNewTemplate()">Créer</button>
+    </div>
+  </div>
+</div>
