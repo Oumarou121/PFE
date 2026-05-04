@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { DbResourceState, DbService } from '../core/services/db.service';
+import { TemplateService } from '../core/services/template.service';
+import { OrganizationService } from '../core/services/organization.service';
 
 export interface AdminFamily {
   id: string;
@@ -28,7 +30,9 @@ export class AdminService {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly db: DbService
+    private readonly db: DbService,
+    private readonly templatesService: TemplateService,
+    private readonly organizationService: OrganizationService
   ) {}
 
   async load(): Promise<AdminVm> {
@@ -40,9 +44,10 @@ export class AdminService {
     });
     await this.db.ensureResources(this.resources);
 
-    const [families, templates, states] = await Promise.all([
-      this.db.getFamilies<AdminFamily>(),
-      this.db.getTemplates<AdminTemplate>(),
+    const [families, templates, , states] = await Promise.all([
+      this.templatesService.listFamilies(),
+      this.templatesService.listTemplates(),
+      this.organizationService.list(),
       this.loadStates()
     ]);
 

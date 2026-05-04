@@ -3,6 +3,9 @@ import { Component, OnInit } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { DbResourceState, DbService } from '../core/services/db.service';
+import { OrganizationService } from '../core/services/organization.service';
+import { TemplateService } from '../core/services/template.service';
+import { TableViewService } from '../core/services/table-view.service';
 
 interface NamedRecord {
   id: string;
@@ -37,7 +40,10 @@ export class SuperadminComponent implements OnInit {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly db: DbService
+    private readonly db: DbService,
+    private readonly organizationsService: OrganizationService,
+    private readonly templatesService: TemplateService,
+    private readonly tableViewService: TableViewService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -84,10 +90,10 @@ export class SuperadminComponent implements OnInit {
 
   private async refreshData(): Promise<void> {
     const [families, organizations, admins, tableViews, stateEntries] = await Promise.all([
-      this.db.getFamilies<NamedRecord>(),
-      this.db.getOrganizations<NamedRecord>(),
+      this.templatesService.listFamilies() as Promise<NamedRecord[]>,
+      this.organizationsService.list() as Promise<NamedRecord[]>,
       this.db.getAdmins<NamedRecord>(),
-      this.db.getTableViews<NamedRecord>(),
+      this.tableViewService.list() as Promise<NamedRecord[]>,
       Promise.all(this.resources.map(async resource => [resource, await this.db.getResourceState(resource)] as const))
     ]);
 
