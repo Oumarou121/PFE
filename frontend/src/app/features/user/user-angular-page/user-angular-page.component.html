@@ -1,0 +1,292 @@
+<div id="loading" [class.done]="!loading">
+  <div class="ll">SIRH-<span>Doc</span></div>
+  <div style="font-size: 11px; color: #888">Chargement...</div>
+  <div class="lb"><div class="lbf"></div></div>
+</div>
+
+<div id="mainApp" [style.opacity]="loading ? '0' : '1'" style="transition: opacity 0.3s; min-height: 100vh">
+  <nav class="topnav">
+    <div class="nav-logo">SIRH-<span>Doc</span></div>
+    <div class="nav-sep"></div>
+    <span class="nav-chip">UTILISATEUR FINAL</span>
+    <span id="navOrganization" style="font-size: 12px; color: var(--text2)">{{ organizationName }}</span>
+    <div class="nav-right">
+      <button class="nav-link" type="button" (click)="logout()">Deconnexion</button>
+    </div>
+  </nav>
+
+  <div style="padding: 0 24px">
+    <div class="hero">
+      <div class="hero-icon" id="heroIcon">{{ mode === 'data' ? 'D' : 'Doc' }}</div>
+      <div>
+        <h1 id="heroTitle">{{ mode === 'data' ? 'Gestion des donnees' : 'Generation de documents' }}</h1>
+        <p id="heroText">
+          {{ mode === 'data' ? 'Consultez et mettez a jour les donnees mises a disposition' : 'Selectionnez une famille, un modele et une personne' }}
+        </p>
+      </div>
+      <div class="hero-badge" id="heroBadge">{{ organizationName || '-' }}</div>
+    </div>
+  </div>
+
+  <div class="mode-switch">
+    <button class="mode-btn" [class.active]="mode === 'documents'" id="modeDocumentsBtn" type="button" (click)="setMode('documents')">
+      Documents
+    </button>
+    <button class="mode-btn" [class.active]="mode === 'data'" id="modeDataBtn" type="button" (click)="setMode('data')">
+      Donnees
+    </button>
+  </div>
+
+  <div class="view-shell" [class.active]="mode === 'documents'" id="documentsView">
+    <div class="main-wrap">
+      <div class="stepper">
+        <div class="stepper-hdr">
+          <span class="stepper-title">Etapes de generation</span>
+          <div class="step-dots">
+            <div class="step-dot" [class.cur]="!selectedFamilyId" [class.done]="!!selectedFamilyId" id="dot1"></div>
+            <div class="step-dot" [class.cur]="!!selectedFamilyId && !selectedTemplateId" [class.done]="!!selectedTemplateId" id="dot2"></div>
+            <div class="step-dot" [class.cur]="!!selectedTemplateId" id="dot3"></div>
+          </div>
+        </div>
+
+        <div class="step-block">
+          <div class="step-hdr" (click)="toggleStep(1)">
+            <div class="step-num" [class.cur]="!selectedFamilyId" [class.done]="!!selectedFamilyId" id="sn1">{{ selectedFamilyId ? '✓' : '1' }}</div>
+            <span class="step-lbl" [class.cur]="!selectedFamilyId" id="sl1">Famille de documents</span>
+            <span class="step-val" [class.ok]="selectedFamilyId" id="sv1">{{ selectedFamily?.nom || 'Non selectionne' }}</span>
+            <svg class="step-chev" id="sc1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="openSteps[1] ? 'rotate(180deg)' : ''">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+          <div class="step-body" [class.open]="openSteps[1]" id="sb1">
+            <div class="data-search" style="margin-bottom:10px">
+              <input id="familySearch" type="text" placeholder="Rechercher une famille..." (input)="updateFamilySearch($event)" />
+            </div>
+            <div class="fam-grid" id="famGrid">
+              <button
+                class="fam-card"
+                [class.sel]="selectedFamilyId === family.id"
+                [style.opacity]="countTemplatesForFamily(family.id) ? '1' : '.4'"
+                [style.pointer-events]="countTemplatesForFamily(family.id) ? 'auto' : 'none'"
+                type="button"
+                *ngFor="let family of filteredFamilies"
+                (click)="selectFamily(family)"
+              >
+                <div class="fam-name">{{ family.nom }}</div>
+                <div class="fam-meta">{{ countTemplatesForFamily(family.id) }} modele(s)</div>
+              </button>
+              <div class="data-empty" *ngIf="!filteredFamilies.length">Aucune famille disponible.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-block">
+          <div class="step-hdr" (click)="toggleStep(2)">
+            <div class="step-num" [class.cur]="!!selectedFamilyId && !selectedTemplateId" [class.done]="!!selectedTemplateId" id="sn2">{{ selectedTemplateId ? '✓' : '2' }}</div>
+            <span class="step-lbl" [class.cur]="!!selectedFamilyId && !selectedTemplateId" id="sl2">Modele de document</span>
+            <span class="step-val" [class.ok]="selectedTemplateId" id="sv2">{{ selectedTemplate?.nom || 'En attente' }}</span>
+            <svg class="step-chev" id="sc2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="openSteps[2] ? 'rotate(180deg)' : ''">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+          <div class="step-body" [class.open]="openSteps[2]" id="sb2">
+            <div class="data-search" style="margin-bottom:10px">
+              <input id="templateSearch" type="text" placeholder="Rechercher un modele..." (input)="updateTemplateSearch($event)" />
+            </div>
+            <div class="tpl-list" id="tplList">
+              <button class="tpl-card" [class.sel]="selectedTemplateId === template.id" type="button" *ngFor="let template of filteredTemplates" (click)="selectTemplate(template)">
+                <span style="font-size:16px">Doc</span>
+                <div style="flex:1">
+                  <div class="tpl-name">{{ template.nom }}</div>
+                  <div class="tpl-meta">{{ formatDate(template.updatedAt) }}</div>
+                </div>
+                <div class="tpl-chk">{{ selectedTemplateId === template.id ? '✓' : '' }}</div>
+              </button>
+              <div style="font-size:11px;color:#aaa;text-align:center;padding:14px" *ngIf="selectedFamilyId && !filteredTemplates.length">Aucun modele</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-block">
+          <div class="step-hdr" (click)="toggleStep(3)">
+            <div class="step-num" [class.cur]="!!selectedTemplateId" id="sn3">3</div>
+            <span class="step-lbl" [class.cur]="!!selectedTemplateId" id="sl3">Personne concernee</span>
+            <span class="step-val" id="sv3">En attente</span>
+            <svg class="step-chev" id="sc3" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="openSteps[3] ? 'rotate(180deg)' : ''">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+          <div class="step-body" [class.open]="openSteps[3]" id="sb3">
+            <div id="filterPanel" style="margin-bottom: 12px" *ngIf="runtimeFilters.length">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;width:100%;margin-bottom:6px">
+                <label style="font-size:11px;color:var(--text2);font-weight:600" *ngFor="let filter of runtimeFilters">
+                  {{ filter.label }}{{ filter.required ? ' *' : '' }}
+                  <select
+                    *ngIf="filter.type === 'select'"
+                    [value]="filterValues[filter.id] || ''"
+                    (change)="updateFilter(filter, $event)"
+                    [disabled]="filter.locked"
+                    style="display:block;width:100%;margin-top:6px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;background:var(--surface2);color:var(--text)"
+                  >
+                    <option value="">Choisir...</option>
+                    <option *ngFor="let option of filter.options" [value]="option.value">{{ option.label }}</option>
+                  </select>
+                  <input
+                    *ngIf="filter.type !== 'select'"
+                    [type]="filter.type === 'number' ? 'number' : filter.type === 'date' ? 'date' : 'text'"
+                    [value]="filterValues[filter.id] || ''"
+                    [placeholder]="filter.placeholder"
+                    [readonly]="filter.locked"
+                    (change)="updateFilter(filter, $event)"
+                    style="display:block;width:100%;margin-top:6px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;background:var(--surface2);color:var(--text)"
+                  />
+                </label>
+              </div>
+            </div>
+            <div class="data-search" style="margin-bottom:10px">
+              <input id="beneficiarySearch" type="text" placeholder="Rechercher un beneficiaire..." (input)="updateBeneficiarySearch($event)" [disabled]="!selectedTemplateId || beneficiaryLoading" />
+            </div>
+            <div class="person-list" id="personList">
+              <div style="font-size:11px;color:#aaa;text-align:center;padding:14px" *ngIf="!selectedTemplateId">Selectionnez un modele pour afficher les beneficiaires.</div>
+              <div style="font-size:11px;color:#9a3412;text-align:center;padding:14px" *ngIf="selectedTemplateId && hasMissingRequiredFilters()">Renseignez les filtres obligatoires pour afficher les beneficiaires.</div>
+              <div style="font-size:11px;color:#aaa;text-align:center;padding:14px" *ngIf="selectedTemplateId && beneficiaryLoading">Chargement des beneficiaires...</div>
+              <button class="person-item" [class.sel]="selectedBeneficiaryId === beneficiary.id" type="button" *ngFor="let beneficiary of filteredBeneficiaries" (click)="selectBeneficiary(beneficiary)">
+                <div class="p-av">{{ beneficiaryInitials(beneficiary) }}</div>
+                <div>
+                  <div class="p-name">{{ beneficiary._displayLabel }}</div>
+                  <div class="p-meta">{{ beneficiary._displaySubtitle }}</div>
+                </div>
+              </button>
+              <div style="font-size:11px;color:#aaa;text-align:center;padding:14px" *ngIf="selectedTemplateId && !beneficiaryLoading && !filteredBeneficiaries.length">Aucun beneficiaire disponible</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-panel">
+        <div class="doc-ph">
+          <span class="doc-pt">Apercu A4</span>
+          <div class="doc-actions" id="docActions" *ngIf="documentData">
+            <button class="btn primary" type="button" (click)="printDocument()">Imprimer</button>
+            <button class="btn ghost" type="button" (click)="resetDocumentFlow()">Nouveau</button>
+          </div>
+        </div>
+        <div id="userPreviewFiltersWrap" style="width: 100%; padding: 10px 18px 0"></div>
+        <div class="zoom-bar" id="zoomBar" *ngIf="documentData">
+          <span style="font-size: 11px; color: var(--text3); font-weight: 600">ZOOM</span>
+          <button class="btn xs ghost" type="button" (click)="setZoom(-10)" style="font-size: 14px; width: 22px; padding: 0">-</button>
+          <span class="zoom-lbl" id="zoomLbl">{{ zoom }}%</span>
+          <button class="btn xs ghost" type="button" (click)="setZoom(10)" style="font-size: 14px; width: 22px; padding: 0">+</button>
+          <button class="btn xs ghost" type="button" (click)="setZoom(0)">↺</button>
+        </div>
+        <div class="pbar" id="pbar">
+          <div class="pb-step" [class.done]="selectedFamilyId" [class.cur]="!selectedFamilyId" id="ps1">{{ selectedFamily?.nom || 'Famille' }}</div>
+          <div class="pb-arr">›</div>
+          <div class="pb-step" [class.done]="selectedTemplateId" [class.cur]="selectedFamilyId && !selectedTemplateId" id="ps2">{{ selectedTemplate?.nom || 'Template' }}</div>
+          <div class="pb-arr">›</div>
+          <div class="pb-step" [class.done]="selectedBeneficiaryId" [class.cur]="selectedTemplateId && !selectedBeneficiaryId" id="ps3">{{ selectedBeneficiary?._displayLabel || 'Personne' }}</div>
+        </div>
+        <div class="doc-pb" id="docPb">
+          <div class="doc-wait" id="docWait" *ngIf="!documentData">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <h3>Document en attente</h3>
+            <p>Completez les 3 etapes pour generer votre document</p>
+          </div>
+          <div class="a4-canvas" id="a4Canvas" style="display: flex" *ngIf="documentData">
+            <div class="zoom-scaler" id="zoomScaler" [style.transform]="'scale(' + zoom / 100 + ')'">
+              <div class="preview-pages">
+                <div class="preview-page document-render document-render--preview" *ngFor="let page of renderedPages">
+                  <div class="doc-page-header" *ngIf="page.header">
+                    <div [innerHTML]="page.header"></div>
+                  </div>
+                  <div class="doc-page-body">
+                    <div [innerHTML]="page.body"></div>
+                  </div>
+                  <div class="doc-page-footer" *ngIf="page.footer">
+                    <div [innerHTML]="page.footer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="view-shell" [class.active]="mode === 'data'" id="dataView">
+    <div class="data-wrap">
+      <div class="data-sidebar">
+        <div class="data-side-hdr">
+          <div class="data-side-title">Gestion des donnees</div>
+          <div class="data-side-sub">Choisissez un espace de donnees</div>
+        </div>
+        <div class="data-search">
+          <input id="userDataViewSearch" type="text" placeholder="Rechercher..." (input)="updateTableViewSearch($event)" />
+        </div>
+        <div class="data-view-list" id="userDataViewList">
+          <button class="data-view-card" [class.active]="selectedTableViewId === view.id" type="button" *ngFor="let view of filteredTableViews" (click)="selectTableView(view)">
+            <div class="data-view-name">{{ view.label || view.tableName }}</div>
+          </button>
+          <div class="data-empty" *ngIf="!filteredTableViews.length">Aucune vue de donnees disponible.</div>
+        </div>
+      </div>
+      <div class="data-main">
+        <div class="data-main-hdr">
+          <div class="data-main-title" id="userDataMainTitle">{{ selectedTableView?.label || selectedTableView?.tableName || 'Aucune vue selectionnee' }}</div>
+          <div class="data-main-sub" id="userDataMainSub">Les vues disponibles sont configurees par l'administrateur.</div>
+          <div class="data-main-actions" id="userDataMainActions" [style.display]="selectedTableView ? 'flex' : 'none'">
+            <input id="userDataRowSearch" type="text" placeholder="Rechercher dans les lignes..." (input)="updateRowSearch($event)" />
+          </div>
+        </div>
+        <div id="userDataContent" class="data-empty" *ngIf="!selectedTableView">Selectionnez une vue de donnees pour commencer.</div>
+        <div id="userDataContent" class="data-empty" *ngIf="selectedTableView && rowsLoading">Chargement des donnees...</div>
+        <div id="userDataContent" class="data-empty" *ngIf="selectedTableView && !rowsLoading && !dataRows.length">Aucune ligne disponible.</div>
+        <div id="userDataContent" *ngIf="selectedTableView && !rowsLoading && dataRows.length">
+          <div class="data-grid">
+            <div class="data-card">
+              <div class="data-card-hdr">
+                <div class="data-card-title">Liste</div>
+                <div class="data-main-sub">{{ dataRows.length }} ligne(s)</div>
+              </div>
+              <div class="data-card-body data-card-body--table">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th *ngFor="let field of previewFields">{{ fieldLabel(field) }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of dataRows" [class.active]="rowId(row) === selectedRowId" (click)="selectRow(row)">
+                      <td *ngFor="let field of previewFields">{{ cellValue(row, field) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="data-card">
+              <div class="data-card-hdr">
+                <div class="data-card-title">Detail</div>
+                <div class="data-main-sub">{{ selectedRowId || 'Selection' }}</div>
+              </div>
+              <div class="data-card-body">
+                <div class="data-empty" *ngIf="!selectedRow">Selectionnez une ligne pour afficher le detail.</div>
+                <div class="data-detail-form" *ngIf="selectedRow">
+                  <label class="data-field" *ngFor="let field of visibleFields">
+                    <span class="data-field-label">{{ fieldLabel(field) }}</span>
+                    <div class="data-field-readonly">{{ cellValue(selectedRow, field) }}</div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-empty" *ngIf="error" style="margin: 24px">{{ error }}</div>
+</div>

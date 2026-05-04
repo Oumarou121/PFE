@@ -35,6 +35,11 @@ export const routes: Routes = [
     data: { page: 'user' }
   },
   {
+    path: 'user-angular',
+    loadComponent: () => import('./features/user/user-angular-page/user-angular-page.component').then(m => m.UserAngularPageComponent),
+    data: { page: 'user' }
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full'
