@@ -50,7 +50,7 @@ export class UserPageComponent implements OnInit {
   previewPlainHtml = "";
   previewTemplate: TemplateRecord | null = null;
   previewPerson: Record<string, any> | null = null;
-  waitMessage = "Prêt pour la génération";
+  waitMessage = "Complétez les 3 étapes pour générer votre document";
 
   selectedDataViewId: string | null = null;
   dataViewSearch = "";
@@ -160,6 +160,18 @@ export class UserPageComponent implements OnInit {
       : "Personne";
   }
 
+  get waitTitle(): string {
+    return !this.selectedFamilyId && !this.selectedTemplateId && !this.selectedBeneficiaryId
+      ? "Document en attente"
+      : this.waitMessage;
+  }
+
+  get waitDetail(): string {
+    return !this.selectedFamilyId && !this.selectedTemplateId && !this.selectedBeneficiaryId
+      ? this.waitMessage
+      : "";
+  }
+
   async switchMode(mode: UserMode): Promise<void> {
     this.mode = mode;
     if (mode === "data") {
@@ -187,7 +199,7 @@ export class UserPageComponent implements OnInit {
     this.templateSearch = "";
     this.beneficiarySearch = "";
     this.openSteps = { 1: false, 2: true, 3: false };
-    this.showWait("Selectionnez un modele de document");
+    this.showWait("Sélectionnez un modèle de document");
   }
 
   async selectTemplate(templateId: string): Promise<void> {
@@ -210,7 +222,7 @@ export class UserPageComponent implements OnInit {
     this.showWait(
       this.hasMissingRequiredFilters()
         ? "Renseignez les filtres pour continuer"
-        : "Selectionnez le beneficiaire concerne",
+        : "Sélectionnez le bénéficiaire concerné",
     );
   }
 
@@ -233,7 +245,7 @@ export class UserPageComponent implements OnInit {
     }
     this.showWait(
       this.beneficiaries.length
-        ? "Selectionnez le beneficiaire concerne"
+        ? "Sélectionnez le bénéficiaire concerné"
         : "Aucun beneficiaire disponible pour ces filtres",
     );
   }
@@ -250,7 +262,7 @@ export class UserPageComponent implements OnInit {
       !this.selectedTemplateId ||
       this.hasMissingRequiredFilters()
     ) {
-      this.notifications.showError("Completez les filtres obligatoires.");
+      this.notifications.showError("Complétez les filtres obligatoires.");
       return;
     }
     const template = this.selectedTemplate;
@@ -270,7 +282,7 @@ export class UserPageComponent implements OnInit {
     this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(
       this.previewPlainHtml,
     );
-    this.notifications.showSuccess("Document genere.");
+    this.notifications.showSuccess("Document généré.");
   }
 
   resetDocumentFlow(): void {
@@ -285,7 +297,7 @@ export class UserPageComponent implements OnInit {
     this.previewPlainHtml = "";
     this.previewTemplate = null;
     this.previewPerson = null;
-    this.showWait("Completez les 3 etapes pour generer votre document");
+    this.showWait("Complétez les 3 étapes pour générer votre document");
   }
 
   printDocument(): void {

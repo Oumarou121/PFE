@@ -40,9 +40,9 @@ export class DocumentRenderService {
 
   buildPreviewHtml(template: TemplateRecord, person: UnknownRecord): string {
     const pages = this.renderDocumentPages(template, person, {
-      mode: "preview",
+      mode: "print",
     });
-    return `<div class="preview-pages">${this.buildDocumentPagesHtml(template, pages, "preview-page", { mode: "preview" })}</div>`;
+    return `<div class="preview-pages" style="${this.getDocumentThemeStyleAttr(template)}">${this.buildDocumentPagesHtml(template, pages, "preview-page", { mode: "print" })}</div>`;
   }
 
   renderDocumentPages(
