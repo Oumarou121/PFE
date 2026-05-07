@@ -50,7 +50,21 @@ export class UserPageComponent implements OnInit {
   previewPlainHtml = "";
   previewTemplate: TemplateRecord | null = null;
   previewPerson: Record<string, any> | null = null;
-  waitMessage = "Complétez les 3 étapes pour générer votre document";
+  waitMessage = "Completez les 3 etapes pour generer votre document";
+
+  confirmModal: {
+    open: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  } = {
+    open: false,
+    title: "",
+    message: "",
+    confirmLabel: "Supprimer",
+    onConfirm: () => {},
+  };
 
   selectedDataViewId: string | null = null;
   dataViewSearch = "";
@@ -150,28 +164,6 @@ export class UserPageComponent implements OnInit {
       : null;
   }
 
-  get selectedBeneficiaryLabelForProgress(): string {
-    const beneficiary = this.beneficiaries.find(
-      (item) => String(item.id) === String(this.selectedBeneficiaryId),
-    );
-    if (beneficiary) return this.getBeneficiaryLabel(beneficiary);
-    return this.selectedFamily?.beneficiaryMode === "organization"
-      ? "Organization"
-      : "Personne";
-  }
-
-  get waitTitle(): string {
-    return !this.selectedFamilyId && !this.selectedTemplateId && !this.selectedBeneficiaryId
-      ? "Document en attente"
-      : this.waitMessage;
-  }
-
-  get waitDetail(): string {
-    return !this.selectedFamilyId && !this.selectedTemplateId && !this.selectedBeneficiaryId
-      ? this.waitMessage
-      : "";
-  }
-
   async switchMode(mode: UserMode): Promise<void> {
     this.mode = mode;
     if (mode === "data") {
@@ -199,7 +191,7 @@ export class UserPageComponent implements OnInit {
     this.templateSearch = "";
     this.beneficiarySearch = "";
     this.openSteps = { 1: false, 2: true, 3: false };
-    this.showWait("Sélectionnez un modèle de document");
+    this.showWait("Selectionnez un modele de document");
   }
 
   async selectTemplate(templateId: string): Promise<void> {
@@ -222,7 +214,7 @@ export class UserPageComponent implements OnInit {
     this.showWait(
       this.hasMissingRequiredFilters()
         ? "Renseignez les filtres pour continuer"
-        : "Sélectionnez le bénéficiaire concerné",
+        : "Selectionnez le beneficiaire concerne",
     );
   }
 
@@ -245,7 +237,7 @@ export class UserPageComponent implements OnInit {
     }
     this.showWait(
       this.beneficiaries.length
-        ? "Sélectionnez le bénéficiaire concerné"
+        ? "Selectionnez le beneficiaire concerne"
         : "Aucun beneficiaire disponible pour ces filtres",
     );
   }
@@ -262,7 +254,7 @@ export class UserPageComponent implements OnInit {
       !this.selectedTemplateId ||
       this.hasMissingRequiredFilters()
     ) {
-      this.notifications.showError("Complétez les filtres obligatoires.");
+      this.notifications.showError("Completez les filtres obligatoires.");
       return;
     }
     const template = this.selectedTemplate;
@@ -282,7 +274,7 @@ export class UserPageComponent implements OnInit {
     this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(
       this.previewPlainHtml,
     );
-    this.notifications.showSuccess("Document généré.");
+    this.notifications.showSuccess("Document genere.");
   }
 
   resetDocumentFlow(): void {
@@ -297,7 +289,7 @@ export class UserPageComponent implements OnInit {
     this.previewPlainHtml = "";
     this.previewTemplate = null;
     this.previewPerson = null;
-    this.showWait("Complétez les 3 étapes pour générer votre document");
+    this.showWait("Completez les 3 etapes pour generer votre document");
   }
 
   printDocument(): void {
@@ -406,14 +398,28 @@ export class UserPageComponent implements OnInit {
       return;
     }
     if (!this.selectedDataRowId) return;
-    await this.tableViews.deleteTableViewRecord(
-      view.id,
-      this.selectedDataRowId,
-    );
-    this.selectedDataRowId = null;
-    this.selectedDataRecord = null;
-    this.notifications.showSuccess("Ligne supprimee.");
-    await this.reloadDataRows();
+    const rowId = this.selectedDataRowId;
+    const previewLabel =
+      this.buildDataPreviewLabel(view, this.selectedDataRecord) ||
+      "cette ligne";
+    this.confirmModal = {
+      open: true,
+      title: "Supprimer la ligne ?",
+      message: `La ligne "${previewLabel}" sera supprimée.`,
+      confirmLabel: "Supprimer",
+      onConfirm: async () => {
+        this.closeConfirmModal();
+        await this.tableViews.deleteTableViewRecord(view.id, rowId);
+        this.selectedDataRowId = null;
+        this.selectedDataRecord = null;
+        this.notifications.showSuccess("Ligne supprimee.");
+        await this.reloadDataRows();
+      },
+    };
+  }
+
+  closeConfirmModal(): void {
+    this.confirmModal = { ...this.confirmModal, open: false };
   }
 
   isFieldEditable(field: string): boolean {
@@ -468,6 +474,14 @@ export class UserPageComponent implements OnInit {
 
   logout(): void {
     this.auth.logout();
+  }
+
+  getSelectedBeneficiary(): BeneficiaryRecord | null {
+    return (
+      this.beneficiaries.find(
+        (b) => String(b.id) === String(this.selectedBeneficiaryId),
+      ) || null
+    );
   }
 
   getBeneficiaryLabel(

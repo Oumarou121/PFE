@@ -4,12 +4,7 @@
   <div class="lb"><div class="lbf"></div></div>
 </div>
 
-<div
-  id="mainApp"
-  class="user-page"
-  style="opacity: 1; transition: opacity 0.3s; min-height: 100vh"
-  *ngIf="!loading"
->
+<div class="user-page" *ngIf="!loading">
   <nav class="topnav">
     <div class="nav-logo">SIRH-<span>Doc</span></div>
     <div class="nav-sep"></div>
@@ -17,29 +12,29 @@
     <span class="nav-organization">{{ organizationName }}</span>
     <div class="nav-right">
       <button class="nav-link" type="button" (click)="logout()">
-        Déconnexion
+        Deconnexion
       </button>
     </div>
   </nav>
 
-  <div style="padding: 0 24px">
+  <div class="hero-wrap">
     <div class="hero">
       <div class="hero-icon">{{ mode === "data" ? "🗂️" : "📄" }}</div>
       <div>
         <h1>
           {{
-            mode === "data" ? "Gestion des données" : "Génération de documents"
+            mode === "data" ? "Gestion des donnees" : "Generation de documents"
           }}
         </h1>
         <p>
           {{
             mode === "data"
-              ? "Consultez et mettez à jour les données mises à disposition"
-              : "Sélectionnez une famille, un modèle et une personne"
+              ? "Consultez et mettez a jour les donnees mises a disposition"
+              : "Selectionnez une famille, un modele et une personne"
           }}
         </p>
       </div>
-      <div class="hero-badge">{{ organizationName || "—" }}</div>
+      <div class="hero-badge">{{ organizationName || "-" }}</div>
     </div>
   </div>
 
@@ -58,7 +53,7 @@
       [class.active]="mode === 'data'"
       (click)="switchMode('data')"
     >
-      Données
+      Donnees
     </button>
   </div>
 
@@ -66,13 +61,7 @@
     <div class="main-wrap">
       <div class="stepper">
         <div class="stepper-hdr">
-          <div class="section-heading">
-            <div class="section-icon">1-3</div>
-            <div>
-              <span class="stepper-title">Étapes de génération</span>
-              <span class="section-subtitle">Construisez le document pas à pas</span>
-            </div>
-          </div>
+          <span class="stepper-title">Etapes de generation</span>
           <div class="step-dots">
             <div
               class="step-dot"
@@ -105,7 +94,7 @@
               >Famille de documents</span
             >
             <span class="step-val" [class.ok]="selectedFamilyId">{{
-              selectedFamily ? getFamilyName() : "Non sélectionné"
+              selectedFamily ? getFamilyName() : "Non selectionne"
             }}</span>
             <svg
               class="step-chev"
@@ -139,7 +128,7 @@
               >
                 <div class="fam-name">{{ getFamilyName(family) }}</div>
                 <div class="fam-meta">
-                  {{ templateCountForFamily(family.id) }} modèle(s)
+                  {{ templateCountForFamily(family.id) }} modele(s)
                 </div>
               </button>
             </div>
@@ -158,7 +147,7 @@
             <span
               class="step-lbl"
               [class.cur]="selectedFamilyId && !selectedTemplateId"
-              >Modèle de document</span
+              >Modele de document</span
             >
             <span class="step-val" [class.ok]="selectedTemplateId">{{
               selectedTemplate ? getTemplateName() : "En attente"
@@ -180,13 +169,13 @@
             <div class="data-search" style="margin-bottom: 10px">
               <input
                 type="text"
-                placeholder="Rechercher un modèle..."
+                placeholder="Rechercher un modele..."
                 [(ngModel)]="templateSearch"
               />
             </div>
             <div class="tpl-list">
               <div class="empty-inline" *ngIf="!templates.length">
-                Aucun modèle
+                Aucun modele
               </div>
               <button
                 class="tpl-card"
@@ -195,7 +184,7 @@
                 [class.sel]="selectedTemplateId === template.id"
                 (click)="selectTemplate(template.id)"
               >
-                <span class="tpl-icon">📄</span>
+                <span class="tpl-icon" style="font-size: 16px">📄</span>
                 <div class="tpl-copy">
                   <div class="tpl-name">{{ getTemplateName(template) }}</div>
                   <div class="tpl-meta">
@@ -228,7 +217,7 @@
               [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
               >{{
                 runtimeFilters.length
-                  ? "Filtres & bénéficiaire"
+                  ? "Filtres & beneficiaire"
                   : getBeneficiaryTypeLabel()
               }}</span
             >
@@ -250,59 +239,86 @@
           </button>
           <div class="step-body" [class.open]="openSteps[3]">
             <div
-              id="filterPanel"
-              style="margin-bottom: 12px"
+              class="filter-panel"
               *ngIf="runtimeFilters.length"
+              style="margin-bottom: 12px"
             >
-              <div class="filter-panel">
-                <label
-                  class="filter-field"
-                  *ngFor="let filter of runtimeFilters"
+              <label
+                class="filter-field"
+                *ngFor="let filter of runtimeFilters"
+                style="
+                  display: block;
+                  font-size: 11px;
+                  color: var(--text2);
+                  font-weight: 600;
+                  margin-bottom: 8px;
+                "
+              >
+                <span
+                  >{{ filter.label
+                  }}{{ filter.profile.required ? " *" : "" }}</span
                 >
-                  <span
-                    >{{ filter.label
-                    }}{{ filter.profile.required ? " *" : "" }}</span
+                <select
+                  *ngIf="filter.type === 'select'"
+                  [(ngModel)]="filterValues[filter.id]"
+                  [disabled]="filter.profile.locked"
+                  (ngModelChange)="onFilterChange(filter.id, $event)"
+                  style="
+                    display: block;
+                    width: 100%;
+                    margin-top: 6px;
+                    font-size: 12px;
+                    border: 1px solid var(--border);
+                    border-radius: var(--r);
+                    padding: 6px 10px;
+                    background: var(--surface2);
+                    color: var(--text);
+                  "
+                >
+                  <option [ngValue]="null">-- Toutes / vide --</option>
+                  <option
+                    *ngFor="let option of filter.options || []"
+                    [ngValue]="option.value"
                   >
-                  <select
-                    *ngIf="filter.type === 'select'"
-                    [(ngModel)]="filterValues[filter.id]"
-                    [disabled]="filter.profile.locked"
-                    (ngModelChange)="onFilterChange(filter.id, $event)"
-                  >
-                    <option [ngValue]="null">-- Toutes / vide --</option>
-                    <option
-                      *ngFor="let option of filter.options || []"
-                      [ngValue]="option.value"
-                    >
-                      {{ option.label }}
-                    </option>
-                  </select>
-                  <input
-                    *ngIf="filter.type !== 'select'"
-                    [type]="
-                      filter.type === 'number'
-                        ? 'number'
-                        : filter.type === 'date'
-                          ? 'date'
-                          : 'text'
-                    "
-                    [(ngModel)]="filterValues[filter.id]"
-                    [readonly]="filter.profile.locked"
-                    (ngModelChange)="onFilterChange(filter.id, $event)"
-                  />
-                </label>
-              </div>
+                    {{ option.label }}
+                  </option>
+                </select>
+                <input
+                  *ngIf="filter.type !== 'select'"
+                  [type]="
+                    filter.type === 'number'
+                      ? 'number'
+                      : filter.type === 'date'
+                        ? 'date'
+                        : 'text'
+                  "
+                  [(ngModel)]="filterValues[filter.id]"
+                  [readonly]="filter.profile.locked"
+                  (ngModelChange)="onFilterChange(filter.id, $event)"
+                  style="
+                    display: block;
+                    width: 100%;
+                    margin-top: 6px;
+                    font-size: 12px;
+                    border: 1px solid var(--border);
+                    border-radius: var(--r);
+                    padding: 6px 10px;
+                    background: var(--surface2);
+                    color: var(--text);
+                  "
+                />
+              </label>
             </div>
             <div class="data-search" style="margin-bottom: 10px">
               <input
                 type="text"
-                placeholder="Rechercher un bénéficiaire..."
+                placeholder="Rechercher un beneficiaire..."
                 [(ngModel)]="beneficiarySearch"
               />
             </div>
             <div class="person-list">
               <div class="empty-inline" *ngIf="!filteredBeneficiaries.length">
-                Aucun bénéficiaire disponible
+                Aucun beneficiaire disponible
               </div>
               <button
                 class="person-item"
@@ -330,60 +346,123 @@
 
       <div class="doc-panel">
         <div class="doc-ph">
-          <div class="section-heading">
-            <div class="section-icon">A4</div>
-            <div>
-              <span class="doc-pt">Aperçu A4</span>
-              <span class="section-subtitle">
-                {{ previewHtml ? "Document prêt pour l'impression" : "Aucun document généré" }}
-              </span>
-            </div>
-          </div>
-          <div class="doc-actions" id="docActions">
-            <ng-container *ngIf="previewHtml">
-              <button
-                class="btn primary"
-                type="button"
-                (click)="printDocument()"
-              >
-                Imprimer
-              </button>
-              <button
-                class="btn ghost"
-                type="button"
-                (click)="resetDocumentFlow()"
-              >
-                Nouveau
-              </button>
-            </ng-container>
+          <span class="doc-pt">Apercu A4</span>
+          <div class="doc-actions" *ngIf="previewHtml">
+            <button class="btn primary" type="button" (click)="printDocument()">
+              Imprimer
+            </button>
+            <button
+              class="btn ghost"
+              type="button"
+              (click)="resetDocumentFlow()"
+            >
+              Nouveau
+            </button>
           </div>
         </div>
+
         <div
-          id="userPreviewFiltersWrap"
-          style="width: 100%; padding: 10px 18px 0"
-        ></div>
-        <div
-          class="zoom-bar"
-          id="zoomBar"
-          [style.display]="previewHtml ? 'flex' : 'none'"
+          class="preview-filters-wrap"
+          *ngIf="previewHtml && runtimeFilters.length"
         >
-          <span style="font-size: 11px; color: var(--text3); font-weight: 600"
-            >ZOOM</span
+          <div
+            style="
+              font-size: 12px;
+              font-weight: 700;
+              color: var(--text);
+              margin-bottom: 8px;
+            "
           >
+            Filtres du document
+          </div>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+              gap: 10px;
+              width: 100%;
+              margin-bottom: 6px;
+            "
+          >
+            <label
+              class="filter-field"
+              *ngFor="let filter of runtimeFilters"
+              style="font-size: 11px; color: var(--text2); font-weight: 600"
+            >
+              {{ filter.label }}{{ filter.profile.required ? " *" : "" }}
+              <select
+                *ngIf="filter.type === 'select'"
+                [(ngModel)]="filterValues[filter.id]"
+                [disabled]="filter.profile.locked"
+                (ngModelChange)="onFilterChange(filter.id, $event)"
+                style="
+                  display: block;
+                  width: 100%;
+                  margin-top: 6px;
+                  font-size: 12px;
+                  border: 1px solid var(--border);
+                  border-radius: var(--r);
+                  padding: 6px 10px;
+                  background: var(--surface2);
+                  color: var(--text);
+                "
+              >
+                <option [ngValue]="null">-- Toutes / vide --</option>
+                <option
+                  *ngFor="let option of filter.options || []"
+                  [ngValue]="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+              <input
+                *ngIf="filter.type !== 'select'"
+                [type]="
+                  filter.type === 'number'
+                    ? 'number'
+                    : filter.type === 'date'
+                      ? 'date'
+                      : 'text'
+                "
+                [(ngModel)]="filterValues[filter.id]"
+                [readonly]="filter.profile.locked"
+                (ngModelChange)="onFilterChange(filter.id, $event)"
+                style="
+                  display: block;
+                  width: 100%;
+                  margin-top: 6px;
+                  font-size: 12px;
+                  border: 1px solid var(--border);
+                  border-radius: var(--r);
+                  padding: 6px 10px;
+                  background: var(--surface2);
+                  color: var(--text);
+                "
+              />
+            </label>
+          </div>
+          <div style="font-size: 11px; color: var(--text2); margin-top: 2px">
+            Organisation :
+            <strong>{{ organizationName || "Organisation principale" }}</strong>
+          </div>
+        </div>
+
+        <div class="zoom-bar" *ngIf="previewHtml">
+          <span>ZOOM</span>
           <button
             class="btn xs ghost"
-            style="font-size: 14px; width: 22px; padding: 0"
             type="button"
             (click)="setZoom(-10)"
+            style="font-size: 14px; width: 22px; padding: 0"
           >
             -
           </button>
           <span class="zoom-lbl">{{ zoom }}%</span>
           <button
             class="btn xs ghost"
-            style="font-size: 14px; width: 22px; padding: 0"
             type="button"
             (click)="setZoom(10)"
+            style="font-size: 14px; width: 22px; padding: 0"
           >
             +
           </button>
@@ -391,26 +470,23 @@
             ↺
           </button>
         </div>
-        <div class="pbar" id="pbar">
+
+        <div class="pbar" *ngIf="previewHtml">
           <div
             class="pb-step"
             [class.done]="selectedFamilyId"
             [class.cur]="!selectedFamilyId"
-            id="ps1"
           >
-            {{ selectedFamily ? (getFamilyName() | slice: 0 : 16) : "Famille" }}
+            {{ selectedFamily ? getFamilyName().substring(0, 16) : "Famille" }}
           </div>
           <div class="pb-arr">›</div>
           <div
             class="pb-step"
             [class.done]="selectedTemplateId"
             [class.cur]="selectedFamilyId && !selectedTemplateId"
-            id="ps2"
           >
             {{
-              selectedTemplate
-                ? (getTemplateName() | slice: 0 : 16)
-                : "Template"
+              selectedTemplate ? getTemplateName().substring(0, 16) : "Template"
             }}
           </div>
           <div class="pb-arr">›</div>
@@ -418,18 +494,19 @@
             class="pb-step"
             [class.done]="selectedBeneficiaryId"
             [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
-            id="ps3"
           >
-            {{ selectedBeneficiaryLabelForProgress | slice: 0 : 14 }}
+            {{
+              selectedBeneficiaryId
+                ? getBeneficiaryLabel(getSelectedBeneficiary()).substring(0, 14)
+                : selectedFamily?.beneficiaryMode === "organization"
+                  ? "Organisation"
+                  : "Bénéficiaire"
+            }}
           </div>
         </div>
 
-        <div class="doc-pb" id="docPb">
-          <div
-            class="doc-wait"
-            id="docWait"
-            [style.display]="previewHtml ? 'none' : 'flex'"
-          >
+        <div class="doc-pb">
+          <div class="doc-wait" *ngIf="!previewHtml">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -439,16 +516,10 @@
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            <h3>{{ waitTitle }}</h3>
-            <p *ngIf="waitDetail">{{ waitDetail }}</p>
+            <h3>{{ waitMessage }}</h3>
           </div>
-          <div
-            class="a4-canvas"
-            id="a4Canvas"
-            [style.display]="previewHtml ? 'flex' : 'none'"
-          >
+          <div class="a4-canvas" *ngIf="previewHtml">
             <div
-              id="zoomScaler"
               class="zoom-scaler"
               [style.transform]="'scale(' + zoom / 100 + ')'"
               [style.marginBottom]="
@@ -467,13 +538,8 @@
     <div class="data-wrap">
       <div class="data-sidebar">
         <div class="data-side-hdr">
-          <div class="section-heading">
-            <div class="section-icon">DB</div>
-            <div>
-              <div class="data-side-title">Gestion des données</div>
-              <div class="data-side-sub">Choisissez un espace de données</div>
-            </div>
-          </div>
+          <div class="data-side-title">Gestion des donnees</div>
+          <div class="data-side-sub">Choisissez un espace de donnees</div>
         </div>
         <div class="data-search">
           <input
@@ -484,7 +550,7 @@
         </div>
         <div class="data-view-list">
           <div class="data-empty" *ngIf="!dataViewsList.length">
-            Aucune vue de données disponible.
+            Aucune vue de donnees disponible.
           </div>
           <button
             class="data-view-card"
@@ -494,32 +560,21 @@
             (click)="selectDataView(view.id)"
           >
             <div class="data-view-name">{{ view.label || view.tableName }}</div>
-            <div class="data-view-meta">{{ view.tableName }}</div>
           </button>
         </div>
       </div>
 
       <div class="data-main">
         <div class="data-main-hdr">
-          <div class="data-main-heading">
-            <div class="section-heading">
-              <div class="section-icon">Vue</div>
-              <div>
-                <div class="data-main-title">
-                  {{
-                    selectedDataView?.label ||
-                      selectedDataView?.tableName ||
-                      "Aucune vue sélectionnée"
-                  }}
-                </div>
-                <div class="data-main-sub">
-                  Les vues disponibles sont configurées par l'administrateur.
-                </div>
-              </div>
-            </div>
-            <div class="data-status-pill" *ngIf="selectedDataView">
-              {{ dataRows.length }} ligne(s)
-            </div>
+          <div class="data-main-title">
+            {{
+              selectedDataView?.label ||
+                selectedDataView?.tableName ||
+                "Aucune vue selectionnee"
+            }}
+          </div>
+          <div class="data-main-sub">
+            Les vues disponibles sont configurees par l'administrateur.
           </div>
           <div class="data-main-actions" *ngIf="selectedDataView">
             <input
@@ -532,13 +587,13 @@
               Ajouter
             </button>
             <button class="nav-link" type="button" (click)="reloadDataRows()">
-              Rafraîchir
+              Rafraichir
             </button>
           </div>
         </div>
 
         <div class="data-empty" *ngIf="!selectedDataView">
-          Sélectionnez une vue de données pour commencer.
+          Selectionnez une vue de donnees pour commencer.
         </div>
         <div class="data-grid" *ngIf="selectedDataView as view">
           <div class="data-card">
@@ -576,20 +631,20 @@
           <div class="data-card">
             <div class="data-card-hdr">
               <div class="data-card-title">
-                {{ creatingDataRow ? "Nouvelle ligne" : "Détail" }}
+                {{ creatingDataRow ? "Nouvelle ligne" : "Detail" }}
               </div>
               <div class="data-main-sub">
                 {{
                   creatingDataRow
                     ? "Saisie"
                     : buildDataPreviewLabel(view, selectedDataRecord) ||
-                      "Sélection"
+                      "Selection"
                 }}
               </div>
             </div>
             <div class="data-card-body">
               <div class="data-empty" *ngIf="!selectedDataRecord">
-                Sélectionnez une ligne pour afficher le détail.
+                Selectionnez une ligne pour afficher le detail.
               </div>
               <div class="data-detail-form" *ngIf="selectedDataRecord">
                 <label
@@ -657,6 +712,38 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation modal (legacy: modalConfirm) -->
+  <div class="modal-overlay" [class.open]="confirmModal.open">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">{{ confirmModal.title }}</span>
+        <button class="modal-close" type="button" (click)="closeConfirmModal()">
+          ✕
+        </button>
+      </div>
+      <p style="font-size: 13px; color: var(--text2); line-height: 1.6">
+        {{ confirmModal.message }}
+      </p>
+      <div class="modal-actions">
+        <button class="nav-link" type="button" (click)="closeConfirmModal()">
+          Annuler
+        </button>
+        <button
+          class="nav-link"
+          type="button"
+          style="
+            background: var(--red-bg);
+            color: var(--red);
+            border-color: rgba(220, 38, 38, 0.25);
+          "
+          (click)="confirmModal.onConfirm()"
+        >
+          {{ confirmModal.confirmLabel }}
+        </button>
       </div>
     </div>
   </div>

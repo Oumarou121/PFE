@@ -40,9 +40,9 @@ export class DocumentRenderService {
 
   buildPreviewHtml(template: TemplateRecord, person: UnknownRecord): string {
     const pages = this.renderDocumentPages(template, person, {
-      mode: "print",
+      mode: "preview",
     });
-    return `<div class="preview-pages" style="${this.getDocumentThemeStyleAttr(template)}">${this.buildDocumentPagesHtml(template, pages, "preview-page", { mode: "print" })}</div>`;
+    return `<div class="preview-pages">${this.buildDocumentPagesHtml(template, pages, "preview-page", { mode: "preview" })}</div>`;
   }
 
   renderDocumentPages(
@@ -144,209 +144,91 @@ export class DocumentRenderService {
 
   printDocPaginated(template: TemplateRecord, person: UnknownRecord): void {
     if (!template || !person) return;
-    const margins = this.getTemplatePageMargins(template);
-    const distances = this.getTemplateHeaderFooterDistances(template);
     const orientation = this.getTemplateOrientation(template);
     const pageWidth = orientation === "landscape" ? "297mm" : "210mm";
     const pageHeight = orientation === "landscape" ? "210mm" : "297mm";
+    const margins = this.getTemplatePageMargins(template);
     const paddings = this.getPageSectionPaddings(template);
     const pages = this.renderDocumentPages(template, person, { mode: "print" });
-
     const printCSS = `
       @page { size: A4 ${orientation}; margin: 0; }
       html, body {
-        width: auto !important;
-        height: auto !important;
-        min-height: auto !important;
-        overflow: visible !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #fff !important;
+        width: auto !important; height: auto !important; min-height: auto !important;
+        overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important;
       }
       #sirh-print-area { display: block; }
-
-      .document-render--print,
-      .preview-page,
-      .sirh-print-page {
-        width: ${pageWidth};
-        height: ${pageHeight};
-        background-color: #fff;
-        background-image: var(--doc-page-bg-image, none);
-        background-size: var(--doc-page-bg-size, cover);
-        background-position: var(--doc-page-bg-position, center center);
-        background-repeat: var(--doc-page-bg-repeat, no-repeat);
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
-        display: grid;
-        grid-template-rows: auto minmax(0, 1fr) auto;
-        position: relative;
-        box-sizing: border-box;
-        overflow: hidden;
-        page-break-after: always;
-        break-after: page;
+      .document-render--print, .preview-page, .sirh-print-page {
+        width: ${pageWidth}; height: ${pageHeight}; background-color: #fff;
+        background-image: var(--doc-page-bg-image, none); background-size: var(--doc-page-bg-size, cover);
+        background-position: var(--doc-page-bg-position, center center); background-repeat: var(--doc-page-bg-repeat, no-repeat);
+        print-color-adjust: exact; -webkit-print-color-adjust: exact; display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto; position: relative; box-sizing: border-box;
+        overflow: hidden; page-break-after: always; break-after: page;
       }
-
-      .document-render--print:last-child,
-      .preview-page:last-child,
-      .sirh-print-page:last-child {
-        page-break-after: auto;
-        break-after: auto;
-      }
-
+      .document-render--print:last-child, .preview-page:last-child, .sirh-print-page:last-child { page-break-after: auto; break-after: auto; }
+      .document-render--print, .preview-page { box-shadow: none; border-radius: 0; flex-shrink: 0; }
       .doc-page-header {
-        grid-row: 1;
-        box-sizing: border-box;
-        padding: ${paddings.header};
-        font-family: var(--doc-font-body, "Times New Roman", Times, serif);
-        font-size: 12pt;
-        line-height: 1.6;
-        color: var(--doc-color-text, #111);
-        background: transparent;
-        overflow: hidden;
-        white-space: normal;
-        overflow-wrap: anywhere;
+        grid-row: 1; box-sizing: border-box; padding: ${paddings.header};
+        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
+        color: var(--doc-color-text, #111); background: transparent;
+        overflow: hidden; white-space: normal; overflow-wrap: anywhere;
       }
-
       .doc-page-body {
-        grid-row: 2;
-        min-height: 0;
-        box-sizing: border-box;
-        padding: ${paddings.body};
-        font-family: var(--doc-font-body, "Times New Roman", Times, serif);
-        font-size: 12pt;
-        line-height: 1.6;
-        color: var(--doc-color-text, #111);
-        overflow: hidden;
-        white-space: normal;
-        overflow-wrap: anywhere;
+        grid-row: 2; min-height: 0; box-sizing: border-box; padding: ${paddings.body};
+        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
+        color: var(--doc-color-text, #111); overflow: hidden; white-space: normal; overflow-wrap: anywhere;
       }
-
-      .doc-page-body.no-header {
-        padding-top: ${margins.mt}mm;
-      }
-
-      .doc-page-body.no-footer {
-        padding-bottom: ${margins.mb}mm;
-      }
-
+      .doc-page-body.no-header { padding-top: ${margins.mt}mm; }
+      .doc-page-body.no-footer { padding-bottom: ${margins.mb}mm; }
+      .doc-page-body.no-header.no-footer { padding: ${paddings.bodyNoHeaderFooter}; }
       .doc-page-footer {
-        grid-row: 3;
-        box-sizing: border-box;
-        padding: ${paddings.footer};
-        font-family: var(--doc-font-body, "Times New Roman", Times, serif);
-        font-size: 12pt;
-        line-height: 1.6;
-        color: var(--doc-color-text, #111);
-        background: transparent;
-        position: relative;
-        z-index: 1;
-        overflow: hidden;
-        white-space: normal;
-        overflow-wrap: anywhere;
+        grid-row: 3; box-sizing: border-box; padding: ${paddings.footer};
+        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
+        color: var(--doc-color-text, #111); background: transparent; position: relative; z-index: 1;
+        overflow: hidden; white-space: normal; overflow-wrap: anywhere;
       }
-
-      .doc-page-header p,
-      .doc-page-body p,
-      .doc-page-footer p {
-        margin: 0 0 0.4em;
-        white-space: inherit;
-        min-height: 1.6em;
+      .doc-page-header p, .doc-page-body p, .doc-page-footer p { margin: 0 0 0.4em; white-space: inherit; }
+      .doc-page-header u, .doc-page-body u, .doc-page-footer u,
+      .doc-page-header a, .doc-page-body a, .doc-page-footer a {
+        text-decoration-thickness: 1px; text-underline-offset: 0.14em; text-decoration-skip-ink: none;
       }
-
-      .doc-page-header u,
-      .doc-page-body u,
-      .doc-page-footer u,
-      .doc-page-header a,
-      .doc-page-body a,
-      .doc-page-footer a {
-        text-decoration-thickness: 1px;
-        text-underline-offset: 0.14em;
-        text-decoration-skip-ink: none;
+      .preview-page ul, .doc-page-header ul, .doc-page-body ul, .doc-page-footer ul,
+      .preview-page ol, .doc-page-header ol, .doc-page-body ol, .doc-page-footer ol {
+        padding-left: 2em; list-style: revert;
       }
-
-      .doc-page-header ul,
-      .doc-page-body ul,
-      .doc-page-footer ul,
-      .doc-page-header ol,
-      .doc-page-body ol,
-      .doc-page-footer ol {
-        padding-left: 2em !important;
-        list-style: revert !important;
+      li { display: list-item; }
+      .preview-page table, .sirh-print-page table, table {
+        border-collapse: collapse; width: 100%; max-width: 100%;
+        table-layout: fixed; margin: 6px 0; box-sizing: border-box; overflow-wrap: anywhere;
       }
-
-      li { display: list-item !important; }
-
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        max-width: 100%;
-        table-layout: fixed;
-        margin: 6px 0;
-        box-sizing: border-box;
-        overflow-wrap: anywhere;
+      .preview-page td, .preview-page th, td, th {
+        border: 1px solid var(--doc-color-border, #c8cdd8); padding: 6px 10px; min-width: 0;
+        position: relative; box-sizing: border-box; word-break: normal; overflow-wrap: anywhere;
+        white-space: normal; print-color-adjust: exact; -webkit-print-color-adjust: exact;
       }
-
-      td, th {
-        border: 1px solid var(--doc-color-border, #c8cdd8);
-        padding: 6px 10px;
-        min-width: 0;
-        position: relative;
-        box-sizing: border-box;
-        word-break: normal;
-        overflow-wrap: anywhere;
-        white-space: normal;
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
+      .preview-page td p, .preview-page th p, td p, th p { color: inherit; margin: 0; white-space: inherit; }
+      .preview-page th:not([style]), th:not([style]) {
+        background: var(--doc-table-header-bg, transparent); color: var(--doc-color-text, #111);
+        font-weight: 700; text-align: left;
       }
-
-      td p, th p { color: inherit; margin: 0; white-space: inherit; }
-
-      th:not([style]) {
-        background: var(--doc-table-header-bg, transparent);
-        color: var(--doc-color-text, #111);
-        font-weight: 700;
-        text-align: left;
-      }
-
       th { font-weight: 700; }
-
       thead { display: table-header-group; }
       tfoot { display: table-footer-group; }
-      tr, img {
-        break-inside: avoid;
-        page-break-inside: avoid;
+      tr, img { break-inside: avoid; page-break-inside: avoid; }
+      img { max-width: 100%; height: auto; display: block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .document-render--print .var-resolved, #sirh-print-area .var-resolved {
+        color: #111 !important; font-weight: inherit !important;
+        background: none !important; padding: 0 !important; border-radius: 0 !important;
       }
-
-      img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
-      }
-
-      .document-render--print .var-resolved,
-      #sirh-print-area .var-resolved {
-        color: inherit !important;
-        font-weight: inherit !important;
-        background: none !important;
-        padding: 0 !important;
-        border-radius: 0 !important;
-      }
-
-      .document-render--print .var-missing,
-      #sirh-print-area .var-missing { color: #dc2626 !important; }
+      .document-render--print .var-missing, #sirh-print-area .var-missing { color: #dc2626 !important; }
     `;
-
     document.getElementById("sirh-print-area")?.remove();
     document.getElementById("sirh-print-css")?.remove();
     document.getElementById("sirh-hide-css")?.remove();
-
     const style = document.createElement("style");
     style.id = "sirh-print-css";
     style.media = "print";
     style.textContent = printCSS;
-
     const hideStyle = document.createElement("style");
     hideStyle.id = "sirh-hide-css";
     hideStyle.media = "print";
@@ -354,7 +236,6 @@ export class DocumentRenderService {
       body > *:not(#sirh-print-area):not(#sirh-print-css):not(#sirh-hide-css) { display: none !important; }
       #sirh-print-area { display: block !important; }
     `;
-
     const area = document.createElement("div");
     area.id = "sirh-print-area";
     area.style.display = "none";
@@ -365,11 +246,9 @@ export class DocumentRenderService {
       "sirh-print-page",
       { mode: "print" },
     );
-
     document.body.appendChild(style);
     document.body.appendChild(hideStyle);
     document.body.appendChild(area);
-
     window.setTimeout(() => {
       window.print();
       window.setTimeout(() => {
@@ -607,10 +486,7 @@ export class DocumentRenderService {
         !Array.isArray(value) &&
         typeof value !== "object"
       ) {
-        const escaped = this.escapeHtml(String(value));
-        return preview
-          ? `<span class="var-resolved">${escaped}</span>`
-          : escaped;
+        return this.wrapResolved(this.escapeHtml(String(value)), preview);
       }
       return preview
         ? `<span class="var-missing">{{${this.escapeHtml(key)}}}</span>`
@@ -709,6 +585,7 @@ export class DocumentRenderService {
   private getPageSectionPaddings(template: TemplateRecord): {
     header: string;
     body: string;
+    bodyNoHeaderFooter: string;
     footer: string;
   } {
     const margins = this.getTemplatePageMargins(template);
@@ -716,6 +593,7 @@ export class DocumentRenderService {
     return {
       header: `${distances.headerTop}mm ${margins.mr}mm 3mm ${margins.ml}mm`,
       body: `${margins.mt}mm ${margins.mr}mm ${margins.mb}mm ${margins.ml}mm`,
+      bodyNoHeaderFooter: `${margins.mt}mm ${margins.mr}mm ${margins.mb}mm ${margins.ml}mm`,
       footer: `3mm ${margins.mr}mm ${distances.footerBottom}mm ${margins.ml}mm`,
     };
   }
@@ -780,10 +658,28 @@ export class DocumentRenderService {
     const root = doc.body.firstElementChild;
     if (!root) return html;
     root
-      .querySelectorAll(".var-resolved, .var-missing")
+      .querySelectorAll(".var-resolved")
       .forEach((node) =>
         node.replaceWith(doc.createTextNode(node.textContent || "")),
       );
+    root
+      .querySelectorAll(".var-missing")
+      .forEach((node) =>
+        node.replaceWith(doc.createTextNode(node.textContent || "")),
+      );
+    root.querySelectorAll<HTMLElement>("span[style]").forEach((node) => {
+      const text = String(node.textContent || "").trim();
+      const styleText = String(node.getAttribute("style") || "");
+      const looksLikeVariablePlaceholder =
+        /^\{\{[#/]?[\w:,\-]+\}\}$/.test(text) || /^\[[\w:,\-]+\]$/.test(text);
+      const looksLikePreviewStyle =
+        /color\s*:\s*#?(2563eb|1d4ed8|7c3aed|f97316)/i.test(styleText) ||
+        /color\s*:\s*var\(--(accent|purple|orange)/i.test(styleText) ||
+        /background(?:-color)?\s*:\s*#?(eff6ff|f3e8ff|fff7ed)/i.test(styleText);
+      if (looksLikeVariablePlaceholder && looksLikePreviewStyle) {
+        node.replaceWith(doc.createTextNode(text));
+      }
+    });
     return root.innerHTML;
   }
 
@@ -975,64 +871,37 @@ export class DocumentRenderService {
   }
 
   private normalizeResolvedTableWidthsHtml(html: string): string {
-    if (!html || typeof DOMParser === "undefined") return html || "";
+    if (!html || typeof DOMParser === "undefined") return html;
     const parser = new DOMParser();
     const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
     const root = doc.body.firstElementChild;
     if (!root) return html;
-
     root.querySelectorAll("table").forEach((table) => {
-      const widths = this.readResolvedTableWidths(table);
+      const firstRow = table.querySelector("tr");
+      if (!firstRow) return;
+      const widths: string[] = [];
+      Array.from(firstRow.children).forEach((cell) => {
+        const el = cell as HTMLElement;
+        const width = String(
+          el.style.width || el.getAttribute("width") || "",
+        ).trim();
+        if (width) widths.push(width);
+      });
       if (!widths.length) return;
-
       let colgroup = table.querySelector(":scope > colgroup");
       if (!colgroup) {
         colgroup = doc.createElement("colgroup");
-        const firstChild = table.firstChild;
-        if (firstChild) table.insertBefore(colgroup, firstChild);
-        else table.appendChild(colgroup);
+        table.insertBefore(colgroup, table.firstChild);
       } else {
         colgroup.innerHTML = "";
       }
-
       widths.forEach((width) => {
         const col = doc.createElement("col");
         col.style.width = width;
         colgroup?.appendChild(col);
       });
     });
-
     return root.innerHTML;
-  }
-
-  private readResolvedTableWidths(table: HTMLTableElement): string[] {
-    const directCols = Array.from(
-      table.querySelectorAll(":scope > colgroup > col"),
-    ) as HTMLElement[];
-    const colgroupWidths = directCols
-      .map((col) => {
-        const styleWidth = String(col.style.width || "").trim();
-        const attrWidth = String(col.getAttribute("width") || "").trim();
-        return styleWidth || attrWidth || "";
-      })
-      .filter(Boolean);
-    if (colgroupWidths.length) return colgroupWidths;
-
-    const colwidthAttr = table.getAttribute("colwidth");
-    if (colwidthAttr) {
-      return colwidthAttr.split(",").map((w) => w.trim() + "px");
-    }
-
-    const firstRow = table.querySelector("tr");
-    if (!firstRow) return [];
-    const widths: string[] = [];
-    Array.from(firstRow.children).forEach((cell) => {
-      const el = cell as HTMLElement;
-      const styleWidth = String(el.style.width || "").trim();
-      const attrWidth = String(el.getAttribute("width") || "").trim();
-      widths.push(styleWidth || attrWidth || "");
-    });
-    return widths.filter(Boolean).length ? widths : [];
   }
 
   private buildOrganizationTemplateVars(org: UnknownRecord): UnknownRecord {
@@ -1161,8 +1030,7 @@ export class DocumentRenderService {
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+      .replace(/"/g, "&quot;");
   }
 }
 
@@ -1325,6 +1193,7 @@ class PagePaginator {
             this.pages.push(currentPageHtml);
             currentPageHtml = "";
             currentPageHeight = 0;
+            lastAddedWasTable = false;
           }
           currentPageHtml += part.outerHTML;
           currentPageHeight += partHeight;
@@ -1375,7 +1244,6 @@ class PagePaginator {
         this.pages.push(currentPageHtml);
         currentPageHtml = "";
         currentPageHeight = 0;
-        lastAddedWasTable = false;
       }
       currentPageHtml += el.outerHTML;
       currentPageHeight += elHeight;
@@ -1452,19 +1320,17 @@ class PagePaginator {
     const computed = window.getComputedStyle(target);
     const marginTop = parseFloat(computed.marginTop) || 0;
     const marginBottom = parseFloat(computed.marginBottom) || 0;
-    const visualHeight = Math.max(
-      wrapper.offsetHeight,
-      wrapper.scrollHeight,
-      clone.offsetHeight,
-      clone.scrollHeight,
-      Math.ceil(wrapper.getBoundingClientRect().height),
-      Math.ceil(clone.getBoundingClientRect().height),
-    );
-    return Math.max(
-      visualHeight + marginTop + marginBottom,
-      Math.ceil(target.getBoundingClientRect().height) +
-        marginTop +
-        marginBottom,
+    return (
+      Math.max(
+        wrapper.offsetHeight,
+        wrapper.scrollHeight,
+        clone.offsetHeight,
+        clone.scrollHeight,
+        Math.ceil(wrapper.getBoundingClientRect().height),
+        Math.ceil(clone.getBoundingClientRect().height),
+      ) +
+      marginTop +
+      marginBottom
     );
   }
 
@@ -1517,45 +1383,12 @@ class PagePaginator {
     startOffset: number,
     endOffset: number,
   ): Element {
-    const shell = el.cloneNode(false) as HTMLElement;
-    const start = this.findTextPosition(el, startOffset);
-    const end = this.findTextPosition(el, endOffset);
-    if (!start || !end) {
-      shell.textContent = String(el.textContent || "").slice(
-        startOffset,
-        endOffset,
-      );
-      return shell;
-    }
-    try {
-      const range = document.createRange();
-      range.setStart(start.node, start.offset);
-      range.setEnd(end.node, end.offset);
-      shell.appendChild(range.cloneContents());
-      return shell;
-    } catch (_) {
-      shell.textContent = String(el.textContent || "").slice(
-        startOffset,
-        endOffset,
-      );
-      return shell;
-    }
-  }
-
-  private findTextPosition(
-    el: Node,
-    offset: number,
-  ): { node: Node; offset: number } | null {
-    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    let current = 0;
-    let node = walker.nextNode();
-    while (node) {
-      const len = node.textContent?.length || 0;
-      if (current + len >= offset) return { node, offset: offset - current };
-      current += len;
-      node = walker.nextNode();
-    }
-    return null;
+    const shell = el.cloneNode(false) as Element;
+    shell.textContent = String(el.textContent || "").slice(
+      startOffset,
+      endOffset,
+    );
+    return shell;
   }
 
   private canSplitTextElement(el: Element): boolean {
@@ -1617,16 +1450,14 @@ class PagePaginator {
       p.style.wordBreak = "normal";
       p.style.whiteSpace = "normal";
       if (
-        !String(p.textContent || "")
-          .replace(/\u00a0/g, " ")
-          .trim() &&
+        !String(p.textContent || "").trim() &&
         !p.querySelector("img, table, hr, ul, ol, iframe, svg")
       ) {
         p.style.minHeight = "1.6em";
       }
     });
 
-    const lastParagraph = root.querySelector("p:last-child") as HTMLElement;
+    const lastParagraph = root.querySelector<HTMLElement>("p:last-child");
     if (lastParagraph) lastParagraph.style.marginBottom = "0";
 
     root.querySelectorAll<HTMLElement>("h1").forEach((el) => {
@@ -1658,10 +1489,18 @@ class PagePaginator {
       el.style.margin = "0.5em 0 0.2em";
     });
 
-    root.querySelectorAll<HTMLElement>("u, a").forEach((el) => {
-      el.style.textDecorationThickness = "1px";
-      el.style.textUnderlineOffset = "0.14em";
-      el.style.textDecorationSkipInk = "none";
+    root.querySelectorAll<HTMLElement>("ul").forEach((list) => {
+      list.style.paddingLeft = "2em";
+      list.style.margin = "0.4em 0";
+      list.style.listStyleType = "disc";
+    });
+    root.querySelectorAll<HTMLElement>("ol").forEach((list) => {
+      list.style.paddingLeft = "2em";
+      list.style.margin = "0.4em 0";
+      list.style.listStyleType = "decimal";
+    });
+    root.querySelectorAll<HTMLElement>("li").forEach((el) => {
+      el.style.display = "list-item";
     });
 
     root.querySelectorAll<HTMLElement>("table").forEach((table) => {
@@ -1672,7 +1511,6 @@ class PagePaginator {
       table.style.margin = "6px 0";
       table.style.boxSizing = "border-box";
     });
-
     root.querySelectorAll<HTMLElement>("td, th").forEach((cell) => {
       cell.style.border = `1px solid ${this.opts.theme.colors["border"]}`;
       cell.style.padding = "6px 10px";
@@ -1682,11 +1520,9 @@ class PagePaginator {
       cell.style.overflowWrap = "anywhere";
       cell.style.whiteSpace = "normal";
     });
-
     root.querySelectorAll<HTMLElement>("td p, th p").forEach((el) => {
       el.style.margin = "0";
     });
-
     root.querySelectorAll<HTMLElement>("th:not([style])").forEach((el) => {
       el.style.background = this.opts.theme.colors["tableHeaderBg"];
       el.style.color = this.opts.theme.colors["text"];
@@ -1694,28 +1530,11 @@ class PagePaginator {
       el.style.textAlign = "left";
     });
 
-    root.querySelectorAll<HTMLElement>("ul").forEach((list) => {
-      list.style.paddingLeft = "2em";
-      list.style.margin = "0.4em 0";
-      list.style.listStyleType = "disc";
-    });
-
-    root.querySelectorAll<HTMLElement>("ol").forEach((list) => {
-      list.style.paddingLeft = "2em";
-      list.style.margin = "0.4em 0";
-      list.style.listStyleType = "decimal";
-    });
-
-    root.querySelectorAll<HTMLElement>("li").forEach((el) => {
-      el.style.display = "list-item";
-    });
-
     root.querySelectorAll<HTMLElement>("hr").forEach((el) => {
       el.style.border = "none";
       el.style.borderTop = `1.5px solid ${this.opts.theme.colors["border"]}`;
       el.style.margin = "10px 0";
     });
-
     root.querySelectorAll<HTMLElement>("img").forEach((el) => {
       el.style.maxWidth = "100%";
       el.style.height = "auto";
