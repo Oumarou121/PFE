@@ -526,7 +526,8 @@ namespace DocApi.Repositories
             var selectFields = new[] { pk }.Concat(JsonArrayStrings(tableView, "visibleFields")).Concat(JsonArrayStrings(tableView, "editableFields")).Where(allowed.Contains).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             if (selectFields.Length == 0) return null;
             using var connection = _connectionFactory.CreateConnection();
-            var row = await connection.QueryFirstOrDefaultAsync($"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableName)} WHERE {Quote(pk)} = @rowId", new { rowId });
+            var normalizedRowId = NormalizeParameterValue(rowId);
+            var row = await connection.QueryFirstOrDefaultAsync($"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableName)} WHERE {Quote(pk)} = @rowId", new { rowId = normalizedRowId });
             return row is null ? null : CleanRow(row);
         }
 
@@ -538,10 +539,11 @@ namespace DocApi.Repositories
             var editable = JsonArrayStrings(tableView, "editableFields").ToHashSet(StringComparer.OrdinalIgnoreCase);
             var tableColumns = await GetColumnsAsync(tableName);
             var columns = tableColumns.Where(column => editable.Contains(column.Name) && values.ContainsKey(column.Name)).ToArray();
+            var normalizedRowId = NormalizeParameterValue(rowId);
             if (columns.Length > 0)
             {
                 var parameters = new DynamicParameters();
-                parameters.Add("rowId", rowId);
+                parameters.Add("rowId", normalizedRowId);
                 foreach (var column in columns)
                 {
                     var raw = values.TryGetValue(column.Name, out var v) ? v : null;
@@ -551,7 +553,7 @@ namespace DocApi.Repositories
                 var pk = await GetRowKeyAsync(tableName, tableColumns);
                 await connection.ExecuteAsync($"UPDATE {Quote(tableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {Quote(pk)} = @rowId", parameters);
             }
-            return await GetTableViewRecordAsync(configId, rowId);
+            return await GetTableViewRecordAsync(configId, normalizedRowId);
         }
 
         public async Task<object?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, JsonObject? config)
@@ -592,7 +594,8 @@ namespace DocApi.Repositories
             if (string.IsNullOrWhiteSpace(tableName) || !await TableExistsAsync(tableName)) return;
             var pk = await GetRowKeyAsync(tableName, await GetColumnsAsync(tableName));
             using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync($"DELETE FROM {Quote(tableName)} WHERE {Quote(pk)} = @rowId", new { rowId });
+            var normalizedRowId = NormalizeParameterValue(rowId);
+            await connection.ExecuteAsync($"DELETE FROM {Quote(tableName)} WHERE {Quote(pk)} = @rowId", new { rowId = normalizedRowId });
         }
 
         public async Task<IEnumerable<object>> GetLookupOptionsAsync(string? configId, string? fieldName, JsonObject? config)
