@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { environment } from '../../../../environments/environment';
 import { EditorStateService } from './editor-state.service';
+import { DocumentRenderService } from './document-render.service';
 import { FamilyService } from './family.service';
 import { FilterRuntimeService } from './filter-runtime.service';
 import { QueryService } from './query.service';
@@ -144,5 +145,87 @@ describe('editor services', () => {
     expect(req.request.method).toBe('PUT');
     req.flush({});
     expect((await promise).id).toBe('fam_1');
+  });
+
+  it('renders document preview with legacy context, charter and table syntaxes', () => {
+    state.replaceState({
+      organizations: [{
+        id: 'org_1',
+        nom: 'Org 1',
+        adresse: 'Rue 1',
+        tel: '123',
+        ville: 'Tunis',
+        raw: { code_etab: 'ORG-CODE', region: 'Nord' },
+        graphicCharters: [{
+          id: 'charter_1',
+          name: 'Charter',
+          description: '',
+          isDefault: true,
+          createdAt: null,
+          updatedAt: '2026-01-01',
+          config: {
+            identity: { officialName: 'Nom officiel', directorName: 'Directeur X', slogan: 'Slogan X', logoText: 'LOGO' },
+            colors: { primary: '#111111', secondary: '#222222', text: '#333333', heading: '#444444', border: '#555555', tableHeaderBg: '#eeeeee', tableAltRowBg: '#dddddd' },
+            typography: { bodyFont: 'Arial', headingFont: 'Georgia' },
+            layout: { orientation: 'landscape', pageMargins: { mt: 10, mb: 11, ml: 12, mr: 13 }, headerFooterDistances: { headerTop: 4, footerBottom: 6 }, pageBackground: { enabled: false, image: '', size: 'cover', position: 'center center', repeat: 'no-repeat' } },
+            header: { enabledByDefault: true, displayMode: 'all', html: '' },
+            footer: { enabledByDefault: true, displayMode: 'all', html: '' },
+            watermark: { enabled: false, text: '', color: '#999999', opacity: 0.1 }
+          }
+        }]
+      }],
+      families: [{
+        id: 'fam_1',
+        beneficiaryMode: 'table',
+        beneficiaryTable: 'Employee',
+        beneficiaryTableLabel: '',
+        beneficiaryDisplayColumn1: '',
+        beneficiaryDisplayColumn2: '',
+        beneficiaryLinkColumn: '',
+        beneficiarySql: '',
+        filterCatalog: [],
+        classes: [{ vars: [{ tech: 'rows', type: 'list-object', columns: [{ key: 'libelle', label: 'Libelle' }, { key: 'valeur', label: 'Valeur' }] }] }]
+      }],
+      templates: [{
+        id: 'tpl_render',
+        familyId: 'fam_1',
+        organizationId: 'org_1',
+        graphicCharterId: 'charter_1',
+        hasHeader: true,
+        hasFooter: true,
+        header: '<p>{{nom_etab}} {{org_code_etab}} {{directeur}}</p>',
+        body: '<p>{{nom}}</p><p>{{date_du_jour_iso}}</p>{{#items:ul}}{{#rows:table:libelle,valeur}}',
+        footer: '<p>{{annee_univ}} {{slogan_etab}}</p>',
+        headerFooterDistances: { headerTop: 5, footerBottom: 5 },
+        filterProfile: [],
+        headerDisplay: 'first',
+        footerDisplay: 'odd',
+        sectionDirections: { header: 'ltr', body: 'ltr', footer: 'ltr' }
+      }],
+      admins: [],
+      tableViews: [],
+      settings: {},
+      _loaded: {}
+    });
+    const service = TestBed.inject(DocumentRenderService);
+    const pages = service.renderDocumentPages(state.getState().templates[0], {
+      nom: 'Ali',
+      items: ['A', 'B'],
+      rows: [{ libelle: 'Salaire', valeur: 100 }]
+    }, { mode: 'preview' });
+
+    expect(pages.length).toBeGreaterThan(0);
+    expect(pages[0].header).toContain('Nom officiel');
+    expect(pages[0].header).toContain('ORG-CODE');
+    expect(pages[0].header).toContain('Directeur X');
+    expect(pages[0].content).not.toContain('{{date_du_jour_iso}}');
+    expect(pages[0].content).toMatch(/\d{4}-\d{2}-\d{2}/);
+    expect(pages[0].content).toContain('<ul');
+    expect(pages[0].content).toContain('<table');
+    expect(pages[0].content).toContain('Libelle');
+    const html = service.buildDocumentPagesHtml(state.getState().templates[0], pages);
+    expect(html).toContain('document-render--preview');
+    expect(html).toContain('--page-orientation:landscape');
+    expect(html).toContain('--doc-font-body:Arial');
   });
 });

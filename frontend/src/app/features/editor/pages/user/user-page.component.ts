@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -12,6 +12,7 @@ import { EditorStateService } from '../../services/editor-state.service';
 import { FamilyService } from '../../services/family.service';
 import { FilterRuntimeService } from '../../services/filter-runtime.service';
 import { DocumentDataService } from '../../services/document-data.service';
+import { DocumentRenderService } from '../../services/document-render.service';
 import { OrganizationService } from '../../services/organization.service';
 import { TableViewService } from '../../services/table-view.service';
 import { TemplateService } from '../../services/template.service';
@@ -24,7 +25,8 @@ type Step = 1 | 2 | 3;
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './user-page.component.html',
-  styleUrls: ['./user-page.component.scss']
+  styleUrls: ['./user-page.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class UserPageComponent implements OnInit {
   loading = true;
@@ -46,6 +48,8 @@ export class UserPageComponent implements OnInit {
   zoom = 100;
   previewHtml: SafeHtml | null = null;
   previewPlainHtml = '';
+  previewTemplate: TemplateRecord | null = null;
+  previewPerson: Record<string, any> | null = null;
   waitMessage = 'Completez les 3 etapes pour generer votre document';
 
   selectedDataViewId: string | null = null;
@@ -65,6 +69,7 @@ export class UserPageComponent implements OnInit {
     private organizationsService: OrganizationService,
     private filterRuntime: FilterRuntimeService,
     private documentData: DocumentDataService,
+    private documentRender: DocumentRenderService,
     private tableViews: TableViewService,
     private notifications: NotificationService,
     private sanitizer: DomSanitizer
@@ -207,7 +212,9 @@ export class UserPageComponent implements OnInit {
       this.filterValues
     );
     if (!template || !person) return;
-    this.previewPlainHtml = this.buildPreviewHtml(template, person);
+    this.previewTemplate = template;
+    this.previewPerson = person;
+    this.previewPlainHtml = this.documentRender.buildPreviewHtml(template, person);
     this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(this.previewPlainHtml);
     this.notifications.showSuccess('Document genere.');
   }
@@ -222,11 +229,14 @@ export class UserPageComponent implements OnInit {
     this.openSteps = { 1: true, 2: false, 3: false };
     this.previewHtml = null;
     this.previewPlainHtml = '';
+    this.previewTemplate = null;
+    this.previewPerson = null;
     this.showWait('Completez les 3 etapes pour generer votre document');
   }
 
   printDocument(): void {
-    window.print();
+    if (!this.previewTemplate || !this.previewPerson) return;
+    this.documentRender.printDocPaginated(this.previewTemplate, this.previewPerson);
   }
 
   setZoom(delta: number): void {
@@ -410,6 +420,8 @@ export class UserPageComponent implements OnInit {
     this.waitMessage = message;
     this.previewHtml = null;
     this.previewPlainHtml = '';
+    this.previewTemplate = null;
+    this.previewPerson = null;
   }
 
   private async ensureLookupOptions(view: TableViewConfig): Promise<void> {
@@ -422,31 +434,6 @@ export class UserPageComponent implements OnInit {
         this.lookupOptions[key] = await this.tableViews.getTableViewLookupOptions(view.id, field, view);
       }
     }
-  }
-
-  private buildPreviewHtml(template: TemplateRecord, person: Record<string, any>): string {
-    const header = template.hasHeader && template.header ? `<div class="doc-page-header">${this.resolveVars(template.header, person)}</div>` : '';
-    const body = `<div class="doc-page-body ${header ? '' : 'no-header'}">${this.resolveVars(template.body || '', person)}</div>`;
-    const footer = template.hasFooter && template.footer ? `<div class="doc-page-footer">${this.resolveVars(template.footer, person)}</div>` : '';
-    return `<div class="preview-pages"><div class="preview-page">${header}${body}${footer}</div></div>`;
-  }
-
-  private resolveVars(html: string, data: Record<string, any>): string {
-    return String(html || '').replace(/\{\{\s*([^#/{][^}]*)\s*\}\}/g, (_match, key) => {
-      const value = data[String(key).trim()];
-      return value === undefined || value === null || value === ''
-        ? `<span class="var-missing">{{${String(key).trim()}}}</span>`
-        : `<span class="var-resolved">${this.escapeHtml(value)}</span>`;
-    });
-  }
-
-  private escapeHtml(value: unknown): string {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
   }
 
   private humanize(value: string): string {
