@@ -8,6 +8,9 @@ export class NotificationService {
 
   constructor(private snackBar: MatSnackBar) {}
 
+  /**
+   * Affiche une notification de succès
+   */
   showSuccess(message: string, duration: number = 3000): void {
     this.snackBar.open(message, 'Fermer', {
       duration,
@@ -17,6 +20,9 @@ export class NotificationService {
     });
   }
 
+  /**
+   * Affiche une notification d'erreur
+   */
   showError(message: string, duration: number = 5000): void {
     this.snackBar.open(message, 'Fermer', {
       duration,
@@ -26,6 +32,9 @@ export class NotificationService {
     });
   }
 
+  /**
+   * Affiche une notification d'information
+   */
   showInfo(message: string, duration: number = 3000): void {
     this.snackBar.open(message, 'Fermer', {
       duration,
@@ -35,6 +44,9 @@ export class NotificationService {
     });
   }
 
+  /**
+   * Affiche une notification d'avertissement
+   */
   showWarning(message: string, duration: number = 4000): void {
     this.snackBar.open(message, 'Fermer', {
       duration,

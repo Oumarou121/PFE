@@ -22,6 +22,9 @@ export const loginGuard = () => {
     return true;
   }
 
-  router.navigate(["/dashboard"]);
+  const role = authService.getCurrentUser()?.role;
+  if (role === "supAdmin") router.navigate(["/super-admin"]);
+  else if (role === "admin") router.navigate(["/admin"]);
+  else router.navigate(["/user"]);
   return false;
 };

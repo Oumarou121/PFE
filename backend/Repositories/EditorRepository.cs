@@ -17,16 +17,18 @@ namespace DocApi.Repositories
 
     public class EditorRepository : IEditorRepository
     {
+        private readonly ILogger<EditorRepository> _logger;
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
         private readonly IEditorDbConnectionFactory _connectionFactory;
         private readonly IWebHostEnvironment _environment;
         private readonly EditorDatabaseOptions _options;
 
-        public EditorRepository(IEditorDbConnectionFactory connectionFactory, IWebHostEnvironment environment, IOptions<EditorDatabaseOptions> options)
+        public EditorRepository(IEditorDbConnectionFactory connectionFactory, IWebHostEnvironment environment, IOptions<EditorDatabaseOptions> options, ILogger<EditorRepository> logger)
         {
             _connectionFactory = connectionFactory;
             _environment = environment;
             _options = options.Value;
+            _logger = logger;
         }
 
         public async Task EnsureSchemaAsync()
@@ -458,12 +460,35 @@ namespace DocApi.Repositories
         public async Task<IEnumerable<object>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters)
         {
             var cleaned = NormalizeSelectQueryForSqlServer((sql ?? string.Empty).Trim().TrimEnd(';'));
-            if (!cleaned.StartsWith("select", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Seules les requetes SELECT sont autorisees.");
+            if (!IsSelectQuery(cleaned))
+            {
+                try
+                {
+                    _logger?.LogWarning("Rejected non-SELECT query: {Sql}", sql);
+                }
+                catch { }
+                throw new InvalidOperationException("Seules les requetes SELECT sont autorisees.");
+            }
             var dynamicParameters = new DynamicParameters();
             if (!parameters.ContainsKey("organizationId")) parameters["organizationId"] = null;
             cleaned = CompileNamedParameters(cleaned, parameters, dynamicParameters);
             using var connection = _connectionFactory.CreateConnection();
             return (await connection.QueryAsync(cleaned, dynamicParameters)).Select(CleanRow);
+        }
+
+        private static bool IsSelectQuery(string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql)) return false;
+            // Work on a trimmed copy
+            var s = sql.Trim();
+            // Strip leading block comments (/* ... */)
+            s = Regex.Replace(s, @"^\s*/\*.*?\*/\s*", "", RegexOptions.Singleline);
+            // Strip leading line comments (-- ... end-of-line)
+            s = Regex.Replace(s, @"^\s*(?:--.*?$\s*)+", "", RegexOptions.Multiline);
+            // Strip leading parentheses that sometimes wrap a select
+            while (s.StartsWith("(")) s = s.Substring(1).TrimStart();
+            // Allow queries starting with SELECT or WITH (CTE)
+            return Regex.IsMatch(s, "^(select|with)\\b", RegexOptions.IgnoreCase);
         }
 
         public async Task<IEnumerable<object>> GetTableViewRowsAsync(string? configId, int? limit, string? search, JsonObject? config)
@@ -517,7 +542,11 @@ namespace DocApi.Repositories
             {
                 var parameters = new DynamicParameters();
                 parameters.Add("rowId", rowId);
-                foreach (var column in columns) parameters.Add(column.Name, values[column.Name]);
+                foreach (var column in columns)
+                {
+                    var raw = values.TryGetValue(column.Name, out var v) ? v : null;
+                    parameters.Add(column.Name, NormalizeParameterValue(raw));
+                }
                 using var connection = _connectionFactory.CreateConnection();
                 var pk = await GetRowKeyAsync(tableName, tableColumns);
                 await connection.ExecuteAsync($"UPDATE {Quote(tableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {Quote(pk)} = @rowId", parameters);
@@ -535,10 +564,22 @@ namespace DocApi.Repositories
             var columns = tableColumns.Where(column => editable.Contains(column.Name) && !column.IsIdentity && values.ContainsKey(column.Name)).ToArray();
             var pk = await GetRowKeyAsync(tableName, tableColumns);
             var parameters = new DynamicParameters();
-            foreach (var column in columns) parameters.Add(column.Name, values[column.Name]);
+            var normalizedValues = new Dictionary<string, object?>();
+            foreach (var column in columns)
+            {
+                var raw = values.TryGetValue(column.Name, out var v) ? v : null;
+                var norm = NormalizeParameterValue(raw);
+                normalizedValues[column.Name] = norm;
+                parameters.Add(column.Name, norm);
+            }
             var insertSql = columns.Length == 0
                 ? $"INSERT INTO {Quote(tableName)} OUTPUT INSERTED.{Quote(pk)} AS inserted_id DEFAULT VALUES"
                 : $"INSERT INTO {Quote(tableName)} ({string.Join(", ", columns.Select(c => Quote(c.Name)))}) OUTPUT INSERTED.{Quote(pk)} AS inserted_id VALUES ({string.Join(", ", columns.Select(c => "@" + c.Name))})";
+            try
+            {
+                _logger?.LogDebug("CreateTableViewRecord SQL: {Sql} Params: {Params}", insertSql, JsonSerializer.Serialize(normalizedValues));
+            }
+            catch { }
             using var connection = _connectionFactory.CreateConnection();
             var insertedId = await connection.ExecuteScalarAsync<object>(insertSql, parameters);
             return await GetTableViewRecordAsync(JString(tableView, "id"), insertedId);
@@ -701,7 +742,9 @@ namespace DocApi.Repositories
                     JsonValueKind.True => true,
                     JsonValueKind.False => false,
                     JsonValueKind.Null => null,
-                    _ => element.ToString()
+                    JsonValueKind.Object => element.GetRawText(),
+                    JsonValueKind.Array => element.GetRawText(),
+                    _ => element.GetRawText()
                 };
             }
             return value;

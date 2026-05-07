@@ -13,8 +13,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       let errorMessage = 'Une erreur est survenue';
 
       if (error.error instanceof ErrorEvent) {
+        // Erreur côté client
         errorMessage = `Erreur: ${error.error.message}`;
       } else {
+        // Erreur côté serveur
         switch (error.status) {
           case 401:
             errorMessage = 'Non autorisé. Veuillez vous reconnecter.';
@@ -34,6 +36,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
 
+      // Afficher la notification d'erreur
       notificationService.showError(errorMessage);
 
       return throwError(() => error);

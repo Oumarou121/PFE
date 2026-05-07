@@ -49,4 +49,13 @@ namespace DocApi.DTOs
         public JsonObject? TableView { get; set; }
         public string? Id { get; set; }
     }
+
+    public class PreviewRequest
+    {
+        public string? TemplateId { get; set; }
+        public string? BeneficiaryId { get; set; }
+        public string? BeneficiaryTable { get; set; }
+        public string? OrganizationId { get; set; }
+        public JsonObject? Filters { get; set; }
+    }
 }
