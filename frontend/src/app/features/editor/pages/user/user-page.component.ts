@@ -35,6 +35,7 @@ type Step = 1 | 2 | 3;
 })
 export class UserPageComponent implements OnInit {
   loading = true;
+  appLoadingMessage = "Chargement...";
   mode: UserMode = "documents";
   organizationId: string | null = null;
   organizationName = "";
@@ -56,13 +57,16 @@ export class UserPageComponent implements OnInit {
   previewTemplate: TemplateRecord | null = null;
   previewPerson: Record<string, any> | null = null;
   waitMessage = "Completez les 3 etapes pour generer votre document";
+  documentBusy = false;
+  documentBusyMessage = "";
+  beneficiariesLoading = false;
 
   confirmModal: {
     open: boolean;
     title: string;
     message: string;
     confirmLabel: string;
-    onConfirm: () => void;
+    onConfirm: () => void | Promise<void>;
   } = {
     open: false,
     title: "",
@@ -79,6 +83,13 @@ export class UserPageComponent implements OnInit {
   selectedDataRecord: Record<string, any> | null = null;
   creatingDataRow = false;
   lookupOptions: Record<string, Array<{ value: string; label: string }>> = {};
+  dataViewsLoading = false;
+  dataRowsLoading = false;
+  lookupLoading = false;
+  dataSaving = false;
+  dataDeleting = false;
+  dataStatusMessage = "";
+  private dataRowsRequestId = 0;
 
   constructor(
     private auth: AuthService,
@@ -96,21 +107,27 @@ export class UserPageComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    await this.state.ensureResources([
-      "organizations",
-      "families",
-      "templates",
-    ]);
-    const user = this.auth.getCurrentUser();
-    this.organizationId =
-      user?.organizationId ||
-      this.organizationsService.getOrganizations()[0]?.id ||
-      null;
-    const organization = this.organizationId
-      ? this.organizationsService.getOrganization(this.organizationId)
-      : null;
-    this.organizationName = organization?.nom || organization?.name || "";
-    this.loading = false;
+    try {
+      this.appLoadingMessage = "Chargement de votre espace...";
+      await this.state.ensureResources([
+        "organizations",
+        "families",
+        "templates",
+      ]);
+      const user = this.auth.getCurrentUser();
+      this.organizationId =
+        user?.organizationId ||
+        this.organizationsService.getOrganizations()[0]?.id ||
+        null;
+      const organization = this.organizationId
+        ? this.organizationsService.getOrganization(this.organizationId)
+        : null;
+      this.organizationName = organization?.nom || organization?.name || "";
+    } catch {
+      this.notifications.showError("Impossible de charger votre espace.");
+    } finally {
+      this.loading = false;
+    }
   }
 
   get families(): FamilyRecord[] {
@@ -173,8 +190,17 @@ export class UserPageComponent implements OnInit {
   async switchMode(mode: UserMode): Promise<void> {
     this.mode = mode;
     if (mode === "data") {
-      await this.state.ensureResources(["tableViews"]);
-      if (this.selectedDataView) await this.renderDataContent();
+      this.dataViewsLoading = true;
+      this.dataStatusMessage = "Chargement des vues de donnees...";
+      try {
+        await this.state.ensureResources(["tableViews"]);
+        if (this.selectedDataView) await this.renderDataContent();
+      } catch {
+        this.notifications.showError("Impossible de charger les donnees.");
+      } finally {
+        this.dataViewsLoading = false;
+        this.dataStatusMessage = "";
+      }
     }
   }
 
@@ -201,54 +227,80 @@ export class UserPageComponent implements OnInit {
   }
 
   async selectTemplate(templateId: string): Promise<void> {
+    if (this.documentBusy) return;
     this.selectedTemplateId = templateId;
     this.selectedBeneficiaryId = null;
     this.beneficiaries = [];
     this.beneficiarySearch = "";
-    await this.refreshRuntimeFilters(false);
-    await this.buildBeneficiaryList();
-    this.openSteps = { 1: false, 2: false, 3: true };
-    const family = this.selectedFamily;
-    if (
-      family?.beneficiaryMode === "organization" &&
-      this.beneficiaries.length === 1 &&
-      !this.hasMissingRequiredFilters()
-    ) {
-      await this.selectBeneficiary(this.beneficiaries[0].id);
-      return;
+    this.documentBusy = true;
+    this.beneficiariesLoading = true;
+    this.documentBusyMessage = "Preparation des filtres et beneficiaires...";
+    try {
+      await this.refreshRuntimeFilters(false);
+      await this.buildBeneficiaryList();
+      this.openSteps = { 1: false, 2: false, 3: true };
+      const family = this.selectedFamily;
+      if (
+        family?.beneficiaryMode === "organization" &&
+        this.beneficiaries.length === 1 &&
+        !this.hasMissingRequiredFilters()
+      ) {
+        await this.selectBeneficiary(this.beneficiaries[0].id);
+        return;
+      }
+      this.showWait(
+        this.hasMissingRequiredFilters()
+          ? "Renseignez les filtres pour continuer"
+          : "Selectionnez le beneficiaire concerne",
+      );
+    } catch {
+      this.notifications.showError("Impossible de preparer ce modele.");
+      this.showWait("Reessayez ou choisissez un autre modele");
+    } finally {
+      this.beneficiariesLoading = false;
+      this.documentBusy = false;
+      this.documentBusyMessage = "";
     }
-    this.showWait(
-      this.hasMissingRequiredFilters()
-        ? "Renseignez les filtres pour continuer"
-        : "Selectionnez le beneficiaire concerne",
-    );
   }
 
   async onFilterChange(filterId: string, value: unknown): Promise<void> {
+    if (this.documentBusy) return;
     this.filterValues = { ...this.filterValues, [filterId]: value || null };
     this.selectedBeneficiaryId = null;
-    await this.refreshRuntimeFilters(true);
-    await this.buildBeneficiaryList();
-    if (this.hasMissingRequiredFilters()) {
-      this.showWait("Renseignez les filtres pour continuer");
-      return;
+    this.documentBusy = true;
+    this.beneficiariesLoading = true;
+    this.documentBusyMessage = "Mise a jour des beneficiaires...";
+    try {
+      await this.refreshRuntimeFilters(true);
+      await this.buildBeneficiaryList();
+      if (this.hasMissingRequiredFilters()) {
+        this.showWait("Renseignez les filtres pour continuer");
+        return;
+      }
+      const family = this.selectedFamily;
+      if (
+        family?.beneficiaryMode === "organization" &&
+        this.beneficiaries.length === 1
+      ) {
+        await this.selectBeneficiary(this.beneficiaries[0].id);
+        return;
+      }
+      this.showWait(
+        this.beneficiaries.length
+          ? "Selectionnez le beneficiaire concerne"
+          : "Aucun beneficiaire disponible pour ces filtres",
+      );
+    } catch {
+      this.notifications.showError("Impossible de mettre a jour les filtres.");
+    } finally {
+      this.beneficiariesLoading = false;
+      this.documentBusy = false;
+      this.documentBusyMessage = "";
     }
-    const family = this.selectedFamily;
-    if (
-      family?.beneficiaryMode === "organization" &&
-      this.beneficiaries.length === 1
-    ) {
-      await this.selectBeneficiary(this.beneficiaries[0].id);
-      return;
-    }
-    this.showWait(
-      this.beneficiaries.length
-        ? "Selectionnez le beneficiaire concerne"
-        : "Aucun beneficiaire disponible pour ces filtres",
-    );
   }
 
   async selectBeneficiary(beneficiaryId: string): Promise<void> {
+    if (this.documentBusy && !this.beneficiariesLoading) return;
     this.selectedBeneficiaryId = beneficiaryId;
     this.openSteps[3] = false;
     await this.generateDocument();
@@ -264,29 +316,39 @@ export class UserPageComponent implements OnInit {
       return;
     }
     const template = this.selectedTemplate;
-    const person = await this.documentData.getDocumentDataForFamily(
-      this.selectedFamilyId,
-      this.selectedBeneficiaryId,
-      this.organizationId,
-      this.filterValues,
-    );
-    if (!template || !person) return;
-    this.previewTemplate = template;
-    this.previewPerson = person;
-    this.previewPlainHtml = this.documentRender.buildPreviewHtml(
-      template,
-      person,
-    );
-    // Apply CSS vars to host so SCSS rules using var(--page-*) and var(--doc-*)
-    // resolve correctly even before inline styles on .preview-page propagate.
-    const themeVars = this.documentRender.getDocumentThemeVars(template);
-    Object.entries(themeVars).forEach(([key, value]) => {
-      this.elementRef.nativeElement.style.setProperty(key, value as string);
-    });
-    this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(
-      this.previewPlainHtml,
-    );
-    this.notifications.showSuccess("Document genere.");
+    this.documentBusy = true;
+    this.documentBusyMessage = "Generation du document...";
+    try {
+      const person = await this.documentData.getDocumentDataForFamily(
+        this.selectedFamilyId,
+        this.selectedBeneficiaryId,
+        this.organizationId,
+        this.filterValues,
+      );
+      if (!template || !person) return;
+      this.previewTemplate = template;
+      this.previewPerson = person;
+      this.previewPlainHtml = this.documentRender.buildPreviewHtml(
+        template,
+        person,
+      );
+      // Apply CSS vars to host so SCSS rules using var(--page-*) and var(--doc-*)
+      // resolve correctly even before inline styles on .preview-page propagate.
+      const themeVars = this.documentRender.getDocumentThemeVars(template);
+      Object.entries(themeVars).forEach(([key, value]) => {
+        this.elementRef.nativeElement.style.setProperty(key, value as string);
+      });
+      this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(
+        this.previewPlainHtml,
+      );
+      this.notifications.showSuccess("Document genere.");
+    } catch {
+      this.notifications.showError("Impossible de generer le document.");
+      this.showWait("La generation a echoue. Reessayez.");
+    } finally {
+      this.documentBusy = false;
+      this.documentBusyMessage = "";
+    }
   }
 
   resetDocumentFlow(): void {
@@ -318,6 +380,14 @@ export class UserPageComponent implements OnInit {
   }
 
   async selectDataView(viewId: string): Promise<void> {
+    if (
+      this.dataRowsLoading ||
+      this.lookupLoading ||
+      this.dataSaving ||
+      this.dataDeleting
+    ) {
+      return;
+    }
     this.selectedDataViewId = viewId;
     this.selectedDataRowId = null;
     this.selectedDataRecord = null;
@@ -330,19 +400,56 @@ export class UserPageComponent implements OnInit {
   async renderDataContent(): Promise<void> {
     const view = this.selectedDataView;
     if (!view) return;
-    await this.ensureLookupOptions(view);
-    await this.reloadDataRows();
+    this.lookupLoading = true;
+    this.dataStatusMessage = "Chargement des listes de choix...";
+    try {
+      await this.ensureLookupOptions(view);
+      await this.reloadDataRows();
+    } catch {
+      this.notifications.showError("Impossible de charger cette vue.");
+    } finally {
+      this.lookupLoading = false;
+      this.dataStatusMessage = "";
+    }
   }
 
   async reloadDataRows(): Promise<void> {
     const view = this.selectedDataView;
     if (!view) return;
-    this.dataRows = await this.tableViews.getTableViewRows(view.id, {
-      config: view,
-      search: this.dataRowSearch,
-    });
-    if (!this.selectedDataRowId && this.dataRows.length) {
-      this.selectDataRow(this.getRowId(this.dataRows[0]));
+    const requestId = ++this.dataRowsRequestId;
+    this.dataRowsLoading = true;
+    this.dataStatusMessage = "Chargement des lignes...";
+    try {
+      const rows = await this.tableViews.getTableViewRows(view.id, {
+        config: view,
+        search: this.dataRowSearch,
+      });
+      if (requestId !== this.dataRowsRequestId) return;
+      this.dataRows = rows;
+      if (
+        this.selectedDataRowId &&
+        !this.dataRows.some(
+          (row) => this.getDataRowId(view, row) === this.selectedDataRowId,
+        )
+      ) {
+        this.selectedDataRowId = null;
+        this.selectedDataRecord = null;
+      }
+      if (!this.selectedDataRowId && this.dataRows.length) {
+        const firstRow = this.dataRows[0];
+        this.selectedDataRowId = this.getDataRowId(view, firstRow);
+        this.selectedDataRecord = { ...firstRow };
+        this.creatingDataRow = false;
+      }
+    } catch {
+      if (requestId === this.dataRowsRequestId) {
+        this.notifications.showError("Impossible de charger les lignes.");
+      }
+    } finally {
+      if (requestId === this.dataRowsRequestId) {
+        this.dataRowsLoading = false;
+        this.dataStatusMessage = "";
+      }
     }
   }
 
@@ -352,7 +459,8 @@ export class UserPageComponent implements OnInit {
 
   createDataRow(): void {
     const view = this.selectedDataView;
-    if (!view) return;
+    if (!view || this.dataRowsLoading || this.dataSaving || this.dataDeleting)
+      return;
     this.creatingDataRow = true;
     this.selectedDataRowId = null;
     this.selectedDataRecord = Object.fromEntries(
@@ -361,55 +469,81 @@ export class UserPageComponent implements OnInit {
   }
 
   selectDataRow(rowId: string): void {
+    const view = this.selectedDataView;
+    if (!view || this.dataRowsLoading || this.dataSaving || this.dataDeleting)
+      return;
     this.creatingDataRow = false;
     this.selectedDataRowId = rowId;
     this.selectedDataRecord = {
-      ...(this.dataRows.find((row) => this.getRowId(row) === rowId) || {}),
+      ...(this.dataRows.find((row) => this.getDataRowId(view, row) === rowId) ||
+        {}),
     };
   }
 
   async saveDataRow(): Promise<void> {
     const view = this.selectedDataView;
-    if (!view || !this.selectedDataRecord) return;
+    if (
+      !view ||
+      !this.selectedDataRecord ||
+      this.dataSaving ||
+      this.dataDeleting
+    )
+      return;
     const values = Object.fromEntries(
       view.editableFields.map((field) => [
         field,
         this.selectedDataRecord?.[field] ?? "",
       ]),
     );
-    if (this.creatingDataRow) {
-      const record = await this.tableViews.createTableViewRecord(
-        view.id,
-        values,
-        view,
-      );
-      this.selectedDataRecord = record ? { ...record } : null;
-      this.selectedDataRowId = record ? this.getRowId(record) : null;
-      this.creatingDataRow = false;
-      this.notifications.showSuccess("Ligne ajoutee.");
-    } else if (this.selectedDataRowId) {
-      const record = await this.tableViews.saveTableViewRecord(
-        view.id,
-        this.selectedDataRowId,
-        values,
-      );
-      this.selectedDataRecord = record
-        ? { ...record }
-        : this.selectedDataRecord;
-      this.notifications.showSuccess("Ligne enregistree.");
+    this.dataSaving = true;
+    this.dataStatusMessage = this.creatingDataRow
+      ? "Ajout de la ligne..."
+      : "Enregistrement...";
+    try {
+      if (this.creatingDataRow) {
+        const record = await this.tableViews.createTableViewRecord(
+          view.id,
+          values,
+          view,
+        );
+        this.selectedDataRecord = record ? { ...record } : null;
+        this.selectedDataRowId = record
+          ? this.getDataRowId(view, record)
+          : null;
+        this.creatingDataRow = false;
+        this.notifications.showSuccess("Ligne ajoutee.");
+      } else if (this.selectedDataRowId) {
+        const record = await this.tableViews.saveTableViewRecord(
+          view.id,
+          this.selectedDataRowId,
+          values,
+        );
+        this.selectedDataRecord = record
+          ? { ...record }
+          : this.selectedDataRecord;
+        this.notifications.showSuccess("Ligne enregistree.");
+      }
+      await this.reloadDataRows();
+    } catch {
+      this.notifications.showError("Impossible d'enregistrer la ligne.");
+    } finally {
+      this.dataSaving = false;
+      this.dataStatusMessage = "";
     }
-    await this.reloadDataRows();
   }
 
   async deleteDataRow(): Promise<void> {
     const view = this.selectedDataView;
-    if (!view) return;
+    if (!view || this.dataDeleting || this.dataSaving) return;
     if (this.creatingDataRow) {
       this.creatingDataRow = false;
       this.selectedDataRecord = null;
       return;
     }
-    if (!this.selectedDataRowId) return;
+    if (!this.selectedDataRowId) {
+      this.notifications.showError("Selectionnez une ligne a supprimer.");
+      return;
+    }
     const rowId = this.selectedDataRowId;
     const previewLabel =
       this.buildDataPreviewLabel(view, this.selectedDataRecord) ||
@@ -421,11 +555,20 @@ export class UserPageComponent implements OnInit {
       confirmLabel: "Supprimer",
       onConfirm: async () => {
         this.closeConfirmModal();
-        await this.tableViews.deleteTableViewRecord(view.id, rowId);
-        this.selectedDataRowId = null;
-        this.selectedDataRecord = null;
-        this.notifications.showSuccess("Ligne supprimee.");
-        await this.reloadDataRows();
+        this.dataDeleting = true;
+        this.dataStatusMessage = "Suppression de la ligne...";
+        try {
+          await this.tableViews.deleteTableViewRecord(view.id, rowId);
+          this.selectedDataRowId = null;
+          this.selectedDataRecord = null;
+          this.notifications.showSuccess("Ligne supprimee.");
+          await this.reloadDataRows();
+        } catch {
+          this.notifications.showError("Impossible de supprimer la ligne.");
+        } finally {
+          this.dataDeleting = false;
+          this.dataStatusMessage = "";
+        }
       },
     };
   }
@@ -439,7 +582,43 @@ export class UserPageComponent implements OnInit {
   }
 
   getRowId(row: Record<string, any>): string {
-    return String(row["id"] ?? row["Id"] ?? Object.values(row)[0] ?? "");
+    return this.getDataRowId(this.selectedDataView, row);
+  }
+
+  getDataRowId(view: TableViewConfig | null, row: Record<string, any>): string {
+    const keys = Object.keys(row || {});
+    const directKey = keys.find((key) => ["id", "Id", "ID"].includes(key));
+    if (directKey && row[directKey] !== null && row[directKey] !== undefined) {
+      return String(row[directKey]);
+    }
+
+    const configuredFields = new Set(
+      [
+        ...(view?.visibleFields || []),
+        ...(view?.editableFields || []),
+        ...(view?.previewFields || []),
+      ].map((field) => field.toLowerCase()),
+    );
+    const injectedKey = keys.find(
+      (key) => !configuredFields.has(key.toLowerCase()),
+    );
+    if (
+      injectedKey &&
+      row[injectedKey] !== null &&
+      row[injectedKey] !== undefined
+    ) {
+      return String(row[injectedKey]);
+    }
+
+    const keyLikeId = keys.find((key) => /(^id_|_id$|id$)/i.test(key));
+    if (keyLikeId && row[keyLikeId] !== null && row[keyLikeId] !== undefined) {
+      return String(row[keyLikeId]);
+    }
+
+    const firstKey = keys.find(
+      (key) => row[key] !== null && row[key] !== undefined,
+    );
+    return firstKey ? String(row[firstKey]) : "";
   }
 
   getDataFieldLabel(view: TableViewConfig, field: string): string {

@@ -1,6 +1,6 @@
 <div class="loading" *ngIf="loading">
   <div class="ll">SIRH-<span>Doc</span></div>
-  <div class="loading-sub">Chargement...</div>
+  <div class="loading-sub">{{ appLoadingMessage }}</div>
   <div class="lb"><div class="lbf"></div></div>
 </div>
 
@@ -123,7 +123,7 @@
                 type="button"
                 *ngFor="let family of families"
                 [class.sel]="selectedFamilyId === family.id"
-                [disabled]="!templateCountForFamily(family.id)"
+                [disabled]="documentBusy || !templateCountForFamily(family.id)"
                 (click)="selectFamily(family.id)"
               >
                 <div class="fam-name">{{ getFamilyName(family) }}</div>
@@ -182,6 +182,7 @@
                 type="button"
                 *ngFor="let template of templates"
                 [class.sel]="selectedTemplateId === template.id"
+                [disabled]="documentBusy"
                 (click)="selectTemplate(template.id)"
               >
                 <span class="tpl-icon" style="font-size: 16px">📄</span>
@@ -261,7 +262,7 @@
                 <select
                   *ngIf="filter.type === 'select'"
                   [(ngModel)]="filterValues[filter.id]"
-                  [disabled]="filter.profile.locked"
+                  [disabled]="filter.profile.locked || documentBusy"
                   (ngModelChange)="onFilterChange(filter.id, $event)"
                   style="
                     display: block;
@@ -293,7 +294,7 @@
                         : 'text'
                   "
                   [(ngModel)]="filterValues[filter.id]"
-                  [readonly]="filter.profile.locked"
+                  [readonly]="filter.profile.locked || documentBusy"
                   (ngModelChange)="onFilterChange(filter.id, $event)"
                   style="
                     display: block;
@@ -317,7 +318,14 @@
               />
             </div>
             <div class="person-list">
-              <div class="empty-inline" *ngIf="!filteredBeneficiaries.length">
+              <div class="inline-loading" *ngIf="beneficiariesLoading">
+                <span class="mini-spinner"></span>
+                Chargement des beneficiaires...
+              </div>
+              <div
+                class="empty-inline"
+                *ngIf="!beneficiariesLoading && !filteredBeneficiaries.length"
+              >
                 Aucun beneficiaire disponible
               </div>
               <button
@@ -325,6 +333,7 @@
                 type="button"
                 *ngFor="let beneficiary of filteredBeneficiaries"
                 [class.sel]="selectedBeneficiaryId === beneficiary.id"
+                [disabled]="documentBusy"
                 (click)="selectBeneficiary(beneficiary.id)"
               >
                 <div class="p-av">
@@ -393,7 +402,7 @@
               <select
                 *ngIf="filter.type === 'select'"
                 [(ngModel)]="filterValues[filter.id]"
-                [disabled]="filter.profile.locked"
+                [disabled]="filter.profile.locked || documentBusy"
                 (ngModelChange)="onFilterChange(filter.id, $event)"
                 style="
                   display: block;
@@ -425,7 +434,7 @@
                       : 'text'
                 "
                 [(ngModel)]="filterValues[filter.id]"
-                [readonly]="filter.profile.locked"
+                [readonly]="filter.profile.locked || documentBusy"
                 (ngModelChange)="onFilterChange(filter.id, $event)"
                 style="
                   display: block;
@@ -506,6 +515,10 @@
         </div>
 
         <div class="doc-pb">
+          <div class="panel-loading" *ngIf="documentBusy">
+            <span class="mini-spinner"></span>
+            {{ documentBusyMessage || "Chargement..." }}
+          </div>
           <div class="doc-wait" *ngIf="!previewHtml">
             <svg
               viewBox="0 0 24 24"
@@ -549,7 +562,14 @@
           />
         </div>
         <div class="data-view-list">
-          <div class="data-empty" *ngIf="!dataViewsList.length">
+          <div class="inline-loading" *ngIf="dataViewsLoading">
+            <span class="mini-spinner"></span>
+            Chargement des vues...
+          </div>
+          <div
+            class="data-empty"
+            *ngIf="!dataViewsLoading && !dataViewsList.length"
+          >
             Aucune vue de donnees disponible.
           </div>
           <button
@@ -557,6 +577,7 @@
             type="button"
             *ngFor="let view of dataViewsList"
             [class.active]="selectedDataViewId === view.id"
+            [disabled]="dataViewsLoading || dataRowsLoading || lookupLoading"
             (click)="selectDataView(view.id)"
           >
             <div class="data-view-name">{{ view.label || view.tableName }}</div>
@@ -581,12 +602,23 @@
               type="text"
               placeholder="Rechercher dans les lignes..."
               [(ngModel)]="dataRowSearch"
+              [disabled]="lookupLoading || dataSaving || dataDeleting"
               (ngModelChange)="updateDataSearch()"
             />
-            <button class="nav-link" type="button" (click)="createDataRow()">
+            <button
+              class="nav-link"
+              type="button"
+              [disabled]="dataRowsLoading || lookupLoading || dataSaving || dataDeleting"
+              (click)="createDataRow()"
+            >
               Ajouter
             </button>
-            <button class="nav-link" type="button" (click)="reloadDataRows()">
+            <button
+              class="nav-link"
+              type="button"
+              [disabled]="dataRowsLoading || lookupLoading || dataSaving || dataDeleting"
+              (click)="reloadDataRows()"
+            >
               Rafraichir
             </button>
           </div>
@@ -599,10 +631,16 @@
           <div class="data-card">
             <div class="data-card-hdr">
               <div class="data-card-title">Liste</div>
-              <div class="data-main-sub">{{ dataRows.length }} ligne(s)</div>
+              <div class="data-main-sub">
+                {{ dataRowsLoading ? "Chargement..." : dataRows.length + " ligne(s)" }}
+              </div>
             </div>
             <div class="data-card-body data-card-body--table">
-              <div class="data-empty" *ngIf="!dataRows.length">
+              <div class="panel-loading subtle" *ngIf="dataRowsLoading">
+                <span class="mini-spinner"></span>
+                {{ dataStatusMessage || "Chargement des lignes..." }}
+              </div>
+              <div class="data-empty" *ngIf="!dataRowsLoading && !dataRows.length">
                 Aucune ligne disponible.
               </div>
               <table class="data-table" *ngIf="dataRows.length">
@@ -616,8 +654,9 @@
                 <tbody>
                   <tr
                     *ngFor="let row of dataRows"
-                    [class.active]="getRowId(row) === selectedDataRowId"
-                    (click)="selectDataRow(getRowId(row))"
+                    [class.active]="getDataRowId(view, row) === selectedDataRowId"
+                    [class.disabled]="dataRowsLoading || dataSaving || dataDeleting"
+                    (click)="selectDataRow(getDataRowId(view, row))"
                   >
                     <td *ngFor="let field of view.previewFields">
                       {{ getDisplayValue(view, field, row[field]) }}
@@ -643,7 +682,17 @@
               </div>
             </div>
             <div class="data-card-body">
-              <div class="data-empty" *ngIf="!selectedDataRecord">
+              <div
+                class="panel-loading subtle"
+                *ngIf="lookupLoading || dataSaving || dataDeleting"
+              >
+                <span class="mini-spinner"></span>
+                {{ dataStatusMessage || "Traitement en cours..." }}
+              </div>
+              <div
+                class="data-empty"
+                *ngIf="!lookupLoading && !selectedDataRecord"
+              >
                 Selectionnez une ligne pour afficher le detail.
               </div>
               <div class="data-detail-form" *ngIf="selectedDataRecord">
@@ -663,6 +712,7 @@
                         view.fieldSettings[field]?.displayMode === 'lookup';
                         else rawInput
                       "
+                      [disabled]="dataSaving || dataDeleting"
                       [(ngModel)]="selectedDataRecord[field]"
                     >
                       <option value="">Choisir...</option>
@@ -679,6 +729,7 @@
                     <ng-template #rawInput>
                       <input
                         class="data-field-input"
+                        [disabled]="dataSaving || dataDeleting"
                         [(ngModel)]="selectedDataRecord[field]"
                       />
                     </ng-template>
@@ -695,17 +746,18 @@
                   <button
                     class="nav-link danger"
                     type="button"
+                    [disabled]="dataSaving || dataDeleting"
                     (click)="deleteDataRow()"
                   >
-                    Supprimer
+                    {{ dataDeleting ? "Suppression..." : "Supprimer" }}
                   </button>
                   <button
                     class="nav-link"
                     type="button"
-                    [disabled]="!view.editableFields.length"
+                    [disabled]="!view.editableFields.length || dataSaving || dataDeleting"
                     (click)="saveDataRow()"
                   >
-                    Enregistrer
+                    {{ dataSaving ? "Enregistrement..." : "Enregistrer" }}
                   </button>
                 </div>
               </div>
@@ -740,9 +792,10 @@
             color: var(--red);
             border-color: rgba(220, 38, 38, 0.25);
           "
+          [disabled]="dataDeleting"
           (click)="confirmModal.onConfirm()"
         >
-          {{ confirmModal.confirmLabel }}
+          {{ dataDeleting ? "Suppression..." : confirmModal.confirmLabel }}
         </button>
       </div>
     </div>

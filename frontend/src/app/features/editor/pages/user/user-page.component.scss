@@ -185,6 +185,16 @@
   border-color: var(--border2);
   color: var(--text);
 }
+.nav-link:disabled,
+.mode-btn:disabled,
+.fam-card:disabled,
+.tpl-card:disabled,
+.person-item:disabled,
+.data-view-card:disabled,
+.data-field-input:disabled {
+  opacity: 0.62;
+  cursor: wait;
+}
 .nav-link.danger {
   color: var(--red);
   background: var(--red-bg);
@@ -399,6 +409,7 @@
 .data-card-body {
   padding: 14px;
   flex: 1;
+  position: relative;
 }
 .data-card-body--table {
   padding: 0;
@@ -475,6 +486,10 @@
 }
 .data-table tr {
   cursor: pointer;
+}
+.data-table tr.disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 .data-table tr.active {
   background: var(--accent-bg);
@@ -809,6 +824,7 @@
 .doc-pb {
   padding: 0;
   min-height: 400px;
+  position: relative;
 }
 .pbar {
   display: flex;
@@ -1164,6 +1180,46 @@
 .preview-filters-wrap {
   width: 100%;
   padding: 10px 18px 0;
+}
+
+.inline-loading,
+.panel-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+}
+.inline-loading {
+  padding: 18px 12px;
+  grid-column: 1 / -1;
+}
+.panel-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(2px);
+  min-height: 72px;
+}
+.panel-loading.subtle {
+  background: rgba(248, 248, 245, 0.78);
+}
+.mini-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex: 0 0 auto;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ BUTTONS Ã¢â€â‚¬Ã¢â€â‚¬ */
