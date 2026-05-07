@@ -31,7 +31,10 @@ export const routes: Routes = [
   },
   {
     path: "user",
-    loadComponent: legacyPage,
+    loadComponent: () =>
+      import("./features/editor/pages/user/user-page.component").then(
+        (m) => m.UserPageComponent,
+      ),
     canActivate: [roleGuard],
     data: { page: "user", roles: ["user"] },
   },
