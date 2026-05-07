@@ -1,38 +1,38 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { AuthService } from '../../../../core/services/auth.service';
-import { NotificationService } from '../../../../core/services/notification.service';
-import { BeneficiaryRecord, FamilyRecord } from '../../models/family.model';
-import { FilterValueMap, RuntimeFilterEntry } from '../../models/filter.model';
-import { TableViewConfig } from '../../models/table-view.model';
-import { TemplateRecord } from '../../models/template.model';
-import { EditorStateService } from '../../services/editor-state.service';
-import { FamilyService } from '../../services/family.service';
-import { FilterRuntimeService } from '../../services/filter-runtime.service';
-import { DocumentDataService } from '../../services/document-data.service';
-import { DocumentRenderService } from '../../services/document-render.service';
-import { OrganizationService } from '../../services/organization.service';
-import { TableViewService } from '../../services/table-view.service';
-import { TemplateService } from '../../services/template.service';
+import { CommonModule } from "@angular/common";
+import { Component, OnInit, ViewEncapsulation } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
+import { AuthService } from "../../../../core/services/auth.service";
+import { NotificationService } from "../../../../core/services/notification.service";
+import { BeneficiaryRecord, FamilyRecord } from "../../models/family.model";
+import { FilterValueMap, RuntimeFilterEntry } from "../../models/filter.model";
+import { TableViewConfig } from "../../models/table-view.model";
+import { TemplateRecord } from "../../models/template.model";
+import { EditorStateService } from "../../services/editor-state.service";
+import { FamilyService } from "../../services/family.service";
+import { FilterRuntimeService } from "../../services/filter-runtime.service";
+import { DocumentDataService } from "../../services/document-data.service";
+import { DocumentRenderService } from "../../services/document-render.service";
+import { OrganizationService } from "../../services/organization.service";
+import { TableViewService } from "../../services/table-view.service";
+import { TemplateService } from "../../services/template.service";
 
-type UserMode = 'documents' | 'data';
+type UserMode = "documents" | "data";
 type Step = 1 | 2 | 3;
 
 @Component({
-  selector: 'app-user-page',
+  selector: "app-user-page",
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './user-page.component.html',
-  styleUrls: ['./user-page.component.scss'],
-  encapsulation: ViewEncapsulation.None
+  templateUrl: "./user-page.component.html",
+  styleUrls: ["./user-page.component.scss"],
+  encapsulation: ViewEncapsulation.None,
 })
 export class UserPageComponent implements OnInit {
   loading = true;
-  mode: UserMode = 'documents';
+  mode: UserMode = "documents";
   organizationId: string | null = null;
-  organizationName = '';
+  organizationName = "";
 
   selectedFamilyId: string | null = null;
   selectedTemplateId: string | null = null;
@@ -42,19 +42,19 @@ export class UserPageComponent implements OnInit {
   filterValues: FilterValueMap = {};
   openSteps: Record<Step, boolean> = { 1: true, 2: false, 3: false };
 
-  familySearch = '';
-  templateSearch = '';
-  beneficiarySearch = '';
+  familySearch = "";
+  templateSearch = "";
+  beneficiarySearch = "";
   zoom = 100;
   previewHtml: SafeHtml | null = null;
-  previewPlainHtml = '';
+  previewPlainHtml = "";
   previewTemplate: TemplateRecord | null = null;
   previewPerson: Record<string, any> | null = null;
-  waitMessage = 'Completez les 3 etapes pour generer votre document';
+  waitMessage = "Prêt pour la génération";
 
   selectedDataViewId: string | null = null;
-  dataViewSearch = '';
-  dataRowSearch = '';
+  dataViewSearch = "";
+  dataRowSearch = "";
   dataRows: Record<string, any>[] = [];
   selectedDataRowId: string | null = null;
   selectedDataRecord: Record<string, any> | null = null;
@@ -72,32 +72,45 @@ export class UserPageComponent implements OnInit {
     private documentRender: DocumentRenderService,
     private tableViews: TableViewService,
     private notifications: NotificationService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
   ) {}
 
   async ngOnInit(): Promise<void> {
-    await this.state.ensureResources(['organizations', 'families', 'templates']);
+    await this.state.ensureResources([
+      "organizations",
+      "families",
+      "templates",
+    ]);
     const user = this.auth.getCurrentUser();
-    this.organizationId = user?.organizationId || this.organizationsService.getOrganizations()[0]?.id || null;
-    const organization = this.organizationId ? this.organizationsService.getOrganization(this.organizationId) : null;
-    this.organizationName = organization?.nom || organization?.name || '';
+    this.organizationId =
+      user?.organizationId ||
+      this.organizationsService.getOrganizations()[0]?.id ||
+      null;
+    const organization = this.organizationId
+      ? this.organizationsService.getOrganization(this.organizationId)
+      : null;
+    this.organizationName = organization?.nom || organization?.name || "";
     this.loading = false;
   }
 
   get families(): FamilyRecord[] {
     const search = this.familySearch.trim().toLowerCase();
-    return this.familiesService.getFamilies().filter(family => {
-      const name = String(family.nom || family.name || '');
+    return this.familiesService.getFamilies().filter((family) => {
+      const name = String(family.nom || family.name || "");
       return !search || name.toLowerCase().includes(search);
     });
   }
 
   get selectedFamily(): FamilyRecord | null {
-    return this.selectedFamilyId ? this.familiesService.getFamily(this.selectedFamilyId) : null;
+    return this.selectedFamilyId
+      ? this.familiesService.getFamily(this.selectedFamilyId)
+      : null;
   }
 
   get selectedTemplate(): TemplateRecord | null {
-    return this.selectedTemplateId ? this.templatesService.getTemplate(this.selectedTemplateId) : null;
+    return this.selectedTemplateId
+      ? this.templatesService.getTemplate(this.selectedTemplateId)
+      : null;
   }
 
   get templates(): TemplateRecord[] {
@@ -105,15 +118,15 @@ export class UserPageComponent implements OnInit {
     const search = this.templateSearch.trim().toLowerCase();
     return this.templatesService
       .getTemplates(this.selectedFamilyId, this.organizationId)
-      .filter(template => {
-        const name = String(template['nom'] || template['name'] || '');
+      .filter((template) => {
+        const name = String(template["nom"] || template["name"] || "");
         return !search || name.toLowerCase().includes(search);
       });
   }
 
   get filteredBeneficiaries(): BeneficiaryRecord[] {
     const search = this.beneficiarySearch.trim().toLowerCase();
-    return this.beneficiaries.filter(beneficiary => {
+    return this.beneficiaries.filter((beneficiary) => {
       const label = this.getBeneficiaryLabel(beneficiary);
       const subtitle = this.getBeneficiarySubtitle(beneficiary);
       return !search || `${label} ${subtitle}`.toLowerCase().includes(search);
@@ -122,19 +135,35 @@ export class UserPageComponent implements OnInit {
 
   get dataViewsList(): TableViewConfig[] {
     const search = this.dataViewSearch.trim().toLowerCase();
-    return this.tableViews.getTableViews().filter(view => {
-      return !search || view.label.toLowerCase().includes(search) || view.tableName.toLowerCase().includes(search);
+    return this.tableViews.getTableViews().filter((view) => {
+      return (
+        !search ||
+        view.label.toLowerCase().includes(search) ||
+        view.tableName.toLowerCase().includes(search)
+      );
     });
   }
 
   get selectedDataView(): TableViewConfig | null {
-    return this.selectedDataViewId ? this.tableViews.getTableView(this.selectedDataViewId) : null;
+    return this.selectedDataViewId
+      ? this.tableViews.getTableView(this.selectedDataViewId)
+      : null;
+  }
+
+  get selectedBeneficiaryLabelForProgress(): string {
+    const beneficiary = this.beneficiaries.find(
+      (item) => String(item.id) === String(this.selectedBeneficiaryId),
+    );
+    if (beneficiary) return this.getBeneficiaryLabel(beneficiary);
+    return this.selectedFamily?.beneficiaryMode === "organization"
+      ? "Organization"
+      : "Personne";
   }
 
   async switchMode(mode: UserMode): Promise<void> {
     this.mode = mode;
-    if (mode === 'data') {
-      await this.state.ensureResources(['tableViews']);
+    if (mode === "data") {
+      await this.state.ensureResources(["tableViews"]);
       if (this.selectedDataView) await this.renderDataContent();
     }
   }
@@ -144,7 +173,8 @@ export class UserPageComponent implements OnInit {
   }
 
   templateCountForFamily(familyId: string): number {
-    return this.templatesService.getTemplates(familyId, this.organizationId).length;
+    return this.templatesService.getTemplates(familyId, this.organizationId)
+      .length;
   }
 
   selectFamily(familyId: string): void {
@@ -154,26 +184,34 @@ export class UserPageComponent implements OnInit {
     this.beneficiaries = [];
     this.runtimeFilters = [];
     this.filterValues = {};
-    this.templateSearch = '';
-    this.beneficiarySearch = '';
+    this.templateSearch = "";
+    this.beneficiarySearch = "";
     this.openSteps = { 1: false, 2: true, 3: false };
-    this.showWait('Selectionnez un modele de document');
+    this.showWait("Selectionnez un modele de document");
   }
 
   async selectTemplate(templateId: string): Promise<void> {
     this.selectedTemplateId = templateId;
     this.selectedBeneficiaryId = null;
     this.beneficiaries = [];
-    this.beneficiarySearch = '';
+    this.beneficiarySearch = "";
     await this.refreshRuntimeFilters(false);
     await this.buildBeneficiaryList();
     this.openSteps = { 1: false, 2: false, 3: true };
     const family = this.selectedFamily;
-    if (family?.beneficiaryMode === 'organization' && this.beneficiaries.length === 1 && !this.hasMissingRequiredFilters()) {
+    if (
+      family?.beneficiaryMode === "organization" &&
+      this.beneficiaries.length === 1 &&
+      !this.hasMissingRequiredFilters()
+    ) {
       await this.selectBeneficiary(this.beneficiaries[0].id);
       return;
     }
-    this.showWait(this.hasMissingRequiredFilters() ? 'Renseignez les filtres pour continuer' : 'Selectionnez le beneficiaire concerne');
+    this.showWait(
+      this.hasMissingRequiredFilters()
+        ? "Renseignez les filtres pour continuer"
+        : "Selectionnez le beneficiaire concerne",
+    );
   }
 
   async onFilterChange(filterId: string, value: unknown): Promise<void> {
@@ -182,15 +220,22 @@ export class UserPageComponent implements OnInit {
     await this.refreshRuntimeFilters(true);
     await this.buildBeneficiaryList();
     if (this.hasMissingRequiredFilters()) {
-      this.showWait('Renseignez les filtres pour continuer');
+      this.showWait("Renseignez les filtres pour continuer");
       return;
     }
     const family = this.selectedFamily;
-    if (family?.beneficiaryMode === 'organization' && this.beneficiaries.length === 1) {
+    if (
+      family?.beneficiaryMode === "organization" &&
+      this.beneficiaries.length === 1
+    ) {
       await this.selectBeneficiary(this.beneficiaries[0].id);
       return;
     }
-    this.showWait(this.beneficiaries.length ? 'Selectionnez le beneficiaire concerne' : 'Aucun beneficiaire disponible pour ces filtres');
+    this.showWait(
+      this.beneficiaries.length
+        ? "Selectionnez le beneficiaire concerne"
+        : "Aucun beneficiaire disponible pour ces filtres",
+    );
   }
 
   async selectBeneficiary(beneficiaryId: string): Promise<void> {
@@ -200,8 +245,12 @@ export class UserPageComponent implements OnInit {
   }
 
   async generateDocument(): Promise<void> {
-    if (!this.selectedFamilyId || !this.selectedTemplateId || this.hasMissingRequiredFilters()) {
-      this.notifications.showError('Completez les filtres obligatoires.');
+    if (
+      !this.selectedFamilyId ||
+      !this.selectedTemplateId ||
+      this.hasMissingRequiredFilters()
+    ) {
+      this.notifications.showError("Completez les filtres obligatoires.");
       return;
     }
     const template = this.selectedTemplate;
@@ -209,14 +258,19 @@ export class UserPageComponent implements OnInit {
       this.selectedFamilyId,
       this.selectedBeneficiaryId,
       this.organizationId,
-      this.filterValues
+      this.filterValues,
     );
     if (!template || !person) return;
     this.previewTemplate = template;
     this.previewPerson = person;
-    this.previewPlainHtml = this.documentRender.buildPreviewHtml(template, person);
-    this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(this.previewPlainHtml);
-    this.notifications.showSuccess('Document genere.');
+    this.previewPlainHtml = this.documentRender.buildPreviewHtml(
+      template,
+      person,
+    );
+    this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(
+      this.previewPlainHtml,
+    );
+    this.notifications.showSuccess("Document genere.");
   }
 
   resetDocumentFlow(): void {
@@ -228,19 +282,23 @@ export class UserPageComponent implements OnInit {
     this.filterValues = {};
     this.openSteps = { 1: true, 2: false, 3: false };
     this.previewHtml = null;
-    this.previewPlainHtml = '';
+    this.previewPlainHtml = "";
     this.previewTemplate = null;
     this.previewPerson = null;
-    this.showWait('Completez les 3 etapes pour generer votre document');
+    this.showWait("Completez les 3 etapes pour generer votre document");
   }
 
   printDocument(): void {
     if (!this.previewTemplate || !this.previewPerson) return;
-    this.documentRender.printDocPaginated(this.previewTemplate, this.previewPerson);
+    this.documentRender.printDocPaginated(
+      this.previewTemplate,
+      this.previewPerson,
+    );
   }
 
   setZoom(delta: number): void {
-    this.zoom = delta === 0 ? 100 : Math.max(40, Math.min(200, this.zoom + delta));
+    this.zoom =
+      delta === 0 ? 100 : Math.max(40, Math.min(200, this.zoom + delta));
   }
 
   async selectDataView(viewId: string): Promise<void> {
@@ -249,7 +307,7 @@ export class UserPageComponent implements OnInit {
     this.selectedDataRecord = null;
     this.creatingDataRow = false;
     this.dataRows = [];
-    this.dataRowSearch = '';
+    this.dataRowSearch = "";
     await this.renderDataContent();
   }
 
@@ -265,7 +323,7 @@ export class UserPageComponent implements OnInit {
     if (!view) return;
     this.dataRows = await this.tableViews.getTableViewRows(view.id, {
       config: view,
-      search: this.dataRowSearch
+      search: this.dataRowSearch,
     });
     if (!this.selectedDataRowId && this.dataRows.length) {
       this.selectDataRow(this.getRowId(this.dataRows[0]));
@@ -281,29 +339,48 @@ export class UserPageComponent implements OnInit {
     if (!view) return;
     this.creatingDataRow = true;
     this.selectedDataRowId = null;
-    this.selectedDataRecord = Object.fromEntries(view.visibleFields.map(field => [field, '']));
+    this.selectedDataRecord = Object.fromEntries(
+      view.visibleFields.map((field) => [field, ""]),
+    );
   }
 
   selectDataRow(rowId: string): void {
     this.creatingDataRow = false;
     this.selectedDataRowId = rowId;
-    this.selectedDataRecord = { ...(this.dataRows.find(row => this.getRowId(row) === rowId) || {}) };
+    this.selectedDataRecord = {
+      ...(this.dataRows.find((row) => this.getRowId(row) === rowId) || {}),
+    };
   }
 
   async saveDataRow(): Promise<void> {
     const view = this.selectedDataView;
     if (!view || !this.selectedDataRecord) return;
-    const values = Object.fromEntries(view.editableFields.map(field => [field, this.selectedDataRecord?.[field] ?? '']));
+    const values = Object.fromEntries(
+      view.editableFields.map((field) => [
+        field,
+        this.selectedDataRecord?.[field] ?? "",
+      ]),
+    );
     if (this.creatingDataRow) {
-      const record = await this.tableViews.createTableViewRecord(view.id, values, view);
+      const record = await this.tableViews.createTableViewRecord(
+        view.id,
+        values,
+        view,
+      );
       this.selectedDataRecord = record ? { ...record } : null;
       this.selectedDataRowId = record ? this.getRowId(record) : null;
       this.creatingDataRow = false;
-      this.notifications.showSuccess('Ligne ajoutee.');
+      this.notifications.showSuccess("Ligne ajoutee.");
     } else if (this.selectedDataRowId) {
-      const record = await this.tableViews.saveTableViewRecord(view.id, this.selectedDataRowId, values);
-      this.selectedDataRecord = record ? { ...record } : this.selectedDataRecord;
-      this.notifications.showSuccess('Ligne enregistree.');
+      const record = await this.tableViews.saveTableViewRecord(
+        view.id,
+        this.selectedDataRowId,
+        values,
+      );
+      this.selectedDataRecord = record
+        ? { ...record }
+        : this.selectedDataRecord;
+      this.notifications.showSuccess("Ligne enregistree.");
     }
     await this.reloadDataRows();
   }
@@ -317,10 +394,13 @@ export class UserPageComponent implements OnInit {
       return;
     }
     if (!this.selectedDataRowId) return;
-    await this.tableViews.deleteTableViewRecord(view.id, this.selectedDataRowId);
+    await this.tableViews.deleteTableViewRecord(
+      view.id,
+      this.selectedDataRowId,
+    );
     this.selectedDataRowId = null;
     this.selectedDataRecord = null;
-    this.notifications.showSuccess('Ligne supprimee.');
+    this.notifications.showSuccess("Ligne supprimee.");
     await this.reloadDataRows();
   }
 
@@ -329,58 +409,93 @@ export class UserPageComponent implements OnInit {
   }
 
   getRowId(row: Record<string, any>): string {
-    return String(row['id'] ?? row['Id'] ?? Object.values(row)[0] ?? '');
+    return String(row["id"] ?? row["Id"] ?? Object.values(row)[0] ?? "");
   }
 
   getDataFieldLabel(view: TableViewConfig, field: string): string {
     return view.fieldLabels[field] || this.humanize(field);
   }
 
-  getDisplayValue(view: TableViewConfig, field: string, rawValue: unknown): string {
+  getDisplayValue(
+    view: TableViewConfig,
+    field: string,
+    rawValue: unknown,
+  ): string {
     const setting = view.fieldSettings[field];
-    if (setting?.displayMode !== 'lookup') return String(rawValue ?? '');
-    const match = this.lookupOptions[`${view.id}::${field}`]?.find(option => String(option.value) === String(rawValue ?? ''));
-    return match?.label || String(rawValue ?? '');
+    if (setting?.displayMode !== "lookup") return String(rawValue ?? "");
+    const match = this.lookupOptions[`${view.id}::${field}`]?.find(
+      (option) => String(option.value) === String(rawValue ?? ""),
+    );
+    return match?.label || String(rawValue ?? "");
   }
 
-  buildDataPreviewLabel(view: TableViewConfig, record: Record<string, any> | null): string {
-    if (!record) return '';
-    return view.previewFields.map(field => this.getDisplayValue(view, field, record[field])).filter(Boolean).join(' - ');
+  buildDataPreviewLabel(
+    view: TableViewConfig,
+    record: Record<string, any> | null,
+  ): string {
+    if (!record) return "";
+    return view.previewFields
+      .map((field) => this.getDisplayValue(view, field, record[field]))
+      .filter(Boolean)
+      .join(" - ");
   }
 
   getFamilyName(family: FamilyRecord | null = this.selectedFamily): string {
-    return String(family?.nom || family?.name || '');
+    return String(family?.nom || family?.name || "");
   }
 
-  getTemplateName(template: TemplateRecord | null = this.selectedTemplate): string {
-    return String(template?.['nom'] || template?.['name'] || '');
+  getTemplateName(
+    template: TemplateRecord | null = this.selectedTemplate,
+  ): string {
+    return String(template?.["nom"] || template?.["name"] || "");
   }
 
   getTemplateUpdatedAt(template: TemplateRecord): string | null {
-    return (template['updatedAt'] as string | null | undefined) || null;
+    return (template["updatedAt"] as string | null | undefined) || null;
   }
 
   logout(): void {
     this.auth.logout();
   }
 
-  getBeneficiaryLabel(beneficiary: BeneficiaryRecord | null | undefined): string {
-    return String(beneficiary?._displayLabel || beneficiary?.['nom_prenom'] || beneficiary?.['nom'] || 'Beneficiaire');
+  getBeneficiaryLabel(
+    beneficiary: BeneficiaryRecord | null | undefined,
+  ): string {
+    return String(
+      beneficiary?._displayLabel ||
+        beneficiary?.["nom_prenom"] ||
+        beneficiary?.["nom"] ||
+        "Beneficiaire",
+    );
   }
 
-  getBeneficiarySubtitle(beneficiary: BeneficiaryRecord | null | undefined): string {
-    return String(beneficiary?._displaySubtitle || (beneficiary?._sourceTable === 'organization' ? 'Document Organization' : this.getBeneficiaryTypeLabel()));
+  getBeneficiarySubtitle(
+    beneficiary: BeneficiaryRecord | null | undefined,
+  ): string {
+    return String(
+      beneficiary?._displaySubtitle ||
+        (beneficiary?._sourceTable === "organization"
+          ? "Document Organization"
+          : this.getBeneficiaryTypeLabel()),
+    );
   }
 
   getBeneficiaryTypeLabel(): string {
     const family = this.selectedFamily;
-    if (!family) return 'Beneficiaire';
-    if (family.beneficiaryMode === 'organization') return 'Organization';
-    return String(family.beneficiaryTableLabel || family.beneficiaryTable || 'Beneficiaire');
+    if (!family) return "Beneficiaire";
+    if (family.beneficiaryMode === "organization") return "Organization";
+    return String(
+      family.beneficiaryTableLabel || family.beneficiaryTable || "Beneficiaire",
+    );
   }
 
   getInitials(label: string): string {
-    return label.split(' ').map(part => part[0] || '').join('').substring(0, 2).toUpperCase();
+    return label
+      .split(" ")
+      .map((part) => part[0] || "")
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
   }
 
   private async refreshRuntimeFilters(preserveValues: boolean): Promise<void> {
@@ -389,15 +504,25 @@ export class UserPageComponent implements OnInit {
       this.filterValues = {};
       return;
     }
-    const baseValues = preserveValues ? this.filterValues : this.filterRuntime.getDefaultFilterValues(this.selectedFamilyId, this.selectedTemplateId, 'user');
-    this.runtimeFilters = await this.filterRuntime.resolveTemplateFiltersForRole(
-      this.selectedFamilyId,
-      this.selectedTemplateId,
-      'user',
-      this.organizationId,
-      baseValues
+    const baseValues = preserveValues
+      ? this.filterValues
+      : this.filterRuntime.getDefaultFilterValues(
+          this.selectedFamilyId,
+          this.selectedTemplateId,
+          "user",
+        );
+    this.runtimeFilters =
+      await this.filterRuntime.resolveTemplateFiltersForRole(
+        this.selectedFamilyId,
+        this.selectedTemplateId,
+        "user",
+        this.organizationId,
+        baseValues,
+      );
+    this.filterValues = this.filterRuntime.validateRuntimeFilterValues(
+      this.runtimeFilters,
+      baseValues,
     );
-    this.filterValues = this.filterRuntime.validateRuntimeFilterValues(this.runtimeFilters, baseValues);
   }
 
   private async buildBeneficiaryList(): Promise<void> {
@@ -405,38 +530,47 @@ export class UserPageComponent implements OnInit {
       this.beneficiaries = [];
       return;
     }
-    this.beneficiaries = await this.familiesService.getBeneficiariesForFamily(this.selectedFamilyId, this.organizationId, this.filterValues);
+    this.beneficiaries = await this.familiesService.getBeneficiariesForFamily(
+      this.selectedFamilyId,
+      this.organizationId,
+      this.filterValues,
+    );
   }
 
   private hasMissingRequiredFilters(): boolean {
-    return this.runtimeFilters.some(entry => {
+    return this.runtimeFilters.some((entry) => {
       if (!entry.profile.required) return false;
       const value = this.filterValues[entry.id];
-      return value === undefined || value === null || String(value).trim() === '';
+      return (
+        value === undefined || value === null || String(value).trim() === ""
+      );
     });
   }
 
   private showWait(message: string): void {
     this.waitMessage = message;
     this.previewHtml = null;
-    this.previewPlainHtml = '';
+    this.previewPlainHtml = "";
     this.previewTemplate = null;
     this.previewPerson = null;
   }
 
   private async ensureLookupOptions(view: TableViewConfig): Promise<void> {
     const lookupFields = Object.entries(view.fieldSettings || {})
-      .filter(([, config]) => config?.displayMode === 'lookup')
+      .filter(([, config]) => config?.displayMode === "lookup")
       .map(([field]) => field);
     for (const field of lookupFields) {
       const key = `${view.id}::${field}`;
       if (!this.lookupOptions[key]) {
-        this.lookupOptions[key] = await this.tableViews.getTableViewLookupOptions(view.id, field, view);
+        this.lookupOptions[key] =
+          await this.tableViews.getTableViewLookupOptions(view.id, field, view);
       }
     }
   }
 
   private humanize(value: string): string {
-    return String(value || '').replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+    return String(value || "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 }

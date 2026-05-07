@@ -51,7 +51,7 @@ describe('UserPageComponent', () => {
 
     expect(fixture.componentInstance).toBeTruthy();
     expect(compiled.querySelector('iframe')).toBeNull();
-    expect(compiled.textContent).toContain('Generation de documents');
+    expect(compiled.textContent).toContain('Génération de documents');
     expect(compiled.textContent).toContain('Org 1');
   });
 });

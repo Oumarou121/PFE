@@ -4,57 +4,137 @@
   <div class="lb"><div class="lbf"></div></div>
 </div>
 
-<div class="user-page" *ngIf="!loading">
+<div
+  id="mainApp"
+  class="user-page"
+  style="opacity: 1; transition: opacity 0.3s; min-height: 100vh"
+  *ngIf="!loading"
+>
   <nav class="topnav">
     <div class="nav-logo">SIRH-<span>Doc</span></div>
     <div class="nav-sep"></div>
     <span class="nav-chip">UTILISATEUR FINAL</span>
     <span class="nav-organization">{{ organizationName }}</span>
     <div class="nav-right">
-      <button class="nav-link" type="button" (click)="logout()">Deconnexion</button>
+      <button class="nav-link" type="button" (click)="logout()">
+        Déconnexion
+      </button>
     </div>
   </nav>
 
-  <div class="hero-wrap">
+  <div style="padding: 0 24px">
     <div class="hero">
-      <div class="hero-icon">{{ mode === 'data' ? 'D' : 'Doc' }}</div>
+      <div class="hero-icon">{{ mode === "data" ? "🗂️" : "📄" }}</div>
       <div>
-        <h1>{{ mode === 'data' ? 'Gestion des donnees' : 'Generation de documents' }}</h1>
-        <p>{{ mode === 'data' ? 'Consultez et mettez a jour les donnees mises a disposition' : 'Selectionnez une famille, un modele et une personne' }}</p>
+        <h1>
+          {{
+            mode === "data" ? "Gestion des données" : "Génération de documents"
+          }}
+        </h1>
+        <p>
+          {{
+            mode === "data"
+              ? "Consultez et mettez à jour les données mises à disposition"
+              : "Sélectionnez une famille, un modèle et une personne"
+          }}
+        </p>
       </div>
-      <div class="hero-badge">{{ organizationName || '-' }}</div>
+      <div class="hero-badge">{{ organizationName || "—" }}</div>
     </div>
   </div>
 
   <div class="mode-switch">
-    <button class="mode-btn" type="button" [class.active]="mode === 'documents'" (click)="switchMode('documents')">Documents</button>
-    <button class="mode-btn" type="button" [class.active]="mode === 'data'" (click)="switchMode('data')">Donnees</button>
+    <button
+      class="mode-btn"
+      type="button"
+      [class.active]="mode === 'documents'"
+      (click)="switchMode('documents')"
+    >
+      Documents
+    </button>
+    <button
+      class="mode-btn"
+      type="button"
+      [class.active]="mode === 'data'"
+      (click)="switchMode('data')"
+    >
+      Données
+    </button>
   </div>
 
   <div class="view-shell active" *ngIf="mode === 'documents'">
     <div class="main-wrap">
       <div class="stepper">
         <div class="stepper-hdr">
-          <span class="stepper-title">Etapes de generation</span>
+          <span class="stepper-title">Étapes de génération</span>
           <div class="step-dots">
-            <div class="step-dot" [class.done]="selectedFamilyId" [class.cur]="!selectedFamilyId"></div>
-            <div class="step-dot" [class.done]="selectedTemplateId" [class.cur]="selectedFamilyId && !selectedTemplateId"></div>
-            <div class="step-dot" [class.done]="selectedBeneficiaryId" [class.cur]="selectedTemplateId && !selectedBeneficiaryId"></div>
+            <div
+              class="step-dot"
+              [class.done]="selectedFamilyId"
+              [class.cur]="!selectedFamilyId"
+            ></div>
+            <div
+              class="step-dot"
+              [class.done]="selectedTemplateId"
+              [class.cur]="selectedFamilyId && !selectedTemplateId"
+            ></div>
+            <div
+              class="step-dot"
+              [class.done]="selectedBeneficiaryId"
+              [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
+            ></div>
           </div>
         </div>
 
         <div class="step-block">
           <button class="step-hdr" type="button" (click)="toggleStep(1)">
-            <div class="step-num" [class.done]="selectedFamilyId" [class.cur]="!selectedFamilyId">{{ selectedFamilyId ? '✓' : '1' }}</div>
-            <span class="step-lbl" [class.cur]="!selectedFamilyId">Famille de documents</span>
-            <span class="step-val" [class.ok]="selectedFamilyId">{{ selectedFamily ? getFamilyName() : 'Non selectionne' }}</span>
+            <div
+              class="step-num"
+              [class.done]="selectedFamilyId"
+              [class.cur]="!selectedFamilyId"
+            >
+              {{ selectedFamilyId ? "✓" : "1" }}
+            </div>
+            <span class="step-lbl" [class.cur]="!selectedFamilyId"
+              >Famille de documents</span
+            >
+            <span class="step-val" [class.ok]="selectedFamilyId">{{
+              selectedFamily ? getFamilyName() : "Non sélectionné"
+            }}</span>
+            <svg
+              class="step-chev"
+              [style.transform]="openSteps[1] ? 'rotate(180deg)' : ''"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
           <div class="step-body" [class.open]="openSteps[1]">
-            <div class="data-search"><input type="text" placeholder="Rechercher une famille..." [(ngModel)]="familySearch" /></div>
+            <div class="data-search" style="margin-bottom: 10px">
+              <input
+                type="text"
+                placeholder="Rechercher une famille..."
+                [(ngModel)]="familySearch"
+              />
+            </div>
             <div class="fam-grid">
-              <button class="fam-card" type="button" *ngFor="let family of families" [class.sel]="selectedFamilyId === family.id" [disabled]="!templateCountForFamily(family.id)" (click)="selectFamily(family.id)">
+              <button
+                class="fam-card"
+                type="button"
+                *ngFor="let family of families"
+                [class.sel]="selectedFamilyId === family.id"
+                [disabled]="!templateCountForFamily(family.id)"
+                (click)="selectFamily(family.id)"
+              >
                 <div class="fam-name">{{ getFamilyName(family) }}</div>
-                <div class="fam-meta">{{ templateCountForFamily(family.id) }} modele(s)</div>
+                <div class="fam-meta">
+                  {{ templateCountForFamily(family.id) }} modèle(s)
+                </div>
               </button>
             </div>
           </div>
@@ -62,21 +142,67 @@
 
         <div class="step-block">
           <button class="step-hdr" type="button" (click)="toggleStep(2)">
-            <div class="step-num" [class.done]="selectedTemplateId" [class.cur]="selectedFamilyId && !selectedTemplateId">{{ selectedTemplateId ? '✓' : '2' }}</div>
-            <span class="step-lbl" [class.cur]="selectedFamilyId && !selectedTemplateId">Modele de document</span>
-            <span class="step-val" [class.ok]="selectedTemplateId">{{ selectedTemplate ? getTemplateName() : 'En attente' }}</span>
+            <div
+              class="step-num"
+              [class.done]="selectedTemplateId"
+              [class.cur]="selectedFamilyId && !selectedTemplateId"
+            >
+              {{ selectedTemplateId ? "✓" : "2" }}
+            </div>
+            <span
+              class="step-lbl"
+              [class.cur]="selectedFamilyId && !selectedTemplateId"
+              >Modèle de document</span
+            >
+            <span class="step-val" [class.ok]="selectedTemplateId">{{
+              selectedTemplate ? getTemplateName() : "En attente"
+            }}</span>
+            <svg
+              class="step-chev"
+              [style.transform]="openSteps[2] ? 'rotate(180deg)' : ''"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
           <div class="step-body" [class.open]="openSteps[2]">
-            <div class="data-search"><input type="text" placeholder="Rechercher un modele..." [(ngModel)]="templateSearch" /></div>
+            <div class="data-search" style="margin-bottom: 10px">
+              <input
+                type="text"
+                placeholder="Rechercher un modèle..."
+                [(ngModel)]="templateSearch"
+              />
+            </div>
             <div class="tpl-list">
-              <div class="empty-inline" *ngIf="!templates.length">Aucun modele</div>
-              <button class="tpl-card" type="button" *ngFor="let template of templates" [class.sel]="selectedTemplateId === template.id" (click)="selectTemplate(template.id)">
-                <span class="tpl-icon">Doc</span>
+              <div class="empty-inline" *ngIf="!templates.length">
+                Aucun modèle
+              </div>
+              <button
+                class="tpl-card"
+                type="button"
+                *ngFor="let template of templates"
+                [class.sel]="selectedTemplateId === template.id"
+                (click)="selectTemplate(template.id)"
+              >
+                <span class="tpl-icon">📄</span>
                 <div class="tpl-copy">
                   <div class="tpl-name">{{ getTemplateName(template) }}</div>
-                  <div class="tpl-meta">{{ getTemplateUpdatedAt(template) ? (getTemplateUpdatedAt(template) | date:'dd/MM/yyyy') : '-' }}</div>
+                  <div class="tpl-meta">
+                    {{
+                      getTemplateUpdatedAt(template)
+                        ? (getTemplateUpdatedAt(template) | date: "dd/MM/yyyy")
+                        : "-"
+                    }}
+                  </div>
                 </div>
-                <div class="tpl-chk">{{ selectedTemplateId === template.id ? '✓' : '' }}</div>
+                <div class="tpl-chk">
+                  {{ selectedTemplateId === template.id ? "✓" : "" }}
+                </div>
               </button>
             </div>
           </div>
@@ -84,29 +210,111 @@
 
         <div class="step-block">
           <button class="step-hdr" type="button" (click)="toggleStep(3)">
-            <div class="step-num" [class.done]="selectedBeneficiaryId" [class.cur]="selectedTemplateId && !selectedBeneficiaryId">{{ selectedBeneficiaryId ? '✓' : '3' }}</div>
-            <span class="step-lbl" [class.cur]="selectedTemplateId && !selectedBeneficiaryId">{{ runtimeFilters.length ? 'Filtres & beneficiaire' : getBeneficiaryTypeLabel() }}</span>
-            <span class="step-val" [class.ok]="selectedBeneficiaryId">{{ selectedBeneficiaryId || 'En attente' }}</span>
+            <div
+              class="step-num"
+              [class.done]="selectedBeneficiaryId"
+              [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
+            >
+              {{ selectedBeneficiaryId ? "✓" : "3" }}
+            </div>
+            <span
+              class="step-lbl"
+              [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
+              >{{
+                runtimeFilters.length
+                  ? "Filtres & bénéficiaire"
+                  : getBeneficiaryTypeLabel()
+              }}</span
+            >
+            <span class="step-val" [class.ok]="selectedBeneficiaryId">{{
+              selectedBeneficiaryId || "En attente"
+            }}</span>
+            <svg
+              class="step-chev"
+              [style.transform]="openSteps[3] ? 'rotate(180deg)' : ''"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
           <div class="step-body" [class.open]="openSteps[3]">
-            <div class="filter-panel" *ngIf="runtimeFilters.length">
-              <label class="filter-field" *ngFor="let filter of runtimeFilters">
-                <span>{{ filter.label }}{{ filter.profile.required ? ' *' : '' }}</span>
-                <select *ngIf="filter.type === 'select'" [(ngModel)]="filterValues[filter.id]" [disabled]="filter.profile.locked" (ngModelChange)="onFilterChange(filter.id, $event)">
-                  <option [ngValue]="null">-- Toutes / vide --</option>
-                  <option *ngFor="let option of filter.options || []" [ngValue]="option.value">{{ option.label }}</option>
-                </select>
-                <input *ngIf="filter.type !== 'select'" [type]="filter.type === 'number' ? 'number' : filter.type === 'date' ? 'date' : 'text'" [(ngModel)]="filterValues[filter.id]" [readonly]="filter.profile.locked" (ngModelChange)="onFilterChange(filter.id, $event)" />
-              </label>
+            <div
+              id="filterPanel"
+              style="margin-bottom: 12px"
+              *ngIf="runtimeFilters.length"
+            >
+              <div class="filter-panel">
+                <label
+                  class="filter-field"
+                  *ngFor="let filter of runtimeFilters"
+                >
+                  <span
+                    >{{ filter.label
+                    }}{{ filter.profile.required ? " *" : "" }}</span
+                  >
+                  <select
+                    *ngIf="filter.type === 'select'"
+                    [(ngModel)]="filterValues[filter.id]"
+                    [disabled]="filter.profile.locked"
+                    (ngModelChange)="onFilterChange(filter.id, $event)"
+                  >
+                    <option [ngValue]="null">-- Toutes / vide --</option>
+                    <option
+                      *ngFor="let option of filter.options || []"
+                      [ngValue]="option.value"
+                    >
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <input
+                    *ngIf="filter.type !== 'select'"
+                    [type]="
+                      filter.type === 'number'
+                        ? 'number'
+                        : filter.type === 'date'
+                          ? 'date'
+                          : 'text'
+                    "
+                    [(ngModel)]="filterValues[filter.id]"
+                    [readonly]="filter.profile.locked"
+                    (ngModelChange)="onFilterChange(filter.id, $event)"
+                  />
+                </label>
+              </div>
             </div>
-            <div class="data-search"><input type="text" placeholder="Rechercher un beneficiaire..." [(ngModel)]="beneficiarySearch" /></div>
+            <div class="data-search" style="margin-bottom: 10px">
+              <input
+                type="text"
+                placeholder="Rechercher un bénéficiaire..."
+                [(ngModel)]="beneficiarySearch"
+              />
+            </div>
             <div class="person-list">
-              <div class="empty-inline" *ngIf="!filteredBeneficiaries.length">Aucun beneficiaire disponible</div>
-              <button class="person-item" type="button" *ngFor="let beneficiary of filteredBeneficiaries" [class.sel]="selectedBeneficiaryId === beneficiary.id" (click)="selectBeneficiary(beneficiary.id)">
-                <div class="p-av">{{ getInitials(getBeneficiaryLabel(beneficiary)) }}</div>
+              <div class="empty-inline" *ngIf="!filteredBeneficiaries.length">
+                Aucun bénéficiaire disponible
+              </div>
+              <button
+                class="person-item"
+                type="button"
+                *ngFor="let beneficiary of filteredBeneficiaries"
+                [class.sel]="selectedBeneficiaryId === beneficiary.id"
+                (click)="selectBeneficiary(beneficiary.id)"
+              >
+                <div class="p-av">
+                  {{ getInitials(getBeneficiaryLabel(beneficiary)) }}
+                </div>
                 <div>
-                  <div class="p-name">{{ getBeneficiaryLabel(beneficiary) }}</div>
-                  <div class="p-meta">{{ getBeneficiarySubtitle(beneficiary) }}</div>
+                  <div class="p-name">
+                    {{ getBeneficiaryLabel(beneficiary) }}
+                  </div>
+                  <div class="p-meta">
+                    {{ getBeneficiarySubtitle(beneficiary) }}
+                  </div>
                 </div>
               </button>
             </div>
@@ -116,25 +324,125 @@
 
       <div class="doc-panel">
         <div class="doc-ph">
-          <span class="doc-pt">Apercu A4</span>
-          <div class="doc-actions" *ngIf="previewHtml">
-            <button class="btn primary" type="button" (click)="printDocument()">Imprimer</button>
-            <button class="btn ghost" type="button" (click)="resetDocumentFlow()">Nouveau</button>
+          <span class="doc-pt">Aperçu A4</span>
+          <div class="doc-actions" id="docActions">
+            <ng-container *ngIf="previewHtml">
+              <button
+                class="btn primary"
+                type="button"
+                (click)="printDocument()"
+              >
+                Imprimer
+              </button>
+              <button
+                class="btn ghost"
+                type="button"
+                (click)="resetDocumentFlow()"
+              >
+                Nouveau
+              </button>
+            </ng-container>
           </div>
         </div>
-        <div class="zoom-bar" *ngIf="previewHtml">
-          <span>ZOOM</span>
-          <button class="btn xs ghost" type="button" (click)="setZoom(-10)">-</button>
+        <div
+          id="userPreviewFiltersWrap"
+          style="width: 100%; padding: 10px 18px 0"
+        ></div>
+        <div
+          class="zoom-bar"
+          id="zoomBar"
+          [style.display]="previewHtml ? 'flex' : 'none'"
+        >
+          <span style="font-size: 11px; color: var(--text3); font-weight: 600"
+            >ZOOM</span
+          >
+          <button
+            class="btn xs ghost"
+            style="font-size: 14px; width: 22px; padding: 0"
+            type="button"
+            (click)="setZoom(-10)"
+          >
+            -
+          </button>
           <span class="zoom-lbl">{{ zoom }}%</span>
-          <button class="btn xs ghost" type="button" (click)="setZoom(10)">+</button>
-          <button class="btn xs ghost" type="button" (click)="setZoom(0)">↺</button>
+          <button
+            class="btn xs ghost"
+            style="font-size: 14px; width: 22px; padding: 0"
+            type="button"
+            (click)="setZoom(10)"
+          >
+            +
+          </button>
+          <button class="btn xs ghost" type="button" (click)="setZoom(0)">
+            ↺
+          </button>
         </div>
-        <div class="doc-pb">
-          <div class="doc-wait" *ngIf="!previewHtml">
-            <h3>{{ waitMessage }}</h3>
+        <div class="pbar" id="pbar">
+          <div
+            class="pb-step"
+            [class.done]="selectedFamilyId"
+            [class.cur]="!selectedFamilyId"
+            id="ps1"
+          >
+            {{ selectedFamily ? (getFamilyName() | slice: 0 : 16) : "Famille" }}
           </div>
-          <div class="a4-canvas" *ngIf="previewHtml">
-            <div class="zoom-scaler" [style.transform]="'scale(' + zoom / 100 + ')'">
+          <div class="pb-arr">›</div>
+          <div
+            class="pb-step"
+            [class.done]="selectedTemplateId"
+            [class.cur]="selectedFamilyId && !selectedTemplateId"
+            id="ps2"
+          >
+            {{
+              selectedTemplate
+                ? (getTemplateName() | slice: 0 : 16)
+                : "Template"
+            }}
+          </div>
+          <div class="pb-arr">›</div>
+          <div
+            class="pb-step"
+            [class.done]="selectedBeneficiaryId"
+            [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
+            id="ps3"
+          >
+            {{ selectedBeneficiaryLabelForProgress | slice: 0 : 14 }}
+          </div>
+        </div>
+
+        <div class="doc-pb" id="docPb">
+          <div
+            class="doc-wait"
+            id="docWait"
+            [style.display]="previewHtml ? 'none' : 'flex'"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            >
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <h3>{{ waitMessage }}</h3>
+            <p *ngIf="!selectedBeneficiaryId">
+              Complétez les 3 étapes pour générer votre document
+            </p>
+          </div>
+          <div
+            class="a4-canvas"
+            id="a4Canvas"
+            [style.display]="previewHtml ? 'flex' : 'none'"
+          >
+            <div
+              id="zoomScaler"
+              class="zoom-scaler"
+              [style.transform]="'scale(' + zoom / 100 + ')'"
+              [style.marginBottom]="
+                zoom < 100 ? ((100 - zoom) / 100) * -500 + 'px' : '0'
+              "
+            >
               <div [innerHTML]="previewHtml"></div>
             </div>
           </div>
@@ -147,13 +455,27 @@
     <div class="data-wrap">
       <div class="data-sidebar">
         <div class="data-side-hdr">
-          <div class="data-side-title">Gestion des donnees</div>
-          <div class="data-side-sub">Choisissez un espace de donnees</div>
+          <div class="data-side-title">Gestion des données</div>
+          <div class="data-side-sub">Choisissez un espace de données</div>
         </div>
-        <div class="data-search"><input type="text" placeholder="Rechercher..." [(ngModel)]="dataViewSearch" /></div>
+        <div class="data-search">
+          <input
+            type="text"
+            placeholder="Rechercher..."
+            [(ngModel)]="dataViewSearch"
+          />
+        </div>
         <div class="data-view-list">
-          <div class="data-empty" *ngIf="!dataViewsList.length">Aucune vue de donnees disponible.</div>
-          <button class="data-view-card" type="button" *ngFor="let view of dataViewsList" [class.active]="selectedDataViewId === view.id" (click)="selectDataView(view.id)">
+          <div class="data-empty" *ngIf="!dataViewsList.length">
+            Aucune vue de données disponible.
+          </div>
+          <button
+            class="data-view-card"
+            type="button"
+            *ngFor="let view of dataViewsList"
+            [class.active]="selectedDataViewId === view.id"
+            (click)="selectDataView(view.id)"
+          >
             <div class="data-view-name">{{ view.label || view.tableName }}</div>
             <div class="data-view-meta">{{ view.tableName }}</div>
           </button>
@@ -162,16 +484,35 @@
 
       <div class="data-main">
         <div class="data-main-hdr">
-          <div class="data-main-title">{{ selectedDataView?.label || selectedDataView?.tableName || 'Aucune vue selectionnee' }}</div>
-          <div class="data-main-sub">Les vues disponibles sont configurees par l'administrateur.</div>
+          <div class="data-main-title">
+            {{
+              selectedDataView?.label ||
+                selectedDataView?.tableName ||
+                "Aucune vue sélectionnée"
+            }}
+          </div>
+          <div class="data-main-sub">
+            Les vues disponibles sont configurées par l'administrateur.
+          </div>
           <div class="data-main-actions" *ngIf="selectedDataView">
-            <input type="text" placeholder="Rechercher dans les lignes..." [(ngModel)]="dataRowSearch" (ngModelChange)="updateDataSearch()" />
-            <button class="nav-link" type="button" (click)="createDataRow()">Ajouter</button>
-            <button class="nav-link" type="button" (click)="reloadDataRows()">Rafraichir</button>
+            <input
+              type="text"
+              placeholder="Rechercher dans les lignes..."
+              [(ngModel)]="dataRowSearch"
+              (ngModelChange)="updateDataSearch()"
+            />
+            <button class="nav-link" type="button" (click)="createDataRow()">
+              Ajouter
+            </button>
+            <button class="nav-link" type="button" (click)="reloadDataRows()">
+              Rafraîchir
+            </button>
           </div>
         </div>
 
-        <div class="data-empty" *ngIf="!selectedDataView">Selectionnez une vue de donnees pour commencer.</div>
+        <div class="data-empty" *ngIf="!selectedDataView">
+          Sélectionnez une vue de données pour commencer.
+        </div>
         <div class="data-grid" *ngIf="selectedDataView as view">
           <div class="data-card">
             <div class="data-card-hdr">
@@ -179,14 +520,26 @@
               <div class="data-main-sub">{{ dataRows.length }} ligne(s)</div>
             </div>
             <div class="data-card-body data-card-body--table">
-              <div class="data-empty" *ngIf="!dataRows.length">Aucune ligne disponible.</div>
+              <div class="data-empty" *ngIf="!dataRows.length">
+                Aucune ligne disponible.
+              </div>
               <table class="data-table" *ngIf="dataRows.length">
                 <thead>
-                  <tr><th *ngFor="let field of view.previewFields">{{ getDataFieldLabel(view, field) }}</th></tr>
+                  <tr>
+                    <th *ngFor="let field of view.previewFields">
+                      {{ getDataFieldLabel(view, field) }}
+                    </th>
+                  </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let row of dataRows" [class.active]="getRowId(row) === selectedDataRowId" (click)="selectDataRow(getRowId(row))">
-                    <td *ngFor="let field of view.previewFields">{{ getDisplayValue(view, field, row[field]) }}</td>
+                  <tr
+                    *ngFor="let row of dataRows"
+                    [class.active]="getRowId(row) === selectedDataRowId"
+                    (click)="selectDataRow(getRowId(row))"
+                  >
+                    <td *ngFor="let field of view.previewFields">
+                      {{ getDisplayValue(view, field, row[field]) }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -195,30 +548,83 @@
 
           <div class="data-card">
             <div class="data-card-hdr">
-              <div class="data-card-title">{{ creatingDataRow ? 'Nouvelle ligne' : 'Detail' }}</div>
-              <div class="data-main-sub">{{ creatingDataRow ? 'Saisie' : buildDataPreviewLabel(view, selectedDataRecord) || 'Selection' }}</div>
+              <div class="data-card-title">
+                {{ creatingDataRow ? "Nouvelle ligne" : "Detail" }}
+              </div>
+              <div class="data-main-sub">
+                {{
+                  creatingDataRow
+                    ? "Saisie"
+                    : buildDataPreviewLabel(view, selectedDataRecord) ||
+                      "Selection"
+                }}
+              </div>
             </div>
             <div class="data-card-body">
-              <div class="data-empty" *ngIf="!selectedDataRecord">Selectionnez une ligne pour afficher le detail.</div>
+              <div class="data-empty" *ngIf="!selectedDataRecord">
+                Selectionnez une ligne pour afficher le detail.
+              </div>
               <div class="data-detail-form" *ngIf="selectedDataRecord">
-                <label class="data-field" *ngFor="let field of view.visibleFields">
-                  <span class="data-field-label">{{ getDataFieldLabel(view, field) }}</span>
-                  <ng-container *ngIf="isFieldEditable(field); else readonlyField">
-                    <select class="data-field-input" *ngIf="view.fieldSettings[field]?.displayMode === 'lookup'; else rawInput" [(ngModel)]="selectedDataRecord[field]">
+                <label
+                  class="data-field"
+                  *ngFor="let field of view.visibleFields"
+                >
+                  <span class="data-field-label">{{
+                    getDataFieldLabel(view, field)
+                  }}</span>
+                  <ng-container
+                    *ngIf="isFieldEditable(field); else readonlyField"
+                  >
+                    <select
+                      class="data-field-input"
+                      *ngIf="
+                        view.fieldSettings[field]?.displayMode === 'lookup';
+                        else rawInput
+                      "
+                      [(ngModel)]="selectedDataRecord[field]"
+                    >
                       <option value="">Choisir...</option>
-                      <option *ngFor="let option of lookupOptions[view.id + '::' + field] || []" [value]="option.value">{{ option.label }}</option>
+                      <option
+                        *ngFor="
+                          let option of lookupOptions[view.id + '::' + field] ||
+                            []
+                        "
+                        [value]="option.value"
+                      >
+                        {{ option.label }}
+                      </option>
                     </select>
                     <ng-template #rawInput>
-                      <input class="data-field-input" [(ngModel)]="selectedDataRecord[field]" />
+                      <input
+                        class="data-field-input"
+                        [(ngModel)]="selectedDataRecord[field]"
+                      />
                     </ng-template>
                   </ng-container>
                   <ng-template #readonlyField>
-                    <div class="data-field-readonly">{{ getDisplayValue(view, field, selectedDataRecord[field]) }}</div>
+                    <div class="data-field-readonly">
+                      {{
+                        getDisplayValue(view, field, selectedDataRecord[field])
+                      }}
+                    </div>
                   </ng-template>
                 </label>
                 <div class="data-detail-actions">
-                  <button class="nav-link danger" type="button" (click)="deleteDataRow()">Supprimer</button>
-                  <button class="nav-link" type="button" [disabled]="!view.editableFields.length" (click)="saveDataRow()">Enregistrer</button>
+                  <button
+                    class="nav-link danger"
+                    type="button"
+                    (click)="deleteDataRow()"
+                  >
+                    Supprimer
+                  </button>
+                  <button
+                    class="nav-link"
+                    type="button"
+                    [disabled]="!view.editableFields.length"
+                    (click)="saveDataRow()"
+                  >
+                    Enregistrer
+                  </button>
                 </div>
               </div>
             </div>
