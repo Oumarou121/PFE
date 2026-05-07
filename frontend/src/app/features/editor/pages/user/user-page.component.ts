@@ -1,5 +1,10 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit, ViewEncapsulation } from "@angular/core";
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  ViewEncapsulation,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { AuthService } from "../../../../core/services/auth.service";
@@ -87,6 +92,7 @@ export class UserPageComponent implements OnInit {
     private tableViews: TableViewService,
     private notifications: NotificationService,
     private sanitizer: DomSanitizer,
+    private elementRef: ElementRef,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -271,6 +277,12 @@ export class UserPageComponent implements OnInit {
       template,
       person,
     );
+    // Apply CSS vars to host so SCSS rules using var(--page-*) and var(--doc-*)
+    // resolve correctly even before inline styles on .preview-page propagate.
+    const themeVars = this.documentRender.getDocumentThemeVars(template);
+    Object.entries(themeVars).forEach(([key, value]) => {
+      this.elementRef.nativeElement.style.setProperty(key, value as string);
+    });
     this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(
       this.previewPlainHtml,
     );

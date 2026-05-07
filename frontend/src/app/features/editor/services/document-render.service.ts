@@ -18,6 +18,7 @@ export interface RenderedDocumentPage {
   header: string;
   content: string;
   footer: string;
+  hasHeader?: boolean;
   hasFooter?: boolean;
 }
 
@@ -84,7 +85,8 @@ export class DocumentRenderService {
       header: String(page.header || "").trim(),
       content: String(page.content || ""),
       footer: String(page.footer || "").trim(),
-      hasFooter: true,
+      hasHeader: !!template.hasHeader,
+      hasFooter: !!template.hasFooter,
     }));
     const displayed = this.applyTemplateHeaderFooterDisplay(
       pages.length
@@ -96,6 +98,7 @@ export class DocumentRenderService {
               header,
               content: "",
               footer,
+              hasHeader: !!template.hasHeader,
               hasFooter: !!template.hasFooter,
             },
           ],
@@ -129,7 +132,8 @@ export class DocumentRenderService {
         const emptyFooterStyle = footerHtml
           ? ""
           : ";border-top-color:transparent!important;color:transparent!important;background:transparent!important";
-        const noHeaderClass = headerHtml ? "" : " no-header";
+        const noHeaderClass =
+          headerHtml && page.hasHeader !== false ? "" : " no-header";
         const noFooterClass = hasFooterSlot ? "" : " no-footer";
         return `
         <div class="${className} ${renderClass}" data-render-mode="${mode}" style="${themeStyle}">
@@ -494,9 +498,7 @@ export class DocumentRenderService {
     });
   }
 
-  private getDocumentThemeVars(
-    template: TemplateRecord,
-  ): Record<string, string> {
+  getDocumentThemeVars(template: TemplateRecord): Record<string, string> {
     const charter = this.getTemplateGraphicCharter(template);
     const margins = this.getTemplatePageMargins(template);
     const distances = this.getTemplateHeaderFooterDistances(template);
@@ -604,11 +606,21 @@ export class DocumentRenderService {
   ): RenderedDocumentPage[] {
     const headerMode = normalizeTemplateSectionDisplay(template.headerDisplay);
     const footerMode = normalizeTemplateSectionDisplay(template.footerDisplay);
-    return pages.map((page, index) => ({
-      ...page,
-      header: this.shouldShowSection(headerMode, index) ? page.header : "",
-      footer: this.shouldShowSection(footerMode, index) ? page.footer : "",
-    }));
+    return pages.map((page, index) => {
+      const showHeader =
+        !!template.hasHeader &&
+        !!page.header &&
+        this.shouldShowSection(headerMode, index);
+      const showFooterContent =
+        !!template.hasFooter && this.shouldShowSection(footerMode, index);
+      return {
+        ...page,
+        header: showHeader ? page.header : "",
+        footer: showFooterContent ? page.footer || "" : "",
+        hasHeader: showHeader,
+        hasFooter: !!template.hasFooter,
+      };
+    });
   }
 
   private shouldShowSection(
