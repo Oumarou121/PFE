@@ -1,4 +1,10 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation, NgZone } from "@angular/core";
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewEncapsulation,
+  NgZone,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { Subject, firstValueFrom } from "rxjs";
@@ -171,7 +177,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   get filteredFamilies(): Family[] {
     const search = this.panelSearch.trim().toLowerCase();
     return this.families.filter((family) =>
-      String(family.nom || family.name || "").toLowerCase().includes(search),
+      String(family.nom || family.name || "")
+        .toLowerCase()
+        .includes(search),
     );
   }
 
@@ -194,13 +202,16 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   get filteredTableViews(): TableViewConfig[] {
     const search = this.panelSearch.trim().toLowerCase();
     return this.tableViews.filter((view) =>
-      `${view.label || ""} ${view.tableName || ""}`.toLowerCase().includes(search),
+      `${view.label || ""} ${view.tableName || ""}`
+        .toLowerCase()
+        .includes(search),
     );
   }
 
   get selectedTableView(): TableViewConfig | null {
     return this.selectedTableViewId
-      ? this.tableViews.find((view) => view.id === this.selectedTableViewId) || null
+      ? this.tableViews.find((view) => view.id === this.selectedTableViewId) ||
+          null
       : null;
   }
 
@@ -505,7 +516,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       }
     } catch {
       this.syncStateFromStore();
-      this.toast("API indisponible. Demarrez le backend puis reessayez.", "error");
+      this.toast(
+        "API indisponible. Demarrez le backend puis reessayez.",
+        "error",
+      );
     }
   }
 
@@ -514,11 +528,14 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   updatePanelSearch(event: Event): void {
-    this.panelSearch = String((event.target as HTMLInputElement | null)?.value || "");
+    this.panelSearch = String(
+      (event.target as HTMLInputElement | null)?.value || "",
+    );
   }
 
   familyTemplateCount(familyId: string): number {
-    return this.templates.filter((template) => template.familyId === familyId).length;
+    return this.templates.filter((template) => template.familyId === familyId)
+      .length;
   }
 
   familyBeneficiaryMeta(family: Family): string {
@@ -527,9 +544,13 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       : `beneficiaire: ${family.beneficiaryTable || "non defini"}`;
   }
 
-  selectFamilyFromPanel(familyId: string): void {
+  async selectFamilyFromPanel(familyId: string): Promise<void> {
     this.selectedFamId = familyId;
-    void this.ensureSchemaMeta().catch(() => {});
+    try {
+      await this.ensureSchemaMeta();
+    } catch (e) {
+      // Continue rendering even if schema fails
+    }
     this.renderFamilyEditor(familyId);
   }
 
@@ -564,7 +585,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.removeFamilyFilterDefinition(this.selectedFamId, filterId);
   }
 
-  updateSelectedFamilyFilterField(filterId: string, field: string, value: string): void {
+  updateSelectedFamilyFilterField(
+    filterId: string,
+    field: string,
+    value: string,
+  ): void {
     if (!this.selectedFamId) return;
     this.updateFamilyFilterField(this.selectedFamId, filterId, field, value);
   }
@@ -574,12 +599,25 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.updateFamilyFilterBindingMode(this.selectedFamId, filterId, mode);
   }
 
-  updateSelectedFamilyFilterBoundColumnForTable(filterId: string, tableName: string, columnName: string): void {
+  updateSelectedFamilyFilterBoundColumnForTable(
+    filterId: string,
+    tableName: string,
+    columnName: string,
+  ): void {
     if (!this.selectedFamId) return;
-    this.updateFamilyFilterBoundColumnForTable(this.selectedFamId, filterId, tableName, columnName);
+    this.updateFamilyFilterBoundColumnForTable(
+      this.selectedFamId,
+      filterId,
+      tableName,
+      columnName,
+    );
   }
 
-  updateSelectedFamilyFilterRole(filterId: string, role: string, checked: boolean): void {
+  updateSelectedFamilyFilterRole(
+    filterId: string,
+    role: string,
+    checked: boolean,
+  ): void {
     if (!this.selectedFamId) return;
     this.toggleFamilyFilterRole(this.selectedFamId, filterId, role, checked);
   }
@@ -589,9 +627,18 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.updateFamilyFilterStaticOptions(this.selectedFamId, filterId, raw);
   }
 
-  updateSelectedFamilyFilterSqlBuilderField(filterId: string, field: string, value: string): void {
+  updateSelectedFamilyFilterSqlBuilderField(
+    filterId: string,
+    field: string,
+    value: string,
+  ): void {
     if (!this.selectedFamId) return;
-    void this.updateFamilyFilterSqlBuilderField(this.selectedFamId, filterId, field, value);
+    void this.updateFamilyFilterSqlBuilderField(
+      this.selectedFamId,
+      filterId,
+      field,
+      value,
+    );
   }
 
   regenerateSelectedFamilyFilterSql(filterId: string): void {
@@ -600,12 +647,19 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   getSelectedFamilyBindableTables(): string[] {
-    if (!this.selectedFamId || !this.selectedFamily || !this.schemaMetaCache) return [];
-    return this.getFamilyFilterBindableTables(this.selectedFamId, this.selectedFamily, this.schemaMetaCache);
+    if (!this.selectedFamId || !this.selectedFamily || !this.schemaMetaCache)
+      return [];
+    return this.getFamilyFilterBindableTables(
+      this.selectedFamId,
+      this.selectedFamily,
+      this.schemaMetaCache,
+    );
   }
 
   getSelectedFamilyVisibleTables(): any[] {
-    return this.schemaMetaCache ? this.getVisibleFamilySchemaTables(this.schemaMetaCache) : [];
+    return this.schemaMetaCache
+      ? this.getVisibleFamilySchemaTables(this.schemaMetaCache)
+      : [];
   }
 
   getSelectedFamilyTableColumns(tableName: string): any[] {
@@ -624,33 +678,40 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   getAdminOrganizationName(admin: AdminAccount): string {
-    const organization = this.organizations.find((item) => item.id === admin.organizationId);
+    const organization = this.organizations.find(
+      (item) => item.id === admin.organizationId,
+    );
     return organization?.nom || organization?.name || "-";
   }
 
   getOrganizationAdmin(organizationId: string): AdminAccount | null {
-    return this.admins.find((admin) => admin.organizationId === organizationId) || null;
+    return (
+      this.admins.find((admin) => admin.organizationId === organizationId) ||
+      null
+    );
   }
 
   getAdminProfile(admin: AdminAccount): string {
     return String(admin["profile"] || admin["raw"]?.Profil || "-");
   }
 
-  selectTableViewFromPanel(viewId: string): void {
+  async selectTableViewFromPanel(viewId: string): Promise<void> {
     this.selectedTableViewId = viewId;
     this.selectedTableViewRowId = null;
     this.selectedTableViewRecord = null;
     this.isCreatingTableViewRow = false;
+    try {
+      await this.ensureTableViewSchema();
+    } catch (e) {
+      // Continue rendering even if schema fails
+    }
     this.renderTableViewsContent();
+    await this.reloadTableViewRows();
   }
 
   getTableViewRowId(row: any): string {
     return String(
-      row?.id ??
-        row?.Id ??
-        row?.ID ??
-        Object.values(row || {})[0] ??
-        "",
+      row?.id ?? row?.Id ?? row?.ID ?? Object.values(row || {})[0] ?? "",
     );
   }
 
@@ -845,7 +906,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   </div>
 </div>`;
 
-    const afterFiltersWrap = document.getElementById("familyEditorAfterFilters");
+    const afterFiltersWrap = document.getElementById(
+      "familyEditorAfterFilters",
+    );
     if (afterFiltersWrap) {
       afterFiltersWrap.innerHTML = "";
       Array.from(wrap.children)
@@ -869,11 +932,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   private renderOrganizationContent(): void {
     // Organizations are rendered by Angular template bindings now.
   }
-
+
   private renderAdminContent(): void {
     // Admin accounts are rendered by Angular template bindings now.
   }
-
+
   private renderTableViewsContent(): void {
     void this.ensureTableViewSchema();
   }
@@ -1525,7 +1588,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   private async renderFamilyFilterCatalog(_famId: string): Promise<void> {
     return;
   }
-private addFamilyFilterDefinition(famId: string): void {
+  private addFamilyFilterDefinition(famId: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam.filterCatalog = [
@@ -1580,6 +1643,7 @@ private addFamilyFilterDefinition(famId: string): void {
     this.saveFamilyLocal(fam);
     this.regenerateFamilyBeneficiarySql(famId, true);
     this.regenerateFamilySql(famId, true);
+    this.renderFamilyEditor(famId);
   }
 
   private updateFamilyFilterBindingMode(
@@ -1624,6 +1688,7 @@ private addFamilyFilterDefinition(famId: string): void {
     this.saveFamilyLocal(fam);
     this.regenerateFamilyBeneficiarySql(famId, true);
     this.regenerateFamilySql(famId, true);
+    this.renderFamilyEditor(famId);
   }
 
   private updateFamilyFilterBoundColumnForTable(
@@ -5632,15 +5697,19 @@ private addFamilyFilterDefinition(famId: string): void {
     );
   }
 
-
   tableViewSchemaTables(): any[] {
-    return this.getAllowedTableViewTables(this.tableViewSchemaCache || this.schemaMetaCache || {});
+    return this.getAllowedTableViewTables(
+      this.tableViewSchemaCache || this.schemaMetaCache || {},
+    );
   }
 
   tableViewColumnsForSelected(): any[] {
     const view = this.selectedTableView;
     if (!view) return [];
-    return this.getTableViewColumns(this.tableViewSchemaCache || this.schemaMetaCache || {}, view.tableName);
+    return this.getTableViewColumns(
+      this.tableViewSchemaCache || this.schemaMetaCache || {},
+      view.tableName,
+    );
   }
 
   setSelectedTableViewLabel(value: string): void {
@@ -5658,7 +5727,11 @@ private addFamilyFilterDefinition(famId: string): void {
     this.updateTableViewTable(view.id, tableName);
   }
 
-  toggleSelectedTableViewField(fieldKey: "visibleFields" | "editableFields" | "previewFields", fieldName: string, checked: boolean): void {
+  toggleSelectedTableViewField(
+    fieldKey: "visibleFields" | "editableFields" | "previewFields",
+    fieldName: string,
+    checked: boolean,
+  ): void {
     const view = this.selectedTableView;
     if (!view) return;
     this.toggleTableViewField(view.id, fieldKey, fieldName, checked);
@@ -5670,13 +5743,19 @@ private addFamilyFilterDefinition(famId: string): void {
     this.updateTableViewFieldLabel(view.id, fieldName, value);
   }
 
-  isSelectedTableViewFieldChecked(fieldKey: "visibleFields" | "editableFields" | "previewFields", fieldName: string): boolean {
+  isSelectedTableViewFieldChecked(
+    fieldKey: "visibleFields" | "editableFields" | "previewFields",
+    fieldName: string,
+  ): boolean {
     const view = this.selectedTableView;
     if (!view) return false;
     return ((view as any)[fieldKey] || []).includes(fieldName);
   }
 
-  isSelectedTableViewFieldDisabled(fieldKey: "visibleFields" | "editableFields" | "previewFields", fieldName: string): boolean {
+  isSelectedTableViewFieldDisabled(
+    fieldKey: "visibleFields" | "editableFields" | "previewFields",
+    fieldName: string,
+  ): boolean {
     const view = this.selectedTableView;
     if (!view) return true;
     if (fieldKey !== "previewFields") return false;
@@ -5690,7 +5769,11 @@ private addFamilyFilterDefinition(famId: string): void {
     return this.getTableViewFieldSetting(view, fieldName);
   }
 
-  setSelectedTableViewFieldSetting(fieldName: string, prop: string, value: string): void {
+  setSelectedTableViewFieldSetting(
+    fieldName: string,
+    prop: string,
+    value: string,
+  ): void {
     const view = this.selectedTableView;
     if (!view) return;
     this.updateTableViewFieldSetting(view.id, fieldName, prop, value);
@@ -5699,13 +5782,12 @@ private addFamilyFilterDefinition(famId: string): void {
   selectedTableViewLookupColumns(fieldName: string): any[] {
     const setting = this.getSelectedTableViewFieldSetting(fieldName);
     if (!setting?.lookupTable) return [];
-    return this.getTableViewColumns(this.tableViewSchemaCache || this.schemaMetaCache || {}, setting.lookupTable);
+    const schema = this.tableViewSchemaCache || this.schemaMetaCache || {};
+    if (!schema || !schema.columns) return [];
+    return this.getTableViewColumns(schema, setting.lookupTable);
   }
 
-  getTableViewFieldLabel(
-    item: TableViewConfig,
-    fieldName: string,
-  ): string {
+  getTableViewFieldLabel(item: TableViewConfig, fieldName: string): string {
     const key = String(fieldName || "").trim();
     return (
       String(item?.fieldLabels?.[key] || "").trim() ||
@@ -5767,13 +5849,16 @@ private addFamilyFilterDefinition(famId: string): void {
       current.lookupValueColumn = "";
       current.lookupLabelColumn = "";
       current.lookupLabelColumn2 = "";
+      // Clear cache for this field to force reload
+      const cacheKey = `${id}::${fieldName}`;
+      delete this.tableViewLookupOptionsCache[cacheKey];
     }
     settings[key] = current;
     item.fieldSettings = settings;
     item.updatedAt = new Date().toISOString();
     this.saveTableViewLocal(item);
     this.tableViewLookupOptionsCache = {};
-    this.renderTableViewsContent();
+    void this.renderTableViewPreview();
   }
 
   private getTableViewLookupCacheKey(
@@ -5866,12 +5951,34 @@ private addFamilyFilterDefinition(famId: string): void {
       .map((column: any) => column.name)
       .filter((fieldName: string) => !/^id$/i.test(fieldName))
       .slice(0, 5);
+
+    // Initialize fieldSettings and fieldLabels for new columns
+    item.fieldSettings = item.fieldSettings || {};
+    item.fieldLabels = item.fieldLabels || {};
+    const visibleFieldsSet = new Set(item.visibleFields);
+    for (const fieldName of visibleFieldsSet) {
+      if (!item.fieldSettings[fieldName]) {
+        item.fieldSettings[fieldName] = {
+          displayMode: "raw",
+          lookupTable: "",
+          lookupValueColumn: "",
+          lookupLabelColumn: "",
+          lookupLabelColumn2: "",
+        };
+      }
+      if (!item.fieldLabels[fieldName]) {
+        item.fieldLabels[fieldName] = this.humanizeSchemaName(fieldName);
+      }
+    }
+
     item.updatedAt = new Date().toISOString();
     this.saveTableViewLocal(item);
     this.selectedTableViewRowId = null;
     this.selectedTableViewRecord = null;
+    this.tableViewLookupOptionsCache = {};
     this.renderLeftPanel();
     this.renderTableViewsContent();
+    void this.reloadTableViewRows();
   }
 
   private toggleTableViewField(
@@ -5901,7 +6008,9 @@ private addFamilyFilterDefinition(famId: string): void {
   private saveTableViewLocal(item: TableViewConfig): void {
     const normalized = normalizeTableViewRecord(item);
     const state = this.editorState.getState();
-    const index = state.tableViews.findIndex((view) => view.id === normalized.id);
+    const index = state.tableViews.findIndex(
+      (view) => view.id === normalized.id,
+    );
     index >= 0
       ? state.tableViews.splice(index, 1, normalized)
       : state.tableViews.push(normalized);
@@ -5986,7 +6095,9 @@ private addFamilyFilterDefinition(famId: string): void {
     }
     if (this.selectedTableViewRowId && !this.isCreatingTableViewRow) {
       this.selectedTableViewRecord = this.cloneData(
-        this.tableViewRowsCache.find((row) => this.getTableViewRowId(row) === this.selectedTableViewRowId) || null,
+        this.tableViewRowsCache.find(
+          (row) => this.getTableViewRowId(row) === this.selectedTableViewRowId,
+        ) || null,
       );
     }
   }
@@ -6046,7 +6157,10 @@ private addFamilyFilterDefinition(famId: string): void {
           : null;
       await this.renderTableViewPreview();
     } catch (error: any) {
-      this.toast(error?.message || "Impossible de charger les lignes.", "error");
+      this.toast(
+        error?.message || "Impossible de charger les lignes.",
+        "error",
+      );
     }
   }
 
@@ -6188,7 +6302,8 @@ private addFamilyFilterDefinition(famId: string): void {
     } catch (error: any) {
       this.toast(error?.message || "Suppression impossible", "error");
     }
-  }
+  }
+
   private cloneData<T>(value: T): T {
     if (value === null || value === undefined) return value;
     return JSON.parse(JSON.stringify(value));
@@ -6233,22 +6348,3 @@ private addFamilyFilterDefinition(famId: string): void {
     ].join("\n");
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

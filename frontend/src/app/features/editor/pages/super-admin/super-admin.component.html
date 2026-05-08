@@ -136,27 +136,26 @@
     </button>
     <div class="panel-scroll" id="panelList" [ngSwitch]="currentSection">
       <ng-container *ngSwitchCase="'families'">
-        <button
-          class="list-item"
-          type="button"
+        <div
+          class="list-card"
           *ngFor="let family of filteredFamilies"
           [class.active]="selectedFamId === family.id"
           (click)="selectFamilyFromPanel(family.id)"
         >
-          <span class="list-item-body">
-            <span class="list-item-name">{{
+          <div class="list-card-header">
+            <span class="list-card-name">{{
               family.nom || family.name || family.id
             }}</span>
-            <span class="list-item-meta"
-              >{{ (family.classes || []).length }} classes ·
-              {{ familyTemplateCount(family.id) }} templates ·
-              {{ familyBeneficiaryMeta(family) }}</span
-            >
-          </span>
-          <span class="list-item-badge">{{
-            familyTemplateCount(family.id)
-          }}</span>
-        </button>
+            <span class="list-card-badge">{{
+              familyTemplateCount(family.id)
+            }}</span>
+          </div>
+          <div class="list-card-meta">
+            {{ (family.classes || []).length }} classes ·
+            {{ familyTemplateCount(family.id) }} templates ·
+            {{ familyBeneficiaryMeta(family) }}
+          </div>
+        </div>
       </ng-container>
       <ng-container *ngSwitchCase="'organizations'">
         <div class="list-item" *ngFor="let org of filteredOrganizations">
@@ -188,27 +187,25 @@
         </div>
       </ng-container>
       <ng-container *ngSwitchCase="'tableviews'">
-        <button
-          class="list-item"
-          type="button"
+        <div
+          class="list-card"
           *ngFor="let view of filteredTableViews"
           [class.active]="selectedTableViewId === view.id"
           (click)="selectTableViewFromPanel(view.id)"
         >
-          <span class="list-item-icon">Data</span>
-          <span class="list-item-body">
-            <span class="list-item-name">{{
+          <div class="list-card-header">
+            <span class="list-card-name">{{
               view.label || view.tableName
             }}</span>
-            <span class="list-item-meta"
-              >{{ view.tableName }} · apercu:
-              {{ (view.previewFields || []).join(", ") || "-" }}</span
-            >
-          </span>
-          <span class="list-item-badge">{{
-            (view.visibleFields || []).length
-          }}</span>
-        </button>
+            <span class="list-card-badge">{{
+              (view.visibleFields || []).length
+            }}</span>
+          </div>
+          <div class="list-card-meta">
+            {{ view.tableName }} · apercu:
+            {{ (view.previewFields || []).join(", ") || "-" }}
+          </div>
+        </div>
       </ng-container>
     </div>
   </div>
@@ -551,10 +548,8 @@
                   background: #fff;
                 "
                 *ngIf="
-                  (filter.columnBindings?.length ||
+                  filter.columnBindings?.length ||
                   filter.columnBinding?.mode === 'base-column'
-                    ? 'table-links'
-                    : 'manual') === 'table-links'
                 "
               >
                 <div
