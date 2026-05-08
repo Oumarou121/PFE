@@ -623,6 +623,19 @@
                     >
                       <option value="">Aucune</option>
                       <option
+                        *ngIf="
+                          getFilterBindingColumnName(filter, tableName) &&
+                          !hasSelectedFamilyTableColumn(
+                            tableName,
+                            getFilterBindingColumnName(filter, tableName)
+                          )
+                        "
+                        [value]="getFilterBindingColumnName(filter, tableName)"
+                      >
+                        {{ getFilterBindingColumnName(filter, tableName) }}
+                        (actuelle)
+                      </option>
+                      <option
                         *ngFor="
                           let column of getSelectedFamilyTableColumns(tableName)
                         "
@@ -670,7 +683,6 @@
                     <label class="form-label">Table source</label>
                     <select
                       class="form-input"
-                      [value]="filter.sqlBuilder?.tableName || ''"
                       (change)="
                         updateSelectedFamilyFilterSqlBuilderField(
                           filter.id,
@@ -679,10 +691,34 @@
                         )
                       "
                     >
-                      <option value="">Choisir</option>
+                      <option
+                        value=""
+                        [selected]="
+                          !getFilterSqlBuilderField(filter, 'tableName')
+                        "
+                      >
+                        Choisir
+                      </option>
+                      <option
+                        *ngIf="
+                          getFilterSqlBuilderField(filter, 'tableName') &&
+                          !hasSelectedFamilyVisibleTable(
+                            getFilterSqlBuilderField(filter, 'tableName')
+                          )
+                        "
+                        [value]="getFilterSqlBuilderField(filter, 'tableName')"
+                        [selected]="true"
+                      >
+                        {{ getFilterSqlBuilderField(filter, "tableName") }}
+                        (actuelle)
+                      </option>
                       <option
                         *ngFor="let table of getSelectedFamilyVisibleTables()"
                         [value]="table.name"
+                        [selected]="
+                          table.name ===
+                          getFilterSqlBuilderField(filter, 'tableName')
+                        "
                       >
                         {{ table.name
                         }}{{ table.comment ? " - " + table.comment : "" }}
@@ -693,7 +729,6 @@
                     <label class="form-label">Colonne valeur</label>
                     <select
                       class="form-input"
-                      [value]="filter.sqlBuilder?.valueColumn || ''"
                       (change)="
                         updateSelectedFamilyFilterSqlBuilderField(
                           filter.id,
@@ -702,14 +737,41 @@
                         )
                       "
                     >
-                      <option value="">Choisir</option>
+                      <option
+                        value=""
+                        [selected]="
+                          !getFilterSqlBuilderField(filter, 'valueColumn')
+                        "
+                      >
+                        Choisir
+                      </option>
+                      <option
+                        *ngIf="
+                          getFilterSqlBuilderField(filter, 'valueColumn') &&
+                          !hasSelectedFamilyTableColumn(
+                            getFilterSqlBuilderField(filter, 'tableName'),
+                            getFilterSqlBuilderField(filter, 'valueColumn')
+                          )
+                        "
+                        [value]="
+                          getFilterSqlBuilderField(filter, 'valueColumn')
+                        "
+                        [selected]="true"
+                      >
+                        {{ getFilterSqlBuilderField(filter, "valueColumn") }}
+                        (actuelle)
+                      </option>
                       <option
                         *ngFor="
                           let column of getSelectedFamilyTableColumns(
-                            filter.sqlBuilder?.tableName || ''
+                            getFilterSqlBuilderField(filter, 'tableName')
                           )
                         "
                         [value]="column.name"
+                        [selected]="
+                          column.name ===
+                          getFilterSqlBuilderField(filter, 'valueColumn')
+                        "
                       >
                         {{ column.name }}
                       </option>
@@ -719,7 +781,6 @@
                     <label class="form-label">Colonne libelle</label>
                     <select
                       class="form-input"
-                      [value]="filter.sqlBuilder?.labelColumn || ''"
                       (change)="
                         updateSelectedFamilyFilterSqlBuilderField(
                           filter.id,
@@ -728,14 +789,41 @@
                         )
                       "
                     >
-                      <option value="">Meme valeur</option>
+                      <option
+                        value=""
+                        [selected]="
+                          !getFilterSqlBuilderField(filter, 'labelColumn')
+                        "
+                      >
+                        Meme valeur
+                      </option>
+                      <option
+                        *ngIf="
+                          getFilterSqlBuilderField(filter, 'labelColumn') &&
+                          !hasSelectedFamilyTableColumn(
+                            getFilterSqlBuilderField(filter, 'tableName'),
+                            getFilterSqlBuilderField(filter, 'labelColumn')
+                          )
+                        "
+                        [value]="
+                          getFilterSqlBuilderField(filter, 'labelColumn')
+                        "
+                        [selected]="true"
+                      >
+                        {{ getFilterSqlBuilderField(filter, "labelColumn") }}
+                        (actuelle)
+                      </option>
                       <option
                         *ngFor="
                           let column of getSelectedFamilyTableColumns(
-                            filter.sqlBuilder?.tableName || ''
+                            getFilterSqlBuilderField(filter, 'tableName')
                           )
                         "
                         [value]="column.name"
+                        [selected]="
+                          column.name ===
+                          getFilterSqlBuilderField(filter, 'labelColumn')
+                        "
                       >
                         {{ column.name }}
                       </option>

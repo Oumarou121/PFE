@@ -673,6 +673,43 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return this.getFilterBindingForTable(filter, tableName)?.columnName || "";
   }
 
+  hasSelectedFamilyVisibleTable(tableName: string): boolean {
+    const normalized = this.normalizeSchemaIdentifier(tableName);
+    if (!normalized) return false;
+    return this.getSelectedFamilyVisibleTables().some(
+      (table: any) =>
+        this.normalizeSchemaIdentifier(String(table?.name || "")) ===
+        normalized,
+    );
+  }
+
+  hasSelectedFamilyTableColumn(tableName: string, columnName: string): boolean {
+    const normalized = this.normalizeSchemaIdentifier(columnName);
+    if (!normalized) return false;
+    return this.getSelectedFamilyTableColumns(tableName).some(
+      (column: any) =>
+        this.normalizeSchemaIdentifier(String(column?.name || "")) ===
+        normalized,
+    );
+  }
+
+  getFilterSqlBuilderField(
+    filter: any,
+    field: "tableName" | "valueColumn" | "labelColumn",
+  ): string {
+    const builder = normalizeFilterSqlBuilder(
+      filter?.sqlBuilder || filter?.builder || {},
+    );
+    const tableName = this.resolveSchemaTableName(
+      String(builder.tableName || ""),
+    );
+    if (field === "tableName") return tableName;
+    return this.resolveSchemaColumnName(
+      tableName,
+      String((builder as any)?.[field] || ""),
+    );
+  }
+
   getFilterStaticOptionsText(filter: any): string {
     return (filter?.staticOptions || [])
       .map((option: any) => `${option?.value || ""}|${option?.label || ""}`)
@@ -1263,8 +1300,55 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return this.schemaMetaCache;
   }
 
+  private normalizeSchemaIdentifier(value: string): string {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const cleaned = raw
+      .replace(/[\[\]"'`]/g, "")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+    const parts = cleaned.split(".").filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : cleaned;
+  }
+
+  private resolveSchemaTableName(tableName: string): string {
+    const raw = String(tableName || "").trim();
+    if (!raw) return "";
+    const normalized = this.normalizeSchemaIdentifier(raw);
+    const match = (this.schemaMetaCache?.tables || []).find(
+      (table: any) =>
+        this.normalizeSchemaIdentifier(String(table?.name || "")) ===
+        normalized,
+    );
+    return String(match?.name || raw);
+  }
+
+  private resolveSchemaColumnName(
+    tableName: string,
+    columnName: string,
+  ): string {
+    const raw = String(columnName || "").trim();
+    if (!raw) return "";
+    const resolvedTable = this.resolveSchemaTableName(tableName);
+    const normalized = this.normalizeSchemaIdentifier(raw);
+    const match = this.getColumnsForTable(
+      this.schemaMetaCache,
+      resolvedTable,
+    ).find(
+      (column: any) =>
+        this.normalizeSchemaIdentifier(String(column?.name || "")) ===
+        normalized,
+    );
+    return String(match?.name || raw);
+  }
+
   private getColumnsForTable(schema: any, tableName: string): any[] {
-    return (schema?.columns || []).filter((c: any) => c.table === tableName);
+    const normalizedTable = this.normalizeSchemaIdentifier(tableName);
+    return (schema?.columns || []).filter(
+      (c: any) =>
+        this.normalizeSchemaIdentifier(String(c?.table || "")) ===
+        normalizedTable,
+    );
   }
 
   private getPrimaryColumn(schema: any, tableName: string): string {
@@ -1733,14 +1817,22 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     fam.filterCatalog = (fam.filterCatalog || []).map(
       (filter: any, index: number) => {
         if (filter.id !== filterId) return filter;
+        const normalizedTableName = this.resolveSchemaTableName(tableName);
         const bindings = normalizeFilterColumnBindings(
           filter.columnBindings || [],
           filter.columnBinding || {},
-        ).filter((binding) => binding.tableName !== tableName);
+        ).filter(
+          (binding) =>
+            this.normalizeSchemaIdentifier(binding.tableName) !==
+            this.normalizeSchemaIdentifier(normalizedTableName),
+        );
         if (columnName) {
           bindings.push({
-            tableName,
-            columnName,
+            tableName: normalizedTableName,
+            columnName: this.resolveSchemaColumnName(
+              normalizedTableName,
+              columnName,
+            ),
             mode: "table-links",
           });
         }
@@ -1781,7 +1873,16 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       (filter: any, index: number) => {
         if (filter.id !== filterId) return filter;
         const sqlBuilder = normalizeFilterSqlBuilder(filter.sqlBuilder || {});
-        (sqlBuilder as any)[field] = value || "";
+        if (field === "tableName") {
+          sqlBuilder.tableName = this.resolveSchemaTableName(value || "");
+        } else if (field === "valueColumn" || field === "labelColumn") {
+          (sqlBuilder as any)[field] = this.resolveSchemaColumnName(
+            sqlBuilder.tableName,
+            value || "",
+          );
+        } else {
+          (sqlBuilder as any)[field] = value || "";
+        }
         if (field === "tableName") {
           sqlBuilder.valueColumn = "";
           sqlBuilder.labelColumn = "";
@@ -1807,6 +1908,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.saveFamilyLocal(fam);
     this.regenerateFamilyBeneficiarySql(famId, true);
     this.regenerateFamilySql(famId, true);
+    this.cdr.markForCheck();
   }
 
   private async regenerateFamilyFilterSqlQuery(
@@ -1901,11 +2003,17 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   private getFilterBindingForTable(filter: any, tableName: string): any {
+    const normalizedTable = this.normalizeSchemaIdentifier(tableName);
     const bindings = normalizeFilterColumnBindings(
       filter?.columnBindings || [],
       filter?.columnBinding || {},
     );
-    return bindings.find((binding) => binding.tableName === tableName) || null;
+    return (
+      bindings.find(
+        (binding) =>
+          this.normalizeSchemaIdentifier(binding.tableName) === normalizedTable,
+      ) || null
+    );
   }
 
   private getBuilderState(famId: string, fam: any, schema: any): any {
