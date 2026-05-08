@@ -1048,6 +1048,7 @@
                   <option
                     *ngFor="let table of tableViewSchemaTables()"
                     [value]="table.name"
+                    [selected]="table.name === view.tableName"
                   >
                     {{ table.comment || table.name }} ({{ table.name }})
                   </option>
