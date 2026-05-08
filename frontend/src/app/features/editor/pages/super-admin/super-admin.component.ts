@@ -76,6 +76,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   tableViewSearch = "";
   isCreatingTableViewRow = false;
   private tableViewLookupOptionsCache: Record<string, any[]> = {};
+  private tableViewDebugLogKeys = new Set<string>();
   private schemaMetaCache: any = null;
   private schemaBuilderState: Record<string, any> = {};
   private tempColsByClass: Record<
@@ -739,6 +740,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.selectedTableViewRowId = null;
     this.selectedTableViewRecord = null;
     this.isCreatingTableViewRow = false;
+    this.tableViewDebugLogKeys.clear();
     try {
       await this.ensureTableViewSchema();
     } catch (e) {
@@ -756,20 +758,27 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
           view.fieldLabels[fieldName] = this.humanizeSchemaName(fieldName);
           needsSave = true;
         }
-        if (!view.fieldSettings[fieldName]) {
-          view.fieldSettings[fieldName] = {
-            displayMode: "raw",
-            lookupTable: "",
-            lookupValueColumn: "",
-            lookupLabelColumn: "",
-            lookupLabelColumn2: "",
-          };
-          needsSave = true;
-        }
+        // if (!view.fieldSettings[fieldName]) {
+        //   view.fieldSettings[fieldName] = {
+        //     displayMode: "raw",
+        //     lookupTable: "",
+        //     lookupValueColumn: "",
+        //     lookupLabelColumn: "",
+        //     lookupLabelColumn2: "",
+        //   };
+        //   needsSave = true;
+        // }
       }
       if (needsSave) {
         this.saveTableViewLocal(view);
       }
+      console.log("[SuperAdmin/Data] selected table view", {
+        id: view.id,
+        tableName: view.tableName,
+        visibleFields: view.visibleFields,
+        fieldSettingsKeys: Object.keys(view.fieldSettings || {}),
+        fieldSettings: view.fieldSettings,
+      });
     }
     this.renderTableViewsContent();
     await this.reloadTableViewRows();
@@ -1012,6 +1021,14 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       this.tableViewSchemaCache = await this.ensureSchemaMeta();
     }
     if (!this.schemaMetaCache) this.schemaMetaCache = this.tableViewSchemaCache;
+    console.log("[SuperAdmin/Data] schema loaded", {
+      tables: (this.tableViewSchemaCache?.tables || []).length,
+      columns: (this.tableViewSchemaCache?.columns || []).length,
+      sampleTables: (this.tableViewSchemaCache?.tables || [])
+        .slice(0, 5)
+        .map((table: any) => table.name),
+    });
+    this.cdr.markForCheck();
   }
   addItem(): void {
     if (this.currentSection === "families") this.newFamily();
@@ -5905,11 +5922,34 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   getSelectedTableViewFieldSetting(fieldName: string): any {
-    const view = this.selectedTableView;
-    if (!view) return this.getTableViewFieldSetting({} as any, fieldName);
-    return this.getTableViewFieldSetting(view, fieldName);
+    const view = this.selectedTableViewId
+      ? this.tableViews.find((v) => v.id === this.selectedTableViewId) || null
+      : null;
+    if (!view)
+      return {
+        displayMode: "raw",
+        lookupTable: "",
+        lookupValueColumn: "",
+        lookupLabelColumn: "",
+        lookupLabelColumn2: "",
+      };
+    const setting = this.getTableViewFieldSetting(view, fieldName);
+    const debugKey = `setting:${view.id}:${fieldName}`;
+    if (
+      setting.displayMode === "lookup" &&
+      !this.tableViewDebugLogKeys.has(debugKey)
+    ) {
+      this.tableViewDebugLogKeys.add(debugKey);
+      console.log("[SuperAdmin/Data] lookup field setting resolved", {
+        viewId: view.id,
+        fieldName,
+        fieldSettingsKeys: Object.keys(view.fieldSettings || {}),
+        rawExact: view.fieldSettings?.[String(fieldName || "").trim()],
+        resolved: setting,
+      });
+    }
+    return setting;
   }
-
   setSelectedTableViewFieldSetting(
     fieldName: string,
     prop: string,
@@ -5921,11 +5961,68 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   selectedTableViewLookupColumns(fieldName: string): any[] {
-    const setting = this.getSelectedTableViewFieldSetting(fieldName);
-    if (!setting?.lookupTable) return [];
+    // Relire la vue depuis tableViews pour avoir les settings les plus récents
+    const view = this.selectedTableViewId
+      ? this.tableViews.find((v) => v.id === this.selectedTableViewId) || null
+      : null;
+    if (!view) return [];
+    const setting = this.getTableViewFieldSetting(view, fieldName);
+    const lookupTable = String(setting.lookupTable || "").trim();
+    if (!lookupTable) {
+      const debugKey = `columns-empty-table:${view.id}:${fieldName}`;
+      if (
+        setting.displayMode === "lookup" &&
+        !this.tableViewDebugLogKeys.has(debugKey)
+      ) {
+        this.tableViewDebugLogKeys.add(debugKey);
+        console.log(
+          "[SuperAdmin/Data] lookup columns unavailable: no lookupTable",
+          {
+            viewId: view.id,
+            fieldName,
+            setting,
+          },
+        );
+      }
+      return [];
+    }
     const schema = this.tableViewSchemaCache || this.schemaMetaCache || {};
-    if (!schema || !schema.columns) return [];
-    return this.getTableViewColumns(schema, setting.lookupTable);
+    if (!schema?.columns) {
+      const debugKey = `columns-no-schema:${view.id}:${fieldName}`;
+      if (!this.tableViewDebugLogKeys.has(debugKey)) {
+        this.tableViewDebugLogKeys.add(debugKey);
+        console.log(
+          "[SuperAdmin/Data] lookup columns unavailable: schema missing",
+          {
+            viewId: view.id,
+            fieldName,
+            lookupTable,
+            setting,
+          },
+        );
+      }
+      return [];
+    }
+    const columns = this.getTableViewColumns(schema, lookupTable);
+    const debugKey = `columns:${view.id}:${fieldName}:${lookupTable}`;
+    if (!this.tableViewDebugLogKeys.has(debugKey)) {
+      this.tableViewDebugLogKeys.add(debugKey);
+      console.log("[SuperAdmin/Data] lookup columns resolved", {
+        viewId: view.id,
+        fieldName,
+        lookupTable,
+        selectedValueColumn: setting.lookupValueColumn,
+        selectedLabelColumn: setting.lookupLabelColumn,
+        columnNames: columns.map((column: any) => column.name),
+        valueColumnExists: columns.some(
+          (column: any) => column.name === setting.lookupValueColumn,
+        ),
+        labelColumnExists: columns.some(
+          (column: any) => column.name === setting.lookupLabelColumn,
+        ),
+      });
+    }
+    return columns;
   }
 
   getTableViewFieldLabel(item: TableViewConfig, fieldName: string): string {
@@ -5954,16 +6051,35 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   private getTableViewFieldSetting(item: TableViewConfig, fieldName: string) {
+    const key = String(fieldName || "").trim();
+    const settings = item?.fieldSettings || {};
+    const exact = settings[key];
+    const insensitiveKey = Object.keys(settings).find(
+      (candidate) => candidate.toLowerCase() === key.toLowerCase(),
+    );
+    const raw = exact || (insensitiveKey ? settings[insensitiveKey] : null);
+    return {
+      displayMode: raw?.displayMode === "lookup" ? "lookup" : "raw",
+      lookupTable: String(raw?.lookupTable || "").trim(),
+      lookupValueColumn: String(raw?.lookupValueColumn || "").trim(),
+      lookupLabelColumn: String(raw?.lookupLabelColumn || "").trim(),
+      lookupLabelColumn2: String(raw?.lookupLabelColumn2 || "").trim(),
+    };
+  }
+
+  private getTableViewFieldSettingKey(
+    item: TableViewConfig,
+    fieldName: string,
+  ): string {
+    const key = String(fieldName || "").trim();
+    const settings = item?.fieldSettings || {};
     return (
-      item?.fieldSettings?.[String(fieldName || "").trim()] || {
-        displayMode: "raw",
-        lookupTable: "",
-        lookupValueColumn: "",
-        lookupLabelColumn: "",
-        lookupLabelColumn2: "",
-      }
+      Object.keys(settings).find(
+        (candidate) => candidate.toLowerCase() === key.toLowerCase(),
+      ) || key
     );
   }
+
   private updateTableViewFieldSetting(
     id: string,
     fieldName: string,
@@ -5972,18 +6088,21 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   ): void {
     const item = this.tableViews.find((tv) => tv.id === id);
     if (!item) return;
-    const key = String(fieldName || "").trim();
+    const key = this.getTableViewFieldSettingKey(item, fieldName);
     const settings = {
       ...(item.fieldSettings || {}),
     };
+    const defaultSetting = {
+      displayMode: "raw",
+      lookupTable: "",
+      lookupValueColumn: "",
+      lookupLabelColumn: "",
+      lookupLabelColumn2: "",
+    };
     const current = {
-      ...(settings[key] || {}),
+      ...defaultSetting,
+      ...(item.fieldSettings?.[key] || {}), // ← lire depuis item directement, pas depuis la copie settings
     } as any;
-    current.displayMode = current.displayMode || "raw";
-    current.lookupTable = current.lookupTable || "";
-    current.lookupValueColumn = current.lookupValueColumn || "";
-    current.lookupLabelColumn = current.lookupLabelColumn || "";
-    current.lookupLabelColumn2 = current.lookupLabelColumn2 || "";
     (current as any)[prop] = value || "";
     if (prop === "displayMode" && value !== "lookup") {
       current.displayMode = "raw";
@@ -6002,6 +6121,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.saveTableViewLocal(item);
     this.tableViewLookupOptionsCache = {};
     void this.renderTableViewPreview();
+    this.cdr.markForCheck();
   }
 
   private getTableViewLookupCacheKey(

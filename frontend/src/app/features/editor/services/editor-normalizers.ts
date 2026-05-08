@@ -747,14 +747,14 @@ export function normalizeTableViewRecord(
             String(field || "").trim(),
             {
               displayMode:
-                String(raw["displayMode"] || "").trim() === "lookup"
+                String(raw["displayMode"] || raw["display_mode"] || "").trim() === "lookup"
                   ? "lookup"
                   : "raw",
-              lookupTable: String(raw["lookupTable"] || "").trim(),
-              lookupValueColumn: String(raw["lookupValueColumn"] || "").trim(),
-              lookupLabelColumn: String(raw["lookupLabelColumn"] || "").trim(),
+              lookupTable: String(raw["lookupTable"] || raw["lookup_table"] || raw["lookupTableName"] || "").trim(),
+              lookupValueColumn: String(raw["lookupValueColumn"] || raw["lookup_value_column"] || raw["valueColumn"] || "").trim(),
+              lookupLabelColumn: String(raw["lookupLabelColumn"] || raw["lookup_label_column"] || raw["labelColumn"] || "").trim(),
               lookupLabelColumn2: String(
-                raw["lookupLabelColumn2"] || "",
+                raw["lookupLabelColumn2"] || raw["lookup_label_column2"] || raw["labelColumn2"] || "",
               ).trim(),
             },
           ];

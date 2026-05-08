@@ -1294,6 +1294,11 @@
                             <option
                               *ngFor="let table of tableViewSchemaTables()"
                               [value]="table.name"
+                              [selected]="
+                                table.name ===
+                                getSelectedTableViewFieldSetting(fieldName)
+                                  .lookupTable
+                              "
                             >
                               {{ table.comment || table.name }}
                             </option>
@@ -1327,6 +1332,11 @@
                                 )
                               "
                               [value]="col.name"
+                              [selected]="
+                                col.name ===
+                                getSelectedTableViewFieldSetting(fieldName)
+                                  .lookupValueColumn
+                              "
                             >
                               {{ col.comment || col.name }}
                             </option>
@@ -1360,6 +1370,11 @@
                                 )
                               "
                               [value]="col.name"
+                              [selected]="
+                                col.name ===
+                                getSelectedTableViewFieldSetting(fieldName)
+                                  .lookupLabelColumn
+                              "
                             >
                               {{ col.comment || col.name }}
                             </option>
