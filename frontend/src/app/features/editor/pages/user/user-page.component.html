@@ -223,7 +223,8 @@
               }}</span
             >
             <span class="step-val" [class.ok]="selectedBeneficiaryId">{{
-              selectedBeneficiaryId || "En attente"
+              getBeneficiaryLabel(getSelectedBeneficiary()).substring(0, 14) ||
+                "En attente"
             }}</span>
             <svg
               class="step-chev"
@@ -608,7 +609,9 @@
             <button
               class="nav-link"
               type="button"
-              [disabled]="dataRowsLoading || lookupLoading || dataSaving || dataDeleting"
+              [disabled]="
+                dataRowsLoading || lookupLoading || dataSaving || dataDeleting
+              "
               (click)="createDataRow()"
             >
               Ajouter
@@ -616,7 +619,9 @@
             <button
               class="nav-link"
               type="button"
-              [disabled]="dataRowsLoading || lookupLoading || dataSaving || dataDeleting"
+              [disabled]="
+                dataRowsLoading || lookupLoading || dataSaving || dataDeleting
+              "
               (click)="reloadDataRows()"
             >
               Rafraichir
@@ -632,7 +637,11 @@
             <div class="data-card-hdr">
               <div class="data-card-title">Liste</div>
               <div class="data-main-sub">
-                {{ dataRowsLoading ? "Chargement..." : dataRows.length + " ligne(s)" }}
+                {{
+                  dataRowsLoading
+                    ? "Chargement..."
+                    : dataRows.length + " ligne(s)"
+                }}
               </div>
             </div>
             <div class="data-card-body data-card-body--table">
@@ -640,7 +649,10 @@
                 <span class="mini-spinner"></span>
                 {{ dataStatusMessage || "Chargement des lignes..." }}
               </div>
-              <div class="data-empty" *ngIf="!dataRowsLoading && !dataRows.length">
+              <div
+                class="data-empty"
+                *ngIf="!dataRowsLoading && !dataRows.length"
+              >
                 Aucune ligne disponible.
               </div>
               <table class="data-table" *ngIf="dataRows.length">
@@ -654,8 +666,12 @@
                 <tbody>
                   <tr
                     *ngFor="let row of dataRows"
-                    [class.active]="getDataRowId(view, row) === selectedDataRowId"
-                    [class.disabled]="dataRowsLoading || dataSaving || dataDeleting"
+                    [class.active]="
+                      getDataRowId(view, row) === selectedDataRowId
+                    "
+                    [class.disabled]="
+                      dataRowsLoading || dataSaving || dataDeleting
+                    "
                     (click)="selectDataRow(getDataRowId(view, row))"
                   >
                     <td *ngFor="let field of view.previewFields">
@@ -754,7 +770,9 @@
                   <button
                     class="nav-link"
                     type="button"
-                    [disabled]="!view.editableFields.length || dataSaving || dataDeleting"
+                    [disabled]="
+                      !view.editableFields.length || dataSaving || dataDeleting
+                    "
                     (click)="saveDataRow()"
                   >
                     {{ dataSaving ? "Enregistrement..." : "Enregistrer" }}

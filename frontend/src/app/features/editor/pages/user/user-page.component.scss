@@ -5,7 +5,7 @@
   margin: 0;
   padding: 0;
 }
-:host {
+:root {
   display: block;
   min-height: 100vh;
   --bg: #f6f6f3;
@@ -52,13 +52,13 @@
   --doc-table-header-bg: transparent;
   --doc-table-row-alt-bg: #f8fafc;
 }
-:host {
-  font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 13px;
-  overflow-x: hidden;
-}
+// :host {
+//   font-family: var(--font);
+//   background: var(--bg);
+//   color: var(--text);
+//   font-size: 13px;
+//   overflow-x: hidden;
+// }
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -70,7 +70,6 @@
   border-radius: 3px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ LOADING Ã¢â€â‚¬Ã¢â€â‚¬ */
 #loading,
 .loading {
   position: fixed;
