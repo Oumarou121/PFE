@@ -612,7 +612,6 @@
                     </div>
                     <select
                       class="form-input"
-                      [value]="getFilterBindingColumnName(filter, tableName)"
                       (change)="
                         updateSelectedFamilyFilterBoundColumnForTable(
                           filter.id,
@@ -621,7 +620,14 @@
                         )
                       "
                     >
-                      <option value="">Aucune</option>
+                      <option
+                        value=""
+                        [selected]="
+                          !getFilterBindingColumnName(filter, tableName)
+                        "
+                      >
+                        Aucune
+                      </option>
                       <option
                         *ngIf="
                           getFilterBindingColumnName(filter, tableName) &&
@@ -631,6 +637,7 @@
                           )
                         "
                         [value]="getFilterBindingColumnName(filter, tableName)"
+                        [selected]="true"
                       >
                         {{ getFilterBindingColumnName(filter, tableName) }}
                         (actuelle)
@@ -640,6 +647,10 @@
                           let column of getSelectedFamilyTableColumns(tableName)
                         "
                         [value]="column.name"
+                        [selected]="
+                          column.name ===
+                          getFilterBindingColumnName(filter, tableName)
+                        "
                       >
                         {{ column.name
                         }}{{ column.comment ? " - " + column.comment : "" }}
