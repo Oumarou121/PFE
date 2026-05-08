@@ -635,7 +635,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     value: string,
   ): void {
     if (!this.selectedFamId) return;
-    void this.updateFamilyFilterSqlBuilderField(
+    this.updateFamilyFilterSqlBuilderField(
       this.selectedFamId,
       filterId,
       field,
@@ -1699,9 +1699,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
             columnBinding:
               normalizedMode === "manual"
                 ? normalizeFilterColumnBinding({})
-                : normalizeFilterColumnBinding(
-                    bindings[0] || filter.columnBinding || {},
-                  ),
+                : bindings[0] || filter.columnBinding?.mode === "table-links"
+                  ? normalizeFilterColumnBinding(
+                      bindings[0] || filter.columnBinding || {},
+                    )
+                  : { tableName: "", columnName: "", mode: "table-links" },
             columnBindings:
               normalizedMode === "manual"
                 ? []
@@ -1766,15 +1768,15 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.regenerateFamilySql(famId, true);
   }
 
-  private async updateFamilyFilterSqlBuilderField(
+  private updateFamilyFilterSqlBuilderField(
     famId: string,
     filterId: string,
     field: string,
     value: string,
-  ): Promise<void> {
+  ): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
-    const schema = await this.ensureSchemaMeta();
+    const schema = this.schemaMetaCache;
     fam.filterCatalog = (fam.filterCatalog || []).map(
       (filter: any, index: number) => {
         if (filter.id !== filterId) return filter;
@@ -1791,7 +1793,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
             sourceType: "sql",
             sqlBuilder,
             sqlQuery:
-              this.buildDistinctFilterSqlQuery(sqlBuilder, schema) ||
+              (schema
+                ? this.buildDistinctFilterSqlQuery(sqlBuilder, schema)
+                : "") ||
               filter.sqlQuery ||
               "",
           },

@@ -319,17 +319,31 @@
           style="margin-bottom: 16px"
         >
           <div class="card-header">
-            <div class="card-title">Catalogue de filtres</div>
-            <span class="chip chip-amber"
-              >{{ selectedFamilyFilters.length }} filtre(s)</span
-            >
-            <button
-              class="btn sm"
-              type="button"
-              (click)="addSelectedFamilyFilter()"
-            >
-              Ajouter un filtre
-            </button>
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 7h18" />
+                <path d="M6 12h12" />
+                <path d="M10 17h4" />
+              </svg>
+              <div class="card-title">Catalogue de filtres</div>
+            </div>
+            <div>
+              <span class="chip chip-amber"
+                >{{ selectedFamilyFilters.length }} filtre(s)</span
+              >
+              <button
+                class="btn sm"
+                type="button"
+                (click)="addSelectedFamilyFilter()"
+              >
+                Ajouter un filtre
+              </button>
+            </div>
           </div>
           <div class="card-body">
             <p class="text-muted" style="margin-bottom: 10px">
@@ -433,6 +447,7 @@
                     class="form-input"
                     [value]="
                       filter.columnBindings?.length ||
+                      filter.columnBinding?.mode === 'table-links' ||
                       filter.columnBinding?.mode === 'base-column'
                         ? 'table-links'
                         : 'manual'
@@ -549,6 +564,7 @@
                 "
                 *ngIf="
                   filter.columnBindings?.length ||
+                  filter.columnBinding?.mode === 'table-links' ||
                   filter.columnBinding?.mode === 'base-column'
                 "
               >
