@@ -296,13 +296,36 @@
             </button>
           </div>
         </div>
+        <div id="familyEditorWrap">
+          <div class="empty">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="2" y="3" width="7" height="7" rx="1" />
+              <rect x="9" y="3" width="7" height="7" rx="1" />
+              <rect x="2" y="12" width="7" height="7" rx="1" />
+              <rect x="9" y="12" width="7" height="7" rx="1" />
+            </svg>
+            <h3>Sélectionnez une famille</h3>
+            <p>
+              Choisissez une famille dans le panneau gauche ou créez-en une
+              nouvelle.
+            </p>
+          </div>
+        </div>
         <div
           class="card"
           *ngIf="selectedFamily as fam"
           style="margin-bottom: 16px"
         >
           <div class="card-header">
-            <div class="card-title">Catalogue des filtres</div>
+            <div class="card-title">Catalogue de filtres</div>
+            <span class="chip chip-amber"
+              >{{ selectedFamilyFilters.length }} filtre(s)</span
+            >
             <button
               class="btn sm"
               type="button"
@@ -312,6 +335,11 @@
             </button>
           </div>
           <div class="card-body">
+            <p class="text-muted" style="margin-bottom: 10px">
+              Ces filtres sont definis au niveau de la famille. Les templates
+              pourront ensuite les activer, les verrouiller, fixer une valeur
+              par defaut ou limiter les valeurs autorisees.
+            </p>
             <div
               class="text-muted"
               *ngIf="!selectedFamilyFilters.length"
@@ -401,181 +429,340 @@
                   </select>
                 </div>
               </div>
-              <div class="form-grid c3" style="margin-top:12px">
-                <div class="form-row" style="margin:0">
+              <div class="form-grid c3" style="margin-top: 12px">
+                <div class="form-row" style="margin: 0">
                   <label class="form-label">Liaison SQL</label>
                   <select
                     class="form-input"
-                    [value]="filter.columnBindings?.length || filter.columnBinding?.mode === 'base-column' ? 'table-links' : 'manual'"
-                    (change)="updateSelectedFamilyFilterBindingMode(filter.id, $any($event.target).value)"
+                    [value]="
+                      filter.columnBindings?.length ||
+                      filter.columnBinding?.mode === 'base-column'
+                        ? 'table-links'
+                        : 'manual'
+                    "
+                    (change)="
+                      updateSelectedFamilyFilterBindingMode(
+                        filter.id,
+                        $any($event.target).value
+                      )
+                    "
                   >
                     <option value="manual">Saisie manuelle</option>
-                    <option value="table-links">Table principale + secondaires</option>
+                    <option value="table-links">
+                      Table principale + secondaires
+                    </option>
                   </select>
                 </div>
-                <div class="form-row" style="margin:0">
+                <div class="form-row" style="margin: 0">
                   <label class="form-label">Placeholder</label>
                   <input
                     class="form-input"
                     [value]="filter.placeholder || ''"
-                    (change)="updateSelectedFamilyFilterField(filter.id, 'placeholder', $any($event.target).value)"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'placeholder',
+                        $any($event.target).value
+                      )
+                    "
                   />
                 </div>
-                <div class="form-row" style="margin:0">
+                <div class="form-row" style="margin: 0">
                   <label class="form-label">Source valeurs</label>
                   <select
                     class="form-input"
                     [disabled]="filter.type !== 'select'"
                     [value]="filter.sourceType === 'sql' ? 'sql' : 'static'"
-                    (change)="updateSelectedFamilyFilterField(filter.id, 'sourceType', $any($event.target).value)"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'sourceType',
+                        $any($event.target).value
+                      )
+                    "
                   >
                     <option value="static">Liste statique</option>
                     <option value="sql">Requete SQL</option>
                   </select>
                 </div>
               </div>
-              <div class="form-grid c2" style="margin-top:12px">
-                <div class="form-row" style="margin:0">
+              <div class="form-grid c2" style="margin-top: 12px">
+                <div class="form-row" style="margin: 0">
                   <label class="form-label">Visibilite</label>
-                  <div class="flex gap-12" style="padding-top:10px;font-size:12px;color:var(--text2)">
+                  <div
+                    class="flex gap-12"
+                    style="
+                      padding-top: 10px;
+                      font-size: 12px;
+                      color: var(--text2);
+                    "
+                  >
                     <label>
-                      <input type="checkbox" [checked]="filter.roles?.admin !== false" (change)="updateSelectedFamilyFilterRole(filter.id, 'admin', $any($event.target).checked)" />
+                      <input
+                        type="checkbox"
+                        [checked]="filter.roles?.admin !== false"
+                        (change)="
+                          updateSelectedFamilyFilterRole(
+                            filter.id,
+                            'admin',
+                            $any($event.target).checked
+                          )
+                        "
+                      />
                       Admin
                     </label>
                     <label>
-                      <input type="checkbox" [checked]="filter.roles?.user !== false" (change)="updateSelectedFamilyFilterRole(filter.id, 'user', $any($event.target).checked)" />
+                      <input
+                        type="checkbox"
+                        [checked]="filter.roles?.user !== false"
+                        (change)="
+                          updateSelectedFamilyFilterRole(
+                            filter.id,
+                            'user',
+                            $any($event.target).checked
+                          )
+                        "
+                      />
                       Utilisateur
                     </label>
                   </div>
                 </div>
-                <div class="form-row" style="margin:0">
+                <div class="form-row" style="margin: 0">
                   <label class="form-label">Aide</label>
                   <input
                     class="form-input"
                     [value]="filter.helpText || ''"
-                    (change)="updateSelectedFamilyFilterField(filter.id, 'helpText', $any($event.target).value)"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'helpText',
+                        $any($event.target).value
+                      )
+                    "
                   />
                 </div>
               </div>
               <div
-                style="margin-top:12px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:#fff"
-                *ngIf="(filter.columnBindings?.length || filter.columnBinding?.mode === 'base-column' ? 'table-links' : 'manual') === 'table-links'"
+                style="
+                  margin-top: 12px;
+                  padding: 12px;
+                  border: 1px dashed var(--line);
+                  border-radius: 14px;
+                  background: #fff;
+                "
+                *ngIf="
+                  (filter.columnBindings?.length ||
+                  filter.columnBinding?.mode === 'base-column'
+                    ? 'table-links'
+                    : 'manual') === 'table-links'
+                "
               >
-                <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Colonnes liees par table</div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+                <div
+                  style="
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: var(--text);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Colonnes liees par table
+                </div>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                    gap: 10px;
+                  "
+                >
                   <div
-                    style="border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfcfe"
-                    *ngFor="let tableName of getSelectedFamilyBindableTables(); let ti = index"
+                    style="
+                      border: 1px solid var(--line);
+                      border-radius: 12px;
+                      padding: 10px;
+                      background: #fbfcfe;
+                    "
+                    *ngFor="
+                      let tableName of getSelectedFamilyBindableTables();
+                      let ti = index
+                    "
                   >
-                    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">
-                      {{ tableName }} <span style="color:var(--text3);font-weight:500">({{ ti === 0 ? 'principale' : 'secondaire' }})</span>
+                    <div
+                      style="
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: var(--text);
+                        margin-bottom: 6px;
+                      "
+                    >
+                      {{ tableName }}
+                      <span style="color: var(--text3); font-weight: 500"
+                        >({{ ti === 0 ? "principale" : "secondaire" }})</span
+                      >
                     </div>
                     <select
                       class="form-input"
                       [value]="getFilterBindingColumnName(filter, tableName)"
-                      (change)="updateSelectedFamilyFilterBoundColumnForTable(filter.id, tableName, $any($event.target).value)"
+                      (change)="
+                        updateSelectedFamilyFilterBoundColumnForTable(
+                          filter.id,
+                          tableName,
+                          $any($event.target).value
+                        )
+                      "
                     >
                       <option value="">Aucune</option>
-                      <option *ngFor="let column of getSelectedFamilyTableColumns(tableName)" [value]="column.name">
-                        {{ column.name }}{{ column.comment ? ' - ' + column.comment : '' }}
+                      <option
+                        *ngFor="
+                          let column of getSelectedFamilyTableColumns(tableName)
+                        "
+                        [value]="column.name"
+                      >
+                        {{ column.name
+                        }}{{ column.comment ? " - " + column.comment : "" }}
                       </option>
                     </select>
                   </div>
                 </div>
               </div>
-              <div class="form-row" style="margin-top:12px" *ngIf="filter.type === 'select' && filter.sourceType !== 'sql'">
+              <div
+                class="form-row"
+                style="margin-top: 12px"
+                *ngIf="filter.type === 'select' && filter.sourceType !== 'sql'"
+              >
                 <label class="form-label">Valeurs possibles</label>
                 <textarea
                   class="form-input"
                   rows="5"
-                  style="min-height:120px"
+                  style="min-height: 120px"
                   [value]="getFilterStaticOptionsText(filter)"
-                  (change)="updateSelectedFamilyFilterStaticOptions(filter.id, $any($event.target).value)"
+                  (change)="
+                    updateSelectedFamilyFilterStaticOptions(
+                      filter.id,
+                      $any($event.target).value
+                    )
+                  "
                   placeholder="2024|Annee 2024&#10;2025|Annee 2025"
                 ></textarea>
               </div>
               <div
-                style="margin-top:12px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:#fff"
+                style="
+                  margin-top: 12px;
+                  padding: 12px;
+                  border: 1px dashed var(--line);
+                  border-radius: 14px;
+                  background: #fff;
+                "
                 *ngIf="filter.type === 'select' && filter.sourceType === 'sql'"
               >
                 <div class="form-grid c3">
-                  <div class="form-row" style="margin:0">
+                  <div class="form-row" style="margin: 0">
                     <label class="form-label">Table source</label>
                     <select
                       class="form-input"
                       [value]="filter.sqlBuilder?.tableName || ''"
-                      (change)="updateSelectedFamilyFilterSqlBuilderField(filter.id, 'tableName', $any($event.target).value)"
+                      (change)="
+                        updateSelectedFamilyFilterSqlBuilderField(
+                          filter.id,
+                          'tableName',
+                          $any($event.target).value
+                        )
+                      "
                     >
                       <option value="">Choisir</option>
-                      <option *ngFor="let table of getSelectedFamilyVisibleTables()" [value]="table.name">
-                        {{ table.name }}{{ table.comment ? ' - ' + table.comment : '' }}
+                      <option
+                        *ngFor="let table of getSelectedFamilyVisibleTables()"
+                        [value]="table.name"
+                      >
+                        {{ table.name
+                        }}{{ table.comment ? " - " + table.comment : "" }}
                       </option>
                     </select>
                   </div>
-                  <div class="form-row" style="margin:0">
+                  <div class="form-row" style="margin: 0">
                     <label class="form-label">Colonne valeur</label>
                     <select
                       class="form-input"
                       [value]="filter.sqlBuilder?.valueColumn || ''"
-                      (change)="updateSelectedFamilyFilterSqlBuilderField(filter.id, 'valueColumn', $any($event.target).value)"
+                      (change)="
+                        updateSelectedFamilyFilterSqlBuilderField(
+                          filter.id,
+                          'valueColumn',
+                          $any($event.target).value
+                        )
+                      "
                     >
                       <option value="">Choisir</option>
-                      <option *ngFor="let column of getSelectedFamilyTableColumns(filter.sqlBuilder?.tableName || '')" [value]="column.name">
+                      <option
+                        *ngFor="
+                          let column of getSelectedFamilyTableColumns(
+                            filter.sqlBuilder?.tableName || ''
+                          )
+                        "
+                        [value]="column.name"
+                      >
                         {{ column.name }}
                       </option>
                     </select>
                   </div>
-                  <div class="form-row" style="margin:0">
+                  <div class="form-row" style="margin: 0">
                     <label class="form-label">Colonne libelle</label>
                     <select
                       class="form-input"
                       [value]="filter.sqlBuilder?.labelColumn || ''"
-                      (change)="updateSelectedFamilyFilterSqlBuilderField(filter.id, 'labelColumn', $any($event.target).value)"
+                      (change)="
+                        updateSelectedFamilyFilterSqlBuilderField(
+                          filter.id,
+                          'labelColumn',
+                          $any($event.target).value
+                        )
+                      "
                     >
                       <option value="">Meme valeur</option>
-                      <option *ngFor="let column of getSelectedFamilyTableColumns(filter.sqlBuilder?.tableName || '')" [value]="column.name">
+                      <option
+                        *ngFor="
+                          let column of getSelectedFamilyTableColumns(
+                            filter.sqlBuilder?.tableName || ''
+                          )
+                        "
+                        [value]="column.name"
+                      >
                         {{ column.name }}
                       </option>
                     </select>
                   </div>
                 </div>
-                <div class="flex gap-8" style="margin-top:10px">
-                  <button class="btn sm" type="button" (click)="regenerateSelectedFamilyFilterSql(filter.id)">Generer la requete</button>
+                <div class="flex gap-8" style="margin-top: 10px">
+                  <button
+                    class="btn sm"
+                    type="button"
+                    (click)="regenerateSelectedFamilyFilterSql(filter.id)"
+                  >
+                    Generer la requete
+                  </button>
                 </div>
-                <div class="form-row" style="margin-top:12px">
-                  <label class="form-label">Requete SQL des valeurs possibles</label>
+                <div class="form-row" style="margin-top: 12px">
+                  <label class="form-label"
+                    >Requete SQL des valeurs possibles</label
+                  >
                   <textarea
                     class="form-input"
                     rows="5"
-                    style="min-height:120px"
+                    style="min-height: 120px"
                     [value]="filter.sqlQuery || ''"
-                    (change)="updateSelectedFamilyFilterField(filter.id, 'sqlQuery', $any($event.target).value)"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'sqlQuery',
+                        $any($event.target).value
+                      )
+                    "
                   ></textarea>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div id="familyEditorWrap">
-          <div class="empty">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="2" y="3" width="7" height="7" rx="1" />
-              <rect x="9" y="3" width="7" height="7" rx="1" />
-              <rect x="2" y="12" width="7" height="7" rx="1" />
-              <rect x="9" y="12" width="7" height="7" rx="1" />
-            </svg>
-            <h3>Sélectionnez une famille</h3>
-            <p>
-              Choisissez une famille dans le panneau gauche ou créez-en une
-              nouvelle.
-            </p>
-          </div>
-        </div>
+        <div id="familyEditorAfterFilters"></div>
       </div>
       <div
         class="content-panel"
@@ -722,187 +909,7 @@
             </div>
           </div>
         </div>
-        <div class="card" *ngIf="selectedTableView">
-          <div class="card-header">
-            <div class="card-title">Page générée</div>
-            <div class="flex gap-8">
-              <button
-                class="btn primary"
-                type="button"
-                (click)="createTableViewRow()"
-              >
-                Ajouter
-              </button>
-              <input
-                class="form-input"
-                style="width: 260px"
-                placeholder="Recherche..."
-                [value]="tableViewSearch"
-                (input)="updateTableViewSearchFromEvent($event)"
-              />
-              <button class="btn" type="button" (click)="reloadTableViewRows()">
-                Rafraîchir
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="form-grid c2" *ngIf="selectedTableView as view">
-          <div class="card" style="margin: 0">
-            <div class="card-header">
-              <div class="card-title">{{ view.label || view.tableName }}</div>
-              <div class="card-subtitle">
-                {{ tableViewRowsCache.length }} ligne(s)
-              </div>
-            </div>
-            <div class="card-body" style="padding: 0">
-              <div
-                class="text-muted"
-                style="padding: 16px"
-                *ngIf="!tableViewRowsCache.length"
-              >
-                Aucune ligne trouvée.
-              </div>
-              <table class="data-table" *ngIf="tableViewRowsCache.length">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th *ngFor="let field of view.previewFields">
-                      {{ getTableViewFieldLabel(view, field) }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    *ngFor="let row of tableViewRowsCache"
-                    (click)="selectTableViewRow(getTableViewRowId(row))"
-                    style="cursor: pointer"
-                  >
-                    <td>
-                      {{
-                        getTableViewRowId(row) === selectedTableViewRowId
-                          ? "●"
-                          : ""
-                      }}
-                    </td>
-                    <td *ngFor="let field of view.previewFields">
-                      {{
-                        resolveTableViewDisplayValue(view, field, row[field])
-                      }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
 
-          <div class="card" style="margin: 0">
-            <div class="card-header">
-              <div class="card-title">Détails</div>
-              <div class="card-subtitle">
-                {{
-                  isCreatingTableViewRow
-                    ? "Nouvelle ligne"
-                    : selectedTableViewRowId || "Aucune sélection"
-                }}
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="text-muted" *ngIf="!selectedTableViewRecord">
-                Sélectionnez une ligne pour afficher le détail.
-              </div>
-              <ng-container *ngIf="selectedTableViewRecord">
-                <div class="form-row" *ngFor="let field of view.visibleFields">
-                  <label class="form-label">{{
-                    getTableViewFieldLabel(view, field)
-                  }}</label>
-                  <ng-container
-                    *ngIf="
-                      view.editableFields.includes(field);
-                      else readonlyTableViewField
-                    "
-                  >
-                    <select
-                      class="form-input"
-                      *ngIf="
-                        view.fieldSettings[field]?.displayMode === 'lookup';
-                        else rawTableViewInput
-                      "
-                      [value]="selectedTableViewRecord[field] ?? ''"
-                      (change)="
-                        updateSelectedTableViewField(
-                          field,
-                          $any($event.target).value
-                        )
-                      "
-                    >
-                      <option value="">Choisir...</option>
-                      <option
-                        *ngFor="
-                          let option of getTableViewLookupOptionsForField(
-                            view,
-                            field
-                          )
-                        "
-                        [value]="option.value"
-                      >
-                        {{ option.label }}
-                      </option>
-                    </select>
-                    <ng-template #rawTableViewInput>
-                      <input
-                        class="form-input"
-                        [value]="selectedTableViewRecord[field] ?? ''"
-                        (input)="
-                          updateSelectedTableViewField(
-                            field,
-                            $any($event.target).value
-                          )
-                        "
-                      />
-                    </ng-template>
-                  </ng-container>
-                  <ng-template #readonlyTableViewField>
-                    <div
-                      class="form-input"
-                      style="
-                        display: flex;
-                        align-items: center;
-                        min-height: 38px;
-                      "
-                    >
-                      {{
-                        resolveTableViewDisplayValue(
-                          view,
-                          field,
-                          selectedTableViewRecord[field]
-                        )
-                      }}
-                    </div>
-                  </ng-template>
-                </div>
-                <div class="modal-actions" style="padding: 0; margin-top: 8px">
-                  <button
-                    class="btn danger"
-                    type="button"
-                    (click)="deleteSelectedTableViewRow()"
-                    [disabled]="
-                      !selectedTableViewRowId && !isCreatingTableViewRow
-                    "
-                  >
-                    Supprimer
-                  </button>
-                  <button
-                    class="btn success"
-                    type="button"
-                    (click)="saveSelectedTableViewRow()"
-                  >
-                    Save
-                  </button>
-                </div>
-              </ng-container>
-            </div>
-          </div>
-        </div>
         <div class="card" *ngIf="selectedTableView as view">
           <div class="card-header">
             <div class="card-title">Vue de données configurable</div>
@@ -1256,6 +1263,187 @@
                   </div>
                 </ng-template>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="card" *ngIf="selectedTableView">
+          <div class="card-header">
+            <div class="card-title">Page générée</div>
+            <div class="flex gap-8">
+              <button
+                class="btn primary"
+                type="button"
+                (click)="createTableViewRow()"
+              >
+                Ajouter
+              </button>
+              <input
+                class="form-input"
+                style="width: 260px"
+                placeholder="Recherche..."
+                [value]="tableViewSearch"
+                (input)="updateTableViewSearchFromEvent($event)"
+              />
+              <button class="btn" type="button" (click)="reloadTableViewRows()">
+                Rafraîchir
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="form-grid c2" *ngIf="selectedTableView as view">
+          <div class="card" style="margin: 0">
+            <div class="card-header">
+              <div class="card-title">{{ view.label || view.tableName }}</div>
+              <div class="card-subtitle">
+                {{ tableViewRowsCache.length }} ligne(s)
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0">
+              <div
+                class="text-muted"
+                style="padding: 16px"
+                *ngIf="!tableViewRowsCache.length"
+              >
+                Aucune ligne trouvée.
+              </div>
+              <table class="data-table" *ngIf="tableViewRowsCache.length">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th *ngFor="let field of view.previewFields">
+                      {{ getTableViewFieldLabel(view, field) }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let row of tableViewRowsCache"
+                    (click)="selectTableViewRow(getTableViewRowId(row))"
+                    style="cursor: pointer"
+                  >
+                    <td>
+                      {{
+                        getTableViewRowId(row) === selectedTableViewRowId
+                          ? "●"
+                          : ""
+                      }}
+                    </td>
+                    <td *ngFor="let field of view.previewFields">
+                      {{
+                        resolveTableViewDisplayValue(view, field, row[field])
+                      }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin: 0">
+            <div class="card-header">
+              <div class="card-title">Détails</div>
+              <div class="card-subtitle">
+                {{
+                  isCreatingTableViewRow
+                    ? "Nouvelle ligne"
+                    : selectedTableViewRowId || "Aucune sélection"
+                }}
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="text-muted" *ngIf="!selectedTableViewRecord">
+                Sélectionnez une ligne pour afficher le détail.
+              </div>
+              <ng-container *ngIf="selectedTableViewRecord">
+                <div class="form-row" *ngFor="let field of view.visibleFields">
+                  <label class="form-label">{{
+                    getTableViewFieldLabel(view, field)
+                  }}</label>
+                  <ng-container
+                    *ngIf="
+                      view.editableFields.includes(field);
+                      else readonlyTableViewField
+                    "
+                  >
+                    <select
+                      class="form-input"
+                      *ngIf="
+                        view.fieldSettings[field]?.displayMode === 'lookup';
+                        else rawTableViewInput
+                      "
+                      [value]="selectedTableViewRecord[field] ?? ''"
+                      (change)="
+                        updateSelectedTableViewField(
+                          field,
+                          $any($event.target).value
+                        )
+                      "
+                    >
+                      <option value="">Choisir...</option>
+                      <option
+                        *ngFor="
+                          let option of getTableViewLookupOptionsForField(
+                            view,
+                            field
+                          )
+                        "
+                        [value]="option.value"
+                      >
+                        {{ option.label }}
+                      </option>
+                    </select>
+                    <ng-template #rawTableViewInput>
+                      <input
+                        class="form-input"
+                        [value]="selectedTableViewRecord[field] ?? ''"
+                        (input)="
+                          updateSelectedTableViewField(
+                            field,
+                            $any($event.target).value
+                          )
+                        "
+                      />
+                    </ng-template>
+                  </ng-container>
+                  <ng-template #readonlyTableViewField>
+                    <div
+                      class="form-input"
+                      style="
+                        display: flex;
+                        align-items: center;
+                        min-height: 38px;
+                      "
+                    >
+                      {{
+                        resolveTableViewDisplayValue(
+                          view,
+                          field,
+                          selectedTableViewRecord[field]
+                        )
+                      }}
+                    </div>
+                  </ng-template>
+                </div>
+                <div class="modal-actions" style="padding: 0; margin-top: 8px">
+                  <button
+                    class="btn danger"
+                    type="button"
+                    (click)="deleteSelectedTableViewRow()"
+                    [disabled]="
+                      !selectedTableViewRowId && !isCreatingTableViewRow
+                    "
+                  >
+                    Supprimer
+                  </button>
+                  <button
+                    class="btn success"
+                    type="button"
+                    (click)="saveSelectedTableViewRow()"
+                  >
+                    Save
+                  </button>
+                </div>
+              </ng-container>
             </div>
           </div>
         </div>

@@ -845,6 +845,14 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   </div>
 </div>`;
 
+    const afterFiltersWrap = document.getElementById("familyEditorAfterFilters");
+    if (afterFiltersWrap) {
+      afterFiltersWrap.innerHTML = "";
+      Array.from(wrap.children)
+        .slice(3)
+        .forEach((node) => afterFiltersWrap.appendChild(node));
+    }
+
     this.renderClassesContainer(fam.id);
     this.renderFamilyFilterCatalog(fam.id);
     this.renderFamilyBeneficiaryTableSelect(fam.id);
@@ -5940,6 +5948,7 @@ private addFamilyFilterDefinition(famId: string): void {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
+          this.syncStateFromStore();
           this.selectedTableViewId = null;
           this.selectedTableViewRowId = null;
           this.selectedTableViewRecord = null;
