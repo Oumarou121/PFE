@@ -313,6 +313,90 @@
             </p>
           </div>
         </div>
+        <div class="card" *ngIf="selectedFamily as fam">
+          <div class="card-header">
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 7h18" />
+                <path d="M6 12h12" />
+                <path d="M10 17h4" />
+              </svg>
+              RequÃªte SQL bÃ©nÃ©ficiaires
+            </div>
+            <div class="flex gap-8">
+              <span class="chip chip-teal">Liste pour aperÃ§u / impression</span>
+              <span
+                class="chip"
+                style="
+                  background: #fef3c7;
+                  color: #92400e;
+                  border: 1px solid #fcd34d;
+                "
+                *ngIf="fam['customBeneficiarySql']"
+                >SQL personnalisÃ©</span
+              >
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="text-muted" style="margin-bottom: 10px">
+              Quand la cible du document est une table, ce SELECT sert Ã 
+              afficher les bÃ©nÃ©ficiaires disponibles avant l'aperÃ§u et
+              l'impression.
+            </p>
+            <div class="flex gap-8" style="margin-bottom: 10px">
+              <button
+                class="btn sm"
+                type="button"
+                (click)="regenerateFamilyBeneficiarySql(fam.id, false, true)"
+              >
+                RÃ©gÃ©nÃ©rer SELECT bÃ©nÃ©ficiaires
+              </button>
+              <button
+                class="btn sm"
+                type="button"
+                (click)="testFamilyBeneficiaryQuery(fam.id)"
+              >
+                Tester la liste
+              </button>
+            </div>
+            <div class="sql-wrap">
+              <textarea
+                class="sql-input"
+                id="fBeneficiarySql"
+                rows="7"
+                [disabled]="fam.beneficiaryMode === 'organization'"
+                [value]="fam.beneficiarySql || ''"
+                (change)="
+                  updateFamilyDraftField(
+                    fam.id,
+                    'beneficiarySql',
+                    $any($event.target).value
+                  )
+                "
+              ></textarea>
+              <div class="sql-badge">BENEF</div>
+            </div>
+            <pre
+              id="beneficiaryPreviewBox"
+              style="
+                margin-top: 10px;
+                white-space: pre-wrap;
+                font-size: 11px;
+                color: var(--text2);
+                background: #fbfcfe;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                padding: 12px;
+              "
+              >{{ beneficiaryPreviewText }}</pre
+            >
+          </div>
+        </div>
         <div
           class="card"
           *ngIf="selectedFamily as fam"

@@ -75,6 +75,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   selectedTableViewRecord: any = null;
   tableViewSearch = "";
   isCreatingTableViewRow = false;
+  beneficiaryPreviewText =
+    'Cliquez sur "Tester la liste" pour voir un bénéficiaire retourné.';
   private tableViewLookupOptionsCache: Record<string, any[]> = {};
   private tableViewDebugLogKeys = new Set<string>();
   private schemaMetaCache: any = null;
@@ -893,38 +895,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   </div>
 </div>
 
-<div class="card">
-  <div class="card-header">
-    <div class="card-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18"/><path d="M6 12h12"/><path d="M10 17h4"/></svg>
-      Requête SQL bénéficiaires
-    </div>
-    <div class="flex gap-8">
-      <span class="chip chip-teal">Liste pour aperçu / impression</span>
-      ${fam.customBeneficiarySql ? '<span class="chip" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">SQL personnalisé</span>' : ""}
-    </div>
-  </div>
-  <div class="card-body">
-    <p class="text-muted" style="margin-bottom:10px">Quand la cible du document est une table, ce SELECT sert à afficher les bénéficiaires disponibles avant l'aperçu et l'impression.</p>
-    <div class="flex gap-8" style="margin-bottom:10px">
-      <button class="btn sm" onclick="regenerateFamilyBeneficiarySql('${this.escAttr(
-        fam.id || "",
-      )}', false, true)">Régénérer SELECT bénéficiaires</button>
-      <button class="btn sm" onclick="testFamilyBeneficiaryQuery('${this.escAttr(
-        fam.id || "",
-      )}')">Tester la liste</button>
-    </div>
-    <div class="sql-wrap">
-      <textarea class="sql-input" id="fBeneficiarySql" rows="7" ${isOrganizationMode ? "disabled" : ""} onchange="updateFamilyDraftField('${this.escAttr(
-        fam.id || "",
-      )}', 'beneficiarySql', this.value)">${this.escHtml(
-        fam.beneficiarySql || "",
-      )}</textarea>
-      <div class="sql-badge">BENEF</div>
-    </div>
-    <pre id="beneficiaryPreviewBox" style="margin-top:10px;white-space:pre-wrap;font-size:11px;color:var(--text2);background:#fbfcfe;border:1px solid var(--line);border-radius:12px;padding:12px">Cliquez sur "Tester la liste" pour voir un bénéficiaire retourné.</pre>
-  </div>
-</div>
 
 <div class="card">
   <div class="card-header">
@@ -994,7 +964,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     if (afterFiltersWrap) {
       afterFiltersWrap.innerHTML = "";
       Array.from(wrap.children)
-        .slice(3)
+        .slice(2)
         .forEach((node) => afterFiltersWrap.appendChild(node));
     }
 
@@ -1199,11 +1169,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  private updateFamilyDraftField(
-    famId: string,
-    field: string,
-    value: string,
-  ): void {
+  updateFamilyDraftField(famId: string, field: string, value: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam[field] = value;
@@ -1215,39 +1181,22 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   private saveFamily(famId: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
-    const beneficiaryModeValue =
-      (document.getElementById("fBeneficiaryMode") as HTMLSelectElement | null)
-        ?.value || "table";
-    const beneficiaryTableValue =
-      (
-        document.getElementById("fBeneficiaryTable") as HTMLSelectElement | null
-      )?.value?.trim() || "";
-    const beneficiaryLinkColumnValue =
-      (
-        document.getElementById(
-          "fBeneficiaryLinkColumn",
-        ) as HTMLSelectElement | null
-      )?.value?.trim() || "";
-    const beneficiaryDisplayColumn1Value =
-      (
-        document.getElementById(
-          "fBeneficiaryDisplayColumn1",
-        ) as HTMLSelectElement | null
-      )?.value?.trim() || "";
-    const beneficiaryDisplayColumn2Value =
-      (
-        document.getElementById(
-          "fBeneficiaryDisplayColumn2",
-        ) as HTMLSelectElement | null
-      )?.value?.trim() || "";
+    const beneficiaryModeValue = fam.beneficiaryMode || "table";
+    const beneficiaryTableValue = String(fam.beneficiaryTable || "").trim();
+    const beneficiaryLinkColumnValue = String(
+      fam.beneficiaryLinkColumn || "",
+    ).trim();
+    const beneficiaryDisplayColumn1Value = String(
+      fam.beneficiaryDisplayColumn1 || "",
+    ).trim();
+    const beneficiaryDisplayColumn2Value = String(
+      fam.beneficiaryDisplayColumn2 || "",
+    ).trim();
     const sqlValue =
       (
         document.getElementById("fSql") as HTMLTextAreaElement | null
       )?.value?.trim() || "";
-    const beneficiarySqlValue =
-      (
-        document.getElementById("fBeneficiarySql") as HTMLTextAreaElement | null
-      )?.value?.trim() || "";
+    const beneficiarySqlValue = String(fam.beneficiarySql || "").trim();
     if (sqlValue && !/^select\b/i.test(sqlValue)) {
       this.toast(
         "La requête principale doit rester une requête SELECT",
@@ -1506,10 +1455,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       if (!fam.beneficiarySql) {
         fam.beneficiarySql = this.buildBeneficiarySqlFromFamily(famId);
         this.saveFamilyLocal(fam);
-        const sqlInput = document.getElementById(
-          "fBeneficiarySql",
-        ) as HTMLTextAreaElement | null;
-        if (sqlInput) sqlInput.value = fam.beneficiarySql || "";
       }
       wrap.innerHTML = `
         <label class="form-label">Table bénéficiaire</label>
@@ -1599,10 +1544,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       fam.customBeneficiarySql = false;
     }
     this.saveFamilyLocal(fam);
-    const modeSelect = document.getElementById(
-      "fBeneficiaryMode",
-    ) as HTMLSelectElement | null;
-    if (modeSelect) modeSelect.value = fam.beneficiaryMode;
     this.renderLeftPanel();
     this.renderFamilyBeneficiaryTableSelect(famId);
     this.renderFamilyEditor(famId);
@@ -1643,10 +1584,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       fam.beneficiarySql = this.buildBeneficiarySqlFromFamily(famId);
     }
     this.saveFamilyLocal(fam);
-    const sqlInput = document.getElementById(
-      "fBeneficiarySql",
-    ) as HTMLTextAreaElement | null;
-    if (sqlInput) sqlInput.value = fam.beneficiarySql || "";
     this.regenerateFamilySql(famId, true);
   }
 
@@ -1657,18 +1594,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   ): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
-    const display1Select = document.getElementById(
-      "fBeneficiaryDisplayColumn1",
-    ) as HTMLSelectElement | null;
-    const display2Select = document.getElementById(
-      "fBeneficiaryDisplayColumn2",
-    ) as HTMLSelectElement | null;
-    let nextDisplay1 = String(
-      display1Select?.value ?? fam.beneficiaryDisplayColumn1 ?? "",
-    ).trim();
-    let nextDisplay2 = String(
-      display2Select?.value ?? fam.beneficiaryDisplayColumn2 ?? "",
-    ).trim();
+    let nextDisplay1 = String(fam.beneficiaryDisplayColumn1 || "").trim();
+    let nextDisplay2 = String(fam.beneficiaryDisplayColumn2 || "").trim();
 
     if (Number(slot) === 1) {
       nextDisplay1 = String(columnName || "").trim();
@@ -1687,14 +1614,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       fam.beneficiarySql = this.buildBeneficiarySqlFromFamily(famId);
     }
     this.saveFamilyLocal(fam);
-    const sqlInput = document.getElementById(
-      "fBeneficiarySql",
-    ) as HTMLTextAreaElement | null;
-    if (sqlInput) sqlInput.value = fam.beneficiarySql || "";
-    if (display1Select)
-      display1Select.value = fam.beneficiaryDisplayColumn1 || "";
-    if (display2Select)
-      display2Select.value = fam.beneficiaryDisplayColumn2 || "";
   }
 
   private createEmptyFamilyFilterDefinition(index = 0): any {
@@ -5357,54 +5276,43 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     if (!silent) this.toast("Requête SELECT régénérée", "success");
   }
 
-  private regenerateFamilyBeneficiarySql(
+  regenerateFamilyBeneficiarySql(
     famId: string,
     silent = false,
     force = false,
   ): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
-    const sqlInput = document.getElementById(
-      "fBeneficiarySql",
-    ) as HTMLTextAreaElement | null;
     if (fam.customBeneficiarySql && !force) {
-      if (sqlInput) sqlInput.value = fam.beneficiarySql || "";
       return;
     }
     fam.beneficiarySql = this.buildBeneficiarySqlFromFamily(famId);
     fam.customBeneficiarySql = false;
     this.saveFamilyLocal(fam);
-    if (sqlInput) sqlInput.value = fam.beneficiarySql || "";
     if (!silent) this.toast("SELECT bénéficiaires régénéré", "success");
   }
 
-  private async testFamilyBeneficiaryQuery(famId: string): Promise<void> {
+  async testFamilyBeneficiaryQuery(famId: string): Promise<void> {
     const fam = this.getFamily(famId);
-    const box = document.getElementById("beneficiaryPreviewBox");
-    if (!box || !fam) return;
+    if (!fam) return;
     if (fam.beneficiaryMode === "organization") {
-      box.textContent =
+      this.beneficiaryPreviewText =
         "Mode Organization : aucun SELECT bénéficiaires n'est nécessaire.";
       return;
     }
-    const sql =
-      (
-        document.getElementById("fBeneficiarySql") as HTMLTextAreaElement | null
-      )?.value?.trim() ||
-      fam.beneficiarySql ||
-      "";
+    const sql = String(fam.beneficiarySql || "").trim();
     if (!sql) {
-      box.textContent = "Aucun SELECT bénéficiaires défini.";
+      this.beneficiaryPreviewText = "Aucun SELECT bénéficiaires défini.";
       return;
     }
-    box.textContent = "Test en cours...";
+    this.beneficiaryPreviewText = "Test en cours...";
     try {
       const rows = await this.runSelect(sql, {
         organizationId: 1,
       });
-      box.textContent = JSON.stringify(rows[0] || {}, null, 2);
+      this.beneficiaryPreviewText = JSON.stringify(rows[0] || {}, null, 2);
     } catch (error: any) {
-      box.textContent = error?.message || "Erreur";
+      this.beneficiaryPreviewText = error?.message || "Erreur";
     }
   }
 
