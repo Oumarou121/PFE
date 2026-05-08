@@ -765,7 +765,13 @@
                     [disabled]="dataSaving || dataDeleting"
                     (click)="deleteDataRow()"
                   >
-                    {{ dataDeleting ? "Suppression..." : "Supprimer" }}
+                    {{
+                      creatingDataRow
+                        ? "Annuler"
+                        : dataDeleting
+                          ? "Suppression..."
+                          : "Supprimer"
+                    }}
                   </button>
                   <button
                     class="nav-link"
@@ -782,39 +788,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Confirmation modal (legacy: modalConfirm) -->
-  <div class="modal-overlay" [class.open]="confirmModal.open">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">{{ confirmModal.title }}</span>
-        <button class="modal-close" type="button" (click)="closeConfirmModal()">
-          ✕
-        </button>
-      </div>
-      <p style="font-size: 13px; color: var(--text2); line-height: 1.6">
-        {{ confirmModal.message }}
-      </p>
-      <div class="modal-actions">
-        <button class="nav-link" type="button" (click)="closeConfirmModal()">
-          Annuler
-        </button>
-        <button
-          class="nav-link"
-          type="button"
-          style="
-            background: var(--red-bg);
-            color: var(--red);
-            border-color: rgba(220, 38, 38, 0.25);
-          "
-          [disabled]="dataDeleting"
-          (click)="confirmModal.onConfirm()"
-        >
-          {{ dataDeleting ? "Suppression..." : confirmModal.confirmLabel }}
-        </button>
       </div>
     </div>
   </div>

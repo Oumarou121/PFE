@@ -1,58 +1,51 @@
-import { Injectable } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Injectable } from "@angular/core";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import {
+  ToastNotificationComponent,
+  NotificationOptions,
+} from "../../shared/components/toast-notification/toast-notification.component";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class NotificationService {
-
   constructor(private snackBar: MatSnackBar) {}
 
-  /**
-   * Affiche une notification de succès
-   */
+
   showSuccess(message: string, duration: number = 3000): void {
-    this.snackBar.open(message, 'Fermer', {
-      duration,
-      panelClass: ['success-snackbar'],
-      horizontalPosition: 'right',
-      verticalPosition: 'top'
-    });
+    this.openComponent({ message, type: "success", duration });
   }
 
-  /**
-   * Affiche une notification d'erreur
-   */
+
   showError(message: string, duration: number = 5000): void {
-    this.snackBar.open(message, 'Fermer', {
-      duration,
-      panelClass: ['error-snackbar'],
-      horizontalPosition: 'right',
-      verticalPosition: 'top'
-    });
+    this.openComponent({ message, type: "error", duration });
   }
 
-  /**
-   * Affiche une notification d'information
-   */
+
   showInfo(message: string, duration: number = 3000): void {
-    this.snackBar.open(message, 'Fermer', {
-      duration,
-      panelClass: ['info-snackbar'],
-      horizontalPosition: 'right',
-      verticalPosition: 'top'
-    });
+    this.openComponent({ message, type: "info", duration });
   }
 
-  /**
-   * Affiche une notification d'avertissement
-   */
+
   showWarning(message: string, duration: number = 4000): void {
-    this.snackBar.open(message, 'Fermer', {
-      duration,
-      panelClass: ['warning-snackbar'],
-      horizontalPosition: 'right',
-      verticalPosition: 'top'
+    this.openComponent({ message, type: "warning", duration });
+  }
+
+  private openComponent(options: NotificationOptions): void {
+    const ref = this.snackBar.openFromComponent(ToastNotificationComponent, {
+      data: options,
+      duration: options.duration ?? 3000,
+      horizontalPosition: "right",
+      verticalPosition: "top",
+      panelClass: ["mat-custom-snackbar"],
+    });
+
+    ref.afterDismissed().subscribe((res) => {
+      if ((res as any)?.dismissedByAction && options.onAction) {
+        try {
+          options.onAction();
+        } catch {}
+      }
     });
   }
 }

@@ -7,6 +7,7 @@ import {
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
+import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
 import { BeneficiaryRecord, FamilyRecord } from "../../models/family.model";
@@ -21,6 +22,7 @@ import { DocumentRenderService } from "../../services/document-render.service";
 import { OrganizationService } from "../../services/organization.service";
 import { TableViewService } from "../../services/table-view.service";
 import { TemplateService } from "../../services/template.service";
+import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
 
 type UserMode = "documents" | "data";
 type Step = 1 | 2 | 3;
@@ -28,7 +30,7 @@ type Step = 1 | 2 | 3;
 @Component({
   selector: "app-user-page",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatDialogModule],
   templateUrl: "./user-page.component.html",
   styleUrls: ["./user-page.component.scss"],
   encapsulation: ViewEncapsulation.None,
@@ -61,20 +63,6 @@ export class UserPageComponent implements OnInit {
   documentBusyMessage = "";
   beneficiariesLoading = false;
 
-  confirmModal: {
-    open: boolean;
-    title: string;
-    message: string;
-    confirmLabel: string;
-    onConfirm: () => void | Promise<void>;
-  } = {
-    open: false,
-    title: "",
-    message: "",
-    confirmLabel: "Supprimer",
-    onConfirm: () => {},
-  };
-
   selectedDataViewId: string | null = null;
   dataViewSearch = "";
   dataRowSearch = "";
@@ -104,6 +92,7 @@ export class UserPageComponent implements OnInit {
     private notifications: NotificationService,
     private sanitizer: DomSanitizer,
     private elementRef: ElementRef,
+    private dialog: MatDialog,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -540,21 +529,32 @@ export class UserPageComponent implements OnInit {
       this.selectedDataRecord = null;
       return;
     }
-    if (!this.selectedDataRowId) {
+    const rowId =
+      this.selectedDataRowId ||
+      (this.selectedDataRecord
+        ? this.getDataRowId(view, this.selectedDataRecord)
+        : null);
+    if (rowId === null || rowId === undefined) {
       this.notifications.showError("Selectionnez une ligne a supprimer.");
       return;
     }
-    const rowId = this.selectedDataRowId;
+    this.selectedDataRowId = rowId;
     const previewLabel =
       this.buildDataPreviewLabel(view, this.selectedDataRecord) ||
       "cette ligne";
-    this.confirmModal = {
-      open: true,
-      title: "Supprimer la ligne ?",
-      message: `La ligne "${previewLabel}" sera supprimée.`,
-      confirmLabel: "Supprimer",
-      onConfirm: async () => {
-        this.closeConfirmModal();
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: "Supprimer la ligne ?",
+        message: `La ligne "${previewLabel}" sera supprimée.`,
+        confirmText: "Supprimer",
+        cancelText: "Annuler",
+        actionType: "delete",
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(async (confirmed) => {
+      if (confirmed) {
         this.dataDeleting = true;
         this.dataStatusMessage = "Suppression de la ligne...";
         try {
@@ -569,12 +569,8 @@ export class UserPageComponent implements OnInit {
           this.dataDeleting = false;
           this.dataStatusMessage = "";
         }
-      },
-    };
-  }
-
-  closeConfirmModal(): void {
-    this.confirmModal = { ...this.confirmModal, open: false };
+      }
+    });
   }
 
   isFieldEditable(field: string): boolean {
