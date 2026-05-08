@@ -4,6 +4,7 @@ import {
   OnDestroy,
   ViewEncapsulation,
   NgZone,
+  ChangeDetectorRef,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
@@ -122,6 +123,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     private notifications: NotificationService,
     private dialog: MatDialog,
     private zone: NgZone,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -704,6 +706,33 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       await this.ensureTableViewSchema();
     } catch (e) {
       // Continue rendering even if schema fails
+    }
+    // Ensure fieldLabels and fieldSettings are initialized for visible fields
+    const view = this.selectedTableView;
+    if (view) {
+      view.fieldLabels = view.fieldLabels || {};
+      view.fieldSettings = view.fieldSettings || {};
+      const visibleFieldsSet = new Set(view.visibleFields || []);
+      let needsSave = false;
+      for (const fieldName of visibleFieldsSet) {
+        if (!view.fieldLabels[fieldName]) {
+          view.fieldLabels[fieldName] = this.humanizeSchemaName(fieldName);
+          needsSave = true;
+        }
+        if (!view.fieldSettings[fieldName]) {
+          view.fieldSettings[fieldName] = {
+            displayMode: "raw",
+            lookupTable: "",
+            lookupValueColumn: "",
+            lookupLabelColumn: "",
+            lookupLabelColumn2: "",
+          };
+          needsSave = true;
+        }
+      }
+      if (needsSave) {
+        this.saveTableViewLocal(view);
+      }
     }
     this.renderTableViewsContent();
     await this.reloadTableViewRows();
@@ -5808,6 +5837,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     };
     item.updatedAt = new Date().toISOString();
     this.saveTableViewLocal(item);
+    // Force template update by triggering change detection
+    this.cdr.markForCheck();
   }
 
   private getTableViewFieldSetting(item: TableViewConfig, fieldName: string) {
