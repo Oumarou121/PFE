@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { from, Observable } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { BeneficiaryRecord, FamilyRecord } from '../models/family.model';
@@ -49,12 +50,20 @@ export class FamilyService {
     return normalized;
   }
 
+  save(family: FamilyRecord): Observable<FamilyRecord> {
+    return from(this.saveFamily(family));
+  }
+
   async deleteFamily(id: string): Promise<void> {
     const state = this.state.getState();
     state.families = state.families.filter(family => family.id !== id);
     state.templates = state.templates.filter(template => template.familyId !== id);
     this.state.replaceState(state);
     await firstValueFrom(this.api.delete(`families/${encodeURIComponent(id)}`));
+  }
+
+  delete(id: string): Observable<void> {
+    return from(this.deleteFamily(id));
   }
 
   async getBeneficiariesForFamily(familyId: string, organizationId: string | null = null, filters: FilterValueMap = {}): Promise<BeneficiaryRecord[]> {

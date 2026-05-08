@@ -1,0 +1,22 @@
+<div class="list-header">
+  <h3 class="list-title">Administrateurs</h3>
+  <button class="btn btn-sm btn-primary" (click)="onCreateNew()">+ Nouveau</button>
+</div>
+
+<ul class="item-list" *ngIf="admins.length > 0; else emptyList">
+  <li
+    *ngFor="let admin of admins"
+    class="list-item"
+    [class.selected]="admin.id === selectedId"
+  >
+    <div class="item-content" (click)="onSelect(admin.id)">
+      <strong class="item-name">{{ admin.name || admin.email }}</strong>
+      <small class="item-meta">{{ admin.email }}</small>
+    </div>
+    <button class="btn btn-xs btn-danger" (click)="onDelete(admin.id)" title="Supprimer">×</button>
+  </li>
+</ul>
+
+<ng-template #emptyList>
+  <div class="empty-list">Aucun administrateur</div>
+</ng-template>

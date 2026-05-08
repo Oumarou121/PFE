@@ -1,0 +1,71 @@
+<div class="template-editor">
+  <div class="editor-header">
+    <h3 class="editor-title">Édition du template</h3>
+  </div>
+
+  <!-- Meta fields -->
+  <div class="meta-section">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nom du template</label>
+        <input type="text" class="form-control" [(ngModel)]="formMeta.nom" placeholder="Nom du template" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Famille</label>
+        <select class="form-control" [(ngModel)]="formMeta.familyId">
+          <option value="">-- Choisir une famille --</option>
+          <option *ngFor="let f of families" [value]="f.id">{{ f.nom || f.id }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <label class="toggle-label">
+        <input type="checkbox" [(ngModel)]="formMeta.hasHeader" />
+        Activer l'en-tête
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" [(ngModel)]="formMeta.hasFooter" />
+        Activer le pied de page
+      </label>
+    </div>
+  </div>
+
+  <!-- Section tabs -->
+  <div class="section-tabs">
+    <button
+      *ngFor="let section of sections"
+      class="section-tab"
+      [class.active]="activeSection === section"
+      (click)="selectSection(section)"
+    >
+      {{ getSectionLabel(section) }}
+    </button>
+  </div>
+
+  <!-- HTML Editor -->
+  <div class="editor-area">
+    <textarea
+      class="html-editor"
+      [(ngModel)]="editorContent[activeSection]"
+      [placeholder]="'HTML pour ' + getSectionLabel(activeSection)"
+      rows="20"
+      spellcheck="false"
+    ></textarea>
+  </div>
+
+  <!-- Live Preview -->
+  <div class="preview-section">
+    <div class="preview-header">
+      <span class="preview-label">Aperçu</span>
+    </div>
+    <div
+      class="preview-content"
+      [innerHTML]="editorContent[activeSection]"
+    ></div>
+  </div>
+
+  <div class="editor-actions">
+    <button class="btn btn-primary" (click)="onSave()">💾 Enregistrer</button>
+  </div>
+</div>

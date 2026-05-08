@@ -1,0 +1,88 @@
+<div class="charter-editor" *ngIf="charter && config; else noSelection">
+
+  <div class="form-header">
+    <h3 class="form-title">Charte Graphique</h3>
+  </div>
+
+  <!-- Informations générales -->
+  <div class="form-section">
+    <h4 class="section-title">Informations</h4>
+    <div class="form-group">
+      <label class="form-label">Nom</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.name" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.description" />
+    </div>
+    <label class="toggle-label">
+      <input type="checkbox" [(ngModel)]="formData.isDefault" />
+      Charte par défaut
+    </label>
+  </div>
+
+  <!-- Identité -->
+  <div class="form-section">
+    <h4 class="section-title">Identité</h4>
+    <div class="form-group">
+      <label class="form-label">Nom officiel</label>
+      <input type="text" class="form-control" [(ngModel)]="config.identity.officialName" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Directeur</label>
+      <input type="text" class="form-control" [(ngModel)]="config.identity.directorName" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Slogan</label>
+      <input type="text" class="form-control" [(ngModel)]="config.identity.slogan" />
+    </div>
+  </div>
+
+  <!-- Couleurs -->
+  <div class="form-section">
+    <h4 class="section-title">Couleurs</h4>
+    <div class="color-grid">
+      <div class="color-item" *ngFor="let colorKey of ['primary','secondary','text','heading','border','tableHeaderBg','tableAltRowBg']">
+        <label class="form-label">{{ colorKey }}</label>
+        <div class="color-row">
+          <input type="color" class="color-picker" [(ngModel)]="config.colors[colorKey]" />
+          <input type="text" class="form-control color-text" [(ngModel)]="config.colors[colorKey]" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Typographie -->
+  <div class="form-section">
+    <h4 class="section-title">Typographie</h4>
+    <div class="form-group">
+      <label class="form-label">Police corps</label>
+      <input type="text" class="form-control" [(ngModel)]="config.typography.bodyFont" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Police titres</label>
+      <input type="text" class="form-control" [(ngModel)]="config.typography.headingFont" />
+    </div>
+  </div>
+
+  <!-- Filigrane -->
+  <div class="form-section">
+    <h4 class="section-title">Filigrane</h4>
+    <label class="toggle-label">
+      <input type="checkbox" [(ngModel)]="config.watermark.enabled" />
+      Activer le filigrane
+    </label>
+    <div class="form-group" *ngIf="config.watermark.enabled">
+      <label class="form-label">Texte</label>
+      <input type="text" class="form-control" [(ngModel)]="config.watermark.text" />
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" (click)="onSave()">💾 Enregistrer</button>
+  </div>
+</div>
+
+<ng-template #noSelection>
+  <div class="no-selection">Sélectionnez une charte pour l'éditer</div>
+</ng-template>

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { from, Observable } from 'rxjs';
 import { AdminAccountRecord } from '../models/admin-account.model';
 import { getScopedOrganizationId } from './editor-normalizers';
 import { EditorStateService } from './editor-state.service';
@@ -25,10 +26,22 @@ export class AdminAccountService {
     return normalized;
   }
 
+  create(admin: AdminAccountRecord): Observable<AdminAccountRecord> {
+    return from(this.saveAdmin({ ...admin, id: admin.id || `adm_${Date.now()}` }));
+  }
+
+  update(id: string, admin: AdminAccountRecord): Observable<AdminAccountRecord> {
+    return from(this.saveAdmin({ ...admin, id }));
+  }
+
   async deleteAdmin(id: string): Promise<void> {
     const state = this.state.getState();
     state.admins = state.admins.filter(admin => admin.id !== id);
     this.state.replaceState(state);
     await this.state.persistState();
+  }
+
+  delete(id: string): Observable<void> {
+    return from(this.deleteAdmin(id));
   }
 }

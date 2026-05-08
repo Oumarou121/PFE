@@ -1,0 +1,28 @@
+<div class="list-header">
+  <h3 class="list-title">Familles</h3>
+  <button class="btn btn-sm btn-primary" (click)="onCreateNew()">+ Nouvelle</button>
+</div>
+
+<ul class="item-list" *ngIf="families.length > 0; else emptyList">
+  <li
+    *ngFor="let family of families"
+    class="list-item"
+    [class.selected]="family.id === selectedId"
+  >
+    <div class="item-content" (click)="onSelect(family.id)">
+      <strong class="item-name">{{ family.nom || 'Sans nom' }}</strong>
+      <small class="item-meta">{{ family.beneficiaryTableLabel }}</small>
+    </div>
+    <button
+      class="btn btn-xs btn-danger"
+      (click)="onDelete(family.id)"
+      title="Supprimer"
+    >
+      ×
+    </button>
+  </li>
+</ul>
+
+<ng-template #emptyList>
+  <div class="empty-list">Aucune famille</div>
+</ng-template>

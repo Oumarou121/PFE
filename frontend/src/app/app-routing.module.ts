@@ -19,7 +19,10 @@ export const routes: Routes = [
   },
   {
     path: "super-admin",
-    loadComponent: legacyPage,
+    loadComponent: () =>
+      import("./features/editor/pages/super-admin/super-admin.component").then(
+        (m) => m.SuperAdminComponent,
+      ),
     canActivate: [roleGuard],
     data: { page: "superAdmin", roles: ["supAdmin"] },
   },

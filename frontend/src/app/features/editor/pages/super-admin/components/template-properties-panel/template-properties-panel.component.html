@@ -1,0 +1,74 @@
+<div class="properties-panel" *ngIf="template; else noTemplate">
+
+  <h3 class="panel-title">Propriétés</h3>
+
+  <div class="prop-section">
+    <h4 class="section-title">Organisation</h4>
+    <select class="form-control" [(ngModel)]="localTemplate.organizationId">
+      <option [ngValue]="null">-- Toutes les organisations --</option>
+      <option *ngFor="let org of organizations" [value]="org.id">
+        {{ org.nom || org.organizationId }}
+      </option>
+    </select>
+  </div>
+
+  <div class="prop-section">
+    <h4 class="section-title">Charte graphique</h4>
+    <select class="form-control" [(ngModel)]="localTemplate.graphicCharterId">
+      <option [ngValue]="null">-- Aucune charte --</option>
+      <option *ngFor="let c of charters" [value]="c.id">{{ c.name }}</option>
+    </select>
+  </div>
+
+  <div class="prop-section">
+    <h4 class="section-title">Affichage</h4>
+    <div class="form-group">
+      <label class="form-label">En-tête affiché sur</label>
+      <select class="form-control" [(ngModel)]="localTemplate.headerDisplay">
+        <option value="all">Toutes les pages</option>
+        <option value="first">Première page</option>
+        <option value="even">Pages paires</option>
+        <option value="odd">Pages impaires</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Pied de page affiché sur</label>
+      <select class="form-control" [(ngModel)]="localTemplate.footerDisplay">
+        <option value="all">Toutes les pages</option>
+        <option value="first">Première page</option>
+        <option value="even">Pages paires</option>
+        <option value="odd">Pages impaires</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="prop-section">
+    <h4 class="section-title">Marges (mm)</h4>
+    <div class="margins-grid">
+      <div class="form-group">
+        <label class="form-label">Haut</label>
+        <input type="number" class="form-control" [(ngModel)]="localTemplate.pageMargins!.mt" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bas</label>
+        <input type="number" class="form-control" [(ngModel)]="localTemplate.pageMargins!.mb" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gauche</label>
+        <input type="number" class="form-control" [(ngModel)]="localTemplate.pageMargins!.ml" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Droite</label>
+        <input type="number" class="form-control" [(ngModel)]="localTemplate.pageMargins!.mr" />
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-actions">
+    <button class="btn btn-primary" (click)="onSave()">💾 Enregistrer</button>
+  </div>
+</div>
+
+<ng-template #noTemplate>
+  <div class="no-selection">Sélectionnez un template</div>
+</ng-template>

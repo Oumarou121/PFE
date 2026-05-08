@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { from, Observable } from 'rxjs';
 import { OrganizationRecord } from '../models/organization.model';
 import { UnknownRecord } from '../models/editor-common.model';
 import { getScopedOrganizationId, normalizeOrganizationRecord } from './editor-normalizers';
@@ -26,12 +27,20 @@ export class OrganizationService {
     return normalized;
   }
 
+  save(organization: OrganizationRecord): Observable<OrganizationRecord> {
+    return from(this.saveOrganization(organization));
+  }
+
   async deleteOrganization(id: string): Promise<void> {
     const state = this.state.getState();
     state.organizations = state.organizations.filter(organization => organization.id !== id);
     state.admins = state.admins.filter(admin => getScopedOrganizationId(admin) !== id);
     this.state.replaceState(state);
     await this.state.persistState();
+  }
+
+  delete(id: string): Observable<void> {
+    return from(this.deleteOrganization(id));
   }
 
   getSettings(): UnknownRecord {

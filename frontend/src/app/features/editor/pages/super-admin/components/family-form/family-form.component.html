@@ -1,0 +1,144 @@
+<div class="family-form">
+  <div class="form-header">
+    <h3 class="form-title">
+      {{ formData.id ? 'Modifier la famille' : 'Nouvelle famille' }}
+    </h3>
+  </div>
+
+  <div class="form-section">
+    <h4 class="section-title">Informations générales</h4>
+
+    <div class="form-group">
+      <label class="form-label">Nom de la famille</label>
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="formData.nom"
+        placeholder="Ex: Salariés, Étudiants..."
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Mode bénéficiaire</label>
+      <select class="form-control" [(ngModel)]="formData.beneficiaryMode">
+        <option *ngFor="let mode of beneficiaryModes" [value]="mode">{{ mode }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <h4 class="section-title">Table des bénéficiaires</h4>
+
+    <div class="form-group">
+      <label class="form-label">Nom de la table</label>
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="formData.beneficiaryTable"
+        placeholder="Ex: employes"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Label de la table</label>
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="formData.beneficiaryTableLabel"
+        placeholder="Ex: Employé"
+      />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Colonne d'affichage 1</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.beneficiaryDisplayColumn1"
+          placeholder="nom"
+        />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Colonne d'affichage 2</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.beneficiaryDisplayColumn2"
+          placeholder="prenom"
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Colonne de lien</label>
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="formData.beneficiaryLinkColumn"
+        placeholder="id"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">SQL bénéficiaire</label>
+      <textarea
+        class="form-control form-textarea"
+        [(ngModel)]="formData.beneficiarySql"
+        placeholder="SELECT id, nom, prenom FROM employes WHERE ..."
+        rows="3"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- Variables (FamilyVar) -->
+  <div class="form-section">
+    <div class="section-header">
+      <h4 class="section-title">Variables</h4>
+      <button class="btn btn-sm btn-primary" (click)="addVar()">+ Variable</button>
+    </div>
+
+    <div class="vars-table-wrapper" *ngIf="vars.length > 0">
+      <table class="vars-table">
+        <thead>
+          <tr>
+            <th>Identifiant technique</th>
+            <th>Label</th>
+            <th>Type</th>
+            <th>SQL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of vars; let i = index">
+            <td>
+              <input type="text" class="cell-input" [(ngModel)]="v.tech" placeholder="tech_name" />
+            </td>
+            <td>
+              <input type="text" class="cell-input" [(ngModel)]="v.label" placeholder="Label affiché" />
+            </td>
+            <td>
+              <select class="cell-input" [(ngModel)]="v.type">
+                <option *ngFor="let t of varTypes" [value]="t">{{ t }}</option>
+              </select>
+            </td>
+            <td>
+              <input type="text" class="cell-input" [(ngModel)]="v.sqlQuery" placeholder="SELECT ..." />
+            </td>
+            <td>
+              <button class="btn btn-xs btn-danger" (click)="removeVar(i)">×</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="vars.length === 0" class="empty-vars">
+      Aucune variable. Cliquez sur "+ Variable" pour en ajouter.
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" (click)="onSave()">💾 Enregistrer</button>
+  </div>
+</div>

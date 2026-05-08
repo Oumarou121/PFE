@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { from, Observable } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { UnknownRecord } from '../models/editor-common.model';
@@ -28,11 +29,19 @@ export class TableViewService {
     return normalized;
   }
 
+  saveConfig(view: TableViewConfig): Observable<TableViewConfig> {
+    return from(this.saveTableView(view));
+  }
+
   async deleteTableView(id: string): Promise<void> {
     const state = this.state.getState();
     state.tableViews = state.tableViews.filter(view => view.id !== id);
     this.state.replaceState(state);
     await firstValueFrom(this.api.deleteWithBody('table-view-config', { id }));
+  }
+
+  deleteConfig(id: string): Observable<void> {
+    return from(this.deleteTableView(id));
   }
 
   async getTableViewRows(configId: string, options: TableViewRowsOptions = {}): Promise<UnknownRecord[]> {
@@ -47,6 +56,12 @@ export class TableViewService {
     return payload.rows || [];
   }
 
+  getRows(options: TableViewRowsOptions & { configId: string }): Observable<TableViewRowsResponse> {
+    return from(
+      this.getTableViewRows(options.configId, options).then(rows => ({ rows }))
+    );
+  }
+
   async getTableViewRecord(configId: string, rowId: string): Promise<UnknownRecord | null> {
     const payload = await firstValueFrom(this.api.post<TableViewRecordResponse>('table-view/record', { configId, rowId }));
     return payload.record || null;
@@ -57,9 +72,17 @@ export class TableViewService {
     return payload.record || null;
   }
 
+  updateRecord(options: { configId: string; rowId: string; values?: UnknownRecord }): Observable<UnknownRecord | null> {
+    return from(this.saveTableViewRecord(options.configId, options.rowId, options.values || {}));
+  }
+
   async createTableViewRecord(configId: string, values: UnknownRecord = {}, config: TableViewConfig | null = null): Promise<UnknownRecord | null> {
     const payload = await firstValueFrom(this.api.post<TableViewRecordResponse>('table-view/record/create', { configId, values, config }));
     return payload.record || null;
+  }
+
+  createRecord(options: { configId: string; values?: UnknownRecord; config?: TableViewConfig | null }): Observable<UnknownRecord | null> {
+    return from(this.createTableViewRecord(options.configId, options.values || {}, options.config || null));
   }
 
   async deleteTableViewRecord(configId: string, rowId: string): Promise<boolean> {
@@ -67,8 +90,16 @@ export class TableViewService {
     return payload.ok === true;
   }
 
+  deleteRecord(options: { configId: string; rowId: string }): Observable<boolean> {
+    return from(this.deleteTableViewRecord(options.configId, options.rowId));
+  }
+
   async getTableViewLookupOptions(configId: string, fieldName: string, config: TableViewConfig | null = null): Promise<Array<{ value: string; label: string }>> {
     const payload = await firstValueFrom(this.api.post<TableViewLookupResponse>('table-view/lookup-options', { configId, fieldName, config }));
     return payload.options || [];
+  }
+
+  getLookupOptions(options: { configId: string; fieldName: string; config?: TableViewConfig | null }): Observable<Array<{ value: string; label: string }>> {
+    return from(this.getTableViewLookupOptions(options.configId, options.fieldName, options.config || null));
   }
 }

@@ -1,0 +1,25 @@
+<div class="list-header">
+  <h3 class="list-title">Chartes Graphiques</h3>
+  <button class="btn btn-sm btn-primary" (click)="onCreateNew()">+ Nouvelle</button>
+</div>
+
+<ul class="item-list" *ngIf="charters.length > 0; else emptyList">
+  <li
+    *ngFor="let charter of charters"
+    class="list-item"
+    [class.selected]="charter.id === selectedId"
+  >
+    <div class="item-content" (click)="onSelect(charter.id)">
+      <strong class="item-name">{{ charter.name }}</strong>
+      <small class="item-meta">
+        {{ charter.isDefault ? '⭐ Défaut' : '' }}
+        {{ charter.description }}
+      </small>
+    </div>
+    <button class="btn btn-xs btn-danger" (click)="onDelete(charter.id)" title="Supprimer">×</button>
+  </li>
+</ul>
+
+<ng-template #emptyList>
+  <div class="empty-list">Aucune charte graphique</div>
+</ng-template>

@@ -1,0 +1,30 @@
+<div class="list-header">
+  <h3 class="list-title">Templates</h3>
+  <button class="btn btn-sm btn-primary" (click)="onCreateNew()">
+    + Nouveau
+  </button>
+</div>
+
+<ul class="item-list" *ngIf="templates.length > 0; else emptyList">
+  <li
+    *ngFor="let tpl of templates"
+    class="list-item"
+    [class.selected]="tpl.id === selectedId"
+  >
+    <div class="item-content" (click)="onSelect(tpl.id)">
+      <strong class="item-name">{{ tpl.nom || "Sans nom" }}</strong>
+      <small class="item-meta">ID famille: {{ tpl.familyId }}</small>
+    </div>
+    <button
+      class="btn btn-xs btn-danger"
+      (click)="onDelete(tpl.id)"
+      title="Supprimer"
+    >
+      ×
+    </button>
+  </li>
+</ul>
+
+<ng-template #emptyList>
+  <div class="empty-list">Aucun template</div>
+</ng-template>

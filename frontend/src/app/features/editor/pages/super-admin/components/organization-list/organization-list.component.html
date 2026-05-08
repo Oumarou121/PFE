@@ -1,0 +1,22 @@
+<div class="list-header">
+  <h3 class="list-title">Organisations</h3>
+  <button class="btn btn-sm btn-primary" (click)="onCreateNew()">+ Nouvelle</button>
+</div>
+
+<ul class="item-list" *ngIf="organizations.length > 0; else emptyList">
+  <li
+    *ngFor="let org of organizations"
+    class="list-item"
+    [class.selected]="org.id === selectedId"
+  >
+    <div class="item-content" (click)="onSelect(org.id)">
+      <strong class="item-name">{{ org.nom || org.organizationId }}</strong>
+      <small class="item-meta">{{ org.ville }}</small>
+    </div>
+    <button class="btn btn-xs btn-danger" (click)="onDelete(org.id)" title="Supprimer">×</button>
+  </li>
+</ul>
+
+<ng-template #emptyList>
+  <div class="empty-list">Aucune organisation</div>
+</ng-template>
