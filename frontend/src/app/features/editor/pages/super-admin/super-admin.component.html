@@ -1496,7 +1496,8 @@
                     <select
                       class="form-input"
                       *ngIf="
-                        view.fieldSettings[field]?.displayMode === 'lookup';
+                        getSelectedTableViewFieldSetting(field).displayMode ===
+                          'lookup';
                         else rawTableViewInput
                       "
                       [value]="selectedTableViewRecord[field] ?? ''"
@@ -1516,6 +1517,12 @@
                           )
                         "
                         [value]="option.value"
+                        [selected]="
+                          isTableViewDetailLookupOptionSelected(
+                            option.value,
+                            selectedTableViewRecord[field]
+                          )
+                        "
                       >
                         {{ option.label }}
                       </option>

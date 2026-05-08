@@ -801,6 +801,13 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     );
   }
 
+  isTableViewDetailLookupOptionSelected(
+    optionValue: unknown,
+    recordValue: unknown,
+  ): boolean {
+    return String(optionValue ?? "") === String(recordValue ?? "");
+  }
+
   updateSelectedTableViewField(fieldName: string, value: string): void {
     if (!this.selectedTableViewRecord) return;
     this.selectedTableViewRecord = {
