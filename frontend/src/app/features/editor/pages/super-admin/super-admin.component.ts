@@ -7,6 +7,7 @@ import {
   ChangeDetectorRef,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { Subject, firstValueFrom } from "rxjs";
 import { takeUntil } from "rxjs/operators";
@@ -41,7 +42,7 @@ import {
 @Component({
   selector: "app-super-admin",
   standalone: true,
-  imports: [CommonModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatDialogModule],
   templateUrl: "./super-admin.component.html",
   styleUrls: ["./super-admin.component.scss"],
   encapsulation: ViewEncapsulation.None,
@@ -50,17 +51,30 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   isLoading = false;
   private destroy$ = new Subject<void>();
   private state: AppState | null = null;
+  // Phase 4 Tranche 5: modalClickHandler + modalKeydownHandler nettoyés —
+  // plus de DOM legacy modals, uniquement les modales Angular state.
   private modalClickHandler = (event: Event) => {
     const target = event.target as HTMLElement | null;
-    if (target?.classList?.contains("modal-overlay")) {
-      target.classList.remove("open");
+    if (!target?.classList?.contains("modal-overlay")) return;
+    if (target.getAttribute("data-modal-id") === "org") {
+      this.isOrganizationModalOpen = false;
+      this.cdr.markForCheck();
+    } else if (target.getAttribute("data-modal-id") === "admin") {
+      this.isAdminModalOpen = false;
+      this.cdr.markForCheck();
     }
   };
+
   private modalKeydownHandler = (event: KeyboardEvent) => {
     if (event.key !== "Escape") return;
-    document
-      .querySelectorAll(".modal-overlay.open")
-      .forEach((node) => node.classList.remove("open"));
+    if (this.isOrganizationModalOpen) {
+      this.isOrganizationModalOpen = false;
+      this.cdr.markForCheck();
+    }
+    if (this.isAdminModalOpen) {
+      this.isAdminModalOpen = false;
+      this.cdr.markForCheck();
+    }
   };
 
   currentSection = "families";
@@ -69,6 +83,29 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   selectedTableViewId: string | null = null;
   private editingOrganizationId: string | null = null;
   private editingAdminId: string | null = null;
+
+  // ── Angular modal state — Organization ──
+  isOrganizationModalOpen = false;
+  organizationModalTitle = "Nouvelle Organization";
+  orgDraft: {
+    nom: string;
+    ville: string;
+    adresse: string;
+    tel: string;
+    email: string;
+    extraFields: Array<{ key: string; value: string }>;
+  } = { nom: "", ville: "", adresse: "", tel: "", email: "", extraFields: [] };
+
+  // ── Angular modal state — Admin ──
+  isAdminModalOpen = false;
+  adminModalTitle = "Nouvel administrateur";
+  adminDraft: {
+    nom: string;
+    email: string;
+    organizationId: string;
+    profile: string;
+    password: string;
+  } = { nom: "", email: "", organizationId: "", profile: "", password: "" };
   private tableViewSchemaCache: any = null;
   tableViewRowsCache: any[] = [];
   selectedTableViewRowId: string | null = null;
@@ -77,14 +114,51 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   isCreatingTableViewRow = false;
   beneficiaryPreviewText =
     'Cliquez sur "Tester la liste" pour voir un bénéficiaire retourné.';
+
+  // ── Angular state for the beneficiary block (replaces renderFamilyBeneficiaryTableSelect) ──
+  beneficiaryLoadState: "idle" | "loading" | "loaded" | "error" = "idle";
+  beneficiaryLoadError = "";
+  beneficiaryVisibleTables: Array<{ name: string; comment?: string }> = [];
+  beneficiaryTableColumns: Array<{
+    name: string;
+    key?: string;
+    comment?: string;
+  }> = [];
+  // ── Angular state for the general-info block (replaces DOM reads in saveFamily) ──
+  familyDraftNom = "";
+  familyDraftDescription = "";
+  familyDraftSql = "";
   private tableViewLookupOptionsCache: Record<string, any[]> = {};
   private tableViewDebugLogKeys = new Set<string>();
   private schemaMetaCache: any = null;
   private schemaBuilderState: Record<string, any> = {};
-  private tempColsByClass: Record<
-    number,
-    Array<{ key: string; label: string }>
+  // ── Angular state — schema preview box ──
+  schemaPreviewText =
+    'Cliquez sur "Tester id=1" pour voir le premier enregistrement retourné.';
+  schemaPreviewState: "idle" | "loading" | "error" = "idle";
+  /** Draft pour le select "Ajouter table secondaire" — piloté par [(ngModel)] */
+  schemaSecondaryTableDraft = "";
+  // ── Angular state — Classes & Variables (Phase 4 Tranche 3) ──
+  readonly CLASS_COLORS = [
+    "#6c63ff",
+    "#48bb78",
+    "#9f7aea",
+    "#f6ad55",
+    "#fc5c5c",
+    "#63b3ed",
+    "#4fd1c5",
+    "#ed8936",
+    "#f97316",
+  ];
+  newVarDrafts: Array<{ tech: string; label: string; type: string }> = [];
+  tempColsByClass: Array<Array<{ key: string; label: string }>> = [];
+  newTempColDrafts: Array<{ key: string; label: string }> = [];
+  addColDrafts: Record<
+    string,
+    { source: string; key: string; label: string; mode: string }
   > = {};
+  listObjectSqlPreviews: Record<string, string> = {};
+  listObjectSqlLoading: Record<string, boolean> = {};
   private readonly legacyOrganizationTable = "Organization";
   private readonly legacyOrganizationIdColumn = "etablissement_id";
   private readonly organizationRawExcludedKeys = new Set([
@@ -130,7 +204,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.bindLegacyWindow();
+    // Phase 4 Tranche 5: bindLegacyWindow() supprimée — 100% Angular
     this.bindModalHandlers();
     this.isLoading = true;
     void this.initializeState();
@@ -139,7 +213,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.unbindLegacyWindow();
+    // Phase 4 Tranche 5: unbindLegacyWindow() supprimée — 100% Angular
     this.unbindModalHandlers();
   }
 
@@ -168,7 +242,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   get panelSubtitle(): string {
-    return "Structure globale du systÃ¨me";
+    return "Structure globale du système";
   }
 
   get topbarTitle(): string {
@@ -248,224 +322,13 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   private showApp(): void {
-    const app = document.getElementById("app");
-    if (app) app.style.opacity = "1";
+    // PHASE 4 TRANCHE 2: opacity now driven by Angular [style.opacity] binding on #app
+    // isLoading=false triggers the binding — no DOM manipulation needed
+    this.cdr.markForCheck();
   }
 
-  private bindLegacyWindow(): void {
-    const win = window as any;
-    win.closeModal = (id: string) => this.closeModal(id);
-    win.openModal = (id: string) => this.openModal(id);
-    win.toast = (msg: string, type?: string) => this.toast(msg, type);
-    win.updateFamilyDraftField = (
-      famId: string,
-      field: string,
-      value: string,
-    ) => this.updateFamilyDraftField(famId, field, value);
-    win.saveFamily = (famId: string) => this.saveFamily(famId);
-    win.deleteFamilyConfirm = (famId: string) =>
-      this.deleteFamilyConfirm(famId);
-    win.updateFamilyBeneficiaryMode = (famId: string, mode: string) =>
-      this.updateFamilyBeneficiaryMode(famId, mode);
-    win.updateFamilyBeneficiaryTable = (famId: string, tableName: string) =>
-      this.updateFamilyBeneficiaryTable(famId, tableName);
-    win.updateFamilyBeneficiaryLinkColumn = (
-      famId: string,
-      columnName: string,
-    ) => this.updateFamilyBeneficiaryLinkColumn(famId, columnName);
-    win.updateFamilyBeneficiaryDisplayColumn = (
-      famId: string,
-      slot: number,
-      columnName: string,
-    ) => this.updateFamilyBeneficiaryDisplayColumn(famId, slot, columnName);
-    win.regenerateFamilyBeneficiarySql = (
-      famId: string,
-      silent?: boolean,
-      force?: boolean,
-    ) => this.regenerateFamilyBeneficiarySql(famId, silent, force);
-    win.testFamilyBeneficiaryQuery = (famId: string) =>
-      this.testFamilyBeneficiaryQuery(famId);
-    win.regenerateFamilySql = (
-      famId: string,
-      silent?: boolean,
-      force?: boolean,
-    ) => this.regenerateFamilySql(famId, silent, force);
-    win.setFamilyBaseTable = (famId: string, tableName: string) =>
-      this.setFamilyBaseTable(famId, tableName);
-    win.addSchemaSecondaryTable = (famId: string, tableName: string) =>
-      this.addSchemaSecondaryTable(famId, tableName);
-    win.removeSchemaSecondaryTable = (famId: string, tableName: string) =>
-      this.removeSchemaSecondaryTable(famId, tableName);
-    win.toggleSchemaColumnSelection = (
-      famId: string,
-      tableName: string,
-      columnName: string,
-    ) => this.toggleSchemaColumnSelection(famId, tableName, columnName);
-    win.addSchemaScalar = (
-      famId: string,
-      tableName: string,
-      columnName: string,
-    ) => this.addSchemaScalar(famId, tableName, columnName);
-    win.addSchemaList = (
-      famId: string,
-      tableName: string,
-      columnName: string,
-    ) => this.addSchemaList(famId, tableName, columnName);
-    win.addSchemaTableVar = (famId: string, tableName: string) =>
-      this.addSchemaTableVar(famId, tableName);
-    win.testFamilyQuery = (famId: string) => this.testFamilyQuery(famId);
-    win.moveVarColumn = (
-      famId: string,
-      ci: number,
-      vi: number,
-      colIndex: number,
-      direction: number,
-    ) => this.moveVarColumn(famId, ci, vi, colIndex, direction);
-    win.removeVarColumn = (
-      famId: string,
-      ci: number,
-      vi: number,
-      colIndex: number,
-    ) => this.removeVarColumn(famId, ci, vi, colIndex);
-    win.updateVarAddColumnMode = (
-      famId: string,
-      ci: number,
-      vi: number,
-      mode: string,
-    ) => this.updateVarAddColumnMode(famId, ci, vi, mode);
-    win.addVarColumn = (famId: string, ci: number, vi: number) =>
-      this.addVarColumn(famId, ci, vi);
-    win.updateVarColumnLookupField = (
-      famId: string,
-      ci: number,
-      vi: number,
-      colIndex: number,
-      field: string,
-      value: string,
-    ) => this.updateVarColumnLookupField(famId, ci, vi, colIndex, field, value);
-    win.updateVarColumnLookupMode = (
-      famId: string,
-      ci: number,
-      vi: number,
-      colIndex: number,
-      mode: string,
-    ) => this.updateVarColumnLookupMode(famId, ci, vi, colIndex, mode);
-    win.updateListVarLookupField = (
-      famId: string,
-      ci: number,
-      vi: number,
-      field: string,
-      value: string,
-    ) => this.updateListVarLookupField(famId, ci, vi, field, value);
-    win.updateListVarLookupMode = (
-      famId: string,
-      ci: number,
-      vi: number,
-      mode: string,
-    ) => this.updateListVarLookupMode(famId, ci, vi, mode);
-    win.updateListObjectSqlQuery = (
-      famId: string,
-      ci: number,
-      vi: number,
-      value: string,
-    ) => this.updateListObjectSqlQuery(famId, ci, vi, value);
-    win.generateListObjectSqlQueryFromSource = (
-      famId: string,
-      ci: number,
-      vi: number,
-    ) => this.generateListObjectSqlQueryFromSource(famId, ci, vi);
-    win.applySuggestedFiltersToListObjectSql = (
-      famId: string,
-      ci: number,
-      vi: number,
-    ) => this.applySuggestedFiltersToListObjectSql(famId, ci, vi);
-    win.clearListObjectSqlQuery = (famId: string, ci: number, vi: number) =>
-      this.clearListObjectSqlQuery(famId, ci, vi);
-    win.testListObjectSqlQuery = (famId: string, ci: number, vi: number) =>
-      this.testListObjectSqlQuery(famId, ci, vi);
-    win.updateVarLinkField = (
-      famId: string,
-      ci: number,
-      vi: number,
-      field: string,
-      value: string,
-    ) => this.updateVarLinkField(famId, ci, vi, field, value);
-    win.updateClassProp = (
-      famId: string,
-      ci: number,
-      prop: string,
-      val: string,
-    ) => this.updateClassProp(famId, ci, prop, val);
-    win.deleteClassBlock = (famId: string, ci: number) =>
-      this.deleteClassBlock(famId, ci);
-    win.deleteVar = (famId: string, ci: number, vi: number) =>
-      this.deleteVar(famId, ci, vi);
-    win.updateVarLabel = (
-      famId: string,
-      ci: number,
-      vi: number,
-      value: string,
-    ) => this.updateVarLabel(famId, ci, vi, value);
-    win.addClassBlock = (famId: string) => this.addClassBlock(famId);
-    win.onVarTypeChange = (ci: number) => this.onVarTypeChange(ci);
-    win.addTempCol = (ci: number) => this.addTempCol(ci);
-    win._removeTempCol = (ci: number, i: number) => this.removeTempCol(ci, i);
-    win._moveTempCol = (ci: number, i: number, direction: number) =>
-      this.moveTempCol(ci, i, direction);
-    win.addVar = (famId: string, ci: number) => this.addVar(famId, ci);
-    win.saveOrganizationVariableSelection = () =>
-      this.saveOrganizationVariableSelection();
-  }
-
-  private unbindLegacyWindow(): void {
-    const win = window as any;
-    delete win.closeModal;
-    delete win.openModal;
-    delete win.toast;
-    delete win.updateFamilyDraftField;
-    delete win.saveFamily;
-    delete win.deleteFamilyConfirm;
-    delete win.updateFamilyBeneficiaryMode;
-    delete win.updateFamilyBeneficiaryTable;
-    delete win.updateFamilyBeneficiaryLinkColumn;
-    delete win.updateFamilyBeneficiaryDisplayColumn;
-    delete win.regenerateFamilyBeneficiarySql;
-    delete win.testFamilyBeneficiaryQuery;
-    delete win.regenerateFamilySql;
-    delete win.setFamilyBaseTable;
-    delete win.addSchemaSecondaryTable;
-    delete win.removeSchemaSecondaryTable;
-    delete win.toggleSchemaColumnSelection;
-    delete win.addSchemaScalar;
-    delete win.addSchemaList;
-    delete win.addSchemaTableVar;
-    delete win.testFamilyQuery;
-    delete win.moveVarColumn;
-    delete win.removeVarColumn;
-    delete win.updateVarAddColumnMode;
-    delete win.addVarColumn;
-    delete win.updateVarColumnLookupField;
-    delete win.updateVarColumnLookupMode;
-    delete win.updateListVarLookupField;
-    delete win.updateListVarLookupMode;
-    delete win.updateListObjectSqlQuery;
-    delete win.generateListObjectSqlQueryFromSource;
-    delete win.applySuggestedFiltersToListObjectSql;
-    delete win.clearListObjectSqlQuery;
-    delete win.testListObjectSqlQuery;
-    delete win.updateVarLinkField;
-    delete win.updateClassProp;
-    delete win.deleteClassBlock;
-    delete win.deleteVar;
-    delete win.updateVarLabel;
-    delete win.addClassBlock;
-    delete win.onVarTypeChange;
-    delete win.addTempCol;
-    delete win._removeTempCol;
-    delete win._moveTempCol;
-    delete win.addVar;
-    delete win.saveOrganizationVariableSelection;
-  }
+  // Phase 4 Tranche 5: bindLegacyWindow + unbindLegacyWindow supprimées.
+  // Le composant est 100% Angular state-driven — aucun win.* nécessaire.
 
   async showSection(section: string, btn?: HTMLElement): Promise<void> {
     this.currentSection = section;
@@ -543,6 +406,298 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       .length;
   }
 
+  /** Templates belonging to the currently selected family — used by Angular template */
+  get selectedFamilyTemplates(): any[] {
+    if (!this.selectedFamId) return [];
+    return this.templates.filter((t) => t.familyId === this.selectedFamId);
+  }
+
+  /** Classes array for the currently selected family — used by Angular template */
+  get selectedFamilyClasses(): any[] {
+    return this.selectedFamily?.classes || [];
+  }
+
+  private initClassDrafts(classes: any[]): void {
+    this.newVarDrafts = classes.map(() => ({
+      tech: "",
+      label: "",
+      type: "scalar",
+    }));
+    this.tempColsByClass = classes.map(() => []);
+    this.newTempColDrafts = classes.map(() => ({ key: "", label: "" }));
+    this.addColDrafts = {};
+    this.listObjectSqlPreviews = {};
+    this.listObjectSqlLoading = {};
+  }
+
+  ensureClassDrafts(classes: any[]): void {
+    while (this.newVarDrafts.length < classes.length)
+      this.newVarDrafts.push({ tech: "", label: "", type: "scalar" });
+    while (this.tempColsByClass.length < classes.length)
+      this.tempColsByClass.push([]);
+    while (this.newTempColDrafts.length < classes.length)
+      this.newTempColDrafts.push({ key: "", label: "" });
+  }
+
+  getAvailableVarSourceColumnsPublic(v: any): any[] {
+    return this.getAvailableVarSourceColumns(v);
+  }
+
+  getLookupTableOptions(selectedTable: string): any[] {
+    if (!this.schemaMetaCache) return [];
+    return this.getVisibleFamilySchemaTables(
+      this.schemaMetaCache,
+      selectedTable ? [selectedTable] : [],
+    );
+  }
+
+  getLookupColumnOptions(tableName: string): any[] {
+    if (!this.schemaMetaCache || !tableName) return [];
+    return this.getColumnsForTable(this.schemaMetaCache, tableName);
+  }
+
+  getAddColDraft(
+    ci: number,
+    vi: number,
+  ): { source: string; key: string; label: string; mode: string } {
+    const k = `${ci}_${vi}`;
+    if (!this.addColDrafts[k])
+      this.addColDrafts[k] = { source: "", key: "", label: "", mode: "schema" };
+    return this.addColDrafts[k];
+  }
+
+  getVarPillTech(v: any): string {
+    const prefix = v.type === "list-object" || v.type === "list" ? "#" : "";
+    const suffix = v.type === "list-object" ? ":table" : "";
+    return "{{" + prefix + (v.tech || "") + suffix + "}}";
+  }
+
+  getVarSqlPlaceholder(v: any): string {
+    return "{{#" + (v.tech || "") + ":table}}";
+  }
+
+  getListObjectSqlPreview(ci: number, vi: number, v: any): string {
+    const k = `${ci}_${vi}`;
+    if (this.listObjectSqlPreviews[k]) return this.listObjectSqlPreviews[k];
+    const sqlQuery = String(v?.sqlQuery || "").trim();
+    return sqlQuery
+      ? 'Cliquez sur "Tester la requête" pour voir les premières lignes.'
+      : "Aucune requête SQL dédiée. La variable utilise le mode lié au schéma.";
+  }
+
+  getVarDisplayColumns(v: any): any[] {
+    return this.getListObjectDisplayColumns(v);
+  }
+
+  getSimpleVarBinding(
+    v: any,
+    ci: number,
+    famId: string,
+  ): {
+    show: boolean;
+    mode: string;
+    canAuto: boolean;
+    relationInfo: string;
+    baseColumns: any[];
+    sourceColumns: any[];
+    canManual: boolean;
+  } {
+    const empty = {
+      show: false,
+      mode: "auto",
+      canAuto: false,
+      relationInfo: "",
+      baseColumns: [],
+      sourceColumns: [],
+      canManual: false,
+    };
+    if (!this.schemaMetaCache || !v?.sourceTable) return empty;
+    const fam = this.getFamily(famId);
+    if (!fam) return empty;
+    const baseTable =
+      this.getBuilderState(famId, fam, this.schemaMetaCache).baseTable ||
+      v.baseTable ||
+      "";
+    if (!baseTable || v.sourceTable === baseTable) return empty;
+    const relPath = this.getJoinPlan(
+      this.schemaMetaCache,
+      baseTable,
+      v.sourceTable,
+    );
+    const baseColumns = this.getColumnsForTable(
+      this.schemaMetaCache,
+      baseTable,
+    );
+    const sourceColumns = this.getColumnsForTable(
+      this.schemaMetaCache,
+      v.sourceTable,
+    );
+    const canAuto = !!relPath?.length;
+    const canManual = this.hasManualVarLink(this.schemaMetaCache, baseTable, v);
+    const mode =
+      v.linkMode === "manual" ||
+      (!canAuto && (v.matchBaseColumn || v.matchSourceColumn))
+        ? "manual"
+        : "auto";
+    const relationInfo = canAuto
+      ? relPath
+          .map(
+            (step: any) =>
+              `${step.relation.table}.${step.relation.column} -> ${step.relation.referencedTable}.${step.relation.referencedColumn}`,
+          )
+          .join(" | ")
+      : "Aucune jointure detectee dans le schema";
+    return {
+      show: true,
+      mode,
+      canAuto,
+      relationInfo,
+      baseColumns,
+      sourceColumns,
+      canManual,
+    };
+  }
+
+  /** Total var count across all classes — used by Angular template */
+  get selectedFamilyAllVarsCount(): number {
+    return (this.selectedFamily?.classes || []).flatMap(
+      (c: any) => c.vars || [],
+    ).length;
+  }
+
+  /** List-object var count — used by Angular template */
+  get selectedFamilyListObjectVarsCount(): number {
+    return (this.selectedFamily?.classes || [])
+      .flatMap((c: any) => c.vars || [])
+      .filter((v: any) => v.type === "list-object").length;
+  }
+
+  /** Organization name for a template — used by Angular template */
+  getTemplateOrganizationName(organizationId: string): string {
+    return this.organizations.find((o) => o.id === organizationId)?.nom || "—";
+  }
+
+  /** Format a date for display — used by Angular template */
+  formatDate(dateStr: string | undefined): string {
+    if (!dateStr) return new Date().toLocaleDateString("fr-FR");
+    return new Date(dateStr).toLocaleDateString("fr-FR");
+  }
+
+  /** Hidden tables hint string — used by Angular template */
+  get hiddenFamilyTablesHint(): string {
+    return this.hiddenFamilyTables.join(", ");
+  }
+
+  /**
+   * Computed data for the schema builder Angular template.
+   * Returns null while schema is loading (shows a spinner).
+   */
+  get schemaBuilderData(): {
+    famId: string;
+    state: any;
+    baseTableOptions: any[];
+    secondaryTableOptions: any[];
+    visibleTables: any[];
+    hiddenTablesHint: string;
+  } | null {
+    if (!this.selectedFamId || !this.schemaMetaCache) return null;
+    const famId = this.selectedFamId;
+    const fam = this.getFamily(famId);
+    if (!fam) return null;
+    const schema = this.schemaMetaCache;
+    const state = this.getBuilderState(famId, fam, schema);
+    const baseTableOptions = this.getFamilyVisibleTables(schema, fam);
+    const allVisibleTableNames = baseTableOptions.map((t: any) => t.name);
+    const visibleTables = [
+      state.baseTable,
+      ...(state.secondaryTables || []),
+    ].filter(
+      (name: string, idx: number, list: string[]) =>
+        name &&
+        allVisibleTableNames.includes(name) &&
+        list.indexOf(name) === idx,
+    );
+    const secondaryTableOptions = baseTableOptions.filter(
+      (t: any) => t.name !== state.baseTable && !visibleTables.includes(t.name),
+    );
+    return {
+      famId,
+      state,
+      baseTableOptions,
+      secondaryTableOptions,
+      visibleTables,
+      hiddenTablesHint: this.hiddenFamilyTables.join(", "),
+    };
+  }
+
+  /** Returns meta for a table from the current schema cache */
+  getSchemaTableMeta(tableName: string): any {
+    if (!this.schemaMetaCache) return null;
+    return this.getTableMeta(this.schemaMetaCache, tableName);
+  }
+
+  /** Returns columns for a table from the current schema cache */
+  getSchemaTableColumns(tableName: string): any[] {
+    if (!this.schemaMetaCache) return [];
+    return this.getColumnsForTable(this.schemaMetaCache, tableName);
+  }
+
+  /** Returns the join path label for a table relative to the base table */
+  getSchemaRelationLabel(state: any, tableName: string): string {
+    if (tableName === state.baseTable) return "Base";
+    const relPath = this.schemaMetaCache
+      ? this.getJoinPlan(this.schemaMetaCache, state.baseTable, tableName)
+      : null;
+    return relPath?.length ? "Join" : "Reference";
+  }
+
+  /** Returns the CSS chip class for the relation label */
+  getSchemaRelationTone(state: any, tableName: string): string {
+    if (tableName === state.baseTable) return "chip-purple";
+    const relPath = this.schemaMetaCache
+      ? this.getJoinPlan(this.schemaMetaCache, state.baseTable, tableName)
+      : null;
+    return relPath?.length ? "chip-teal" : "chip";
+  }
+
+  /** Returns human-readable join summary for a table */
+  getSchemaRelationSummary(state: any, tableName: string): string {
+    if (tableName === state.baseTable) return "Table principale active";
+    const relPath = this.schemaMetaCache
+      ? this.getJoinPlan(this.schemaMetaCache, state.baseTable, tableName)
+      : null;
+    if (relPath?.length) {
+      return relPath
+        .map(
+          (step: any) =>
+            `${step.relation.table}.${step.relation.column} -> ${step.relation.referencedTable}.${step.relation.referencedColumn}`,
+        )
+        .join(" | ");
+    }
+    return "Aucune jointure automatique detectee. Vous pouvez tout de meme ajouter des variables puis definir une correspondance manuelle.";
+  }
+
+  /** Returns whether a column is selected in the schema builder */
+  isSchemaColumnSelected(
+    state: any,
+    tableName: string,
+    colName: string,
+  ): boolean {
+    return !!state.selectedColumns[`${tableName}.${colName}`];
+  }
+
+  /** Beneficiary table name for selected family — used by Angular template */
+  get selectedFamilyBeneficiaryTableName(): string {
+    if (!this.selectedFamily || !this.schemaMetaCache) return "";
+    return this.getFamilyBeneficiaryTable(this.selectedFamily);
+  }
+
+  /** Beneficiary table label placeholder — used by Angular template */
+  get selectedFamilyBeneficiaryTablePlaceholder(): string {
+    const tableName = this.selectedFamilyBeneficiaryTableName;
+    return tableName ? this.humanizeSchemaName(tableName) : "Ex: Étudiant";
+  }
+
   familyBeneficiaryMeta(family: Family): string {
     return family.beneficiaryMode === "organization"
       ? "lie a l'Organization"
@@ -556,7 +711,98 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     } catch (e) {
       // Continue rendering even if schema fails
     }
-    this.renderFamilyEditor(familyId);
+    this.populateFamilyDraftFields(familyId);
+    const fam = this.getFamily(familyId);
+    this.initClassDrafts(fam?.classes || []);
+    await this.loadBeneficiaryState(familyId);
+    this.renderLegacyFamilySubSections(familyId);
+  }
+
+  /** Populate Angular-bound draft fields from the family state object */
+  private populateFamilyDraftFields(famId: string): void {
+    const fam = this.getFamily(famId);
+    if (!fam) return;
+    this.familyDraftNom = fam.nom || "";
+    this.familyDraftDescription = fam.description || "";
+    this.familyDraftSql = fam.sql || "";
+    this.cdr.markForCheck();
+  }
+
+  /** Load schema data for the beneficiary block into Angular state */
+  async loadBeneficiaryState(famId: string): Promise<void> {
+    const fam = this.getFamily(famId);
+    if (!fam) return;
+
+    if (fam.beneficiaryMode === "organization") {
+      this.beneficiaryLoadState = "loaded";
+      this.beneficiaryVisibleTables = [];
+      this.beneficiaryTableColumns = [];
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.beneficiaryLoadState = "loading";
+    this.beneficiaryLoadError = "";
+    this.cdr.markForCheck();
+
+    try {
+      const schema = await this.ensureSchemaMeta();
+      const visibleTables = this.getVisibleFamilySchemaTables(schema, [
+        fam.beneficiaryTable,
+      ]);
+      const tableName = this.getFamilyBeneficiaryTable(fam);
+      const tableColumns = this.getColumnsForTable(schema, tableName);
+      const tableLinkColumn = this.getFamilyBeneficiaryLinkColumn(fam, schema);
+      const suggestedColumns = this.getSuggestedBeneficiaryDisplayColumns(
+        fam,
+        schema,
+        tableName,
+      );
+
+      // Auto-populate defaults (same logic as former renderFamilyBeneficiaryTableSelect)
+      if (tableLinkColumn && tableLinkColumn !== fam.beneficiaryLinkColumn) {
+        fam.beneficiaryLinkColumn = tableLinkColumn;
+      }
+      if (!fam.beneficiaryDisplayColumn1 && suggestedColumns[0]) {
+        fam.beneficiaryDisplayColumn1 = suggestedColumns[0];
+      }
+      if (!fam.beneficiaryDisplayColumn2 && suggestedColumns[1]) {
+        fam.beneficiaryDisplayColumn2 = suggestedColumns[1];
+      }
+      if (!fam.beneficiarySql) {
+        fam.beneficiarySql = this.buildBeneficiarySqlFromFamily(famId);
+        this.saveFamilyLocal(fam);
+      }
+
+      this.beneficiaryVisibleTables = visibleTables;
+      this.beneficiaryTableColumns = tableColumns;
+      this.beneficiaryLoadState = "loaded";
+      this.cdr.markForCheck();
+    } catch (error: any) {
+      this.beneficiaryLoadState = "error";
+      this.beneficiaryLoadError = error?.message || "Erreur de chargement";
+      this.cdr.markForCheck();
+    }
+  }
+
+  /** Render only the sub-sections still driven by legacy renderers (schema builder) */
+  private renderLegacyFamilySubSections(famId: string): void {
+    const fam = this.getFamily(famId);
+    if (!fam) return;
+    // Phase 4 Tranche 3: renderClassesContainer supprimée — Angular *ngFor pilote le bloc Classes & Variables
+    // Phase 4 Tranche 4: renderSchemaAssistant supprimée — schemaBuilderData getter pilote le template
+    // Ensure schema is loaded so schemaBuilderData has data
+    void this.ensureSchemaMeta().then(() => this.cdr.markForCheck());
+    this.refreshGeneratedListObjectQueries(famId, fam);
+    // TRANCHE 1: setTimeout supprimé — appel direct synchrone.
+    // Le hack async n'est plus nécessaire car loadBeneficiaryState est awaité
+    // avant l'appel à renderLegacyFamilySubSections dans selectFamilyFromPanel.
+    if (
+      fam.beneficiaryMode === "organization" &&
+      (!fam.sql || /:beneficiaryId\b/i.test(fam.sql))
+    ) {
+      this.regenerateFamilySql(famId, true);
+    }
   }
 
   getSelectedFamilyCreatedAtLabel(): string {
@@ -825,161 +1071,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     if (this.currentSection === "tableviews") this.renderTableViewsContent();
   }
 
-  private renderFamilyEditor(_famId: string): void {
-    const fam = this.getFamily(_famId);
-    if (!fam) return;
-    const wrap = document.getElementById("familyEditorWrap");
-    if (!wrap) return;
-    const isOrganizationMode = fam.beneficiaryMode === "organization";
-    const templates = this.templates.filter((t) => t.familyId === fam.id);
-    const allVars = (fam.classes || []).flatMap((c: any) => c.vars || []);
-    const createdAt = fam.createdAt ? new Date(fam.createdAt) : new Date();
-
-    wrap.innerHTML = `
-<div class="card">
-  <div class="card-header">
-    <div class="card-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-      Assistant schéma SQL Server
-    </div>
-    <span class="chip chip-teal">Variables pilotées par la base</span>
-  </div>
-  <div class="card-body">
-    <div class="text-muted" style="margin-bottom:12px">
-      Choisissez une table source, récupérez ses descriptions et générez automatiquement les variables ainsi que la requête <strong>SELECT</strong>.
-    </div>
-    <div id="schemaBuilderWrap"></div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <div class="card-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Informations générales
-    </div>
-    <span class="chip chip-purple">Famille</span>
-  </div>
-  <div class="card-body">
-    <div class="form-grid c3">
-      <div class="form-row" style="margin:0"><label class="form-label">Nom <span class="req">*</span></label><input class="form-input" id="fNom" value="${this.escAttr(
-        fam.nom || "",
-      )}" placeholder="Ex: Attestation de travail" oninput="updateFamilyDraftField('${this.escAttr(
-        fam.id || "",
-      )}', 'nom', this.value)"></div>
-      <div class="form-row" style="margin:0"><label class="form-label">Description</label><input class="form-input" id="fDesc" value="${this.escAttr(
-        fam.description || "",
-      )}" placeholder="Description courte" oninput="updateFamilyDraftField('${this.escAttr(
-        fam.id || "",
-      )}', 'description', this.value)"></div>
-    </div>
-    <div class="form-grid c3" style="margin-top:14px">
-      <div class="form-row" style="margin:0">
-        <label class="form-label">Cible du document</label>
-        <select class="form-input" id="fBeneficiaryMode" onchange="updateFamilyBeneficiaryMode('${this.escAttr(
-          fam.id || "",
-        )}', this.value)">
-          <option value="table" ${!isOrganizationMode ? "selected" : ""}>Bénéficiaire d'une table</option>
-          <option value="organization" ${isOrganizationMode ? "selected" : ""}>Lié à l'Organization</option>
-        </select>
-      </div>
-      <div class="form-row" style="margin:0" id="familyBeneficiaryTableWrap">
-        <label class="form-label">Table bénéficiaire</label>
-        <div class="text-muted" style="padding-top:9px">Chargement...</div>
-      </div>
-      <div class="form-row" style="margin:0">
-        <label class="form-label">Tables masquées</label>
-        <div class="text-muted" id="familyHiddenTablesHint" style="padding-top:9px"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<div class="card">
-  <div class="card-header">
-    <div class="card-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
-      Classes &amp; Variables
-    </div>
-    <div class="text-muted">${allVars.length} variables (${allVars.filter((v: any) => v.type === "list-object").length} tableaux-objet)</div>
-  </div>
-  <div class="card-body">
-    <div id="classesContainer"></div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <div class="card-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-      Requête SQL principale
-    </div>
-    <div class="flex gap-8">
-      <span class="chip chip-teal">SELECT automatique à la génération</span>
-      ${fam.customMainSql ? '<span class="chip" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">SQL personnalisé</span>' : ""}
-    </div>
-  </div>
-  <div class="card-body">
-    <p class="text-muted" style="margin-bottom:10px">Les paramètres :nom_param seront substitués automatiquement lors de la génération.</p>
-    <div class="sql-wrap">
-      <textarea class="sql-input" id="fSql" rows="9" onchange="updateFamilyDraftField('${this.escAttr(
-        fam.id || "",
-      )}', 'sql', this.value)">${this.escHtml(fam.sql || "")}</textarea>
-      <div class="sql-badge">SQL</div>
-    </div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <div class="card-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Templates associés
-    </div>
-    <span class="chip chip-green">${templates.length} template(s)</span>
-  </div>
-  <div class="card-body" style="padding:0">
-    ${
-      templates.length === 0
-        ? '<div class="text-muted" style="padding:16px;text-align:center">Aucun template — créez-en depuis l\'interface Admin Organization</div>'
-        : `<table class="data-table"><thead><tr><th>Nom</th><th>Organization</th><th>Mis à jour</th><th>Statut</th></tr></thead><tbody>${templates
-            .map((t: any) => {
-              const org = this.organizations.find(
-                (o) => o.id === t.organizationId,
-              );
-              const updatedAt = t.updatedAt
-                ? new Date(t.updatedAt)
-                : new Date();
-              return `<tr><td><strong>${this.escHtml(t.nom || "")}</strong></td><td>${this.escHtml(org?.nom || "—")}</td><td>${updatedAt.toLocaleDateString("fr-FR")}</td><td><span class="chip chip-green">Publié</span></td></tr>`;
-            })
-            .join("")}</tbody></table>`
-    }
-  </div>
-</div>`;
-
-    const afterFiltersWrap = document.getElementById(
-      "familyEditorAfterFilters",
-    );
-    if (afterFiltersWrap) {
-      afterFiltersWrap.innerHTML = "";
-      Array.from(wrap.children)
-        .slice(2)
-        .forEach((node) => afterFiltersWrap.appendChild(node));
-    }
-
-    this.renderClassesContainer(fam.id);
-    this.renderFamilyFilterCatalog(fam.id);
-    this.renderFamilyBeneficiaryTableSelect(fam.id);
-    this.renderSchemaAssistant(fam.id);
-    this.refreshGeneratedListObjectQueries(fam.id, fam);
-    if (
-      fam.beneficiaryMode === "organization" &&
-      (!fam.sql || /:beneficiaryId\b/i.test(fam.sql))
-    ) {
-      setTimeout(() => this.regenerateFamilySql(fam.id, true), 0);
-    }
-  }
+  // TRANCHE 3: renderFamilyEditor supprimée — plus aucun caller actif.
+  // Tous les call-sites ont été migrés :
+  //   - filtres add/remove/update → cdr.markForCheck()
+  //   - création famille → selectFamilyFromPanel()
+  //   - upsertGeneratedVar → renderLegacyFamilySubSections() direct
 
   private renderOrganizationContent(): void {
     // Organizations are rendered by Angular template bindings now.
@@ -1033,9 +1129,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       .saveFamily(family)
       .then((saved: Family) => {
         this.syncStateFromStore();
-        this.selectedFamId = saved.id;
+        // TRANCHE 2: renderFamilyEditor remplacé par selectFamilyFromPanel — chemin Angular pur.
+        // selectFamilyFromPanel: met à jour selectedFamId, charge le state bénéficiaire,
+        // popule les draft fields, et appelle renderLegacyFamilySubSections.
         this.renderLeftPanel();
-        this.renderFamilyEditor(saved.id);
+        void this.selectFamilyFromPanel(saved.id);
         this.toast("Famille créée", "success");
       })
       .catch(() => {
@@ -1051,14 +1149,24 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.zone.run(() => this.auth.logout());
   }
 
+  // Phase 4 Tranche 5: openModal/closeModal simplifiées — fallback DOM supprimé.
+  // Seules les modales Organization et Admin existent; elles sont 100% Angular state.
   closeModal(id: string): void {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.remove("open");
+    if (id === "modalOrganization") {
+      this.isOrganizationModalOpen = false;
+    } else if (id === "modalAdmin") {
+      this.isAdminModalOpen = false;
+    }
+    this.cdr.markForCheck();
   }
 
   openModal(id: string): void {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.add("open");
+    if (id === "modalOrganization") {
+      this.isOrganizationModalOpen = true;
+    } else if (id === "modalAdmin") {
+      this.isAdminModalOpen = true;
+    }
+    this.cdr.markForCheck();
   }
 
   private bindModalHandlers(): void {
@@ -1096,10 +1204,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return (await firstValueFrom(dialogRef.afterClosed())) === true;
   }
 
-  private setText(id: string, text: string): void {
-    const node = document.getElementById(id);
-    if (node) node.textContent = text;
-  }
+  // setText() supprimée — PHASE 4 TRANCHE 2 (aucun caller restant)
 
   getInitials(value: string): string {
     return String(value || "")
@@ -1116,18 +1221,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     ).trim();
   }
 
-  private escHtml(value: string): string {
-    return String(value || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  private escAttr(value: string): string {
-    return this.escHtml(value).replace(/"/g, "&quot;");
-  }
+  // Phase 4 Tranche 5: escHtml + escAttr supprimées — plus de string renderers
 
   private genId(prefix: string): string {
     return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
@@ -1192,10 +1286,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const beneficiaryDisplayColumn2Value = String(
       fam.beneficiaryDisplayColumn2 || "",
     ).trim();
-    const sqlValue =
-      (
-        document.getElementById("fSql") as HTMLTextAreaElement | null
-      )?.value?.trim() || "";
+    // Read SQL from Angular draft state (replaces document.getElementById("fSql"))
+    const sqlValue = this.familyDraftSql.trim();
     const beneficiarySqlValue = String(fam.beneficiarySql || "").trim();
     if (sqlValue && !/^select\b/i.test(sqlValue)) {
       this.toast(
@@ -1215,12 +1307,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       );
       return;
     }
-    fam.nom =
-      (document.getElementById("fNom") as HTMLInputElement | null)?.value ||
-      fam.nom;
-    fam.description =
-      (document.getElementById("fDesc") as HTMLInputElement | null)?.value ||
-      "";
+    // Read nom/description from Angular draft state (replaces document.getElementById fNom/fDesc)
+    fam.nom = this.familyDraftNom.trim() || fam.nom;
+    fam.description = this.familyDraftDescription.trim();
     fam.beneficiaryMode =
       beneficiaryModeValue === "organization" ? "organization" : "table";
     fam.beneficiaryTable =
@@ -1258,11 +1347,16 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     });
     if (!confirmed) return;
     this.deleteFamilyLocal(famId);
+    // Angular state-driven: selectedFamId = null causes *ngIf to hide all family cards
     this.selectedFamId = null;
+    this.beneficiaryLoadState = "idle";
+    this.beneficiaryVisibleTables = [];
+    this.beneficiaryTableColumns = [];
+    this.familyDraftNom = "";
+    this.familyDraftDescription = "";
+    this.familyDraftSql = "";
+    this.cdr.markForCheck();
     this.renderLeftPanel();
-    const wrap = document.getElementById("familyEditorWrap");
-    if (wrap)
-      wrap.innerHTML = '<div class="empty"><h3>Famille supprimée</h3></div>';
     this.toast("Famille supprimée", "success");
   }
 
@@ -1410,126 +1504,15 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     );
   }
 
-  private async renderFamilyBeneficiaryTableSelect(
-    famId: string,
-  ): Promise<void> {
-    const fam = this.getFamily(famId);
-    const wrap = document.getElementById("familyBeneficiaryTableWrap");
-    const hiddenHint = document.getElementById("familyHiddenTablesHint");
-    if (hiddenHint) hiddenHint.textContent = this.hiddenFamilyTables.join(", ");
-    if (!fam || !wrap) return;
+  /**
+   * @removed TRANCHE 1 — replaced by loadBeneficiaryState() which drives the Angular template.
+   * Kept as stub to avoid breaking any remaining call-sites during incremental migration.
+   */
+  // TRANCHE 1: renderFamilyBeneficiaryTableSelect supprimée — était déjà un no-op.
+  // Le bloc bénéficiaire est intégralement piloté par Angular state :
+  // beneficiaryLoadState / beneficiaryVisibleTables / beneficiaryTableColumns.
 
-    if (fam.beneficiaryMode === "organization") {
-      wrap.innerHTML = `
-        <label class="form-label">Table bénéficiaire</label>
-        <div class="text-muted" style="padding-top:9px">Aucune table requise : ce document sera généré à partir du contexte de l'Organization.</div>`;
-      return;
-    }
-
-    wrap.innerHTML = `
-      <label class="form-label">Table bénéficiaire</label>
-      <div class="text-muted" style="padding-top:9px">Chargement du schéma...</div>`;
-
-    try {
-      const schema = await this.ensureSchemaMeta();
-      const visibleTables = this.getVisibleFamilySchemaTables(schema, [
-        fam.beneficiaryTable,
-      ]);
-      const tableName = this.getFamilyBeneficiaryTable(fam);
-      const tableColumns = this.getColumnsForTable(schema, tableName);
-      const tableLinkColumn = this.getFamilyBeneficiaryLinkColumn(fam, schema);
-      const suggestedColumns = this.getSuggestedBeneficiaryDisplayColumns(
-        fam,
-        schema,
-        tableName,
-      );
-      if (tableLinkColumn && tableLinkColumn !== fam.beneficiaryLinkColumn) {
-        fam.beneficiaryLinkColumn = tableLinkColumn;
-      }
-      if (!fam.beneficiaryDisplayColumn1 && suggestedColumns[0]) {
-        fam.beneficiaryDisplayColumn1 = suggestedColumns[0];
-      }
-      if (!fam.beneficiaryDisplayColumn2 && suggestedColumns[1]) {
-        fam.beneficiaryDisplayColumn2 = suggestedColumns[1];
-      }
-      if (!fam.beneficiarySql) {
-        fam.beneficiarySql = this.buildBeneficiarySqlFromFamily(famId);
-        this.saveFamilyLocal(fam);
-      }
-      wrap.innerHTML = `
-        <label class="form-label">Table bénéficiaire</label>
-        <select class="form-input" id="fBeneficiaryTable" onchange="updateFamilyBeneficiaryTable('${this.escAttr(
-          famId,
-        )}', this.value)">
-          ${visibleTables
-            .map(
-              (table: any) =>
-                `<option value="${this.escAttr(table.name)}" ${table.name === tableName ? "selected" : ""}>${this.escHtml(table.name)}${table.comment ? ` - ${this.escHtml(table.comment)}` : ""}</option>`,
-            )
-            .join("")}
-        </select>
-        <div style="margin-top:10px">
-          <label class="form-label" style="font-size:11px">Libellé affiché à l'admin et au user</label>
-          <input class="form-input" id="fBeneficiaryTableLabel" value="${this.escAttr(
-            fam.beneficiaryTableLabel || "",
-          )}" placeholder="${this.escAttr(tableName ? this.humanizeSchemaName(tableName) : "Ex: Étudiant")}" oninput="updateFamilyDraftField('${this.escAttr(
-            famId,
-          )}', 'beneficiaryTableLabel', this.value)">
-        </div>
-        <div style="margin-top:10px">
-          <label class="form-label" style="font-size:11px">Colonne de liaison</label>
-          <select class="form-input" id="fBeneficiaryLinkColumn" onchange="updateFamilyBeneficiaryLinkColumn('${this.escAttr(
-            famId,
-          )}', this.value)">
-            <option value="">Choisir une colonne</option>
-            ${tableColumns
-              .map(
-                (column: any) =>
-                  `<option value="${this.escAttr(column.name)}" ${column.name === (fam.beneficiaryLinkColumn || "") ? "selected" : ""}>${this.escHtml(column.name)}${column.key === "PRI" ? " - clé primaire" : column.comment ? ` - ${this.escHtml(column.comment)}` : ""}</option>`,
-              )
-              .join("")}
-          </select>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-          <div>
-            <label class="form-label" style="font-size:11px">Colonne affichage 1</label>
-            <select class="form-input" id="fBeneficiaryDisplayColumn1" onchange="updateFamilyBeneficiaryDisplayColumn('${this.escAttr(
-              famId,
-            )}', 1, this.value)">
-              <option value="">Choisir une colonne</option>
-              ${tableColumns
-                .map(
-                  (column: any) =>
-                    `<option value="${this.escAttr(column.name)}" ${column.name === (fam.beneficiaryDisplayColumn1 || "") ? "selected" : ""}>${this.escHtml(column.name)}${column.comment ? ` - ${this.escHtml(column.comment)}` : ""}</option>`,
-                )
-                .join("")}
-            </select>
-          </div>
-          <div>
-            <label class="form-label" style="font-size:11px">Colonne affichage 2</label>
-            <select class="form-input" id="fBeneficiaryDisplayColumn2" onchange="updateFamilyBeneficiaryDisplayColumn('${this.escAttr(
-              famId,
-            )}', 2, this.value)">
-              <option value="">Aucune</option>
-              ${tableColumns
-                .map(
-                  (column: any) =>
-                    `<option value="${this.escAttr(column.name)}" ${column.name === (fam.beneficiaryDisplayColumn2 || "") ? "selected" : ""}>${this.escHtml(column.name)}${column.comment ? ` - ${this.escHtml(column.comment)}` : ""}</option>`,
-                )
-                .join("")}
-            </select>
-          </div>
-        </div>
-        <div class="text-muted" style="margin-top:8px">Ces colonnes seront affichées dans les listes de bénéficiaires côté admin et user. Exemple : <strong>Nom</strong> + <strong>Prenom</strong>.</div>`;
-      this.saveFamilyLocal(fam);
-    } catch (error: any) {
-      wrap.innerHTML = `
-        <label class="form-label">Table bénéficiaire</label>
-        <div class="text-danger" style="padding-top:9px">${this.escHtml(error?.message || "Erreur de chargement")}</div>`;
-    }
-  }
-
-  private updateFamilyBeneficiaryMode(famId: string, mode: string): void {
+  updateFamilyBeneficiaryMode(famId: string, mode: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam.beneficiaryMode = mode === "organization" ? "organization" : "table";
@@ -1545,12 +1528,12 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     }
     this.saveFamilyLocal(fam);
     this.renderLeftPanel();
-    this.renderFamilyBeneficiaryTableSelect(famId);
-    this.renderFamilyEditor(famId);
+    void this.loadBeneficiaryState(famId);
     this.regenerateFamilySql(famId, true);
+    this.cdr.markForCheck();
   }
 
-  private updateFamilyBeneficiaryTable(famId: string, tableName: string): void {
+  updateFamilyBeneficiaryTable(famId: string, tableName: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam.beneficiaryMode = "table";
@@ -1569,14 +1552,12 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       if (state && !state.baseTable) state.baseTable = fam.beneficiaryTable;
     }
     this.renderLeftPanel();
-    this.renderFamilyEditor(famId);
+    void this.loadBeneficiaryState(famId);
     this.regenerateFamilySql(famId, true);
+    this.cdr.markForCheck();
   }
 
-  private updateFamilyBeneficiaryLinkColumn(
-    famId: string,
-    columnName: string,
-  ): void {
+  updateFamilyBeneficiaryLinkColumn(famId: string, columnName: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam.beneficiaryLinkColumn = columnName || "";
@@ -1587,7 +1568,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.regenerateFamilySql(famId, true);
   }
 
-  private updateFamilyBeneficiaryDisplayColumn(
+  updateFamilyBeneficiaryDisplayColumn(
     famId: string,
     slot: number,
     columnName: string,
@@ -1641,9 +1622,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     );
   }
 
-  private async renderFamilyFilterCatalog(_famId: string): Promise<void> {
-    return;
-  }
+  // TRANCHE 3: renderFamilyFilterCatalog supprimée — était un no-op, jamais appelée.
   private addFamilyFilterDefinition(famId: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
@@ -1652,7 +1631,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       this.createEmptyFamilyFilterDefinition((fam.filterCatalog || []).length),
     ];
     this.saveFamilyLocal(fam);
-    this.renderFamilyEditor(famId);
+    // TRANCHE 2: renderFamilyEditor supprimé — Angular *ngFor sur selectedFamilyFilters
+    // reflète la mutation immédiatement via le getter. Pas de stale state possible.
+    this.cdr.markForCheck();
     this.toast("Filtre ajouté", "success");
   }
 
@@ -1663,7 +1644,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       (filter: any) => filter.id !== filterId,
     );
     this.saveFamilyLocal(fam);
-    this.renderFamilyEditor(famId);
+    // TRANCHE 2: renderFamilyEditor supprimé — la suppression est reflétée immédiatement
+    // par le getter selectedFamilyFilters → *ngFor Angular sans stale state.
+    this.cdr.markForCheck();
     this.toast("Filtre supprimé", "success");
   }
 
@@ -1699,7 +1682,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.saveFamilyLocal(fam);
     this.regenerateFamilyBeneficiarySql(famId, true);
     this.regenerateFamilySql(famId, true);
-    this.renderFamilyEditor(famId);
+    // TRANCHE 2: renderFamilyEditor supprimé — la mutation du filtre est reflétée
+    // par le getter selectedFamilyFilters. Les SQL sont régénérés ci-dessus.
+    this.cdr.markForCheck();
   }
 
   private updateFamilyFilterBindingMode(
@@ -1746,7 +1731,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.saveFamilyLocal(fam);
     this.regenerateFamilyBeneficiarySql(famId, true);
     this.regenerateFamilySql(famId, true);
-    this.renderFamilyEditor(famId);
+    // TRANCHE 2: renderFamilyEditor supprimé — Angular reflète la mutation immédiatement.
+    this.cdr.markForCheck();
   }
 
   private updateFamilyFilterBoundColumnForTable(
@@ -2273,7 +2259,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     if (existingIndex >= 0) cls.vars[existingIndex] = nextVar;
     else cls.vars.push(nextVar);
     this.saveFamilyLocal(fam);
-    this.renderFamilyEditor(famId);
+    // TRANCHE 3: renderFamilyEditor remplacé par renderLegacyFamilySubSections direct.
+    // upsertGeneratedVar modifie fam.classes → le schema builder legacy doit se rafraîchir.
+    // loadBeneficiaryState inutile ici (aucune modification de la table bénéficiaire).
+    this.renderLegacyFamilySubSections(famId);
     this.regenerateFamilySql(famId, true);
   }
 
@@ -2296,207 +2285,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return cls;
   }
 
-  private async renderSchemaAssistant(famId: string): Promise<void> {
-    const wrap = document.getElementById("schemaBuilderWrap");
-    if (!wrap) return;
-    wrap.innerHTML =
-      '<div class="text-muted" style="padding:8px 0">Chargement du schéma SQL Server...</div>';
-    try {
-      const schema = await this.ensureSchemaMeta();
-      const fam = this.getFamily(famId);
-      if (!fam) return;
-      const state = this.getBuilderState(famId, fam, schema);
-      const baseTableOptions = this.getFamilyVisibleTables(schema, fam);
-      const allVisibleTableNames = baseTableOptions.map(
-        (table: any) => table.name,
-      );
-      const visibleTables = [
-        state.baseTable,
-        ...(state.secondaryTables || []),
-      ].filter(
-        (tableName: string, index: number, list: string[]) =>
-          tableName &&
-          allVisibleTableNames.includes(tableName) &&
-          list.indexOf(tableName) === index,
-      );
-      const secondaryTableOptions = baseTableOptions.filter(
-        (table: any) =>
-          table.name !== state.baseTable && !visibleTables.includes(table.name),
-      );
-      const hiddenTables = this.hiddenFamilyTables;
-      wrap.innerHTML = `
-<div class="form-grid c3" style="margin-bottom:14px">
-  <div class="form-row" style="margin:0">
-    <label class="form-label">Table principale</label>
-    <select class="form-input" onchange="setFamilyBaseTable('${this.escAttr(
-      famId,
-    )}', this.value)">
-      ${baseTableOptions
-        .map(
-          (t: any) =>
-            `<option value="${this.escAttr(t.name)}" ${t.name === state.baseTable ? "selected" : ""}>${this.escHtml(t.name)}${t.comment ? ` - ${this.escHtml(t.comment)}` : ""}</option>`,
-        )
-        .join("")}
-    </select>
-  </div>
-  <div class="form-row" style="margin:0">
-    <label class="form-label">Tables secondaires</label>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <select class="form-input" id="schemaSecondaryTableSelect_${this.escAttr(
-        famId,
-      )}" style="min-width:220px;flex:1">
-        <option value="">Ajouter une table secondaire</option>
-        ${secondaryTableOptions
-          .map(
-            (table: any) =>
-              `<option value="${this.escAttr(table.name)}">${this.escHtml(table.name)}${table.comment ? ` - ${this.escHtml(table.comment)}` : ""}</option>`,
-          )
-          .join("")}
-      </select>
-      <button class="btn sm" onclick="addSchemaSecondaryTable('${this.escAttr(
-        famId,
-      )}', document.getElementById('schemaSecondaryTableSelect_${this.escAttr(
-        famId,
-      )}').value)">Ajouter</button>
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
-      ${
-        (state.secondaryTables || []).length
-          ? state.secondaryTables
-              .map(
-                (tableName: string) =>
-                  `<span class="chip chip-teal">${this.escHtml(
-                    tableName,
-                  )} <button type="button" onclick="removeSchemaSecondaryTable('${this.escAttr(
-                    famId,
-                  )}','${this.escJs(tableName)}')" style="background:none;border:none;color:inherit;cursor:pointer;padding:0 0 0 6px">×</button></span>`,
-              )
-              .join("")
-          : `<span class="text-muted">Aucune table secondaire affichée</span>`
-      }
-    </div>
-  </div>
-  <div class="form-row" style="margin:0">
-    <label class="form-label">Aide</label>
-    <div class="text-muted" style="padding-top:9px">La table principale reste celle choisie ici. Les autres tables peuvent servir de sources secondaires, meme sans jointure automatique, via une correspondance manuelle. Tables masquees au superadmin : ${hiddenTables
-      .map((name) => this.escHtml(name))
-      .join(", ")}.</div>
-  </div>
-  <div class="form-row" style="margin:0">
-    <label class="form-label">Actions</label>
-    <div class="flex gap-8" style="padding-top:2px">
-      <button class="btn sm" onclick="regenerateFamilySql('${this.escAttr(
-        famId,
-      )}', false, true)">Régénérer SELECT</button>
-      <button class="btn sm" onclick="testFamilyQuery('${this.escAttr(
-        famId,
-      )}')">Tester id=1</button>
-    </div>
-  </div>
-</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px">
-  ${visibleTables
-    .map((tableName: string) => {
-      const table = this.getTableMeta(schema, tableName);
-      const relationPath = this.getJoinPlan(schema, state.baseTable, tableName);
-      const columns = this.getColumnsForTable(schema, tableName);
-      const relationLabel =
-        tableName === state.baseTable
-          ? "Base"
-          : relationPath?.length
-            ? "Join"
-            : "Reference";
-      const relationTone =
-        tableName === state.baseTable
-          ? "chip-purple"
-          : relationPath?.length
-            ? "chip-teal"
-            : "chip";
-      const relationSummary =
-        tableName === state.baseTable
-          ? "Table principale active"
-          : relationPath?.length
-            ? relationPath
-                .map(
-                  (step: any) =>
-                    `${step.relation.table}.${step.relation.column} -> ${step.relation.referencedTable}.${step.relation.referencedColumn}`,
-                )
-                .join(" | ")
-            : "Aucune jointure automatique detectee. Vous pouvez tout de meme ajouter des variables puis definir une correspondance manuelle.";
-      return `<div style="border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff">
-        <div class="flex gap-8" style="align-items:flex-start;margin-bottom:10px">
-          <div>
-            <div style="font-weight:700;color:var(--text)">${this.escHtml(
-              tableName,
-            )}</div>
-            <div class="text-muted">${this.escHtml(
-              table?.comment || this.humanizeSchemaName(tableName),
-            )}</div>
-          </div>
-          <span class="chip ${relationTone}">${relationLabel}</span>
-        </div>
-        <div class="text-muted" style="font-size:11px;margin-bottom:10px">${this.escHtml(
-          relationSummary,
-        )}</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${columns
-            .map((col: any) => {
-              const key = `${tableName}.${col.name}`;
-              return `<div style="border:1px solid #edf0f4;border-radius:12px;padding:10px 12px">
-                <div class="flex gap-8" style="align-items:flex-start">
-                  <div style="flex:1">
-                    <div style="font-weight:600;color:var(--text)">${this.escHtml(
-                      col.name,
-                    )}</div>
-                    <div class="text-muted">${this.escHtml(
-                      col.comment || this.humanizeSchemaName(col.name),
-                    )} · ${this.escHtml(col.type || "")}</div>
-                  </div>
-                  <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
-                    <input type="checkbox" ${state.selectedColumns[key] ? "checked" : ""} onchange="toggleSchemaColumnSelection('${this.escAttr(
-                      famId,
-                    )}','${this.escJs(tableName)}','${this.escJs(col.name)}')">
-                    Tableau
-                  </label>
-                </div>
-                <div class="flex gap-8" style="margin-top:8px">
-                  <button class="btn sm" onclick="addSchemaScalar('${this.escAttr(
-                    famId,
-                  )}','${this.escJs(tableName)}','${this.escJs(
-                    col.name,
-                  )}')">Simple</button>
-                  <button class="btn sm" onclick="addSchemaList('${this.escAttr(
-                    famId,
-                  )}','${this.escJs(tableName)}','${this.escJs(
-                    col.name,
-                  )}')">Liste</button>
-                </div>
-              </div>`;
-            })
-            .join("")}
-        </div>
-        <div style="margin-top:10px">
-          <button class="btn sm primary" onclick="addSchemaTableVar('${this.escAttr(
-            famId,
-          )}','${this.escJs(tableName)}')">Créer un tableau d'objets depuis les colonnes cochées</button>
-        </div>
-      </div>`;
-    })
-    .join("")}
-</div>
-<div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:14px;background:#fbfcfe">
-  <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Aperçu du test de requête</div>
-  <pre id="schemaPreviewBox" style="margin:0;white-space:pre-wrap;font-size:11px;color:var(--text2)">Cliquez sur "Tester id=1" pour voir le premier enregistrement retourné.</pre>
-</div>`;
-    } catch (error: any) {
-      wrap.innerHTML = `<div class="text-danger">${this.escHtml(error?.message || "Erreur")}</div>`;
-    }
-  }
+  // Phase 4 Tranche 4: renderSchemaAssistant + syncSchemaPreviewBox supprimées — Angular template
 
-  private async setFamilyBaseTable(
-    famId: string,
-    tableName: string,
-  ): Promise<void> {
+  async setFamilyBaseTable(famId: string, tableName: string): Promise<void> {
     const fam = this.getFamily(famId);
     if (!fam) return;
     const schema = await this.ensureSchemaMeta();
@@ -2505,11 +2296,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     state.secondaryTables = (state.secondaryTables || []).filter(
       (name: string) => name && name !== tableName,
     );
-    await this.renderSchemaAssistant(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private async addSchemaSecondaryTable(
+  async addSchemaSecondaryTable(
     famId: string,
     tableName: string,
   ): Promise<void> {
@@ -2520,10 +2311,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     state.secondaryTables = [
       ...new Set([...(state.secondaryTables || []), tableName]),
     ].filter((name: string) => name && name !== state.baseTable);
-    await this.renderSchemaAssistant(famId);
+    this.cdr.markForCheck();
   }
 
-  private async removeSchemaSecondaryTable(
+  async removeSchemaSecondaryTable(
     famId: string,
     tableName: string,
   ): Promise<void> {
@@ -2534,10 +2325,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     state.secondaryTables = (state.secondaryTables || []).filter(
       (name: string) => name && name !== tableName,
     );
-    await this.renderSchemaAssistant(famId);
+    this.cdr.markForCheck();
   }
 
-  private async toggleSchemaColumnSelection(
+  async toggleSchemaColumnSelection(
     famId: string,
     tableName: string,
     columnName: string,
@@ -2548,10 +2339,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const state = this.getBuilderState(famId, fam, schema);
     const key = `${tableName}.${columnName}`;
     state.selectedColumns[key] = !state.selectedColumns[key];
-    await this.renderSchemaAssistant(famId);
+    this.cdr.markForCheck();
   }
 
-  private async addSchemaScalar(
+  async addSchemaScalar(
     famId: string,
     tableName: string,
     columnName: string,
@@ -2580,7 +2371,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     });
   }
 
-  private async addSchemaList(
+  async addSchemaList(
     famId: string,
     tableName: string,
     columnName: string,
@@ -2607,10 +2398,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     });
   }
 
-  private async addSchemaTableVar(
-    famId: string,
-    tableName: string,
-  ): Promise<void> {
+  async addSchemaTableVar(famId: string, tableName: string): Promise<void> {
     const fam = this.getFamily(famId);
     if (!fam) return;
     const schema = await this.ensureSchemaMeta();
@@ -2652,11 +2440,12 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.upsertGeneratedVar(famId, tableName, nextVar);
   }
 
-  private async testFamilyQuery(famId: string): Promise<void> {
+  async testFamilyQuery(famId: string): Promise<void> {
     const fam = this.getFamily(famId);
-    const box = document.getElementById("schemaPreviewBox");
-    if (!fam?.sql || !box) return;
-    box.textContent = "Test en cours...";
+    if (!fam?.sql) return;
+    this.schemaPreviewState = "loading";
+    this.schemaPreviewText = "Test en cours...";
+    this.cdr.markForCheck();
     try {
       const rows = await this.runSelect(fam.sql, {
         id: 1,
@@ -2665,170 +2454,17 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         etablissementId: 1,
         etabId: 1,
       });
-      box.textContent = JSON.stringify(rows[0] || {}, null, 2);
+      this.schemaPreviewState = "idle";
+      this.schemaPreviewText = JSON.stringify(rows[0] || {}, null, 2);
     } catch (error: any) {
-      box.textContent = error?.message || "Erreur";
+      this.schemaPreviewState = "error";
+      this.schemaPreviewText = error?.message || "Erreur";
     }
+    this.cdr.markForCheck();
   }
 
-  private renderClassesContainer(famId: string): void {
-    const fam = this.getFamily(famId);
-    const container = document.getElementById("classesContainer");
-    if (!container || !fam) return;
-    container.innerHTML = "";
-    (fam.classes || []).forEach((cls: any, ci: number) => {
-      const block = document.createElement("div");
-      block.className = "class-block";
-      block.innerHTML = `
-<div class="class-block-header">
-  <div class="class-color-dot" style="background:${cls.couleur}"></div>
-  <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px">
-    <label class="form-label" style="font-size:10px;margin:0">Libellé de classe affiché à l'admin</label>
-    <input class="class-name-input" value="${this.escAttr(cls.nom)}" placeholder="Libellé affiché" onchange="updateClassProp('${this.escAttr(
-      famId,
-    )}',${ci},'nom',this.value)">
-    ${cls.sourceTable ? `<div class="text-muted" style="font-size:10px">Table SQL: ${this.escHtml(cls.sourceTable)}</div>` : ""}
-  </div>
-  <select class="color-select" onchange="updateClassProp('${this.escAttr(
-    famId,
-  )}',${ci},'couleur',this.value)">
-    ${[
-      "#6c63ff",
-      "#48bb78",
-      "#9f7aea",
-      "#f6ad55",
-      "#fc5c5c",
-      "#63b3ed",
-      "#4fd1c5",
-      "#ed8936",
-      "#f97316",
-    ]
-      .map(
-        (c) =>
-          `<option value="${c}" ${cls.couleur === c ? "selected" : ""}>${c}</option>`,
-      )
-      .join("")}
-  </select>
-  <button class="del-cls-btn" onclick="deleteClassBlock('${this.escAttr(
-    famId,
-  )}',${ci})">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-  </button>
-</div>
-
-<div class="vars-area" id="vars_${ci}">
-  ${(cls.vars || [])
-    .map((v: any, vi: number) =>
-      this.renderVarPill(v, vi, ci, famId, cls.couleur),
-    )
-    .join("")}
-</div>
-
-<div class="var-add-row">
-  <input class="var-input-sm" id="vt_${ci}" placeholder="tech_variable">
-  <input class="var-input-sm label" id="vl_${ci}" placeholder="Libellé">
-  <select class="type-select" id="vtype_${ci}" onchange="onVarTypeChange(${ci})">
-    <option value="scalar">Simple</option>
-    <option value="list">Liste</option>
-    <option value="list-object">Tableau</option>
-  </select>
-  <button class="btn sm" type="button" onclick="addVar('${this.escAttr(
-    famId,
-  )}',${ci})">Ajouter</button>
-</div>
-<div class="cols-area" id="cols_area_${ci}">
-  <div class="cols-area-label">Colonnes du tableau</div>
-  <div id="cols_pills_${ci}"></div>
-</div>
-<div class="col-add-row" id="col_add_${ci}">
-  <input class="var-input-sm" id="ck_${ci}" placeholder="cle_technique">
-  <input class="var-input-sm label" id="cl_${ci}" placeholder="Libellé">
-  <button class="btn sm" type="button" onclick="addTempCol(${ci})">Ajouter colonne</button>
-</div>
-
-<div style="margin-top:10px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;background:#fafbfd;font-size:11px;color:var(--text2)">
-  Variables pilotées par le schéma SQL Server. Utilisez l'assistant ci-dessus pour ajouter des champs, listes et tableaux d'objets.
-</div>
-
-</div>`;
-      container.appendChild(block);
-      this.onVarTypeChange(ci);
-    });
-  }
-
-  private renderVarPill(
-    v: any,
-    vi: number,
-    ci: number,
-    famId: string,
-    couleur: string,
-  ): string {
-    const isObj = v.type === "list-object";
-    const isList = v.type === "list";
-    const typeTag = isObj
-      ? '<span class="var-pill-type obj">TABLE</span>'
-      : isList
-        ? '<span class="var-pill-type">LIST</span>'
-        : "";
-    const sqlTag =
-      isObj && String(v.sqlQuery || "").trim()
-        ? '<span class="var-pill-type" style="background:#dbeafe;color:#1d4ed8">SQL</span>'
-        : "";
-    const customSqlTag =
-      isObj && v.customSqlQuery
-        ? '<span class="var-pill-type" style="background:#fef3c7;color:#92400e">SQL personnalisé</span>'
-        : "";
-    const cols =
-      isObj && v.columns && v.columns.length
-        ? `<span style="font-size:9px;color:${couleur};opacity:.7;margin-left:3px">[${v.columns
-            .map((c: any) => c.key)
-            .join(",")}]</span>`
-        : "";
-    const pillMarkup = `<div class="var-pill" style="background:${couleur}15;border-color:${couleur}40;color:${couleur}">
-          <span class="var-pill-tech">{{${isObj ? "#" : isList ? "#" : ""}${this.escHtml(
-            v.tech,
-          )}${isObj ? ":table" : ""}}}</span>
-          <span class="var-pill-label">→ ${this.escHtml(v.label || v.tech || "")}</span>
-          ${typeTag}${sqlTag}${customSqlTag}${cols}
-          <button class="var-pill-del" onclick="deleteVar('${this.escAttr(
-            famId,
-          )}',${ci},${vi})">×</button>
-        </div>`;
-    const labelEditor = `<label class="form-label" style="font-size:10px;color:var(--text2);margin:0">
-          Nom affiché
-          <input class="form-input" value="${this.escAttr(
-            v.label || v.tech || "",
-          )}" onchange="updateVarLabel('${this.escAttr(
-            famId,
-          )}',${ci},${vi},this.value)" style="display:block;width:100%;margin-top:4px" placeholder="Nom affiché">
-        </label>`;
-    if (!isObj) {
-      const bindingEditor = this.renderSimpleVarBindingEditor(
-        v,
-        vi,
-        ci,
-        famId,
-        couleur,
-      );
-      const listLookupEditor = this.renderListVarLookupEditor(
-        v,
-        vi,
-        ci,
-        famId,
-        couleur,
-      );
-      return bindingEditor || listLookupEditor
-        ? `<div style="display:flex;flex-direction:column;gap:6px;max-width:100%">${pillMarkup}${labelEditor}${bindingEditor}${listLookupEditor}</div>`
-        : `<div style="display:flex;flex-direction:column;gap:6px;max-width:100%">${pillMarkup}${labelEditor}</div>`;
-    }
-    return `<div style="display:flex;flex-direction:column;gap:6px;max-width:100%;padding:8px 10px;border:1px dashed ${couleur}35;border-radius:12px;background:${couleur}08">
-          ${pillMarkup}
-          ${labelEditor}
-          ${this.renderListObjectSqlEditor(v, vi, ci, famId, couleur)}
-          <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${couleur};opacity:.9">Colonnes et affichage</div>
-          ${this.renderVarColumnEditor(v, vi, ci, famId, couleur)}
-        </div>`;
-  }
+  // ── Phase 4 Tranche 3: renderClassesContainer et tous les renderers legacy supprimés ──
+  // Le bloc Classes & Variables est maintenant 100% Angular state-driven (*ngFor dans le template).
 
   private getListObjectDisplayColumns(varDef: any): any[] {
     if (Array.isArray(varDef?.columns) && varDef.columns.length) {
@@ -2843,42 +2479,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return [];
   }
 
-  private buildLookupTableOptions(selectedTable: string): string {
-    const activeSchema = this.schemaMetaCache;
-    if (!activeSchema) return "";
-    return this.getVisibleFamilySchemaTables(
-      activeSchema,
-      selectedTable ? [selectedTable] : [],
-    )
-      .map(
-        (table: any) =>
-          `<option value="${this.escAttr(table.name)}" ${
-            table.name === selectedTable ? "selected" : ""
-          }>${this.escHtml(
-            table.comment || this.humanizeSchemaName(table.name),
-          )}</option>`,
-      )
-      .join("");
-  }
-
-  private buildLookupColumnOptions(
-    tableName: string,
-    selectedColumn: string,
-  ): string {
-    const activeSchema = this.schemaMetaCache;
-    if (!activeSchema || !tableName) return "";
-    return this.getColumnsForTable(activeSchema, tableName)
-      .map(
-        (column: any) =>
-          `<option value="${this.escAttr(column.name)}" ${
-            column.name === selectedColumn ? "selected" : ""
-          }>${this.escHtml(
-            column.comment || this.humanizeSchemaName(column.name),
-          )}</option>`,
-      )
-      .join("");
-  }
-
   private getAvailableVarSourceColumns(varDef: any): any[] {
     if (!this.schemaMetaCache || !varDef?.sourceTable) return [];
     const selected = new Set(
@@ -2890,460 +2490,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       this.schemaMetaCache,
       varDef.sourceTable,
     ).filter((column: any) => !selected.has(column.name));
-  }
-
-  private getLookupEditorMode(config: any = {}): string {
-    return String(config?.lookupEditorMode || "").trim() === "manual"
-      ? "manual"
-      : "schema";
-  }
-
-  private renderLookupSourceModeSwitch(
-    mode: string,
-    onChangeHandler: string,
-    args: any[] = [],
-    disabled = false,
-  ): string {
-    const serializedArgs = args
-      .map((arg) => {
-        if (typeof arg === "number") return String(arg);
-        return `'${this.escJs(String(arg ?? ""))}'`;
-      })
-      .join(",");
-    return `<label class="form-label" style="font-size:10px;color:var(--text2)">
-          Source des noms
-          <select class="form-input" ${disabled ? "disabled" : ""} onchange="${onChangeHandler}(${serializedArgs},this.value)" style="display:block;width:100%;margin-top:4px">
-            <option value="schema" ${mode !== "manual" ? "selected" : ""}>Schéma détecté</option>
-            <option value="manual" ${mode === "manual" ? "selected" : ""}>Saisie manuelle</option>
-          </select>
-        </label>`;
-  }
-
-  private renderLookupTableField(
-    mode: string,
-    value: string,
-    onChangeHandler: string,
-    args: any[] = [],
-  ): string {
-    const serializedArgs = args
-      .map((arg) => {
-        if (typeof arg === "number") return String(arg);
-        return `'${this.escJs(String(arg ?? ""))}'`;
-      })
-      .join(",");
-    if (mode === "manual") {
-      return `<label class="form-label" style="font-size:10px;color:var(--text2)">
-            Table libellé
-            <input class="form-input" value="${this.escAttr(
-              value || "",
-            )}" onchange="${onChangeHandler}(${serializedArgs},this.value)" style="display:block;width:100%;margin-top:4px" placeholder="Ex: Grade">
-          </label>`;
-    }
-    return `<label class="form-label" style="font-size:10px;color:var(--text2)">
-          Table libellé
-          <select class="form-input" onchange="${onChangeHandler}(${serializedArgs},this.value)" style="display:block;width:100%;margin-top:4px">
-            <option value="">Choisir une table</option>
-            ${this.buildLookupTableOptions(value)}
-          </select>
-        </label>`;
-  }
-
-  private renderLookupColumnField(
-    label: string,
-    mode: string,
-    tableName: string,
-    value: string,
-    onChangeHandler: string,
-    args: any[] = [],
-  ): string {
-    const serializedArgs = args
-      .map((arg) => {
-        if (typeof arg === "number") return String(arg);
-        return `'${this.escJs(String(arg ?? ""))}'`;
-      })
-      .join(",");
-    if (mode === "manual") {
-      return `<label class="form-label" style="font-size:10px;color:var(--text2)">
-            ${this.escHtml(label)}
-            <input class="form-input" value="${this.escAttr(
-              value || "",
-            )}" onchange="${onChangeHandler}(${serializedArgs},this.value)" style="display:block;width:100%;margin-top:4px" placeholder="Ex: CodeUnivad">
-          </label>`;
-    }
-    return `<label class="form-label" style="font-size:10px;color:var(--text2)">
-          ${this.escHtml(label)}
-          <select class="form-input" onchange="${onChangeHandler}(${serializedArgs},this.value)" style="display:block;width:100%;margin-top:4px">
-            <option value="">Choisir une colonne</option>
-            ${this.buildLookupColumnOptions(tableName, value)}
-          </select>
-        </label>`;
-  }
-
-  private renderVarColumnEditor(
-    v: any,
-    vi: number,
-    ci: number,
-    famId: string,
-    couleur: string,
-  ): string {
-    const orderedCols = this.getListObjectDisplayColumns(v);
-    const addEditor = this.renderAddVarColumnEditor(v, vi, ci, famId, couleur);
-    if (!orderedCols.length) {
-      return `<div style="display:flex;flex-direction:column;gap:8px">
-            <div style="font-size:10px;color:${couleur};opacity:.8">Aucune colonne définie</div>
-            ${addEditor}
-          </div>`;
-    }
-    return `<div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px">
-            ${orderedCols
-              .map((col: any, colIndex: number) => {
-                const sourceMeta = Array.isArray(v.sourceColumns)
-                  ? v.sourceColumns[colIndex] || null
-                  : null;
-                const displayMode =
-                  sourceMeta?.displayMode === "lookup" ? "lookup" : "raw";
-                const lookupTable = sourceMeta?.lookupTable || "";
-                const lookupValueColumn = sourceMeta?.lookupValueColumn || "";
-                const lookupLabelColumn = sourceMeta?.lookupLabelColumn || "";
-                const lookupEditorMode = this.getLookupEditorMode(sourceMeta);
-                const hasSqlSource = !!sourceMeta?.column;
-                const sourceLabel = hasSqlSource
-                  ? `Source SQL : ${sourceMeta.column}`
-                  : "Colonne libre sans source SQL liée";
-                return `
-                <div style="display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid ${couleur}35;border-radius:10px;background:#fff">
-                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-                    <div>
-                      <div style="font-size:12px;font-weight:700;color:var(--text)">${this.escHtml(
-                        col.label || col.key,
-                      )}</div>
-                      <div style="font-size:10px;color:var(--text3)">${this.escHtml(
-                        col.key || "",
-                      )}</div>
-                      <div style="font-size:10px;color:${couleur};margin-top:2px">${this.escHtml(
-                        sourceLabel,
-                      )}</div>
-                    </div>
-                    <div style="display:flex;gap:4px">
-                      <button class="col-pill-btn" type="button" title="Monter" onclick="moveVarColumn('${this.escAttr(
-                        famId,
-                      )}',${ci},${vi},${colIndex},-1)" ${
-                        colIndex === 0 ? "disabled" : ""
-                      }>&uarr;</button>
-                      <button class="col-pill-btn" type="button" title="Descendre" onclick="moveVarColumn('${this.escAttr(
-                        famId,
-                      )}',${ci},${vi},${colIndex},1)" ${
-                        colIndex === orderedCols.length - 1 ? "disabled" : ""
-                      }>&darr;</button>
-                      <button class="col-pill-del" type="button" title="Supprimer" onclick="removeVarColumn('${this.escAttr(
-                        famId,
-                      )}',${ci},${vi},${colIndex})">×</button>
-                    </div>
-                  </div>
-                  ${
-                    hasSqlSource
-                      ? `<label class="form-label" style="font-size:10px;color:var(--text2)">
-                          Affichage
-                          <select class="form-input" onchange="updateVarColumnLookupField('${this.escAttr(
-                            famId,
-                          )}',${ci},${vi},${colIndex},'displayMode',this.value)" style="display:block;width:100%;margin-top:4px">
-                            <option value="raw" ${
-                              displayMode !== "lookup" ? "selected" : ""
-                            }>Valeur source</option>
-                            <option value="lookup" ${
-                              displayMode === "lookup" ? "selected" : ""
-                            }>Libellé depuis une table</option>
-                          </select>
-                        </label>
-                        ${
-                          displayMode === "lookup"
-                            ? `${this.renderLookupSourceModeSwitch(lookupEditorMode, "updateVarColumnLookupMode", [famId, ci, vi, colIndex])}
-                              ${this.renderLookupTableField(lookupEditorMode, lookupTable, "updateVarColumnLookupField", [famId, ci, vi, colIndex, "lookupTable"])}
-                              ${this.renderLookupColumnField("Colonne code", lookupEditorMode, lookupTable, lookupValueColumn, "updateVarColumnLookupField", [famId, ci, vi, colIndex, "lookupValueColumn"])}
-                              ${this.renderLookupColumnField("Colonne libellé", lookupEditorMode, lookupTable, lookupLabelColumn, "updateVarColumnLookupField", [famId, ci, vi, colIndex, "lookupLabelColumn"])}
-                              <div style="font-size:10px;color:var(--text3)">Vous pouvez choisir dans le schéma ou saisir manuellement les noms SQL.</div>`
-                            : ""
-                        }`
-                      : ""
-                  }
-                </div>`;
-              })
-              .join("")}
-          </div>
-          ${addEditor}
-        </div>`;
-  }
-
-  private renderAddVarColumnEditor(
-    v: any,
-    vi: number,
-    ci: number,
-    famId: string,
-    couleur: string,
-  ): string {
-    if (v?.type !== "list-object") return "";
-    const addMode =
-      String(v?.addColumnMode || "").trim() === "manual" ? "manual" : "schema";
-    const availableColumns = this.getAvailableVarSourceColumns(v);
-    const sourceId = `var_col_source_${ci}_${vi}`;
-    const keyId = `var_col_key_${ci}_${vi}`;
-    const labelId = `var_col_label_${ci}_${vi}`;
-    return `<div style="padding:10px;border:1px dashed ${couleur}35;border-radius:12px;background:#fff">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${couleur};opacity:.9;margin-bottom:8px">Ajouter une colonne</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">
-            <label class="form-label" style="font-size:10px;color:var(--text2)">
-              Source
-              <select class="form-input" onchange="updateVarAddColumnMode('${this.escAttr(
-                famId,
-              )}',${ci},${vi},this.value)" style="display:block;width:100%;margin-top:4px">
-                <option value="schema" ${addMode !== "manual" ? "selected" : ""}>Colonne du schéma</option>
-                <option value="manual" ${addMode === "manual" ? "selected" : ""}>Saisie manuelle</option>
-              </select>
-            </label>
-            ${
-              addMode === "manual"
-                ? `<label class="form-label" style="font-size:10px;color:var(--text2)">
-                    Colonne source
-                    <input id="${sourceId}" class="form-input" style="display:block;width:100%;margin-top:4px" placeholder="Ex: Grade">
-                  </label>`
-                : `<label class="form-label" style="font-size:10px;color:var(--text2)">
-                    Colonne source
-                    <select id="${sourceId}" class="form-input" style="display:block;width:100%;margin-top:4px">
-                      <option value="">Choisir une colonne</option>
-                      ${availableColumns
-                        .map(
-                          (column: any) =>
-                            `<option value="${this.escAttr(column.name)}">${this.escHtml(
-                              column.comment ||
-                                this.humanizeSchemaName(column.name),
-                            )}</option>`,
-                        )
-                        .join("")}
-                    </select>
-                  </label>`
-            }
-            <label class="form-label" style="font-size:10px;color:var(--text2)">
-              Clé technique
-              <input id="${keyId}" class="form-input" style="display:block;width:100%;margin-top:4px" placeholder="Ex: grade">
-            </label>
-            <label class="form-label" style="font-size:10px;color:var(--text2)">
-              Libellé
-              <input id="${labelId}" class="form-input" style="display:block;width:100%;margin-top:4px" placeholder="Ex: Grade">
-            </label>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
-            <div style="font-size:10px;color:var(--text3)">
-              ${
-                addMode === "manual"
-                  ? "Ajoutez une colonne même si elle n'a pas été détectée dans le schéma."
-                  : availableColumns.length
-                    ? "Ajoutez de nouvelles colonnes sans recréer le tableau."
-                    : "Toutes les colonnes détectées sont déjà utilisées. Passez en saisie manuelle si besoin."
-              }
-            </div>
-            <button class="btn sm" type="button" onclick="addVarColumn('${this.escAttr(
-              famId,
-            )}',${ci},${vi})">Ajouter la colonne</button>
-          </div>
-        </div>`;
-  }
-
-  private renderListObjectSqlEditor(
-    v: any,
-    vi: number,
-    ci: number,
-    famId: string,
-    couleur: string,
-  ): string {
-    if (v?.type !== "list-object") return "";
-    const sqlQuery = String(v.sqlQuery || "").trim();
-    return `<div style="margin-top:6px;padding:10px;border:1px dashed ${couleur}35;border-radius:12px;background:${couleur}08">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${couleur};opacity:.9;margin-bottom:8px">Requête SQL tableau</div>
-          <div style="font-size:10px;color:var(--text2);margin-bottom:8px">Utilisez une requête <strong>SELECT</strong> qui retourne plusieurs lignes, par exemple avec <strong>GROUP BY</strong>, <strong>SUM</strong>, <strong>COUNT</strong> ou <strong>HAVING</strong>. Le résultat sera injecté comme tableau JSON dans <code>{{#${this.escHtml(
-            v.tech,
-          )}:table}}</code>.</div>
-          <textarea class="sql-input" rows="8" style="min-height:150px" onchange="updateListObjectSqlQuery('${this.escAttr(
-            famId,
-          )}',${ci},${vi},this.value)" placeholder="SELECT idEnseignant, idModule, Groupe, COUNT(*) AS nb, SUM(NbSemainesPeriode) AS total_volume FROM ChargeDetailleeModule GROUP BY idEnseignant, idModule, Groupe HAVING COUNT(*) &gt; 1">${this.escHtml(
-            sqlQuery,
-          )}</textarea>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-            <button class="btn sm" type="button" onclick="generateListObjectSqlQueryFromSource('${this.escAttr(
-              famId,
-            )}',${ci},${vi})">Générer depuis la liaison</button>
-            <button class="btn sm" type="button" onclick="applySuggestedFiltersToListObjectSql('${this.escAttr(
-              famId,
-            )}',${ci},${vi})">Ajouter les filtres applicables</button>
-            <button class="btn sm" type="button" onclick="testListObjectSqlQuery('${this.escAttr(
-              famId,
-            )}',${ci},${vi})">Tester la requête</button>
-            <button class="btn sm" type="button" onclick="clearListObjectSqlQuery('${this.escAttr(
-              famId,
-            )}',${ci},${vi})">Revenir au mode colonnes liées</button>
-          </div>
-          <pre id="listObjectSqlPreview_${ci}_${vi}" style="margin:10px 0 0;white-space:pre-wrap;font-size:11px;color:var(--text2)">${
-            sqlQuery
-              ? 'Cliquez sur "Tester la requête" pour voir les premières lignes.'
-              : "Aucune requête SQL dédiée. La variable utilise le mode lié au schéma."
-          }</pre>
-        </div>`;
-  }
-
-  private renderListVarLookupEditor(
-    v: any,
-    vi: number,
-    ci: number,
-    famId: string,
-    couleur: string,
-  ): string {
-    if (v?.type !== "list" || !v?.sourceColumn) return "";
-    const displayMode = v.displayMode === "lookup" ? "lookup" : "raw";
-    const lookupTable = v.lookupTable || "";
-    const lookupValueColumn = v.lookupValueColumn || "";
-    const lookupLabelColumn = v.lookupLabelColumn || "";
-    const lookupEditorMode = this.getLookupEditorMode(v);
-    return `<div style="margin-top:6px;padding:10px;border:1px dashed ${couleur}35;border-radius:12px;background:${couleur}08">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${couleur};opacity:.9;margin-bottom:8px">Affichage de la liste</div>
-          <div style="font-size:10px;color:${couleur};margin-bottom:8px">${this.escHtml(
-            `Source SQL : ${v.sourceColumn}`,
-          )}</div>
-          <label class="form-label" style="font-size:10px;color:var(--text2)">
-            Affichage
-            <select class="form-input" onchange="updateListVarLookupField('${this.escAttr(
-              famId,
-            )}',${ci},${vi},'displayMode',this.value)" style="display:block;width:100%;margin-top:4px">
-              <option value="raw" ${displayMode !== "lookup" ? "selected" : ""}>Valeur source</option>
-              <option value="lookup" ${displayMode === "lookup" ? "selected" : ""}>Libellé depuis une table</option>
-            </select>
-          </label>
-          ${
-            displayMode === "lookup"
-              ? `${this.renderLookupSourceModeSwitch(lookupEditorMode, "updateListVarLookupMode", [famId, ci, vi])}
-                ${this.renderLookupTableField(lookupEditorMode, lookupTable, "updateListVarLookupField", [famId, ci, vi, "lookupTable"])}
-                ${this.renderLookupColumnField("Colonne code", lookupEditorMode, lookupTable, lookupValueColumn, "updateListVarLookupField", [famId, ci, vi, "lookupValueColumn"])}
-                ${this.renderLookupColumnField("Colonne libellé", lookupEditorMode, lookupTable, lookupLabelColumn, "updateListVarLookupField", [famId, ci, vi, "lookupLabelColumn"])}
-                <div style="font-size:10px;color:var(--text3)">Vous pouvez choisir dans le schéma ou saisir manuellement les noms SQL.</div>`
-              : ""
-          }
-        </div>`;
-  }
-
-  private renderSimpleVarBindingEditor(
-    v: any,
-    vi: number,
-    ci: number,
-    famId: string,
-    couleur: string,
-  ): string {
-    if (!this.schemaMetaCache || !v?.sourceTable) return "";
-    const fam = this.getFamily(famId);
-    if (!fam) return "";
-    const baseTable =
-      this.getBuilderState(famId, fam, this.schemaMetaCache).baseTable ||
-      v.baseTable ||
-      "";
-    if (!baseTable || v.sourceTable === baseTable) return "";
-    const relPath = this.getJoinPlan(
-      this.schemaMetaCache,
-      baseTable,
-      v.sourceTable,
-    );
-    const baseColumns = this.getColumnsForTable(
-      this.schemaMetaCache,
-      baseTable,
-    );
-    const sourceColumns = this.getColumnsForTable(
-      this.schemaMetaCache,
-      v.sourceTable,
-    );
-    const canAuto = !!relPath?.length;
-    const canManual = this.hasManualVarLink(this.schemaMetaCache, baseTable, v);
-    const mode =
-      v.linkMode === "manual" ||
-      (!canAuto && (v.matchBaseColumn || v.matchSourceColumn))
-        ? "manual"
-        : "auto";
-    const relationInfo = canAuto
-      ? relPath
-          .map(
-            (step: any) =>
-              `${step.relation.table}.${step.relation.column} -> ${step.relation.referencedTable}.${step.relation.referencedColumn}`,
-          )
-          .join(" | ")
-      : "Aucune jointure detectee dans le schema";
-    return `<div style="margin-top:6px;padding:10px;border:1px dashed ${couleur}35;border-radius:12px;background:${couleur}08">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${couleur};opacity:.9;margin-bottom:8px">Liaison de la variable</div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:8px">${this.escHtml(
-            relationInfo,
-          )}</div>
-          <label class="form-label" style="font-size:10px;color:var(--text2)">
-            Mode
-            <select class="form-input" onchange="updateVarLinkField('${this.escAttr(
-              famId,
-            )}',${ci},${vi},'linkMode',this.value)" style="display:block;width:100%;margin-top:4px">
-              <option value="auto" ${mode !== "manual" ? "selected" : ""}>Jointure automatique</option>
-              <option value="manual" ${mode === "manual" ? "selected" : ""}>Correspondance manuelle</option>
-            </select>
-          </label>
-          ${
-            mode === "manual"
-              ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-                  <label class="form-label" style="font-size:10px;color:var(--text2)">
-                    Colonne table principale
-                    <select class="form-input" onchange="updateVarLinkField('${this.escAttr(
-                      famId,
-                    )}',${ci},${vi},'matchBaseColumn',this.value)" style="display:block;width:100%;margin-top:4px">
-                      <option value="">Choisir une colonne</option>
-                      ${baseColumns
-                        .map(
-                          (column: any) =>
-                            `<option value="${this.escAttr(column.name)}" ${
-                              column.name === (v.matchBaseColumn || "")
-                                ? "selected"
-                                : ""
-                            }>${this.escHtml(
-                              column.comment ||
-                                this.humanizeSchemaName(column.name),
-                            )}</option>`,
-                        )
-                        .join("")}
-                    </select>
-                  </label>
-                  <label class="form-label" style="font-size:10px;color:var(--text2)">
-                    Colonne table secondaire
-                    <select class="form-input" onchange="updateVarLinkField('${this.escAttr(
-                      famId,
-                    )}',${ci},${vi},'matchSourceColumn',this.value)" style="display:block;width:100%;margin-top:4px">
-                      <option value="">Choisir une colonne</option>
-                      ${sourceColumns
-                        .map(
-                          (column: any) =>
-                            `<option value="${this.escAttr(column.name)}" ${
-                              column.name === (v.matchSourceColumn || "")
-                                ? "selected"
-                                : ""
-                            }>${this.escHtml(
-                              column.comment ||
-                                this.humanizeSchemaName(column.name),
-                            )}</option>`,
-                        )
-                        .join("")}
-                    </select>
-                  </label>
-                </div>
-                <div style="font-size:10px;color:var(--text3);margin-top:8px">${
-                  canManual
-                    ? "Correspondance valide"
-                    : "Choisissez la colonne code de la table principale et la colonne code de la table secondaire"
-                }</div>`
-              : `<div style="font-size:10px;color:var(--text3);margin-top:8px">${
-                  canAuto
-                    ? "La jointure automatique sera utilisee pour cette variable."
-                    : "Aucune jointure detectee. Passez en correspondance manuelle."
-                }</div>`
-          }
-        </div>`;
   }
 
   private async runSelect(
@@ -4179,7 +3325,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return this.buildAggregateSubquery("MAX", valueExpr, fromLines);
   }
 
-  private updateVarLinkField(
+  updateVarLinkField(
     famId: string,
     ci: number,
     vi: number,
@@ -4194,11 +3340,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       varDef.linkMode = "auto";
     }
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private moveVarColumn(
+  moveVarColumn(
     famId: string,
     ci: number,
     vi: number,
@@ -4250,11 +3396,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       }
     }
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private removeVarColumn(
+  removeVarColumn(
     famId: string,
     ci: number,
     vi: number,
@@ -4279,11 +3425,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       varDef.sourceColumns.splice(index, 1);
     }
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private updateVarAddColumnMode(
+  updateVarAddColumnMode(
     famId: string,
     ci: number,
     vi: number,
@@ -4294,25 +3440,18 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     if (!varDef || varDef.type !== "list-object") return;
     varDef.addColumnMode = mode === "manual" ? "manual" : "schema";
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
   }
 
-  private addVarColumn(famId: string, ci: number, vi: number): void {
+  addVarColumn(famId: string, ci: number, vi: number): void {
+    // Phase 4 Tranche 3: lecture depuis getAddColDraft(ci,vi) au lieu de document.getElementById
     const fam = this.getFamily(famId);
     const varDef = fam?.classes?.[ci]?.vars?.[vi];
     if (!varDef || varDef.type !== "list-object") return;
-    const sourceInput = document.getElementById(
-      `var_col_source_${ci}_${vi}`,
-    ) as HTMLInputElement | null;
-    const keyInput = document.getElementById(
-      `var_col_key_${ci}_${vi}`,
-    ) as HTMLInputElement | null;
-    const labelInput = document.getElementById(
-      `var_col_label_${ci}_${vi}`,
-    ) as HTMLInputElement | null;
-    const sourceColumn = String(sourceInput?.value || "").trim();
-    const keyRaw = String(keyInput?.value || "").trim();
-    const label = String(labelInput?.value || "").trim();
+    const draft = this.getAddColDraft(ci, vi);
+    const sourceColumn = String(draft.source || "").trim();
+    const keyRaw = String(draft.key || "").trim();
+    const label = String(draft.label || "").trim();
     const key = this.slugTech(keyRaw || sourceColumn);
     if (!sourceColumn) {
       this.toast("Choisissez ou saisissez une colonne source", "error");
@@ -4342,16 +3481,19 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       ...(Array.isArray(varDef.columns) ? varDef.columns : []),
       { key, label },
     ];
-    if (sourceInput) sourceInput.value = "";
-    if (keyInput) keyInput.value = "";
-    if (labelInput) labelInput.value = "";
+    this.addColDrafts[`${ci}_${vi}`] = {
+      source: "",
+      key: "",
+      label: "",
+      mode: draft.mode,
+    };
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
     this.toast("Colonne ajoutée", "success");
   }
 
-  private updateVarColumnLookupField(
+  updateVarColumnLookupField(
     famId: string,
     ci: number,
     vi: number,
@@ -4380,11 +3522,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     }
     varDef.sourceColumns[colIndex] = sourceCol;
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private updateVarColumnLookupMode(
+  updateVarColumnLookupMode(
     famId: string,
     ci: number,
     vi: number,
@@ -4407,11 +3549,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     };
     varDef.sourceColumns[colIndex] = sourceCol;
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private updateListVarLookupField(
+  updateListVarLookupField(
     famId: string,
     ci: number,
     vi: number,
@@ -4430,11 +3572,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       varDef.lookupLabelColumn = "";
     }
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private updateListVarLookupMode(
+  updateListVarLookupMode(
     famId: string,
     ci: number,
     vi: number,
@@ -4445,11 +3587,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     if (!varDef || varDef.type !== "list") return;
     varDef.lookupEditorMode = mode === "manual" ? "manual" : "schema";
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private updateListObjectSqlQuery(
+  updateListObjectSqlQuery(
     famId: string,
     ci: number,
     vi: number,
@@ -4461,18 +3603,18 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const sqlQuery = String(value || "").trim();
     if (sqlQuery && !/^select\b/i.test(sqlQuery)) {
       this.toast("La requête du tableau doit être un SELECT", "error");
-      this.renderClassesContainer(famId);
+      this.cdr.markForCheck();
       return;
     }
     varDef.sqlQuery = sqlQuery;
     varDef.customSqlQuery = !!sqlQuery;
     this.syncListObjectColumnsFromSql(varDef);
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
-  private generateListObjectSqlQueryFromSource(
+  generateListObjectSqlQueryFromSource(
     famId: string,
     ci: number,
     vi: number,
@@ -4492,12 +3634,12 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     varDef.customSqlQuery = false;
     this.syncListObjectColumnsFromSql(varDef);
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
     this.toast("Requête SQL du tableau générée", "success");
   }
 
-  private applySuggestedFiltersToListObjectSql(
+  applySuggestedFiltersToListObjectSql(
     famId: string,
     ci: number,
     vi: number,
@@ -4530,19 +3672,19 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     varDef.sqlQuery = nextSql;
     varDef.customSqlQuery = true;
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
     this.toast("Filtres applicables ajoutés au SQL du tableau", "success");
   }
 
-  private clearListObjectSqlQuery(famId: string, ci: number, vi: number): void {
+  clearListObjectSqlQuery(famId: string, ci: number, vi: number): void {
     const fam = this.getFamily(famId);
     const varDef = fam?.classes?.[ci]?.vars?.[vi];
     if (!varDef || varDef.type !== "list-object") return;
     varDef.sqlQuery = "";
     varDef.customSqlQuery = false;
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
   }
 
@@ -4551,20 +3693,25 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     ci: number,
     vi: number,
   ): Promise<void> {
+    // Phase 4 Tranche 3: listObjectSqlPreviews state au lieu de document.getElementById
+    const k = `${ci}_${vi}`;
     const fam = this.getFamily(famId);
     const varDef = fam?.classes?.[ci]?.vars?.[vi];
-    const box = document.getElementById(`listObjectSqlPreview_${ci}_${vi}`);
-    if (!box || !varDef || varDef.type !== "list-object") return;
+    if (!varDef || varDef.type !== "list-object") return;
     const sqlQuery = String(varDef.sqlQuery || "").trim();
     if (!sqlQuery) {
-      box.textContent = "Aucune requête SQL dédiée à tester.";
+      this.listObjectSqlPreviews[k] = "Aucune requête SQL dédiée à tester.";
+      this.cdr.markForCheck();
       return;
     }
     if (!/^select\b/i.test(sqlQuery)) {
-      box.textContent = "La requête doit commencer par SELECT.";
+      this.listObjectSqlPreviews[k] = "La requête doit commencer par SELECT.";
+      this.cdr.markForCheck();
       return;
     }
-    box.textContent = "Test en cours...";
+    this.listObjectSqlPreviews[k] = "Test en cours...";
+    this.listObjectSqlLoading[k] = true;
+    this.cdr.markForCheck();
     try {
       this.syncListObjectColumnsFromSql(varDef);
       this.saveFamilyLocal(fam);
@@ -4574,37 +3721,42 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         personId: 1,
         organizationId: 1,
       });
-      box.textContent = JSON.stringify(rows.slice(0, 10), null, 2);
+      this.listObjectSqlPreviews[k] = JSON.stringify(
+        rows.slice(0, 10),
+        null,
+        2,
+      );
     } catch (error: any) {
-      box.textContent = error?.message || "Erreur";
+      this.listObjectSqlPreviews[k] = error?.message || "Erreur";
     }
+    this.listObjectSqlLoading[k] = false;
+    this.cdr.markForCheck();
   }
 
-  private updateClassProp(
-    famId: string,
-    ci: number,
-    prop: string,
-    val: string,
-  ): void {
+  testListObjectSqlQueryAngular(famId: string, ci: number, vi: number): void {
+    void this.testListObjectSqlQuery(famId, ci, vi);
+  }
+
+  updateClassProp(famId: string, ci: number, prop: string, val: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam.classes = fam.classes || [];
     if (!fam.classes[ci]) return;
     fam.classes[ci][prop] = val;
     this.saveFamilyLocal(fam);
-    if (prop === "couleur") this.renderClassesContainer(famId);
+    if (prop === "couleur") this.cdr.markForCheck();
   }
 
-  private deleteClassBlock(famId: string, ci: number): void {
+  deleteClassBlock(famId: string, ci: number): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam.classes = fam.classes || [];
     fam.classes.splice(ci, 1);
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
   }
 
-  private deleteVar(famId: string, ci: number, vi: number): void {
+  deleteVar(famId: string, ci: number, vi: number): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam.classes = fam.classes || [];
@@ -4612,24 +3764,19 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     fam.classes[ci].vars = fam.classes[ci].vars || [];
     fam.classes[ci].vars.splice(vi, 1);
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
   }
 
-  private updateVarLabel(
-    famId: string,
-    ci: number,
-    vi: number,
-    value: string,
-  ): void {
+  updateVarLabel(famId: string, ci: number, vi: number, value: string): void {
     const fam = this.getFamily(famId);
     const varDef = fam?.classes?.[ci]?.vars?.[vi];
     if (!fam || !varDef) return;
     varDef.label = String(value || "").trim() || varDef.tech;
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
   }
 
-  private addClassBlock(famId: string): void {
+  addClassBlock(famId: string): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     fam.classes = fam.classes || [];
@@ -4639,97 +3786,58 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       vars: [],
     });
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
+    this.cdr.markForCheck();
   }
 
-  private onVarTypeChange(ci: number): void {
-    const type = (
-      document.getElementById(`vtype_${ci}`) as HTMLSelectElement | null
-    )?.value;
-    const isObj = type === "list-object";
-    const colsArea = document.getElementById(`cols_area_${ci}`);
-    const colAdd = document.getElementById(`col_add_${ci}`);
-    if (colsArea) colsArea.classList.toggle("visible", isObj);
-    if (colAdd) colAdd.classList.toggle("visible", isObj);
-    if (isObj && !this.tempColsByClass[ci]) this.tempColsByClass[ci] = [];
-    this.refreshTempColPills(ci);
-  }
+  // Phase 4 Tranche 3: onVarTypeChange supprimée — visibilité gérée par *ngIf newVarDrafts[ci].type
+  // Phase 4 Tranche 3: refreshTempColPills supprimée — Angular *ngFor sur tempColsByClass[ci]
 
-  private addTempCol(ci: number): void {
-    const keyInput = document.getElementById(
-      `ck_${ci}`,
-    ) as HTMLInputElement | null;
-    const labelInput = document.getElementById(
-      `cl_${ci}`,
-    ) as HTMLInputElement | null;
-    const key = String(keyInput?.value || "")
+  addTempCol(ci: number): void {
+    this.ensureClassDrafts(this.selectedFamilyClasses);
+    const draft = this.newTempColDrafts[ci] || { key: "", label: "" };
+    const key = String(draft.key || "")
       .trim()
       .replace(/\s/g, "_");
-    const label = String(labelInput?.value || "").trim();
+    const label = String(draft.label || "").trim();
     if (!key || !label) {
       this.toast("Remplissez clé et libellé", "error");
       return;
     }
     if (!this.tempColsByClass[ci]) this.tempColsByClass[ci] = [];
     this.tempColsByClass[ci].push({ key, label });
-    if (keyInput) keyInput.value = "";
-    if (labelInput) labelInput.value = "";
-    this.refreshTempColPills(ci);
+    this.newTempColDrafts[ci] = { key: "", label: "" };
+    this.cdr.markForCheck();
   }
 
-  private refreshTempColPills(ci: number): void {
-    const area = document.getElementById(`cols_pills_${ci}`);
-    if (!area) return;
-    const cols = this.tempColsByClass[ci] || [];
-    area.innerHTML = cols
-      .map(
-        (c, i) => `
-          <span class="col-pill">
-            ${this.escHtml(c.key)} → ${this.escHtml(c.label)}
-            <button class="col-pill-btn" type="button" title="Monter" onclick="_moveTempCol(${ci},${i},-1)" ${
-              i === 0 ? "disabled" : ""
-            }>&uarr;</button>
-            <button class="col-pill-btn" type="button" title="Descendre" onclick="_moveTempCol(${ci},${i},1)" ${
-              i === cols.length - 1 ? "disabled" : ""
-            }>&darr;</button>
-            <button class="col-pill-del" onclick="_removeTempCol(${ci},${i})">×</button>
-          </span>`,
-      )
-      .join("");
-  }
-
-  private removeTempCol(ci: number, index: number): void {
+  removeTempCol(ci: number, index: number): void {
     if (this.tempColsByClass[ci]) this.tempColsByClass[ci].splice(index, 1);
-    this.refreshTempColPills(ci);
+    this.cdr.markForCheck();
   }
 
-  private moveTempCol(ci: number, index: number, direction: number): void {
+  moveTempCol(ci: number, index: number, direction: number): void {
     const cols = this.tempColsByClass[ci];
     if (!Array.isArray(cols)) return;
     const targetIndex = index + Number(direction || 0);
     if (targetIndex < 0 || targetIndex >= cols.length) return;
     const [moved] = cols.splice(index, 1);
     cols.splice(targetIndex, 0, moved);
-    this.refreshTempColPills(ci);
+    this.cdr.markForCheck();
   }
 
-  private addVar(famId: string, ci: number): void {
+  addVar(famId: string, ci: number): void {
+    this.ensureClassDrafts(this.selectedFamilyClasses);
     const fam = this.getFamily(famId);
     if (!fam) return;
-    const techInput = document.getElementById(
-      `vt_${ci}`,
-    ) as HTMLInputElement | null;
-    const labelInput = document.getElementById(
-      `vl_${ci}`,
-    ) as HTMLInputElement | null;
-    const typeInput = document.getElementById(
-      `vtype_${ci}`,
-    ) as HTMLSelectElement | null;
-    const tech = String(techInput?.value || "")
+    const draft = this.newVarDrafts[ci] || {
+      tech: "",
+      label: "",
+      type: "scalar",
+    };
+    const tech = String(draft.tech || "")
       .trim()
       .replace(/\s/g, "_");
-    const label = String(labelInput?.value || "").trim();
-    const type = String(typeInput?.value || "scalar");
+    const label = String(draft.label || "").trim();
+    const type = String(draft.type || "scalar");
     if (!tech || !label) {
       this.toast("Remplissez les deux champs", "error");
       return;
@@ -4749,9 +3857,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     fam.classes[ci].vars = fam.classes[ci].vars || [];
     fam.classes[ci].vars.push(newVar);
     this.saveFamilyLocal(fam);
-    this.renderClassesContainer(famId);
-    if (techInput) techInput.value = "";
-    if (labelInput) labelInput.value = "";
+    this.newVarDrafts[ci] = { tech: "", label: "", type: "scalar" };
+    this.cdr.markForCheck();
     this.toast("Variable ajoutée", "success");
   }
 
@@ -5249,19 +4356,14 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return ["SELECT", filteredSelects.join(",\n")].join("\n");
   }
 
-  private regenerateFamilySql(
-    famId: string,
-    silent = false,
-    force = false,
-  ): void {
+  regenerateFamilySql(famId: string, silent = false, force = false): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     this.refreshGeneratedListObjectQueries(famId, fam);
     if (fam.customMainSql && !force) {
-      const sqlInput = document.getElementById(
-        "fSql",
-      ) as HTMLTextAreaElement | null;
-      if (sqlInput) sqlInput.value = fam.sql || "";
+      // Phase 4 Tranche 4: familyDraftSql remplace document.getElementById("fSql")
+      this.familyDraftSql = fam.sql || "";
+      this.cdr.markForCheck();
       return;
     }
     const generatedSql = this.buildSqlFromFamily(famId);
@@ -5269,10 +4371,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     fam.sql = generatedSql;
     fam.customMainSql = false;
     this.saveFamilyLocal(fam);
-    const sqlInput = document.getElementById(
-      "fSql",
-    ) as HTMLTextAreaElement | null;
-    if (sqlInput) sqlInput.value = generatedSql;
+    // Phase 4 Tranche 4: familyDraftSql remplace document.getElementById("fSql")
+    this.familyDraftSql = generatedSql;
+    this.cdr.markForCheck();
     if (!silent) this.toast("Requête SELECT régénérée", "success");
   }
 
@@ -5328,27 +4429,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return [...keys].sort((a, b) => a.localeCompare(b));
   }
 
-  private renderOrganizationExtraFields(org: any = null): void {
-    const host = document.getElementById("organizationExtraFields");
-    if (!host) return;
-    const keys = this.getOrganizationExtraFieldKeys();
-    host.innerHTML = keys
-      .map((key) => {
-        const value =
-          org?.raw?.[key] === undefined || org?.raw?.[key] === null
-            ? ""
-            : String(org.raw[key]);
-        return `<div class="form-row" style="margin:0">
-              <label class="form-label">${this.escHtml(key)}</label>
-              <input class="form-input" data-org-raw-field="${this.escAttr(
-                key,
-              )}" value="${this.escAttr(value)}" placeholder="${this.escAttr(
-                key,
-              )}" />
-            </div>`;
-      })
-      .join("");
-  }
+  // renderOrganizationExtraFields supprimée — PHASE 4 TRANCHE 1
+  // Les extra-fields sont maintenant dans orgDraft.extraFields (Angular state-driven)
 
   private buildOrganizationTemplateVars(org: any): Record<string, any> {
     const raw = org?.raw && typeof org.raw === "object" ? org.raw : {};
@@ -5473,53 +4555,31 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   openOrganizationModal(id: string | null = null): void {
     this.editingOrganizationId = id;
     const org = id ? this.organizations.find((o) => o.id === id) : null;
-    const title = document.getElementById("organizationModalTitle");
-    if (title) {
-      title.textContent = id
-        ? "Modifier l'Organization"
-        : "Nouvelle Organization";
-    }
-    const nameInput = document.getElementById(
-      "organizationName",
-    ) as HTMLInputElement | null;
-    const cityInput = document.getElementById(
-      "organizationCity",
-    ) as HTMLInputElement | null;
-    const addressInput = document.getElementById(
-      "organizationAddress",
-    ) as HTMLInputElement | null;
-    const phoneInput = document.getElementById(
-      "organizationPhone",
-    ) as HTMLInputElement | null;
-    const emailInput = document.getElementById(
-      "organizationEmail",
-    ) as HTMLInputElement | null;
-    if (nameInput) nameInput.value = org?.nom || "";
-    if (cityInput) cityInput.value = org?.ville || "";
-    if (addressInput) addressInput.value = org?.["adresse"] || "";
-    if (phoneInput) phoneInput.value = org?.["tel"] || "";
-    if (emailInput) emailInput.value = org?.["email"] || "";
-    this.renderOrganizationExtraFields(org);
+    this.organizationModalTitle = id
+      ? "Modifier l'Organization"
+      : "Nouvelle Organization";
+    const existingRaw =
+      org?.["raw"] && typeof org["raw"] === "object" ? org["raw"] : {};
+    const extraKeys = this.getOrganizationExtraFieldKeys();
+    this.orgDraft = {
+      nom: org?.nom || "",
+      ville: org?.ville || "",
+      adresse: (org as any)?.adresse || "",
+      tel: (org as any)?.tel || "",
+      email: (org as any)?.email || "",
+      extraFields: extraKeys.map((key) => ({
+        key,
+        value:
+          existingRaw[key] === undefined || existingRaw[key] === null
+            ? ""
+            : String(existingRaw[key]),
+      })),
+    };
     this.openModal("modalOrganization");
   }
 
   saveOrganization(): void {
-    const nameInput = document.getElementById(
-      "organizationName",
-    ) as HTMLInputElement | null;
-    const cityInput = document.getElementById(
-      "organizationCity",
-    ) as HTMLInputElement | null;
-    const addressInput = document.getElementById(
-      "organizationAddress",
-    ) as HTMLInputElement | null;
-    const phoneInput = document.getElementById(
-      "organizationPhone",
-    ) as HTMLInputElement | null;
-    const emailInput = document.getElementById(
-      "organizationEmail",
-    ) as HTMLInputElement | null;
-    const nom = String(nameInput?.value || "").trim();
+    const nom = String(this.orgDraft.nom || "").trim();
     if (!nom) {
       this.toast("Le nom est requis", "error");
       return;
@@ -5528,18 +4588,17 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       ? this.organizations.find((o) => o.id === this.editingOrganizationId)
       : null;
     const raw = { ...((existing as any)?.raw || {}) };
-    document.querySelectorAll("[data-org-raw-field]").forEach((input) => {
-      const field = (input as HTMLInputElement).dataset["orgRawField"] || "";
-      raw[field] = (input as HTMLInputElement).value;
+    this.orgDraft.extraFields.forEach(({ key, value }) => {
+      raw[key] = value;
     });
     const payload: any = {
       ...(existing || {}),
       id: this.editingOrganizationId || this.genId("org"),
       nom,
-      ville: cityInput?.value || "",
-      adresse: addressInput?.value || "",
-      tel: phoneInput?.value || "",
-      email: emailInput?.value || "",
+      ville: this.orgDraft.ville || "",
+      adresse: this.orgDraft.adresse || "",
+      tel: this.orgDraft.tel || "",
+      email: this.orgDraft.email || "",
       raw,
       graphicCharters: (existing as any)?.graphicCharters || [],
       createdAt: (existing as any)?.createdAt || new Date().toISOString(),
@@ -5589,69 +4648,29 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   openAdminModal(id: string | null = null): void {
     this.editingAdminId = id;
     const admin = id ? this.admins.find((a) => a.id === id) : null;
-    const title = document.getElementById("adminModalTitle");
-    if (title) {
-      title.textContent = id
-        ? "Modifier l'administrateur"
-        : "Nouvel administrateur";
-    }
-    const nameInput = document.getElementById(
-      "adminNom",
-    ) as HTMLInputElement | null;
-    const emailInput = document.getElementById(
-      "adminEmail",
-    ) as HTMLInputElement | null;
-    const profileInput = document.getElementById(
-      "adminProfile",
-    ) as HTMLInputElement | null;
-    const passwordInput = document.getElementById(
-      "adminPassword",
-    ) as HTMLInputElement | null;
-    if (nameInput) nameInput.value = admin?.name || (admin as any)?.nom || "";
-    if (emailInput) emailInput.value = admin?.email || "";
-    if (profileInput) profileInput.value = (admin as any)?.profile || "";
-    if (passwordInput) passwordInput.value = "";
-    const sel = document.getElementById(
-      "adminOrganization",
-    ) as HTMLSelectElement | null;
-    if (sel) {
-      sel.innerHTML = '<option value="">— Choisir —</option>';
-      this.organizations.forEach((org) => {
-        const opt = document.createElement("option");
-        opt.value = org.id;
-        opt.textContent = org.nom || org.id;
-        if (admin?.organizationId === org.id) opt.selected = true;
-        sel.appendChild(opt);
-      });
-    }
+    this.adminModalTitle = id
+      ? "Modifier l'administrateur"
+      : "Nouvel administrateur";
+    this.adminDraft = {
+      nom: admin?.name || (admin as any)?.nom || "",
+      email: admin?.email || "",
+      organizationId: admin?.organizationId || "",
+      profile: (admin as any)?.profile || "",
+      password: "",
+    };
     this.openModal("modalAdmin");
   }
 
   saveAdmin(): void {
-    const nameInput = document.getElementById(
-      "adminNom",
-    ) as HTMLInputElement | null;
-    const emailInput = document.getElementById(
-      "adminEmail",
-    ) as HTMLInputElement | null;
-    const orgSelect = document.getElementById(
-      "adminOrganization",
-    ) as HTMLSelectElement | null;
-    const profileInput = document.getElementById(
-      "adminProfile",
-    ) as HTMLInputElement | null;
-    const passwordInput = document.getElementById(
-      "adminPassword",
-    ) as HTMLInputElement | null;
-    const name = String(nameInput?.value || "").trim();
-    const organizationId = String(orgSelect?.value || "").trim();
+    const name = String(this.adminDraft.nom || "").trim();
+    const organizationId = String(this.adminDraft.organizationId || "").trim();
     if (!name || !organizationId) {
       this.toast("Nom et Organization requis", "error");
       return;
     }
-    const email = String(emailInput?.value || "").trim();
-    const profile = String(profileInput?.value || "").trim();
-    const password = String(passwordInput?.value || "").trim();
+    const email = String(this.adminDraft.email || "").trim();
+    const profile = String(this.adminDraft.profile || "").trim();
+    const password = String(this.adminDraft.password || "").trim();
     const existing = this.editingAdminId
       ? this.admins.find((a) => a.id === this.editingAdminId)
       : null;
@@ -6240,8 +5259,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
           this.selectedTableViewRowId = null;
           this.selectedTableViewRecord = null;
           this.isCreatingTableViewRow = false;
+          // TRANCHE 3: renderLeftPanel() est un no-op Angular. cdr.markForCheck()
+          // garantit la synchronisation immédiate du *ngFor filteredTableViews.
           this.renderLeftPanel();
           this.renderTableViewsContent();
+          this.cdr.markForCheck();
           this.toast("Vue supprimée", "success");
         },
         error: () => this.toast("Suppression impossible", "error"),
@@ -6459,7 +5481,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       "";
     const confirmed = await this.confirmAction({
       title: "Supprimer la ligne ?",
-      message: `La ligne "${previewLabel}" sera supprim�e de ${item.tableName}.`,
+      message: `La ligne "${previewLabel}" sera supprimée de ${item.tableName}.`,
       confirmText: "Supprimer",
       actionType: "delete",
     });
@@ -6475,7 +5497,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       this.selectedTableViewRowId = null;
       this.selectedTableViewRecord = null;
       this.isCreatingTableViewRow = false;
-      this.toast("Ligne supprim�e", "success");
+      this.toast("Ligne supprimée", "success");
       await this.reloadTableViewRows();
     } catch (error: any) {
       this.toast(error?.message || "Suppression impossible", "error");
@@ -6493,14 +5515,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
-  private escJs(value: string): string {
-    return String(value || "")
-      .replace(/\\/g, "\\\\")
-      .replace(/'/g, "\\'")
-      .replace(/\r/g, "\\r")
-      .replace(/\n/g, "\\n")
-      .replace(/<\/script/gi, "<\\/script");
-  }
+  // Phase 4 Tranche 5: escJs supprimée — plus de string renderers
 
   private buildDistinctFilterSqlQuery(builder: any, schema: any): string {
     const normalized = normalizeFilterSqlBuilder(builder);

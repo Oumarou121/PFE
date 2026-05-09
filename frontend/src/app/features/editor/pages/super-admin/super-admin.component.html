@@ -5,7 +5,7 @@
   <div class="load-bar"><div class="load-fill"></div></div>
 </div>
 
-<div id="app">
+<div id="app" [style.opacity]="!isLoading ? '1' : '0'">
   <div class="icon-sidebar">
     <div class="app-logo">📋</div>
     <button
@@ -293,26 +293,1908 @@
             </button>
           </div>
         </div>
-        <div id="familyEditorWrap">
-          <div class="empty">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
+        <!-- TRANCHE 1: familyEditorWrap replaced by Angular template. Empty state shown when no family selected. -->
+        <div class="empty" *ngIf="!selectedFamily">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="2" y="3" width="7" height="7" rx="1" />
+            <rect x="9" y="3" width="7" height="7" rx="1" />
+            <rect x="2" y="12" width="7" height="7" rx="1" />
+            <rect x="9" y="12" width="7" height="7" rx="1" />
+          </svg>
+          <h3>Sélectionnez une famille</h3>
+          <p>
+            Choisissez une famille dans le panneau gauche ou créez-en une
+            nouvelle.
+          </p>
+        </div>
+
+        <!-- ── TRANCHE 1: Assistant schéma (legacy renderer target — migré en TRANCHE 3) ── -->
+        <div class="card" *ngIf="selectedFamily">
+          <div class="card-header">
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 3h18v18H3z" />
+                <path d="M3 9h18" />
+                <path d="M9 21V9" />
+              </svg>
+              Assistant schéma SQL Server
+            </div>
+            <span class="chip chip-teal">Variables pilotées par la base</span>
+          </div>
+          <div class="card-body">
+            <div class="text-muted" style="margin-bottom: 12px">
+              Choisissez une table source, récupérez ses descriptions et générez
+              automatiquement les variables ainsi que la requête
+              <strong>SELECT</strong>.
+            </div>
+            <!-- Phase 4 Tranche 4: schemaBuilderWrap migré vers Angular state-driven -->
+
+            <!-- Chargement -->
+            <div
+              *ngIf="!schemaBuilderData"
+              class="text-muted"
+              style="padding: 8px 0"
             >
-              <rect x="2" y="3" width="7" height="7" rx="1" />
-              <rect x="9" y="3" width="7" height="7" rx="1" />
-              <rect x="2" y="12" width="7" height="7" rx="1" />
-              <rect x="9" y="12" width="7" height="7" rx="1" />
-            </svg>
-            <h3>Sélectionnez une famille</h3>
-            <p>
-              Choisissez une famille dans le panneau gauche ou créez-en une
-              nouvelle.
-            </p>
+              Chargement du schéma SQL Server...
+            </div>
+
+            <ng-container *ngIf="schemaBuilderData as sb">
+              <!-- Grille supérieure : table principale, tables secondaires, aide, actions -->
+              <div class="form-grid c3" style="margin-bottom: 14px">
+                <!-- Table principale -->
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Table principale</label>
+                  <select
+                    class="form-input"
+                    [value]="sb.state.baseTable"
+                    (change)="
+                      setFamilyBaseTable(sb.famId, $any($event.target).value)
+                    "
+                  >
+                    <option
+                      *ngFor="let t of sb.baseTableOptions"
+                      [value]="t.name"
+                      [selected]="t.name === sb.state.baseTable"
+                    >
+                      {{ t.name }}{{ t.comment ? " - " + t.comment : "" }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Tables secondaires -->
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Tables secondaires</label>
+                  <div
+                    style="
+                      display: flex;
+                      gap: 8px;
+                      align-items: center;
+                      flex-wrap: wrap;
+                    "
+                  >
+                    <select
+                      class="form-input"
+                      [(ngModel)]="schemaSecondaryTableDraft"
+                      style="min-width: 220px; flex: 1"
+                    >
+                      <option value="">Ajouter une table secondaire</option>
+                      <option
+                        *ngFor="let t of sb.secondaryTableOptions"
+                        [value]="t.name"
+                      >
+                        {{ t.name }}{{ t.comment ? " - " + t.comment : "" }}
+                      </option>
+                    </select>
+                    <button
+                      class="btn sm"
+                      type="button"
+                      (click)="
+                        addSchemaSecondaryTable(
+                          sb.famId,
+                          schemaSecondaryTableDraft
+                        );
+                        schemaSecondaryTableDraft = ''
+                      "
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      gap: 6px;
+                      flex-wrap: wrap;
+                      margin-top: 8px;
+                    "
+                  >
+                    <ng-container
+                      *ngIf="
+                        (sb.state.secondaryTables || []).length;
+                        else noSecondary
+                      "
+                    >
+                      <span
+                        *ngFor="let tName of sb.state.secondaryTables"
+                        class="chip chip-teal"
+                      >
+                        {{ tName }}
+                        <button
+                          type="button"
+                          style="
+                            background: none;
+                            border: none;
+                            color: inherit;
+                            cursor: pointer;
+                            padding: 0 0 0 6px;
+                          "
+                          (click)="removeSchemaSecondaryTable(sb.famId, tName)"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    </ng-container>
+                    <ng-template #noSecondary>
+                      <span class="text-muted"
+                        >Aucune table secondaire affichée</span
+                      >
+                    </ng-template>
+                  </div>
+                </div>
+
+                <!-- Aide -->
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Aide</label>
+                  <div class="text-muted" style="padding-top: 9px">
+                    La table principale reste celle choisie ici. Les autres
+                    tables peuvent servir de sources secondaires, meme sans
+                    jointure automatique, via une correspondance manuelle.
+                    Tables masquées au superadmin : {{ sb.hiddenTablesHint }}.
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Actions</label>
+                  <div class="flex gap-8" style="padding-top: 2px">
+                    <button
+                      class="btn sm"
+                      type="button"
+                      (click)="regenerateFamilySql(sb.famId, false, true)"
+                    >
+                      Régénérer SELECT
+                    </button>
+                    <button
+                      class="btn sm"
+                      type="button"
+                      (click)="testFamilyQuery(sb.famId)"
+                    >
+                      Tester id=1
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- /form-grid -->
+
+              <!-- Cartes de tables -->
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+                  gap: 12px;
+                "
+              >
+                <div
+                  *ngFor="let tableName of sb.visibleTables"
+                  style="
+                    border: 1px solid var(--line);
+                    border-radius: 16px;
+                    padding: 14px;
+                    background: #fff;
+                  "
+                >
+                  <!-- En-tête de table -->
+                  <div
+                    class="flex gap-8"
+                    style="align-items: flex-start; margin-bottom: 10px"
+                  >
+                    <div>
+                      <div style="font-weight: 700; color: var(--text)">
+                        {{ tableName }}
+                      </div>
+                      <div class="text-muted">
+                        {{
+                          getSchemaTableMeta(tableName)?.comment || tableName
+                        }}
+                      </div>
+                    </div>
+                    <span
+                      class="chip"
+                      [ngClass]="getSchemaRelationTone(sb.state, tableName)"
+                    >
+                      {{ getSchemaRelationLabel(sb.state, tableName) }}
+                    </span>
+                  </div>
+
+                  <!-- Résumé jointure -->
+                  <div
+                    class="text-muted"
+                    style="font-size: 11px; margin-bottom: 10px"
+                  >
+                    {{ getSchemaRelationSummary(sb.state, tableName) }}
+                  </div>
+
+                  <!-- Colonnes -->
+                  <div style="display: flex; flex-direction: column; gap: 8px">
+                    <div
+                      *ngFor="let col of getSchemaTableColumns(tableName)"
+                      style="
+                        border: 1px solid #edf0f4;
+                        border-radius: 12px;
+                        padding: 10px 12px;
+                      "
+                    >
+                      <div class="flex gap-8" style="align-items: flex-start">
+                        <div style="flex: 1">
+                          <div style="font-weight: 600; color: var(--text)">
+                            {{ col.name }}
+                          </div>
+                          <div class="text-muted">
+                            {{ col.comment || col.name }} · {{ col.type || "" }}
+                          </div>
+                        </div>
+                        <label
+                          style="
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            font-size: 11px;
+                            color: var(--text2);
+                          "
+                        >
+                          <input
+                            type="checkbox"
+                            [checked]="
+                              isSchemaColumnSelected(
+                                sb.state,
+                                tableName,
+                                col.name
+                              )
+                            "
+                            (change)="
+                              toggleSchemaColumnSelection(
+                                sb.famId,
+                                tableName,
+                                col.name
+                              )
+                            "
+                          />
+                          Tableau
+                        </label>
+                      </div>
+                      <div class="flex gap-8" style="margin-top: 8px">
+                        <button
+                          class="btn sm"
+                          type="button"
+                          (click)="
+                            addSchemaScalar(sb.famId, tableName, col.name)
+                          "
+                        >
+                          Simple
+                        </button>
+                        <button
+                          class="btn sm"
+                          type="button"
+                          (click)="addSchemaList(sb.famId, tableName, col.name)"
+                        >
+                          Liste
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Créer tableau d'objets -->
+                  <div style="margin-top: 10px">
+                    <button
+                      class="btn sm primary"
+                      type="button"
+                      (click)="addSchemaTableVar(sb.famId, tableName)"
+                    >
+                      Créer un tableau d'objets depuis les colonnes cochées
+                    </button>
+                  </div>
+                </div>
+                <!-- /table card -->
+              </div>
+              <!-- /grid tables -->
+
+              <!-- Aperçu du test de requête -->
+              <div
+                style="
+                  margin-top: 14px;
+                  padding: 12px;
+                  border: 1px solid var(--line);
+                  border-radius: 14px;
+                  background: #fbfcfe;
+                "
+              >
+                <div
+                  style="
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: var(--text);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Aperçu du test de requête
+                </div>
+                <pre
+                  style="margin: 0; white-space: pre-wrap; font-size: 11px"
+                  [style.color]="
+                    schemaPreviewState === 'error'
+                      ? 'var(--danger)'
+                      : 'var(--text2)'
+                  "
+                  >{{ schemaPreviewText }}</pre
+                >
+              </div> </ng-container
+            ><!-- /schemaBuilderData -->
           </div>
         </div>
+
+        <!-- ── TRANCHE 1: Informations générales — Angular pur ── -->
+        <div class="card" *ngIf="selectedFamily as fam">
+          <div class="card-header">
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              Informations générales
+            </div>
+            <span class="chip chip-purple">Famille</span>
+          </div>
+          <div class="card-body">
+            <div class="form-grid c3">
+              <div class="form-row" style="margin: 0">
+                <label class="form-label">Nom <span class="req">*</span></label>
+                <input
+                  class="form-input"
+                  [value]="familyDraftNom"
+                  placeholder="Ex: Attestation de travail"
+                  (input)="
+                    familyDraftNom = $any($event.target).value;
+                    updateFamilyDraftField(
+                      fam.id,
+                      'nom',
+                      $any($event.target).value
+                    )
+                  "
+                />
+              </div>
+              <div class="form-row" style="margin: 0">
+                <label class="form-label">Description</label>
+                <input
+                  class="form-input"
+                  [value]="familyDraftDescription"
+                  placeholder="Description courte"
+                  (input)="
+                    familyDraftDescription = $any($event.target).value;
+                    updateFamilyDraftField(
+                      fam.id,
+                      'description',
+                      $any($event.target).value
+                    )
+                  "
+                />
+              </div>
+            </div>
+            <div class="form-grid c3" style="margin-top: 14px">
+              <div class="form-row" style="margin: 0">
+                <label class="form-label">Cible du document</label>
+                <select
+                  class="form-input"
+                  [value]="fam.beneficiaryMode || 'table'"
+                  (change)="
+                    updateFamilyBeneficiaryMode(
+                      fam.id,
+                      $any($event.target).value
+                    )
+                  "
+                >
+                  <option value="table">Bénéficiaire d'une table</option>
+                  <option value="organization">Lié à l'Organization</option>
+                </select>
+              </div>
+
+              <!-- Table bénéficiaire — Angular state-driven (replaces familyBeneficiaryTableWrap) -->
+              <div class="form-row" style="margin: 0">
+                <ng-container [ngSwitch]="beneficiaryLoadState">
+                  <ng-container *ngSwitchCase="'loading'">
+                    <label class="form-label">Table bénéficiaire</label>
+                    <div class="text-muted" style="padding-top: 9px">
+                      Chargement du schéma...
+                    </div>
+                  </ng-container>
+                  <ng-container *ngSwitchCase="'error'">
+                    <label class="form-label">Table bénéficiaire</label>
+                    <div class="text-danger" style="padding-top: 9px">
+                      {{ beneficiaryLoadError }}
+                    </div>
+                  </ng-container>
+                  <ng-container *ngSwitchCase="'loaded'">
+                    <ng-container
+                      *ngIf="
+                        fam.beneficiaryMode === 'organization';
+                        else beneficiaryTableBlock
+                      "
+                    >
+                      <label class="form-label">Table bénéficiaire</label>
+                      <div class="text-muted" style="padding-top: 9px">
+                        Aucune table requise : ce document sera généré à partir
+                        du contexte de l'Organization.
+                      </div>
+                    </ng-container>
+                    <ng-template #beneficiaryTableBlock>
+                      <label class="form-label">Table bénéficiaire</label>
+                      <select
+                        class="form-input"
+                        [value]="fam.beneficiaryTable || ''"
+                        (change)="
+                          updateFamilyBeneficiaryTable(
+                            fam.id,
+                            $any($event.target).value
+                          )
+                        "
+                      >
+                        <option
+                          *ngFor="let table of beneficiaryVisibleTables"
+                          [value]="table.name"
+                        >
+                          {{ table.name
+                          }}{{ table.comment ? " - " + table.comment : "" }}
+                        </option>
+                      </select>
+                      <div style="margin-top: 10px">
+                        <label class="form-label" style="font-size: 11px"
+                          >Libellé affiché à l'admin et au user</label
+                        >
+                        <input
+                          class="form-input"
+                          [value]="fam.beneficiaryTableLabel || ''"
+                          [placeholder]="
+                            selectedFamilyBeneficiaryTablePlaceholder
+                          "
+                          (input)="
+                            updateFamilyDraftField(
+                              fam.id,
+                              'beneficiaryTableLabel',
+                              $any($event.target).value
+                            )
+                          "
+                        />
+                      </div>
+                      <div style="margin-top: 10px">
+                        <label class="form-label" style="font-size: 11px"
+                          >Colonne de liaison</label
+                        >
+                        <select
+                          class="form-input"
+                          [value]="fam.beneficiaryLinkColumn || ''"
+                          (change)="
+                            updateFamilyBeneficiaryLinkColumn(
+                              fam.id,
+                              $any($event.target).value
+                            )
+                          "
+                        >
+                          <option value="">Choisir une colonne</option>
+                          <option
+                            *ngFor="let col of beneficiaryTableColumns"
+                            [value]="col.name"
+                          >
+                            {{ col.name
+                            }}{{
+                              col.key === "PRI"
+                                ? " - clé primaire"
+                                : col.comment
+                                  ? " - " + col.comment
+                                  : ""
+                            }}
+                          </option>
+                        </select>
+                      </div>
+                      <div
+                        style="
+                          display: grid;
+                          grid-template-columns: 1fr 1fr;
+                          gap: 8px;
+                          margin-top: 10px;
+                        "
+                      >
+                        <div>
+                          <label class="form-label" style="font-size: 11px"
+                            >Colonne affichage 1</label
+                          >
+                          <select
+                            class="form-input"
+                            [value]="fam.beneficiaryDisplayColumn1 || ''"
+                            (change)="
+                              updateFamilyBeneficiaryDisplayColumn(
+                                fam.id,
+                                1,
+                                $any($event.target).value
+                              )
+                            "
+                          >
+                            <option value="">Choisir une colonne</option>
+                            <option
+                              *ngFor="let col of beneficiaryTableColumns"
+                              [value]="col.name"
+                            >
+                              {{ col.name
+                              }}{{ col.comment ? " - " + col.comment : "" }}
+                            </option>
+                          </select>
+                        </div>
+                        <div>
+                          <label class="form-label" style="font-size: 11px"
+                            >Colonne affichage 2</label
+                          >
+                          <select
+                            class="form-input"
+                            [value]="fam.beneficiaryDisplayColumn2 || ''"
+                            (change)="
+                              updateFamilyBeneficiaryDisplayColumn(
+                                fam.id,
+                                2,
+                                $any($event.target).value
+                              )
+                            "
+                          >
+                            <option value="">Aucune</option>
+                            <option
+                              *ngFor="let col of beneficiaryTableColumns"
+                              [value]="col.name"
+                            >
+                              {{ col.name
+                              }}{{ col.comment ? " - " + col.comment : "" }}
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="text-muted" style="margin-top: 8px">
+                        Ces colonnes seront affichées dans les listes de
+                        bénéficiaires côté admin et user. Exemple :
+                        <strong>Nom</strong> + <strong>Prenom</strong>.
+                      </div>
+                    </ng-template>
+                  </ng-container>
+                  <ng-container *ngSwitchDefault>
+                    <!-- idle state: no family selected yet -->
+                  </ng-container>
+                </ng-container>
+              </div>
+
+              <div class="form-row" style="margin: 0">
+                <label class="form-label">Tables masquées</label>
+                <div class="text-muted" style="padding-top: 9px">
+                  {{ hiddenFamilyTablesHint }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TRANCHE 1: Classes & Variables (legacy renderer target — migré en TRANCHE 2) ── -->
+        <div class="card" *ngIf="selectedFamily as fam">
+          <div class="card-header">
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M4 7h16M4 12h16M4 17h10" />
+              </svg>
+              Classes &amp; Variables
+            </div>
+            <div class="text-muted">
+              {{ selectedFamilyAllVarsCount }} variables ({{
+                selectedFamilyListObjectVarsCount
+              }}
+              tableaux-objet)
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- Phase 4 Tranche 3: classesContainer migré vers Angular state-driven -->
+            <ng-container *ngIf="selectedFamId as famId">
+              <div
+                *ngFor="let cls of selectedFamilyClasses; let ci = index"
+                class="class-block"
+              >
+                <!-- En-tête de classe -->
+                <div class="class-block-header">
+                  <div
+                    class="class-color-dot"
+                    [style.background]="cls.couleur"
+                  ></div>
+                  <div
+                    style="
+                      display: flex;
+                      flex-direction: column;
+                      gap: 4px;
+                      flex: 1;
+                      min-width: 180px;
+                    "
+                  >
+                    <label class="form-label" style="font-size: 10px; margin: 0"
+                      >Libellé de classe affiché à l'admin</label
+                    >
+                    <input
+                      class="class-name-input"
+                      [value]="cls.nom"
+                      placeholder="Libellé affiché"
+                      (change)="
+                        updateClassProp(
+                          famId,
+                          ci,
+                          'nom',
+                          $any($event.target).value
+                        )
+                      "
+                    />
+                    <div
+                      *ngIf="cls.sourceTable"
+                      class="text-muted"
+                      style="font-size: 10px"
+                    >
+                      Table SQL: {{ cls.sourceTable }}
+                    </div>
+                  </div>
+                  <select
+                    class="color-select"
+                    [value]="cls.couleur"
+                    (change)="
+                      updateClassProp(
+                        famId,
+                        ci,
+                        'couleur',
+                        $any($event.target).value
+                      )
+                    "
+                  >
+                    <option
+                      *ngFor="let c of CLASS_COLORS"
+                      [value]="c"
+                      [selected]="cls.couleur === c"
+                    >
+                      {{ c }}
+                    </option>
+                  </select>
+                  <button
+                    class="del-cls-btn"
+                    type="button"
+                    (click)="deleteClassBlock(famId, ci)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14H6L5 6" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Variables de la classe -->
+                <div class="vars-area">
+                  <ng-container
+                    *ngFor="let v of cls.vars || []; let vi = index"
+                  >
+                    <div
+                      style="
+                        display: flex;
+                        flex-direction: column;
+                        gap: 6px;
+                        max-width: 100%;
+                      "
+                      [style.padding]="
+                        v.type === 'list-object' ? '8px 10px' : null
+                      "
+                      [style.border]="
+                        v.type === 'list-object'
+                          ? '1px dashed ' + cls.couleur + '35'
+                          : null
+                      "
+                      [style.border-radius]="
+                        v.type === 'list-object' ? '12px' : null
+                      "
+                      [style.background]="
+                        v.type === 'list-object' ? cls.couleur + '08' : null
+                      "
+                    >
+                      <!-- Pill de variable -->
+                      <div
+                        class="var-pill"
+                        [style.background]="cls.couleur + '15'"
+                        [style.border-color]="cls.couleur + '40'"
+                        [style.color]="cls.couleur"
+                      >
+                        <span class="var-pill-tech">{{
+                          getVarPillTech(v)
+                        }}</span>
+                        <span class="var-pill-label"
+                          >→ {{ v.label || v.tech || "" }}</span
+                        >
+                        <span
+                          *ngIf="v.type === 'list-object'"
+                          class="var-pill-type obj"
+                          >TABLE</span
+                        >
+                        <span *ngIf="v.type === 'list'" class="var-pill-type"
+                          >LIST</span
+                        >
+                        <span
+                          *ngIf="
+                            v.type === 'list-object' &&
+                            (v.sqlQuery || '') !== ''
+                          "
+                          class="var-pill-type"
+                          style="background: #dbeafe; color: #1d4ed8"
+                          >SQL</span
+                        >
+                        <span
+                          *ngIf="v.type === 'list-object' && v.customSqlQuery"
+                          class="var-pill-type"
+                          style="background: #fef3c7; color: #92400e"
+                          >SQL personnalisé</span
+                        >
+                        <button
+                          class="var-pill-del"
+                          type="button"
+                          (click)="deleteVar(famId, ci, vi)"
+                        >
+                          ×
+                        </button>
+                      </div>
+
+                      <!-- Éditeur libellé -->
+                      <label
+                        class="form-label"
+                        style="font-size: 10px; color: var(--text2); margin: 0"
+                      >
+                        Nom affiché
+                        <input
+                          class="form-input"
+                          [value]="v.label || v.tech || ''"
+                          (change)="
+                            updateVarLabel(
+                              famId,
+                              ci,
+                              vi,
+                              $any($event.target).value
+                            )
+                          "
+                          style="display: block; width: 100%; margin-top: 4px"
+                          placeholder="Nom affiché"
+                        />
+                      </label>
+
+                      <!-- Liaison simple -->
+                      <ng-container
+                        *ngIf="getSimpleVarBinding(v, ci, famId) as binding"
+                      >
+                        <div
+                          *ngIf="binding.show"
+                          style="
+                            margin-top: 6px;
+                            padding: 10px;
+                            border-radius: 12px;
+                          "
+                          [style.border]="'1px dashed ' + cls.couleur + '35'"
+                          [style.background]="cls.couleur + '08'"
+                        >
+                          <div
+                            style="
+                              font-size: 10px;
+                              font-weight: 700;
+                              letter-spacing: 0.04em;
+                              text-transform: uppercase;
+                              opacity: 0.9;
+                              margin-bottom: 8px;
+                            "
+                            [style.color]="cls.couleur"
+                          >
+                            Liaison de la variable
+                          </div>
+                          <div
+                            style="
+                              font-size: 10px;
+                              color: var(--text3);
+                              margin-bottom: 8px;
+                            "
+                          >
+                            {{ binding.relationInfo }}
+                          </div>
+                          <label
+                            class="form-label"
+                            style="font-size: 10px; color: var(--text2)"
+                          >
+                            Mode
+                            <select
+                              class="form-input"
+                              [value]="binding.mode"
+                              (change)="
+                                updateVarLinkField(
+                                  famId,
+                                  ci,
+                                  vi,
+                                  'linkMode',
+                                  $any($event.target).value
+                                )
+                              "
+                              style="
+                                display: block;
+                                width: 100%;
+                                margin-top: 4px;
+                              "
+                            >
+                              <option value="auto">Jointure automatique</option>
+                              <option value="manual">
+                                Correspondance manuelle
+                              </option>
+                            </select>
+                          </label>
+                          <ng-container *ngIf="binding.mode === 'manual'">
+                            <div
+                              style="
+                                display: grid;
+                                grid-template-columns: 1fr 1fr;
+                                gap: 8px;
+                                margin-top: 8px;
+                              "
+                            >
+                              <label
+                                class="form-label"
+                                style="font-size: 10px; color: var(--text2)"
+                              >
+                                Colonne table principale
+                                <select
+                                  class="form-input"
+                                  [value]="v.matchBaseColumn || ''"
+                                  (change)="
+                                    updateVarLinkField(
+                                      famId,
+                                      ci,
+                                      vi,
+                                      'matchBaseColumn',
+                                      $any($event.target).value
+                                    )
+                                  "
+                                  style="
+                                    display: block;
+                                    width: 100%;
+                                    margin-top: 4px;
+                                  "
+                                >
+                                  <option value="">Choisir une colonne</option>
+                                  <option
+                                    *ngFor="let col of binding.baseColumns"
+                                    [value]="col.name"
+                                    [selected]="
+                                      col.name === (v.matchBaseColumn || '')
+                                    "
+                                  >
+                                    {{ col.comment || col.name }}
+                                  </option>
+                                </select>
+                              </label>
+                              <label
+                                class="form-label"
+                                style="font-size: 10px; color: var(--text2)"
+                              >
+                                Colonne table secondaire
+                                <select
+                                  class="form-input"
+                                  [value]="v.matchSourceColumn || ''"
+                                  (change)="
+                                    updateVarLinkField(
+                                      famId,
+                                      ci,
+                                      vi,
+                                      'matchSourceColumn',
+                                      $any($event.target).value
+                                    )
+                                  "
+                                  style="
+                                    display: block;
+                                    width: 100%;
+                                    margin-top: 4px;
+                                  "
+                                >
+                                  <option value="">Choisir une colonne</option>
+                                  <option
+                                    *ngFor="let col of binding.sourceColumns"
+                                    [value]="col.name"
+                                    [selected]="
+                                      col.name === (v.matchSourceColumn || '')
+                                    "
+                                  >
+                                    {{ col.comment || col.name }}
+                                  </option>
+                                </select>
+                              </label>
+                            </div>
+                            <div
+                              style="
+                                font-size: 10px;
+                                color: var(--text3);
+                                margin-top: 8px;
+                              "
+                            >
+                              {{
+                                binding.canManual
+                                  ? "Correspondance valide"
+                                  : "Choisissez la colonne code de la table principale et la colonne code de la table secondaire"
+                              }}
+                            </div>
+                          </ng-container>
+                          <ng-container *ngIf="binding.mode !== 'manual'">
+                            <div
+                              style="
+                                font-size: 10px;
+                                color: var(--text3);
+                                margin-top: 8px;
+                              "
+                            >
+                              {{
+                                binding.canAuto
+                                  ? "La jointure automatique sera utilisee pour cette variable."
+                                  : "Aucune jointure detectee. Passez en correspondance manuelle."
+                              }}
+                            </div>
+                          </ng-container>
+                        </div>
+                      </ng-container>
+
+                      <!-- Lookup liste -->
+                      <ng-container *ngIf="v.type === 'list' && v.sourceColumn">
+                        <div
+                          style="
+                            margin-top: 6px;
+                            padding: 10px;
+                            border-radius: 12px;
+                          "
+                          [style.border]="'1px dashed ' + cls.couleur + '35'"
+                          [style.background]="cls.couleur + '08'"
+                        >
+                          <div
+                            style="
+                              font-size: 10px;
+                              font-weight: 700;
+                              letter-spacing: 0.04em;
+                              text-transform: uppercase;
+                              opacity: 0.9;
+                              margin-bottom: 8px;
+                            "
+                            [style.color]="cls.couleur"
+                          >
+                            Affichage de la liste
+                          </div>
+                          <label
+                            class="form-label"
+                            style="font-size: 10px; color: var(--text2)"
+                          >
+                            Affichage
+                            <select
+                              class="form-input"
+                              [value]="
+                                v.displayMode === 'lookup' ? 'lookup' : 'raw'
+                              "
+                              (change)="
+                                updateListVarLookupField(
+                                  famId,
+                                  ci,
+                                  vi,
+                                  'displayMode',
+                                  $any($event.target).value
+                                )
+                              "
+                              style="
+                                display: block;
+                                width: 100%;
+                                margin-top: 4px;
+                              "
+                            >
+                              <option value="raw">Valeur source</option>
+                              <option value="lookup">
+                                Libellé depuis une table
+                              </option>
+                            </select>
+                          </label>
+                          <ng-container *ngIf="v.displayMode === 'lookup'">
+                            <label
+                              class="form-label"
+                              style="font-size: 10px; color: var(--text2)"
+                            >
+                              Source des noms
+                              <select
+                                class="form-input"
+                                [value]="
+                                  v.lookupEditorMode === 'manual'
+                                    ? 'manual'
+                                    : 'schema'
+                                "
+                                (change)="
+                                  updateListVarLookupMode(
+                                    famId,
+                                    ci,
+                                    vi,
+                                    $any($event.target).value
+                                  )
+                                "
+                                style="
+                                  display: block;
+                                  width: 100%;
+                                  margin-top: 4px;
+                                "
+                              >
+                                <option value="schema">Schéma détecté</option>
+                                <option value="manual">Saisie manuelle</option>
+                              </select>
+                            </label>
+                            <label
+                              class="form-label"
+                              style="font-size: 10px; color: var(--text2)"
+                            >
+                              Table libellé
+                              <input
+                                *ngIf="v.lookupEditorMode === 'manual'"
+                                class="form-input"
+                                [value]="v.lookupTable || ''"
+                                (change)="
+                                  updateListVarLookupField(
+                                    famId,
+                                    ci,
+                                    vi,
+                                    'lookupTable',
+                                    $any($event.target).value
+                                  )
+                                "
+                                style="
+                                  display: block;
+                                  width: 100%;
+                                  margin-top: 4px;
+                                "
+                                placeholder="Ex: Grade"
+                              />
+                              <select
+                                *ngIf="v.lookupEditorMode !== 'manual'"
+                                class="form-input"
+                                [value]="v.lookupTable || ''"
+                                (change)="
+                                  updateListVarLookupField(
+                                    famId,
+                                    ci,
+                                    vi,
+                                    'lookupTable',
+                                    $any($event.target).value
+                                  )
+                                "
+                                style="
+                                  display: block;
+                                  width: 100%;
+                                  margin-top: 4px;
+                                "
+                              >
+                                <option value="">Choisir une table</option>
+                                <option
+                                  *ngFor="
+                                    let t of getLookupTableOptions(
+                                      v.lookupTable || ''
+                                    )
+                                  "
+                                  [value]="t.name"
+                                  [selected]="t.name === (v.lookupTable || '')"
+                                >
+                                  {{ t.comment || t.name }}
+                                </option>
+                              </select>
+                            </label>
+                            <label
+                              class="form-label"
+                              style="font-size: 10px; color: var(--text2)"
+                            >
+                              Colonne code
+                              <input
+                                *ngIf="v.lookupEditorMode === 'manual'"
+                                class="form-input"
+                                [value]="v.lookupValueColumn || ''"
+                                (change)="
+                                  updateListVarLookupField(
+                                    famId,
+                                    ci,
+                                    vi,
+                                    'lookupValueColumn',
+                                    $any($event.target).value
+                                  )
+                                "
+                                style="
+                                  display: block;
+                                  width: 100%;
+                                  margin-top: 4px;
+                                "
+                                placeholder="Ex: CodeUnivad"
+                              />
+                              <select
+                                *ngIf="v.lookupEditorMode !== 'manual'"
+                                class="form-input"
+                                [value]="v.lookupValueColumn || ''"
+                                (change)="
+                                  updateListVarLookupField(
+                                    famId,
+                                    ci,
+                                    vi,
+                                    'lookupValueColumn',
+                                    $any($event.target).value
+                                  )
+                                "
+                                style="
+                                  display: block;
+                                  width: 100%;
+                                  margin-top: 4px;
+                                "
+                              >
+                                <option value="">Choisir une colonne</option>
+                                <option
+                                  *ngFor="
+                                    let col of getLookupColumnOptions(
+                                      v.lookupTable || ''
+                                    )
+                                  "
+                                  [value]="col.name"
+                                  [selected]="
+                                    col.name === (v.lookupValueColumn || '')
+                                  "
+                                >
+                                  {{ col.comment || col.name }}
+                                </option>
+                              </select>
+                            </label>
+                            <label
+                              class="form-label"
+                              style="font-size: 10px; color: var(--text2)"
+                            >
+                              Colonne libellé
+                              <input
+                                *ngIf="v.lookupEditorMode === 'manual'"
+                                class="form-input"
+                                [value]="v.lookupLabelColumn || ''"
+                                (change)="
+                                  updateListVarLookupField(
+                                    famId,
+                                    ci,
+                                    vi,
+                                    'lookupLabelColumn',
+                                    $any($event.target).value
+                                  )
+                                "
+                                style="
+                                  display: block;
+                                  width: 100%;
+                                  margin-top: 4px;
+                                "
+                                placeholder="Ex: Libelle"
+                              />
+                              <select
+                                *ngIf="v.lookupEditorMode !== 'manual'"
+                                class="form-input"
+                                [value]="v.lookupLabelColumn || ''"
+                                (change)="
+                                  updateListVarLookupField(
+                                    famId,
+                                    ci,
+                                    vi,
+                                    'lookupLabelColumn',
+                                    $any($event.target).value
+                                  )
+                                "
+                                style="
+                                  display: block;
+                                  width: 100%;
+                                  margin-top: 4px;
+                                "
+                              >
+                                <option value="">Choisir une colonne</option>
+                                <option
+                                  *ngFor="
+                                    let col of getLookupColumnOptions(
+                                      v.lookupTable || ''
+                                    )
+                                  "
+                                  [value]="col.name"
+                                  [selected]="
+                                    col.name === (v.lookupLabelColumn || '')
+                                  "
+                                >
+                                  {{ col.comment || col.name }}
+                                </option>
+                              </select>
+                            </label>
+                          </ng-container>
+                        </div>
+                      </ng-container>
+
+                      <!-- SQL + colonnes list-object -->
+                      <ng-container *ngIf="v.type === 'list-object'">
+                        <div
+                          style="
+                            margin-top: 6px;
+                            padding: 10px;
+                            border-radius: 12px;
+                          "
+                          [style.border]="'1px dashed ' + cls.couleur + '35'"
+                          [style.background]="cls.couleur + '08'"
+                        >
+                          <div
+                            style="
+                              font-size: 10px;
+                              font-weight: 700;
+                              letter-spacing: 0.04em;
+                              text-transform: uppercase;
+                              opacity: 0.9;
+                              margin-bottom: 8px;
+                            "
+                            [style.color]="cls.couleur"
+                          >
+                            Requête SQL tableau
+                          </div>
+                          <div
+                            style="
+                              font-size: 10px;
+                              color: var(--text2);
+                              margin-bottom: 8px;
+                            "
+                          >
+                            Requête <strong>SELECT</strong> retournant plusieurs
+                            lignes — injectée dans
+                            <code>{{ getVarSqlPlaceholder(v) }}</code
+                            >.
+                          </div>
+                          <textarea
+                            class="sql-input"
+                            rows="8"
+                            style="min-height: 150px"
+                            [value]="v.sqlQuery || ''"
+                            (change)="
+                              updateListObjectSqlQuery(
+                                famId,
+                                ci,
+                                vi,
+                                $any($event.target).value
+                              )
+                            "
+                            placeholder="SELECT ... FROM ..."
+                          ></textarea>
+                          <div
+                            style="
+                              display: flex;
+                              gap: 8px;
+                              flex-wrap: wrap;
+                              margin-top: 8px;
+                            "
+                          >
+                            <button
+                              class="btn sm"
+                              type="button"
+                              (click)="
+                                generateListObjectSqlQueryFromSource(
+                                  famId,
+                                  ci,
+                                  vi
+                                )
+                              "
+                            >
+                              Générer depuis la liaison
+                            </button>
+                            <button
+                              class="btn sm"
+                              type="button"
+                              (click)="
+                                applySuggestedFiltersToListObjectSql(
+                                  famId,
+                                  ci,
+                                  vi
+                                )
+                              "
+                            >
+                              Ajouter les filtres
+                            </button>
+                            <button
+                              class="btn sm"
+                              type="button"
+                              [disabled]="listObjectSqlLoading[ci + '_' + vi]"
+                              (click)="
+                                testListObjectSqlQueryAngular(famId, ci, vi)
+                              "
+                            >
+                              Tester la requête
+                            </button>
+                            <button
+                              class="btn sm"
+                              type="button"
+                              (click)="clearListObjectSqlQuery(famId, ci, vi)"
+                            >
+                              Revenir au mode colonnes
+                            </button>
+                          </div>
+                          <pre
+                            style="
+                              margin: 10px 0 0;
+                              white-space: pre-wrap;
+                              font-size: 11px;
+                              color: var(--text2);
+                            "
+                            >{{ getListObjectSqlPreview(ci, vi, v) }}</pre
+                          >
+                        </div>
+
+                        <!-- Colonnes du tableau-objet -->
+                        <div
+                          style="
+                            font-size: 10px;
+                            font-weight: 700;
+                            letter-spacing: 0.04em;
+                            text-transform: uppercase;
+                            opacity: 0.9;
+                            margin-top: 6px;
+                          "
+                          [style.color]="cls.couleur"
+                        >
+                          Colonnes et affichage
+                        </div>
+
+                        <ng-container
+                          *ngIf="getVarDisplayColumns(v) as orderedCols"
+                        >
+                          <div
+                            *ngIf="!orderedCols.length"
+                            style="font-size: 10px; opacity: 0.8"
+                            [style.color]="cls.couleur"
+                          >
+                            Aucune colonne définie
+                          </div>
+                          <div
+                            *ngIf="orderedCols.length"
+                            style="
+                              display: grid;
+                              grid-template-columns: repeat(
+                                auto-fit,
+                                minmax(250px, 1fr)
+                              );
+                              gap: 8px;
+                            "
+                          >
+                            <div
+                              *ngFor="
+                                let col of orderedCols;
+                                let colIndex = index
+                              "
+                              style="
+                                display: flex;
+                                flex-direction: column;
+                                gap: 8px;
+                                padding: 10px;
+                                border-radius: 10px;
+                                background: #fff;
+                              "
+                              [style.border]="'1px solid ' + cls.couleur + '35'"
+                            >
+                              <div
+                                style="
+                                  display: flex;
+                                  align-items: flex-start;
+                                  justify-content: space-between;
+                                  gap: 10px;
+                                "
+                              >
+                                <div>
+                                  <div
+                                    style="
+                                      font-size: 12px;
+                                      font-weight: 700;
+                                      color: var(--text);
+                                    "
+                                  >
+                                    {{ col.label || col.key }}
+                                  </div>
+                                  <div
+                                    style="font-size: 10px; color: var(--text3)"
+                                  >
+                                    {{ col.key || "" }}
+                                  </div>
+                                </div>
+                                <div style="display: flex; gap: 4px">
+                                  <button
+                                    class="col-pill-btn"
+                                    type="button"
+                                    [disabled]="colIndex === 0"
+                                    (click)="
+                                      moveVarColumn(famId, ci, vi, colIndex, -1)
+                                    "
+                                  >
+                                    &uarr;
+                                  </button>
+                                  <button
+                                    class="col-pill-btn"
+                                    type="button"
+                                    [disabled]="
+                                      colIndex === orderedCols.length - 1
+                                    "
+                                    (click)="
+                                      moveVarColumn(famId, ci, vi, colIndex, 1)
+                                    "
+                                  >
+                                    &darr;
+                                  </button>
+                                  <button
+                                    class="col-pill-del"
+                                    type="button"
+                                    (click)="
+                                      removeVarColumn(famId, ci, vi, colIndex)
+                                    "
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              </div>
+                              <ng-container
+                                *ngIf="
+                                  v.sourceColumns &&
+                                  v.sourceColumns[colIndex] as sourceMeta
+                                "
+                              >
+                                <label
+                                  class="form-label"
+                                  style="font-size: 10px; color: var(--text2)"
+                                >
+                                  Affichage
+                                  <select
+                                    class="form-input"
+                                    [value]="
+                                      sourceMeta.displayMode === 'lookup'
+                                        ? 'lookup'
+                                        : 'raw'
+                                    "
+                                    (change)="
+                                      updateVarColumnLookupField(
+                                        famId,
+                                        ci,
+                                        vi,
+                                        colIndex,
+                                        'displayMode',
+                                        $any($event.target).value
+                                      )
+                                    "
+                                    style="
+                                      display: block;
+                                      width: 100%;
+                                      margin-top: 4px;
+                                    "
+                                  >
+                                    <option value="raw">Valeur source</option>
+                                    <option value="lookup">
+                                      Libellé depuis une table
+                                    </option>
+                                  </select>
+                                </label>
+                                <ng-container
+                                  *ngIf="sourceMeta.displayMode === 'lookup'"
+                                >
+                                  <label
+                                    class="form-label"
+                                    style="font-size: 10px; color: var(--text2)"
+                                  >
+                                    Source des noms
+                                    <select
+                                      class="form-input"
+                                      [value]="
+                                        sourceMeta.lookupEditorMode === 'manual'
+                                          ? 'manual'
+                                          : 'schema'
+                                      "
+                                      (change)="
+                                        updateVarColumnLookupMode(
+                                          famId,
+                                          ci,
+                                          vi,
+                                          colIndex,
+                                          $any($event.target).value
+                                        )
+                                      "
+                                      style="
+                                        display: block;
+                                        width: 100%;
+                                        margin-top: 4px;
+                                      "
+                                    >
+                                      <option value="schema">
+                                        Schéma détecté
+                                      </option>
+                                      <option value="manual">
+                                        Saisie manuelle
+                                      </option>
+                                    </select>
+                                  </label>
+                                  <label
+                                    class="form-label"
+                                    style="font-size: 10px; color: var(--text2)"
+                                  >
+                                    Table libellé
+                                    <input
+                                      *ngIf="
+                                        sourceMeta.lookupEditorMode === 'manual'
+                                      "
+                                      class="form-input"
+                                      [value]="sourceMeta.lookupTable || ''"
+                                      (change)="
+                                        updateVarColumnLookupField(
+                                          famId,
+                                          ci,
+                                          vi,
+                                          colIndex,
+                                          'lookupTable',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                      style="
+                                        display: block;
+                                        width: 100%;
+                                        margin-top: 4px;
+                                      "
+                                      placeholder="Ex: Grade"
+                                    />
+                                    <select
+                                      *ngIf="
+                                        sourceMeta.lookupEditorMode !== 'manual'
+                                      "
+                                      class="form-input"
+                                      [value]="sourceMeta.lookupTable || ''"
+                                      (change)="
+                                        updateVarColumnLookupField(
+                                          famId,
+                                          ci,
+                                          vi,
+                                          colIndex,
+                                          'lookupTable',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                      style="
+                                        display: block;
+                                        width: 100%;
+                                        margin-top: 4px;
+                                      "
+                                    >
+                                      <option value="">
+                                        Choisir une table
+                                      </option>
+                                      <option
+                                        *ngFor="
+                                          let t of getLookupTableOptions(
+                                            sourceMeta.lookupTable || ''
+                                          )
+                                        "
+                                        [value]="t.name"
+                                        [selected]="
+                                          t.name ===
+                                          (sourceMeta.lookupTable || '')
+                                        "
+                                      >
+                                        {{ t.comment || t.name }}
+                                      </option>
+                                    </select>
+                                  </label>
+                                </ng-container>
+                              </ng-container>
+                            </div>
+                          </div>
+                        </ng-container>
+
+                        <!-- Ajouter une colonne -->
+                        <ng-container
+                          *ngIf="getAddColDraft(ci, vi) as colDraft"
+                        >
+                          <div
+                            style="
+                              padding: 10px;
+                              border-radius: 12px;
+                              background: #fff;
+                            "
+                            [style.border]="'1px dashed ' + cls.couleur + '35'"
+                          >
+                            <div
+                              style="
+                                font-size: 10px;
+                                font-weight: 700;
+                                letter-spacing: 0.04em;
+                                text-transform: uppercase;
+                                opacity: 0.9;
+                                margin-bottom: 8px;
+                              "
+                              [style.color]="cls.couleur"
+                            >
+                              Ajouter une colonne
+                            </div>
+                            <div
+                              style="
+                                display: grid;
+                                grid-template-columns: repeat(
+                                  auto-fit,
+                                  minmax(180px, 1fr)
+                                );
+                                gap: 8px;
+                              "
+                            >
+                              <label
+                                class="form-label"
+                                style="font-size: 10px; color: var(--text2)"
+                              >
+                                Source
+                                <select
+                                  class="form-input"
+                                  [value]="colDraft.mode"
+                                  (change)="
+                                    updateVarAddColumnMode(
+                                      famId,
+                                      ci,
+                                      vi,
+                                      $any($event.target).value
+                                    )
+                                  "
+                                  style="
+                                    display: block;
+                                    width: 100%;
+                                    margin-top: 4px;
+                                  "
+                                >
+                                  <option value="schema">
+                                    Colonne du schéma
+                                  </option>
+                                  <option value="manual">
+                                    Saisie manuelle
+                                  </option>
+                                </select>
+                              </label>
+                              <label
+                                class="form-label"
+                                style="font-size: 10px; color: var(--text2)"
+                              >
+                                Colonne source
+                                <input
+                                  *ngIf="colDraft.mode === 'manual'"
+                                  class="form-input"
+                                  [(ngModel)]="colDraft.source"
+                                  style="
+                                    display: block;
+                                    width: 100%;
+                                    margin-top: 4px;
+                                  "
+                                  placeholder="Ex: Grade"
+                                />
+                                <select
+                                  *ngIf="colDraft.mode !== 'manual'"
+                                  class="form-input"
+                                  [(ngModel)]="colDraft.source"
+                                  style="
+                                    display: block;
+                                    width: 100%;
+                                    margin-top: 4px;
+                                  "
+                                >
+                                  <option value="">Choisir une colonne</option>
+                                  <option
+                                    *ngFor="
+                                      let col of getAvailableVarSourceColumnsPublic(
+                                        v
+                                      )
+                                    "
+                                    [value]="col.name"
+                                  >
+                                    {{ col.comment || col.name }}
+                                  </option>
+                                </select>
+                              </label>
+                              <label
+                                class="form-label"
+                                style="font-size: 10px; color: var(--text2)"
+                              >
+                                Clé technique
+                                <input
+                                  class="form-input"
+                                  [(ngModel)]="colDraft.key"
+                                  style="
+                                    display: block;
+                                    width: 100%;
+                                    margin-top: 4px;
+                                  "
+                                  placeholder="Ex: grade"
+                                />
+                              </label>
+                              <label
+                                class="form-label"
+                                style="font-size: 10px; color: var(--text2)"
+                              >
+                                Libellé
+                                <input
+                                  class="form-input"
+                                  [(ngModel)]="colDraft.label"
+                                  style="
+                                    display: block;
+                                    width: 100%;
+                                    margin-top: 4px;
+                                  "
+                                  placeholder="Ex: Grade"
+                                />
+                              </label>
+                            </div>
+                            <div
+                              style="
+                                display: flex;
+                                justify-content: flex-end;
+                                margin-top: 8px;
+                              "
+                            >
+                              <button
+                                class="btn sm"
+                                type="button"
+                                (click)="addVarColumn(famId, ci, vi)"
+                              >
+                                Ajouter la colonne
+                              </button>
+                            </div>
+                          </div>
+                        </ng-container> </ng-container
+                      ><!-- /list-object -->
+                    </div>
+                    <!-- /var wrapper --> </ng-container
+                  ><!-- *ngFor vars -->
+                </div>
+                <!-- /vars-area -->
+
+                <!-- Ajouter une variable -->
+                <ng-container *ngIf="newVarDrafts[ci] as draft">
+                  <div class="var-add-row">
+                    <input
+                      class="var-input-sm"
+                      [(ngModel)]="draft.tech"
+                      placeholder="tech_variable"
+                    />
+                    <input
+                      class="var-input-sm label"
+                      [(ngModel)]="draft.label"
+                      placeholder="Libellé"
+                    />
+                    <select class="type-select" [(ngModel)]="draft.type">
+                      <option value="scalar">Simple</option>
+                      <option value="list">Liste</option>
+                      <option value="list-object">Tableau</option>
+                    </select>
+                    <button
+                      class="btn sm"
+                      type="button"
+                      (click)="addVar(famId, ci)"
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+
+                  <!-- Colonnes temporaires list-object -->
+                  <div
+                    class="cols-area"
+                    [class.visible]="draft.type === 'list-object'"
+                  >
+                    <div class="cols-area-label">Colonnes du tableau</div>
+                    <div>
+                      <span
+                        *ngFor="
+                          let tc of tempColsByClass[ci] || [];
+                          let tci = index
+                        "
+                        class="col-pill"
+                      >
+                        {{ tc.key }} → {{ tc.label }}
+                        <button
+                          class="col-pill-btn"
+                          type="button"
+                          [disabled]="tci === 0"
+                          (click)="moveTempCol(ci, tci, -1)"
+                        >
+                          &uarr;
+                        </button>
+                        <button
+                          class="col-pill-btn"
+                          type="button"
+                          [disabled]="
+                            tci === (tempColsByClass[ci] || []).length - 1
+                          "
+                          (click)="moveTempCol(ci, tci, 1)"
+                        >
+                          &darr;
+                        </button>
+                        <button
+                          class="col-pill-del"
+                          type="button"
+                          (click)="removeTempCol(ci, tci)"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="col-add-row"
+                    [class.visible]="draft.type === 'list-object'"
+                    *ngIf="newTempColDrafts[ci] as tcDraft"
+                  >
+                    <input
+                      class="var-input-sm"
+                      [(ngModel)]="tcDraft.key"
+                      placeholder="cle_technique"
+                    />
+                    <input
+                      class="var-input-sm label"
+                      [(ngModel)]="tcDraft.label"
+                      placeholder="Libellé"
+                    />
+                    <button
+                      class="btn sm"
+                      type="button"
+                      (click)="addTempCol(ci)"
+                    >
+                      Ajouter colonne
+                    </button>
+                  </div>
+                </ng-container>
+
+                <div
+                  style="
+                    margin-top: 10px;
+                    padding: 10px 12px;
+                    border: 1px dashed var(--line);
+                    border-radius: 12px;
+                    background: #fafbfd;
+                    font-size: 11px;
+                    color: var(--text2);
+                  "
+                >
+                  Variables pilotées par le schéma SQL Server.
+                </div>
+              </div>
+              <!-- /class-block --> </ng-container
+            ><!-- /selectedFamId -->
+          </div>
+        </div>
+
         <div class="card" *ngIf="selectedFamily as fam">
           <div class="card-header">
             <div class="card-title">
@@ -326,10 +2208,10 @@
                 <path d="M6 12h12" />
                 <path d="M10 17h4" />
               </svg>
-              RequÃªte SQL bÃ©nÃ©ficiaires
+              Requête SQL bénéficiaires
             </div>
             <div class="flex gap-8">
-              <span class="chip chip-teal">Liste pour aperÃ§u / impression</span>
+              <span class="chip chip-teal">Liste pour aperçu / impression</span>
               <span
                 class="chip"
                 style="
@@ -338,14 +2220,14 @@
                   border: 1px solid #fcd34d;
                 "
                 *ngIf="fam['customBeneficiarySql']"
-                >SQL personnalisÃ©</span
+                >SQL personnalisé</span
               >
             </div>
           </div>
           <div class="card-body">
             <p class="text-muted" style="margin-bottom: 10px">
-              Quand la cible du document est une table, ce SELECT sert Ã 
-              afficher les bÃ©nÃ©ficiaires disponibles avant l'aperÃ§u et
+              Quand la cible du document est une table, ce SELECT sert à
+              afficher les bénéficiaires disponibles avant l'aperçu et
               l'impression.
             </p>
             <div class="flex gap-8" style="margin-bottom: 10px">
@@ -354,7 +2236,7 @@
                 type="button"
                 (click)="regenerateFamilyBeneficiarySql(fam.id, false, true)"
               >
-                RÃ©gÃ©nÃ©rer SELECT bÃ©nÃ©ficiaires
+                Régénérer SELECT bénéficiaires
               </button>
               <button
                 class="btn sm"
@@ -956,7 +2838,118 @@
             </div>
           </div>
         </div>
-        <div id="familyEditorAfterFilters"></div>
+        <!-- ── TRANCHE 1: Requête SQL principale — Angular pur ── -->
+        <div class="card" *ngIf="selectedFamily as fam">
+          <div class="card-header">
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+              </svg>
+              Requête SQL principale
+            </div>
+            <div class="flex gap-8">
+              <span class="chip chip-teal"
+                >SELECT automatique à la génération</span
+              >
+              <span
+                class="chip"
+                style="
+                  background: #fef3c7;
+                  color: #92400e;
+                  border: 1px solid #fcd34d;
+                "
+                *ngIf="fam['customMainSql']"
+                >SQL personnalisé</span
+              >
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="text-muted" style="margin-bottom: 10px">
+              Les paramètres :nom_param seront substitués automatiquement lors
+              de la génération.
+            </p>
+            <div class="sql-wrap">
+              <textarea
+                class="sql-input"
+                rows="9"
+                [value]="familyDraftSql"
+                (change)="
+                  familyDraftSql = $any($event.target).value;
+                  updateFamilyDraftField(
+                    fam.id,
+                    'sql',
+                    $any($event.target).value
+                  )
+                "
+              ></textarea>
+              <div class="sql-badge">SQL</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TRANCHE 1: Templates associés — Angular pur ── -->
+        <div class="card" *ngIf="selectedFamily">
+          <div class="card-header">
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+                />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              Templates associés
+            </div>
+            <span class="chip chip-green"
+              >{{ selectedFamilyTemplates.length }} template(s)</span
+            >
+          </div>
+          <div class="card-body" style="padding: 0">
+            <div
+              class="text-muted"
+              *ngIf="selectedFamilyTemplates.length === 0"
+              style="padding: 16px; text-align: center"
+            >
+              Aucun template — créez-en depuis l'interface Admin Organization
+            </div>
+            <table
+              class="data-table"
+              *ngIf="selectedFamilyTemplates.length > 0"
+            >
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Organization</th>
+                  <th>Mis à jour</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let tmpl of selectedFamilyTemplates">
+                  <td>
+                    <strong>{{ tmpl.nom || "" }}</strong>
+                  </td>
+                  <td>
+                    {{ getTemplateOrganizationName(tmpl.organizationId) }}
+                  </td>
+                  <td>{{ formatDate(tmpl.updatedAt) }}</td>
+                  <td><span class="chip chip-green">Publié</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <div
         class="content-panel"
@@ -1671,12 +3664,14 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="modalOrganization">
+<div
+  class="modal-overlay"
+  [class.open]="isOrganizationModalOpen"
+  data-modal-id="org"
+>
   <div class="modal" style="max-width: 960px">
     <div class="modal-header">
-      <span class="modal-title" id="organizationModalTitle"
-        >Nouvelle Organization</span
-      >
+      <span class="modal-title">{{ organizationModalTitle }}</span>
       <button
         class="modal-close"
         type="button"
@@ -1690,20 +3685,24 @@
         <label class="form-label">Nom <span class="req">*</span></label
         ><input
           class="form-input"
-          id="organizationName"
+          [(ngModel)]="orgDraft.nom"
           placeholder="Ex: ISET Tunis"
         />
       </div>
       <div class="form-row" style="margin: 0">
         <label class="form-label">Ville</label
-        ><input class="form-input" id="organizationCity" placeholder="Tunis" />
+        ><input
+          class="form-input"
+          [(ngModel)]="orgDraft.ville"
+          placeholder="Tunis"
+        />
       </div>
     </div>
     <div class="form-row" style="margin-top: 14px">
       <label class="form-label">Adresse</label
       ><input
         class="form-input"
-        id="organizationAddress"
+        [(ngModel)]="orgDraft.adresse"
         placeholder="Adresse complète"
       />
     </div>
@@ -1711,7 +3710,7 @@
       <label class="form-label">Téléphone</label
       ><input
         class="form-input"
-        id="organizationPhone"
+        [(ngModel)]="orgDraft.tel"
         placeholder="+216 ..."
       />
     </div>
@@ -1719,12 +3718,25 @@
       <label class="form-label">E-mail</label
       ><input
         class="form-input"
-        id="organizationEmail"
+        [(ngModel)]="orgDraft.email"
         type="email"
         placeholder="contact@organization.tn"
       />
     </div>
-    <div class="form-grid c2" id="organizationExtraFields"></div>
+    <div class="form-grid c2" *ngIf="orgDraft.extraFields.length > 0">
+      <div
+        class="form-row"
+        style="margin: 0"
+        *ngFor="let field of orgDraft.extraFields"
+      >
+        <label class="form-label">{{ field.key }}</label>
+        <input
+          class="form-input"
+          [(ngModel)]="field.value"
+          [placeholder]="field.key"
+        />
+      </div>
+    </div>
     <div class="modal-actions">
       <button
         class="btn"
@@ -1740,12 +3752,14 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="modalAdmin">
+<div
+  class="modal-overlay"
+  [class.open]="isAdminModalOpen"
+  data-modal-id="admin"
+>
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title" id="adminModalTitle"
-        >Nouvel administrateur</span
-      >
+      <span class="modal-title">{{ adminModalTitle }}</span>
       <button
         class="modal-close"
         type="button"
@@ -1757,13 +3771,17 @@
     <div class="form-grid c2">
       <div class="form-row" style="margin: 0">
         <label class="form-label">Nom complet <span class="req">*</span></label
-        ><input class="form-input" id="adminNom" placeholder="Prénom Nom" />
+        ><input
+          class="form-input"
+          [(ngModel)]="adminDraft.nom"
+          placeholder="Prénom Nom"
+        />
       </div>
       <div class="form-row" style="margin: 0">
         <label class="form-label">E-mail</label
         ><input
           class="form-input"
-          id="adminEmail"
+          [(ngModel)]="adminDraft.email"
           type="email"
           placeholder="email@organization.tn"
         />
@@ -1773,20 +3791,27 @@
       <label class="form-label"
         >Organization assignée <span class="req">*</span></label
       >
-      <select class="form-input" id="adminOrganization">
+      <select class="form-input" [(ngModel)]="adminDraft.organizationId">
         <option value="">— Choisir —</option>
+        <option *ngFor="let org of organizations" [value]="org.id">
+          {{ org.nom || org.id }}
+        </option>
       </select>
     </div>
     <div class="form-grid c2">
       <div class="form-row" style="margin: 0">
         <label class="form-label">Profil</label>
-        <input class="form-input" id="adminProfile" placeholder="Profil" />
+        <input
+          class="form-input"
+          [(ngModel)]="adminDraft.profile"
+          placeholder="Profil"
+        />
       </div>
       <div class="form-row" style="margin: 0">
         <label class="form-label">Mot de passe</label>
         <input
           class="form-input"
-          id="adminPassword"
+          [(ngModel)]="adminDraft.password"
           type="text"
           placeholder="Laisser vide pour conserver"
         />
