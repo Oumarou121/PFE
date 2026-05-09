@@ -232,6 +232,7 @@ export class AdminComponent
   saveStatus = "Prêt";
   previewOpen = false;
   previewHtml: SafeHtml = "";
+  previewPlainHtml = "";
   previewBeneficiaries: BeneficiaryRecord[] = [];
   previewBeneficiarySearch = "";
   selectedPreviewBeneficiaryId = "";
@@ -462,6 +463,7 @@ export class AdminComponent
     private notifications: NotificationService,
     private dialog: MatDialog,
     private sanitizer: DomSanitizer,
+    private elementRef: ElementRef<HTMLElement>,
     // ─── ADDED: NgZone and ChangeDetectorRef for performance ─────────────────
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef,
@@ -1322,7 +1324,9 @@ export class AdminComponent
     );
   }
 
-  formatAllowedFilterValues(options: { value: string; label: string }[] = []): string {
+  formatAllowedFilterValues(
+    options: { value: string; label: string }[] = [],
+  ): string {
     return options
       .map((option) =>
         option.label && option.label !== option.value
@@ -1999,6 +2003,11 @@ export class AdminComponent
       previewTemplate,
       person || this.currentOrganization || {},
     );
+    this.previewPlainHtml = html;
+    const themeVars = this.documentRender.getDocumentThemeVars(previewTemplate);
+    Object.entries(themeVars).forEach(([key, value]) => {
+      this.elementRef.nativeElement.style.setProperty(key, value);
+    });
     this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(html);
     this.cdr.markForCheck();
   }
