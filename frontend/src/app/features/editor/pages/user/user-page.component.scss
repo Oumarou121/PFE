@@ -52,13 +52,6 @@
   --doc-table-header-bg: transparent;
   --doc-table-row-alt-bg: #f8fafc;
 }
-// :host {
-//   font-family: var(--font);
-//   background: var(--bg);
-//   color: var(--text);
-//   font-size: 13px;
-//   overflow-x: hidden;
-// }
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -119,7 +112,6 @@
   }
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ TOP NAV Ã¢â€â‚¬Ã¢â€â‚¬ */
 .topnav {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -199,7 +191,6 @@
   background: var(--red-bg);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ HERO Ã¢â€â‚¬Ã¢â€â‚¬ */
 .hero {
   background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%);
   padding: 20px 24px;
@@ -242,7 +233,6 @@
   white-space: nowrap;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ LAYOUT Ã¢â€â‚¬Ã¢â€â‚¬ */
 .main-wrap {
   max-width: 1200px;
   margin: 0 auto;
@@ -523,7 +513,6 @@
   }
 }
 
-/* STEPPER */
 .stepper {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -646,7 +635,6 @@
   display: block;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ CARDS Ã¢â€â‚¬Ã¢â€â‚¬ */
 .fam-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -793,7 +781,6 @@
   margin-top: 1px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ DOC PANEL Ã¢â€â‚¬Ã¢â€â‚¬ */
 .doc-panel {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -859,7 +846,6 @@
   font-size: 10px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ A4 CANVAS Ã¢â€â‚¬Ã¢â€â‚¬ */
 .a4-canvas {
   background: #c8cdd8;
   overflow-y: auto;
@@ -972,7 +958,6 @@
   margin-top: 8px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ ZOOM BAR Ã¢â€â‚¬Ã¢â€â‚¬ */
 .zoom-bar {
   display: flex;
   align-items: center;
@@ -989,8 +974,6 @@
   text-align: center;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ CONTENU DOC Ã¢â€â‚¬Ã¢â€â‚¬ */
-/* —— CONTENU DOC —— */
 .doc-content {
   font-family: var(--doc-font-body, "Times New Roman", Times, serif);
   font-size: 12pt;
@@ -998,7 +981,6 @@
   color: var(--doc-color-text, #111111);
   white-space: break-spaces;
 }
-/* Paragraphs - high specificity to override Angular Material and global resets */
 .a4-canvas .preview-page .doc-page-header p,
 .a4-canvas .preview-page .doc-page-body p,
 .a4-canvas .preview-page .doc-page-footer p,
@@ -1016,7 +998,6 @@
 .doc-content p:last-child {
   margin-bottom: 0 !important;
 }
-/* Headings */
 .a4-canvas .preview-page h1,
 .doc-content h1 {
   font-family: var(
@@ -1056,7 +1037,6 @@
   color: var(--doc-color-heading, #0f172a) !important;
   margin: 0.6em 0 0.3em !important;
 }
-/* Lists */
 .a4-canvas .preview-page ul,
 .doc-content ul {
   padding-left: 2em !important;
@@ -1073,14 +1053,12 @@
 .doc-content li {
   display: list-item !important;
 }
-/* HR */
 .a4-canvas .preview-page hr,
 .doc-content hr {
   border: none !important;
   border-top: 1.5px solid var(--doc-color-border, #c8cdd8) !important;
   margin: 10px 0 !important;
 }
-/* Tables */
 .a4-canvas .preview-page table,
 .doc-content table {
   border-collapse: collapse !important;
@@ -1124,7 +1102,6 @@
   white-space: inherit !important;
   margin: 0 !important;
 }
-/* Underlines and links inside doc sections */
 .a4-canvas .preview-page .doc-page-header u,
 .a4-canvas .preview-page .doc-page-body u,
 .a4-canvas .preview-page .doc-page-footer u,
@@ -1135,7 +1112,6 @@
   text-underline-offset: 0.14em;
   text-decoration-skip-ink: none;
 }
-/* var-resolved / var-missing (outside preview, e.g. editor) */
 .var-resolved {
   color: inherit;
   font-weight: inherit;
@@ -1152,7 +1128,6 @@
   font-size: 0.9em;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ DOC WAIT Ã¢â€â‚¬Ã¢â€â‚¬ */
 .doc-wait {
   display: flex;
   flex-direction: column;
@@ -1221,7 +1196,6 @@
   }
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ BUTTONS Ã¢â€â‚¬Ã¢â€â‚¬ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1319,7 +1293,6 @@
   margin-top: 16px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ TOAST Ã¢â€â‚¬Ã¢â€â‚¬ */
 .toast-stack {
   position: fixed;
   bottom: 24px;

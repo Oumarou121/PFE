@@ -807,6 +807,7 @@
                           <option
                             *ngFor="let col of beneficiaryTableColumns"
                             [value]="col.name"
+                            [selected]="col.name === fam.beneficiaryLinkColumn"
                           >
                             {{ col.name
                             }}{{
@@ -846,6 +847,9 @@
                             <option
                               *ngFor="let col of beneficiaryTableColumns"
                               [value]="col.name"
+                              [selected]="
+                                col.name === fam.beneficiaryDisplayColumn1
+                              "
                             >
                               {{ col.name
                               }}{{ col.comment ? " - " + col.comment : "" }}
@@ -871,6 +875,9 @@
                             <option
                               *ngFor="let col of beneficiaryTableColumns"
                               [value]="col.name"
+                              [selected]="
+                                col.name === fam.beneficiaryDisplayColumn2
+                              "
                             >
                               {{ col.name
                               }}{{ col.comment ? " - " + col.comment : "" }}
@@ -895,6 +902,650 @@
                 <label class="form-label">Tables masquées</label>
                 <div class="text-muted" style="padding-top: 9px">
                   {{ hiddenFamilyTablesHint }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" *ngIf="selectedFamily as fam">
+          <div class="card-header">
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 7h18" />
+                <path d="M6 12h12" />
+                <path d="M10 17h4" />
+              </svg>
+              Requête SQL bénéficiaires
+            </div>
+            <div class="flex gap-8">
+              <span class="chip chip-teal">Liste pour aperçu / impression</span>
+              <span
+                class="chip"
+                style="
+                  background: #fef3c7;
+                  color: #92400e;
+                  border: 1px solid #fcd34d;
+                "
+                *ngIf="fam['customBeneficiarySql']"
+                >SQL personnalisé</span
+              >
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="text-muted" style="margin-bottom: 10px">
+              Quand la cible du document est une table, ce SELECT sert à
+              afficher les bénéficiaires disponibles avant l'aperçu et
+              l'impression.
+            </p>
+            <div class="flex gap-8" style="margin-bottom: 10px">
+              <button
+                class="btn sm"
+                type="button"
+                (click)="regenerateFamilyBeneficiarySql(fam.id, false, true)"
+              >
+                Régénérer SELECT bénéficiaires
+              </button>
+              <button
+                class="btn sm"
+                type="button"
+                (click)="testFamilyBeneficiaryQuery(fam.id)"
+              >
+                Tester la liste
+              </button>
+            </div>
+            <div class="sql-wrap">
+              <textarea
+                class="sql-input"
+                id="fBeneficiarySql"
+                rows="7"
+                [disabled]="fam.beneficiaryMode === 'organization'"
+                [value]="fam.beneficiarySql || ''"
+                (change)="
+                  updateFamilyDraftField(
+                    fam.id,
+                    'beneficiarySql',
+                    $any($event.target).value
+                  )
+                "
+              ></textarea>
+              <div class="sql-badge">BENEF</div>
+            </div>
+            <pre
+              id="beneficiaryPreviewBox"
+              style="
+                margin-top: 10px;
+                white-space: pre-wrap;
+                font-size: 11px;
+                color: var(--text2);
+                background: #fbfcfe;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                padding: 12px;
+              "
+              >{{ beneficiaryPreviewText }}</pre
+            >
+          </div>
+        </div>
+        <div
+          class="card"
+          *ngIf="selectedFamily as fam"
+          style="margin-bottom: 16px"
+        >
+          <div class="card-header">
+            <div class="card-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 7h18" />
+                <path d="M6 12h12" />
+                <path d="M10 17h4" />
+              </svg>
+              <div class="card-title">Catalogue de filtres</div>
+            </div>
+            <div>
+              <span class="chip chip-amber"
+                >{{ selectedFamilyFilters.length }} filtre(s)</span
+              >
+              <button
+                class="btn sm"
+                type="button"
+                (click)="addSelectedFamilyFilter()"
+              >
+                Ajouter un filtre
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="text-muted" style="margin-bottom: 10px">
+              Ces filtres sont definis au niveau de la famille. Les templates
+              pourront ensuite les activer, les verrouiller, fixer une valeur
+              par defaut ou limiter les valeurs autorisees.
+            </p>
+            <div
+              class="text-muted"
+              *ngIf="!selectedFamilyFilters.length"
+              style="
+                padding: 14px;
+                border: 1px dashed var(--line);
+                border-radius: 14px;
+                background: #fafbfd;
+              "
+            >
+              Aucun filtre défini. Ajoutez-en pour permettre un filtrage
+              dynamique.
+            </div>
+            <div
+              *ngFor="let filter of selectedFamilyFilters; let i = index"
+              style="
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                padding: 14px;
+                background: #fbfcfe;
+                margin-bottom: 12px;
+              "
+            >
+              <div
+                class="flex gap-8"
+                style="align-items: center; margin-bottom: 12px"
+              >
+                <strong style="font-size: 13px; color: var(--text)">{{
+                  filter.label || "Filtre " + (i + 1)
+                }}</strong>
+                <span class="chip chip-teal">{{ filter.key }}</span>
+                <span class="chip chip-purple">{{ filter.type }}</span>
+                <button
+                  class="btn sm danger ml-auto"
+                  type="button"
+                  (click)="removeSelectedFamilyFilter(filter.id)"
+                >
+                  Supprimer
+                </button>
+              </div>
+              <div class="form-grid c3">
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Libellé</label>
+                  <input
+                    class="form-input"
+                    [value]="filter.label"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'label',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                </div>
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Paramètre SQL</label>
+                  <input
+                    class="form-input"
+                    [value]="filter.key"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'key',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                </div>
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Type</label>
+                  <select
+                    class="form-input"
+                    [value]="filter.type"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'type',
+                        $any($event.target).value
+                      )
+                    "
+                  >
+                    <option value="text">text</option>
+                    <option value="number">number</option>
+                    <option value="date">date</option>
+                    <option value="select">select</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-grid c3" style="margin-top: 12px">
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Liaison SQL</label>
+                  <select
+                    class="form-input"
+                    [value]="
+                      filter.columnBindings?.length ||
+                      filter.columnBinding?.mode === 'table-links' ||
+                      filter.columnBinding?.mode === 'base-column'
+                        ? 'table-links'
+                        : 'manual'
+                    "
+                    (change)="
+                      updateSelectedFamilyFilterBindingMode(
+                        filter.id,
+                        $any($event.target).value
+                      )
+                    "
+                  >
+                    <option value="manual">Saisie manuelle</option>
+                    <option value="table-links">
+                      Table principale + secondaires
+                    </option>
+                  </select>
+                </div>
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Placeholder</label>
+                  <input
+                    class="form-input"
+                    [value]="filter.placeholder || ''"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'placeholder',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                </div>
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Source valeurs</label>
+                  <select
+                    class="form-input"
+                    [disabled]="filter.type !== 'select'"
+                    [value]="filter.sourceType === 'sql' ? 'sql' : 'static'"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'sourceType',
+                        $any($event.target).value
+                      )
+                    "
+                  >
+                    <option value="static">Liste statique</option>
+                    <option value="sql">Requete SQL</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-grid c2" style="margin-top: 12px">
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Visibilite</label>
+                  <div
+                    class="flex gap-12"
+                    style="
+                      padding-top: 10px;
+                      font-size: 12px;
+                      color: var(--text2);
+                    "
+                  >
+                    <label>
+                      <input
+                        type="checkbox"
+                        [checked]="filter.roles?.admin !== false"
+                        (change)="
+                          updateSelectedFamilyFilterRole(
+                            filter.id,
+                            'admin',
+                            $any($event.target).checked
+                          )
+                        "
+                      />
+                      Admin
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        [checked]="filter.roles?.user !== false"
+                        (change)="
+                          updateSelectedFamilyFilterRole(
+                            filter.id,
+                            'user',
+                            $any($event.target).checked
+                          )
+                        "
+                      />
+                      Utilisateur
+                    </label>
+                  </div>
+                </div>
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Aide</label>
+                  <input
+                    class="form-input"
+                    [value]="filter.helpText || ''"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'helpText',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                </div>
+              </div>
+              <div
+                style="
+                  margin-top: 12px;
+                  padding: 12px;
+                  border: 1px dashed var(--line);
+                  border-radius: 14px;
+                  background: #fff;
+                "
+                *ngIf="
+                  filter.columnBindings?.length ||
+                  filter.columnBinding?.mode === 'table-links' ||
+                  filter.columnBinding?.mode === 'base-column'
+                "
+              >
+                <div
+                  style="
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: var(--text);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Colonnes liees par table
+                </div>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                    gap: 10px;
+                  "
+                >
+                  <div
+                    style="
+                      border: 1px solid var(--line);
+                      border-radius: 12px;
+                      padding: 10px;
+                      background: #fbfcfe;
+                    "
+                    *ngFor="
+                      let tableName of getSelectedFamilyBindableTables();
+                      let ti = index
+                    "
+                  >
+                    <div
+                      style="
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: var(--text);
+                        margin-bottom: 6px;
+                      "
+                    >
+                      {{ tableName }}
+                      <span style="color: var(--text3); font-weight: 500"
+                        >({{ ti === 0 ? "principale" : "secondaire" }})</span
+                      >
+                    </div>
+                    <select
+                      class="form-input"
+                      (change)="
+                        updateSelectedFamilyFilterBoundColumnForTable(
+                          filter.id,
+                          tableName,
+                          $any($event.target).value
+                        )
+                      "
+                    >
+                      <option
+                        value=""
+                        [selected]="
+                          !getFilterBindingColumnName(filter, tableName)
+                        "
+                      >
+                        Aucune
+                      </option>
+                      <option
+                        *ngIf="
+                          getFilterBindingColumnName(filter, tableName) &&
+                          !hasSelectedFamilyTableColumn(
+                            tableName,
+                            getFilterBindingColumnName(filter, tableName)
+                          )
+                        "
+                        [value]="getFilterBindingColumnName(filter, tableName)"
+                        [selected]="true"
+                      >
+                        {{ getFilterBindingColumnName(filter, tableName) }}
+                        (actuelle)
+                      </option>
+                      <option
+                        *ngFor="
+                          let column of getSelectedFamilyTableColumns(tableName)
+                        "
+                        [value]="column.name"
+                        [selected]="
+                          column.name ===
+                          getFilterBindingColumnName(filter, tableName)
+                        "
+                      >
+                        {{ column.name
+                        }}{{ column.comment ? " - " + column.comment : "" }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="form-row"
+                style="margin-top: 12px"
+                *ngIf="filter.type === 'select' && filter.sourceType !== 'sql'"
+              >
+                <label class="form-label">Valeurs possibles</label>
+                <textarea
+                  class="form-input"
+                  rows="5"
+                  style="min-height: 120px"
+                  [value]="getFilterStaticOptionsText(filter)"
+                  (change)="
+                    updateSelectedFamilyFilterStaticOptions(
+                      filter.id,
+                      $any($event.target).value
+                    )
+                  "
+                  placeholder="2024|Annee 2024&#10;2025|Annee 2025"
+                ></textarea>
+              </div>
+              <div
+                style="
+                  margin-top: 12px;
+                  padding: 12px;
+                  border: 1px dashed var(--line);
+                  border-radius: 14px;
+                  background: #fff;
+                "
+                *ngIf="filter.type === 'select' && filter.sourceType === 'sql'"
+              >
+                <div class="form-grid c3">
+                  <div class="form-row" style="margin: 0">
+                    <label class="form-label">Table source</label>
+                    <select
+                      class="form-input"
+                      (change)="
+                        updateSelectedFamilyFilterSqlBuilderField(
+                          filter.id,
+                          'tableName',
+                          $any($event.target).value
+                        )
+                      "
+                    >
+                      <option
+                        value=""
+                        [selected]="
+                          !getFilterSqlBuilderField(filter, 'tableName')
+                        "
+                      >
+                        Choisir
+                      </option>
+                      <option
+                        *ngIf="
+                          getFilterSqlBuilderField(filter, 'tableName') &&
+                          !hasSelectedFamilyVisibleTable(
+                            getFilterSqlBuilderField(filter, 'tableName')
+                          )
+                        "
+                        [value]="getFilterSqlBuilderField(filter, 'tableName')"
+                        [selected]="true"
+                      >
+                        {{ getFilterSqlBuilderField(filter, "tableName") }}
+                        (actuelle)
+                      </option>
+                      <option
+                        *ngFor="let table of getSelectedFamilyVisibleTables()"
+                        [value]="table.name"
+                        [selected]="
+                          table.name ===
+                          getFilterSqlBuilderField(filter, 'tableName')
+                        "
+                      >
+                        {{ table.name
+                        }}{{ table.comment ? " - " + table.comment : "" }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-row" style="margin: 0">
+                    <label class="form-label">Colonne valeur</label>
+                    <select
+                      class="form-input"
+                      (change)="
+                        updateSelectedFamilyFilterSqlBuilderField(
+                          filter.id,
+                          'valueColumn',
+                          $any($event.target).value
+                        )
+                      "
+                    >
+                      <option
+                        value=""
+                        [selected]="
+                          !getFilterSqlBuilderField(filter, 'valueColumn')
+                        "
+                      >
+                        Choisir
+                      </option>
+                      <option
+                        *ngIf="
+                          getFilterSqlBuilderField(filter, 'valueColumn') &&
+                          !hasSelectedFamilyTableColumn(
+                            getFilterSqlBuilderField(filter, 'tableName'),
+                            getFilterSqlBuilderField(filter, 'valueColumn')
+                          )
+                        "
+                        [value]="
+                          getFilterSqlBuilderField(filter, 'valueColumn')
+                        "
+                        [selected]="true"
+                      >
+                        {{ getFilterSqlBuilderField(filter, "valueColumn") }}
+                        (actuelle)
+                      </option>
+                      <option
+                        *ngFor="
+                          let column of getSelectedFamilyTableColumns(
+                            getFilterSqlBuilderField(filter, 'tableName')
+                          )
+                        "
+                        [value]="column.name"
+                        [selected]="
+                          column.name ===
+                          getFilterSqlBuilderField(filter, 'valueColumn')
+                        "
+                      >
+                        {{ column.name }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-row" style="margin: 0">
+                    <label class="form-label">Colonne libelle</label>
+                    <select
+                      class="form-input"
+                      (change)="
+                        updateSelectedFamilyFilterSqlBuilderField(
+                          filter.id,
+                          'labelColumn',
+                          $any($event.target).value
+                        )
+                      "
+                    >
+                      <option
+                        value=""
+                        [selected]="
+                          !getFilterSqlBuilderField(filter, 'labelColumn')
+                        "
+                      >
+                        Meme valeur
+                      </option>
+                      <option
+                        *ngIf="
+                          getFilterSqlBuilderField(filter, 'labelColumn') &&
+                          !hasSelectedFamilyTableColumn(
+                            getFilterSqlBuilderField(filter, 'tableName'),
+                            getFilterSqlBuilderField(filter, 'labelColumn')
+                          )
+                        "
+                        [value]="
+                          getFilterSqlBuilderField(filter, 'labelColumn')
+                        "
+                        [selected]="true"
+                      >
+                        {{ getFilterSqlBuilderField(filter, "labelColumn") }}
+                        (actuelle)
+                      </option>
+                      <option
+                        *ngFor="
+                          let column of getSelectedFamilyTableColumns(
+                            getFilterSqlBuilderField(filter, 'tableName')
+                          )
+                        "
+                        [value]="column.name"
+                        [selected]="
+                          column.name ===
+                          getFilterSqlBuilderField(filter, 'labelColumn')
+                        "
+                      >
+                        {{ column.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div class="flex gap-8" style="margin-top: 10px">
+                  <button
+                    class="btn sm"
+                    type="button"
+                    (click)="regenerateSelectedFamilyFilterSql(filter.id)"
+                  >
+                    Generer la requete
+                  </button>
+                </div>
+                <div class="form-row" style="margin-top: 12px">
+                  <label class="form-label"
+                    >Requete SQL des valeurs possibles</label
+                  >
+                  <textarea
+                    class="form-input"
+                    rows="5"
+                    style="min-height: 120px"
+                    [value]="filter.sqlQuery || ''"
+                    (change)="
+                      updateSelectedFamilyFilterField(
+                        filter.id,
+                        'sqlQuery',
+                        $any($event.target).value
+                      )
+                    "
+                  ></textarea>
                 </div>
               </div>
             </div>
@@ -2195,649 +2846,6 @@
           </div>
         </div>
 
-        <div class="card" *ngIf="selectedFamily as fam">
-          <div class="card-header">
-            <div class="card-title">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M3 7h18" />
-                <path d="M6 12h12" />
-                <path d="M10 17h4" />
-              </svg>
-              Requête SQL bénéficiaires
-            </div>
-            <div class="flex gap-8">
-              <span class="chip chip-teal">Liste pour aperçu / impression</span>
-              <span
-                class="chip"
-                style="
-                  background: #fef3c7;
-                  color: #92400e;
-                  border: 1px solid #fcd34d;
-                "
-                *ngIf="fam['customBeneficiarySql']"
-                >SQL personnalisé</span
-              >
-            </div>
-          </div>
-          <div class="card-body">
-            <p class="text-muted" style="margin-bottom: 10px">
-              Quand la cible du document est une table, ce SELECT sert à
-              afficher les bénéficiaires disponibles avant l'aperçu et
-              l'impression.
-            </p>
-            <div class="flex gap-8" style="margin-bottom: 10px">
-              <button
-                class="btn sm"
-                type="button"
-                (click)="regenerateFamilyBeneficiarySql(fam.id, false, true)"
-              >
-                Régénérer SELECT bénéficiaires
-              </button>
-              <button
-                class="btn sm"
-                type="button"
-                (click)="testFamilyBeneficiaryQuery(fam.id)"
-              >
-                Tester la liste
-              </button>
-            </div>
-            <div class="sql-wrap">
-              <textarea
-                class="sql-input"
-                id="fBeneficiarySql"
-                rows="7"
-                [disabled]="fam.beneficiaryMode === 'organization'"
-                [value]="fam.beneficiarySql || ''"
-                (change)="
-                  updateFamilyDraftField(
-                    fam.id,
-                    'beneficiarySql',
-                    $any($event.target).value
-                  )
-                "
-              ></textarea>
-              <div class="sql-badge">BENEF</div>
-            </div>
-            <pre
-              id="beneficiaryPreviewBox"
-              style="
-                margin-top: 10px;
-                white-space: pre-wrap;
-                font-size: 11px;
-                color: var(--text2);
-                background: #fbfcfe;
-                border: 1px solid var(--line);
-                border-radius: 12px;
-                padding: 12px;
-              "
-              >{{ beneficiaryPreviewText }}</pre
-            >
-          </div>
-        </div>
-        <div
-          class="card"
-          *ngIf="selectedFamily as fam"
-          style="margin-bottom: 16px"
-        >
-          <div class="card-header">
-            <div class="card-title">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M3 7h18" />
-                <path d="M6 12h12" />
-                <path d="M10 17h4" />
-              </svg>
-              <div class="card-title">Catalogue de filtres</div>
-            </div>
-            <div>
-              <span class="chip chip-amber"
-                >{{ selectedFamilyFilters.length }} filtre(s)</span
-              >
-              <button
-                class="btn sm"
-                type="button"
-                (click)="addSelectedFamilyFilter()"
-              >
-                Ajouter un filtre
-              </button>
-            </div>
-          </div>
-          <div class="card-body">
-            <p class="text-muted" style="margin-bottom: 10px">
-              Ces filtres sont definis au niveau de la famille. Les templates
-              pourront ensuite les activer, les verrouiller, fixer une valeur
-              par defaut ou limiter les valeurs autorisees.
-            </p>
-            <div
-              class="text-muted"
-              *ngIf="!selectedFamilyFilters.length"
-              style="
-                padding: 14px;
-                border: 1px dashed var(--line);
-                border-radius: 14px;
-                background: #fafbfd;
-              "
-            >
-              Aucun filtre défini. Ajoutez-en pour permettre un filtrage
-              dynamique.
-            </div>
-            <div
-              *ngFor="let filter of selectedFamilyFilters; let i = index"
-              style="
-                border: 1px solid var(--line);
-                border-radius: 16px;
-                padding: 14px;
-                background: #fbfcfe;
-                margin-bottom: 12px;
-              "
-            >
-              <div
-                class="flex gap-8"
-                style="align-items: center; margin-bottom: 12px"
-              >
-                <strong style="font-size: 13px; color: var(--text)">{{
-                  filter.label || "Filtre " + (i + 1)
-                }}</strong>
-                <span class="chip chip-teal">{{ filter.key }}</span>
-                <span class="chip chip-purple">{{ filter.type }}</span>
-                <button
-                  class="btn sm danger ml-auto"
-                  type="button"
-                  (click)="removeSelectedFamilyFilter(filter.id)"
-                >
-                  Supprimer
-                </button>
-              </div>
-              <div class="form-grid c3">
-                <div class="form-row" style="margin: 0">
-                  <label class="form-label">Libellé</label>
-                  <input
-                    class="form-input"
-                    [value]="filter.label"
-                    (change)="
-                      updateSelectedFamilyFilterField(
-                        filter.id,
-                        'label',
-                        $any($event.target).value
-                      )
-                    "
-                  />
-                </div>
-                <div class="form-row" style="margin: 0">
-                  <label class="form-label">Paramètre SQL</label>
-                  <input
-                    class="form-input"
-                    [value]="filter.key"
-                    (change)="
-                      updateSelectedFamilyFilterField(
-                        filter.id,
-                        'key',
-                        $any($event.target).value
-                      )
-                    "
-                  />
-                </div>
-                <div class="form-row" style="margin: 0">
-                  <label class="form-label">Type</label>
-                  <select
-                    class="form-input"
-                    [value]="filter.type"
-                    (change)="
-                      updateSelectedFamilyFilterField(
-                        filter.id,
-                        'type',
-                        $any($event.target).value
-                      )
-                    "
-                  >
-                    <option value="text">text</option>
-                    <option value="number">number</option>
-                    <option value="date">date</option>
-                    <option value="select">select</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-grid c3" style="margin-top: 12px">
-                <div class="form-row" style="margin: 0">
-                  <label class="form-label">Liaison SQL</label>
-                  <select
-                    class="form-input"
-                    [value]="
-                      filter.columnBindings?.length ||
-                      filter.columnBinding?.mode === 'table-links' ||
-                      filter.columnBinding?.mode === 'base-column'
-                        ? 'table-links'
-                        : 'manual'
-                    "
-                    (change)="
-                      updateSelectedFamilyFilterBindingMode(
-                        filter.id,
-                        $any($event.target).value
-                      )
-                    "
-                  >
-                    <option value="manual">Saisie manuelle</option>
-                    <option value="table-links">
-                      Table principale + secondaires
-                    </option>
-                  </select>
-                </div>
-                <div class="form-row" style="margin: 0">
-                  <label class="form-label">Placeholder</label>
-                  <input
-                    class="form-input"
-                    [value]="filter.placeholder || ''"
-                    (change)="
-                      updateSelectedFamilyFilterField(
-                        filter.id,
-                        'placeholder',
-                        $any($event.target).value
-                      )
-                    "
-                  />
-                </div>
-                <div class="form-row" style="margin: 0">
-                  <label class="form-label">Source valeurs</label>
-                  <select
-                    class="form-input"
-                    [disabled]="filter.type !== 'select'"
-                    [value]="filter.sourceType === 'sql' ? 'sql' : 'static'"
-                    (change)="
-                      updateSelectedFamilyFilterField(
-                        filter.id,
-                        'sourceType',
-                        $any($event.target).value
-                      )
-                    "
-                  >
-                    <option value="static">Liste statique</option>
-                    <option value="sql">Requete SQL</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-grid c2" style="margin-top: 12px">
-                <div class="form-row" style="margin: 0">
-                  <label class="form-label">Visibilite</label>
-                  <div
-                    class="flex gap-12"
-                    style="
-                      padding-top: 10px;
-                      font-size: 12px;
-                      color: var(--text2);
-                    "
-                  >
-                    <label>
-                      <input
-                        type="checkbox"
-                        [checked]="filter.roles?.admin !== false"
-                        (change)="
-                          updateSelectedFamilyFilterRole(
-                            filter.id,
-                            'admin',
-                            $any($event.target).checked
-                          )
-                        "
-                      />
-                      Admin
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        [checked]="filter.roles?.user !== false"
-                        (change)="
-                          updateSelectedFamilyFilterRole(
-                            filter.id,
-                            'user',
-                            $any($event.target).checked
-                          )
-                        "
-                      />
-                      Utilisateur
-                    </label>
-                  </div>
-                </div>
-                <div class="form-row" style="margin: 0">
-                  <label class="form-label">Aide</label>
-                  <input
-                    class="form-input"
-                    [value]="filter.helpText || ''"
-                    (change)="
-                      updateSelectedFamilyFilterField(
-                        filter.id,
-                        'helpText',
-                        $any($event.target).value
-                      )
-                    "
-                  />
-                </div>
-              </div>
-              <div
-                style="
-                  margin-top: 12px;
-                  padding: 12px;
-                  border: 1px dashed var(--line);
-                  border-radius: 14px;
-                  background: #fff;
-                "
-                *ngIf="
-                  filter.columnBindings?.length ||
-                  filter.columnBinding?.mode === 'table-links' ||
-                  filter.columnBinding?.mode === 'base-column'
-                "
-              >
-                <div
-                  style="
-                    font-size: 12px;
-                    font-weight: 700;
-                    color: var(--text);
-                    margin-bottom: 8px;
-                  "
-                >
-                  Colonnes liees par table
-                </div>
-                <div
-                  style="
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-                    gap: 10px;
-                  "
-                >
-                  <div
-                    style="
-                      border: 1px solid var(--line);
-                      border-radius: 12px;
-                      padding: 10px;
-                      background: #fbfcfe;
-                    "
-                    *ngFor="
-                      let tableName of getSelectedFamilyBindableTables();
-                      let ti = index
-                    "
-                  >
-                    <div
-                      style="
-                        font-size: 11px;
-                        font-weight: 700;
-                        color: var(--text);
-                        margin-bottom: 6px;
-                      "
-                    >
-                      {{ tableName }}
-                      <span style="color: var(--text3); font-weight: 500"
-                        >({{ ti === 0 ? "principale" : "secondaire" }})</span
-                      >
-                    </div>
-                    <select
-                      class="form-input"
-                      (change)="
-                        updateSelectedFamilyFilterBoundColumnForTable(
-                          filter.id,
-                          tableName,
-                          $any($event.target).value
-                        )
-                      "
-                    >
-                      <option
-                        value=""
-                        [selected]="
-                          !getFilterBindingColumnName(filter, tableName)
-                        "
-                      >
-                        Aucune
-                      </option>
-                      <option
-                        *ngIf="
-                          getFilterBindingColumnName(filter, tableName) &&
-                          !hasSelectedFamilyTableColumn(
-                            tableName,
-                            getFilterBindingColumnName(filter, tableName)
-                          )
-                        "
-                        [value]="getFilterBindingColumnName(filter, tableName)"
-                        [selected]="true"
-                      >
-                        {{ getFilterBindingColumnName(filter, tableName) }}
-                        (actuelle)
-                      </option>
-                      <option
-                        *ngFor="
-                          let column of getSelectedFamilyTableColumns(tableName)
-                        "
-                        [value]="column.name"
-                        [selected]="
-                          column.name ===
-                          getFilterBindingColumnName(filter, tableName)
-                        "
-                      >
-                        {{ column.name
-                        }}{{ column.comment ? " - " + column.comment : "" }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div
-                class="form-row"
-                style="margin-top: 12px"
-                *ngIf="filter.type === 'select' && filter.sourceType !== 'sql'"
-              >
-                <label class="form-label">Valeurs possibles</label>
-                <textarea
-                  class="form-input"
-                  rows="5"
-                  style="min-height: 120px"
-                  [value]="getFilterStaticOptionsText(filter)"
-                  (change)="
-                    updateSelectedFamilyFilterStaticOptions(
-                      filter.id,
-                      $any($event.target).value
-                    )
-                  "
-                  placeholder="2024|Annee 2024&#10;2025|Annee 2025"
-                ></textarea>
-              </div>
-              <div
-                style="
-                  margin-top: 12px;
-                  padding: 12px;
-                  border: 1px dashed var(--line);
-                  border-radius: 14px;
-                  background: #fff;
-                "
-                *ngIf="filter.type === 'select' && filter.sourceType === 'sql'"
-              >
-                <div class="form-grid c3">
-                  <div class="form-row" style="margin: 0">
-                    <label class="form-label">Table source</label>
-                    <select
-                      class="form-input"
-                      (change)="
-                        updateSelectedFamilyFilterSqlBuilderField(
-                          filter.id,
-                          'tableName',
-                          $any($event.target).value
-                        )
-                      "
-                    >
-                      <option
-                        value=""
-                        [selected]="
-                          !getFilterSqlBuilderField(filter, 'tableName')
-                        "
-                      >
-                        Choisir
-                      </option>
-                      <option
-                        *ngIf="
-                          getFilterSqlBuilderField(filter, 'tableName') &&
-                          !hasSelectedFamilyVisibleTable(
-                            getFilterSqlBuilderField(filter, 'tableName')
-                          )
-                        "
-                        [value]="getFilterSqlBuilderField(filter, 'tableName')"
-                        [selected]="true"
-                      >
-                        {{ getFilterSqlBuilderField(filter, "tableName") }}
-                        (actuelle)
-                      </option>
-                      <option
-                        *ngFor="let table of getSelectedFamilyVisibleTables()"
-                        [value]="table.name"
-                        [selected]="
-                          table.name ===
-                          getFilterSqlBuilderField(filter, 'tableName')
-                        "
-                      >
-                        {{ table.name
-                        }}{{ table.comment ? " - " + table.comment : "" }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="form-row" style="margin: 0">
-                    <label class="form-label">Colonne valeur</label>
-                    <select
-                      class="form-input"
-                      (change)="
-                        updateSelectedFamilyFilterSqlBuilderField(
-                          filter.id,
-                          'valueColumn',
-                          $any($event.target).value
-                        )
-                      "
-                    >
-                      <option
-                        value=""
-                        [selected]="
-                          !getFilterSqlBuilderField(filter, 'valueColumn')
-                        "
-                      >
-                        Choisir
-                      </option>
-                      <option
-                        *ngIf="
-                          getFilterSqlBuilderField(filter, 'valueColumn') &&
-                          !hasSelectedFamilyTableColumn(
-                            getFilterSqlBuilderField(filter, 'tableName'),
-                            getFilterSqlBuilderField(filter, 'valueColumn')
-                          )
-                        "
-                        [value]="
-                          getFilterSqlBuilderField(filter, 'valueColumn')
-                        "
-                        [selected]="true"
-                      >
-                        {{ getFilterSqlBuilderField(filter, "valueColumn") }}
-                        (actuelle)
-                      </option>
-                      <option
-                        *ngFor="
-                          let column of getSelectedFamilyTableColumns(
-                            getFilterSqlBuilderField(filter, 'tableName')
-                          )
-                        "
-                        [value]="column.name"
-                        [selected]="
-                          column.name ===
-                          getFilterSqlBuilderField(filter, 'valueColumn')
-                        "
-                      >
-                        {{ column.name }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="form-row" style="margin: 0">
-                    <label class="form-label">Colonne libelle</label>
-                    <select
-                      class="form-input"
-                      (change)="
-                        updateSelectedFamilyFilterSqlBuilderField(
-                          filter.id,
-                          'labelColumn',
-                          $any($event.target).value
-                        )
-                      "
-                    >
-                      <option
-                        value=""
-                        [selected]="
-                          !getFilterSqlBuilderField(filter, 'labelColumn')
-                        "
-                      >
-                        Meme valeur
-                      </option>
-                      <option
-                        *ngIf="
-                          getFilterSqlBuilderField(filter, 'labelColumn') &&
-                          !hasSelectedFamilyTableColumn(
-                            getFilterSqlBuilderField(filter, 'tableName'),
-                            getFilterSqlBuilderField(filter, 'labelColumn')
-                          )
-                        "
-                        [value]="
-                          getFilterSqlBuilderField(filter, 'labelColumn')
-                        "
-                        [selected]="true"
-                      >
-                        {{ getFilterSqlBuilderField(filter, "labelColumn") }}
-                        (actuelle)
-                      </option>
-                      <option
-                        *ngFor="
-                          let column of getSelectedFamilyTableColumns(
-                            getFilterSqlBuilderField(filter, 'tableName')
-                          )
-                        "
-                        [value]="column.name"
-                        [selected]="
-                          column.name ===
-                          getFilterSqlBuilderField(filter, 'labelColumn')
-                        "
-                      >
-                        {{ column.name }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <div class="flex gap-8" style="margin-top: 10px">
-                  <button
-                    class="btn sm"
-                    type="button"
-                    (click)="regenerateSelectedFamilyFilterSql(filter.id)"
-                  >
-                    Generer la requete
-                  </button>
-                </div>
-                <div class="form-row" style="margin-top: 12px">
-                  <label class="form-label"
-                    >Requete SQL des valeurs possibles</label
-                  >
-                  <textarea
-                    class="form-input"
-                    rows="5"
-                    style="min-height: 120px"
-                    [value]="filter.sqlQuery || ''"
-                    (change)="
-                      updateSelectedFamilyFilterField(
-                        filter.id,
-                        'sqlQuery',
-                        $any($event.target).value
-                      )
-                    "
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
         <!-- ── TRANCHE 1: Requête SQL principale — Angular pur ── -->
         <div class="card" *ngIf="selectedFamily as fam">
           <div class="card-header">

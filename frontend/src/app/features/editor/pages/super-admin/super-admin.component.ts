@@ -750,27 +750,79 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       const visibleTables = this.getVisibleFamilySchemaTables(schema, [
         fam.beneficiaryTable,
       ]);
-      const tableName = this.getFamilyBeneficiaryTable(fam);
+      const configuredTableName = this.getFamilyBeneficiaryTable(fam);
+      const tableName = this.resolveSchemaTableName(configuredTableName);
       const tableColumns = this.getColumnsForTable(schema, tableName);
-      const tableLinkColumn = this.getFamilyBeneficiaryLinkColumn(fam, schema);
+      const configuredLinkColumn = this.resolveSchemaColumnName(
+        tableName,
+        fam.beneficiaryLinkColumn || "",
+      );
+      const configuredDisplayColumn1 = this.resolveSchemaColumnName(
+        tableName,
+        fam.beneficiaryDisplayColumn1 || "",
+      );
+      const configuredDisplayColumn2 = this.resolveSchemaColumnName(
+        tableName,
+        fam.beneficiaryDisplayColumn2 || "",
+      );
+      const tableLinkColumn = this.getFamilyBeneficiaryLinkColumn(
+        {
+          ...fam,
+          beneficiaryTable: tableName,
+          beneficiaryLinkColumn: configuredLinkColumn,
+        },
+        schema,
+      );
       const suggestedColumns = this.getSuggestedBeneficiaryDisplayColumns(
-        fam,
+        {
+          ...fam,
+          beneficiaryDisplayColumn1: configuredDisplayColumn1,
+          beneficiaryDisplayColumn2: configuredDisplayColumn2,
+        },
         schema,
         tableName,
       );
 
       // Auto-populate defaults (same logic as former renderFamilyBeneficiaryTableSelect)
+      let hasAutoPopulatedChanges = false;
+
+      if (tableName && tableName !== configuredTableName) {
+        fam.beneficiaryTable = tableName;
+        hasAutoPopulatedChanges = true;
+      }
       if (tableLinkColumn && tableLinkColumn !== fam.beneficiaryLinkColumn) {
         fam.beneficiaryLinkColumn = tableLinkColumn;
+        hasAutoPopulatedChanges = true;
+      }
+      if (
+        configuredDisplayColumn1 &&
+        configuredDisplayColumn1 !== fam.beneficiaryDisplayColumn1
+      ) {
+        fam.beneficiaryDisplayColumn1 = configuredDisplayColumn1;
+        hasAutoPopulatedChanges = true;
+      }
+      if (
+        configuredDisplayColumn2 &&
+        configuredDisplayColumn2 !== fam.beneficiaryDisplayColumn2
+      ) {
+        fam.beneficiaryDisplayColumn2 = configuredDisplayColumn2;
+        hasAutoPopulatedChanges = true;
       }
       if (!fam.beneficiaryDisplayColumn1 && suggestedColumns[0]) {
         fam.beneficiaryDisplayColumn1 = suggestedColumns[0];
+        hasAutoPopulatedChanges = true;
       }
       if (!fam.beneficiaryDisplayColumn2 && suggestedColumns[1]) {
         fam.beneficiaryDisplayColumn2 = suggestedColumns[1];
+        hasAutoPopulatedChanges = true;
       }
       if (!fam.beneficiarySql) {
         fam.beneficiarySql = this.buildBeneficiarySqlFromFamily(famId);
+        hasAutoPopulatedChanges = true;
+      }
+
+      // Save if any auto-populate changes were made
+      if (hasAutoPopulatedChanges) {
         this.saveFamilyLocal(fam);
       }
 
