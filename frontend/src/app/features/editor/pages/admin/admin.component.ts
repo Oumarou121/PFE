@@ -1,9 +1,13 @@
 ﻿import { CommonModule } from "@angular/common";
 import {
   AfterViewChecked,
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   HostListener,
+  NgZone,
   OnDestroy,
   OnInit,
   ViewChild,
@@ -12,7 +16,7 @@ import {
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { firstValueFrom } from "rxjs";
-import { Editor } from "@tiptap/core";
+import { Editor, Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
@@ -86,21 +90,117 @@ interface AdminVariableGroup {
   count: number;
 }
 
-const FontSize = TextStyle.extend({
+const FontSize = Extension.create({
+  name: "fontSize",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["textStyle"],
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: (element) => element.style.fontSize || null,
+            renderHTML: (attributes) =>
+              attributes["fontSize"]
+                ? { style: `font-size: ${attributes["fontSize"]}` }
+                : {},
+          },
+        },
+      },
+    ];
+  },
+});
+
+function renderTableCellStyle(
+  attributes: Record<string, unknown>,
+): Record<string, string> {
+  const styles = [
+    attributes["backgroundColor"] &&
+    attributes["backgroundColor"] !== "transparent"
+      ? `background-color:${attributes["backgroundColor"]}`
+      : "",
+    attributes["textColor"] ? `color:${attributes["textColor"]}` : "",
+    attributes["textAlign"] ? `text-align:${attributes["textAlign"]}` : "",
+    attributes["verticalAlign"]
+      ? `vertical-align:${attributes["verticalAlign"]}`
+      : "",
+  ].filter(Boolean);
+  return styles.length ? { style: styles.join(";") } : {};
+}
+
+const TableCellExt = TableCell.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
-      fontSize: {
+      backgroundColor: {
         default: null,
-        parseHTML: (element) => element.style.fontSize || null,
-        renderHTML: (attributes) =>
-          attributes["fontSize"]
-            ? { style: `font-size: ${attributes["fontSize"]}` }
-            : {},
+        parseHTML: (element) => element.style.backgroundColor || null,
+        renderHTML: renderTableCellStyle,
+      },
+      textColor: {
+        default: null,
+        parseHTML: (element) => element.style.color || null,
+        renderHTML: () => ({}),
+      },
+      textAlign: {
+        default: null,
+        parseHTML: (element) => element.style.textAlign || null,
+        renderHTML: () => ({}),
+      },
+      verticalAlign: {
+        default: null,
+        parseHTML: (element) => element.style.verticalAlign || null,
+        renderHTML: () => ({}),
       },
     };
   },
 });
+
+const TableHeaderExt = TableHeader.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      backgroundColor: {
+        default: null,
+        parseHTML: (element) => element.style.backgroundColor || null,
+        renderHTML: renderTableCellStyle,
+      },
+      textColor: {
+        default: null,
+        parseHTML: (element) => element.style.color || null,
+        renderHTML: () => ({}),
+      },
+      textAlign: {
+        default: null,
+        parseHTML: (element) => element.style.textAlign || null,
+        renderHTML: () => ({}),
+      },
+      verticalAlign: {
+        default: null,
+        parseHTML: (element) => element.style.verticalAlign || null,
+        renderHTML: () => ({}),
+      },
+    };
+  },
+});
+
+// ─── SHARED TIPTAP EXTENSIONS (created once, reused) ──────────────────────────
+const SHARED_EXTENSIONS = [
+  StarterKit.configure({ heading: { levels: [1, 2, 3, 4] } }),
+  TextStyle,
+  FontSize,
+  Color,
+  FontFamily,
+  Underline,
+  Highlight.configure({ multicolor: true }),
+  Link.configure({ openOnClick: false, autolink: true }),
+  Image.configure({ inline: true, allowBase64: true }),
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
+  Table.configure({ resizable: true }),
+  TableRow,
+  TableCellExt,
+  TableHeaderExt,
+];
 
 @Component({
   selector: "app-admin",
@@ -109,8 +209,13 @@ const FontSize = TextStyle.extend({
   templateUrl: "./admin.component.html",
   styleUrls: ["./admin.component.scss"],
   encapsulation: ViewEncapsulation.None,
+  // OnPush: Angular only checks this component when inputs change or
+  // markForCheck() is called — eliminates constant re-checking that caused lag.
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
+export class AdminComponent
+  implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy
+{
   @ViewChild("editorHost") private editorHost?: ElementRef<HTMLElement>;
   @ViewChild("graphicCharterHeaderHost")
   private graphicCharterHeaderHost?: ElementRef<HTMLElement>;
@@ -231,9 +336,46 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     "#9f1239",
     "#c2410c",
   ];
+  readonly tableCellColors = [
+    "transparent",
+    "#ffffff",
+    "#f8fafc",
+    "#dbeafe",
+    "#dcfce7",
+    "#fef9c3",
+    "#fee2e2",
+    "#fce7f3",
+    "#f3e8ff",
+    "#ffedd5",
+    "#e0f2fe",
+    "#f0fdf4",
+    "#1e3a5f",
+    "#1d4ed8",
+    "#15803d",
+    "#7c2d12",
+    "#7c3aed",
+    "#9f1239",
+    "#374151",
+    "#111827",
+  ];
+  readonly tableTextColors = [
+    "#111111",
+    "#374151",
+    "#6b7280",
+    "#ffffff",
+    "#dc2626",
+    "#ea580c",
+    "#16a34a",
+    "#0284c7",
+    "#7c3aed",
+    "#db2777",
+  ];
   activeColorPopover: "text" | "highlight" | null = null;
+  activeTablePopover: "background" | "text" | null = null;
   selectedTextColor = "#1a1d2e";
   selectedHighlightColor = "#fef9c3";
+  selectedTableBackgroundColor = "#ffffff";
+  selectedTableTextColor = "#111111";
   activeVariableGroupId = "simple";
   templateFilterProfile: TemplateFilterProfileEntry[] = [];
   runtimeAdminFilters: RuntimeFilterEntry[] = [];
@@ -275,13 +417,28 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     watermarkColor: "#94a3b8",
     watermarkOpacity: 0.08,
   };
+
   private editor: Editor | null = null;
   private editorBoundElement: HTMLElement | null = null;
   private editorSection: "header" | "body" | "footer" | null = null;
   private graphicCharterHeaderEditor: Editor | null = null;
   private graphicCharterFooterEditor: Editor | null = null;
   private searchMatches: Array<{ from: number; to: number }> = [];
-  toolbarStateVersion = 0;
+
+  // ─── CHANGED: toolbar version tracked privately, no longer triggers CD alone ─
+  private _toolbarStateVersion = 0;
+  get toolbarStateVersion(): number {
+    return this._toolbarStateVersion;
+  }
+
+  // ─── CHANGED: single rebind timer reference to avoid multiple timeouts ──────
+  private rebindTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // ─── CHANGED: gc editors scheduled similarly ─────────────────────────────────
+  private gcEnsureTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // ─── CHANGED: flag to prevent double-init from both AfterViewInit and AfterViewChecked ──
+  private editorInitialized = false;
 
   families: FamilyRecord[] = [];
   templates: TemplateRecord[] = [];
@@ -306,20 +463,38 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     private notifications: NotificationService,
     private dialog: MatDialog,
     private sanitizer: DomSanitizer,
+    // ─── ADDED: NgZone and ChangeDetectorRef for performance ─────────────────
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadState();
   }
 
+  // ─── CHANGED: init editor once here (replaces AfterViewChecked init) ─────────
+  ngAfterViewInit(): void {
+    this.editorInitialized = false;
+    // Use setTimeout(0) so the DOM is fully stable before Tiptap attaches
+    setTimeout(() => {
+      this.ensureEditorInstance();
+      this.editorInitialized = true;
+    }, 0);
+  }
+
+  // ─── CHANGED: AfterViewChecked only handles graphic charter editors (modal).
+  //             Never touches the main editor here — that was the infinite loop. ─
   ngAfterViewChecked(): void {
-    this.ensureEditorInstance();
-    this.ensureGraphicCharterEditors();
+    if (this.graphicCharterModalOpen) {
+      this.scheduleGcEditorsEnsure();
+    }
   }
 
   ngOnDestroy(): void {
     this.destroyEditor();
     this.destroyGraphicCharterEditors();
+    if (this.rebindTimer !== null) clearTimeout(this.rebindTimer);
+    if (this.gcEnsureTimer !== null) clearTimeout(this.gcEnsureTimer);
   }
 
   @HostListener("document:keydown", ["$event"])
@@ -341,6 +516,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     const target = event.target as HTMLElement | null;
     if (!target?.closest(".tb-clr")) {
       this.activeColorPopover = null;
+    }
+    if (!target?.closest(".tbl-cell-clr-wrap")) {
+      this.activeTablePopover = null;
     }
   }
 
@@ -436,11 +614,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   get organizationVariableGroup(): any {
     const settings = this.getOrganizationVariableSettings();
     const vars = this.buildVisibleOrganizationVariables(settings).map(
-      ({ key, label }) => ({
-        tech: key,
-        key,
-        label,
-      }),
+      ({ key, label }) => ({ tech: key, key, label }),
     );
     return {
       id: "organization",
@@ -522,6 +696,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     await this.editorState.loadBootstrap();
     this.refreshCollections();
     this.isLoading = false;
+    this.cdr.markForCheck();
   }
 
   private refreshCollections(): void {
@@ -532,14 +707,17 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
+    this.cdr.markForCheck();
   }
 
   toggleVarsPanel(): void {
     this.varsPanelVisible = !this.varsPanelVisible;
+    this.cdr.markForCheck();
   }
 
   selectVariableGroup(groupId: string): void {
     this.activeVariableGroupId = groupId || "all";
+    this.cdr.markForCheck();
   }
 
   logoutAndRedirect(): void {
@@ -550,6 +728,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.selectedFamilyId = familyId;
     this.selectedTemplateId = "";
     this.clearEditor();
+    this.cdr.markForCheck();
   }
 
   openTemplate(templateId: string): void {
@@ -559,9 +738,8 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.destroyEditor();
     this.selectedTemplateId = template.id;
     this.templateNameDraft = String(template["nom"] || template["name"] || "");
-    this.selectedGraphicCharterId = this.resolveTemplateGraphicCharterId(
-      template,
-    );
+    this.selectedGraphicCharterId =
+      this.resolveTemplateGraphicCharterId(template);
     this.hasHeader = template.hasHeader === true;
     this.hasFooter = template.hasFooter === true;
     this.pageSettingsForm = this.getPageSettingsFromTemplate(template);
@@ -586,6 +764,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.activeSection = "body";
     this.saveStatus = "Prêt";
     this.rebindEditorSoon();
+    this.cdr.markForCheck();
   }
 
   async newTemplate(): Promise<void> {
@@ -612,6 +791,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.refreshCollections();
     this.openTemplate(template.id);
     this.notifications.showSuccess("Template créé");
+    this.cdr.markForCheck();
   }
 
   async duplicateTemplate(templateId: string): Promise<void> {
@@ -629,6 +809,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.refreshCollections();
     this.openTemplate(clone.id);
     this.notifications.showSuccess("Template dupliqué");
+    this.cdr.markForCheck();
   }
 
   async saveTemplate(): Promise<void> {
@@ -665,11 +846,13 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       updatedAt: new Date().toISOString(),
     });
     this.saveStatus = "Enregistrement...";
+    this.cdr.markForCheck();
     await this.templatesService.saveTemplate(next);
     this.refreshCollections();
     this.selectedTemplateId = next.id;
     this.saveStatus = "Enregistré";
     this.notifications.showSuccess("Template enregistré");
+    this.cdr.markForCheck();
   }
 
   async confirmDeleteTemplate(templateId: string): Promise<void> {
@@ -686,12 +869,14 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.refreshCollections();
     if (this.selectedTemplateId === templateId) this.clearEditor();
     this.notifications.showSuccess("Template supprimé");
+    this.cdr.markForCheck();
   }
 
   onGraphicCharterChange(charterId: string): void {
     this.selectedGraphicCharterId = charterId;
-    this.applyGraphicCharterToCurrentState(false);
+    this.applyGraphicCharterToCurrentState(true);
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   async applySelectedGraphicCharterToTemplate(): Promise<void> {
@@ -725,6 +910,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       return;
     }
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   async saveActiveSectionToGraphicCharter(): Promise<void> {
@@ -755,6 +941,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.refreshCollections();
     this.selectedGraphicCharterId = saved?.id || charter.id;
     this.notifications.showSuccess("Section enregistrée dans la charte");
+    this.cdr.markForCheck();
   }
 
   openGraphicCharterModal(charterId: string | null = null): void {
@@ -802,6 +989,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       watermarkOpacity: config.watermark.opacity,
     };
     this.graphicCharterModalOpen = true;
+    this.cdr.markForCheck();
   }
 
   editCurrentGraphicCharter(): void {
@@ -856,7 +1044,12 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
           mr: this.clampNumber(this.graphicCharterForm.marginRight, 5, 60, 25),
         },
         headerFooterDistances: {
-          headerTop: this.clampNumber(this.graphicCharterForm.headerTop, 0, 30, 5),
+          headerTop: this.clampNumber(
+            this.graphicCharterForm.headerTop,
+            0,
+            30,
+            5,
+          ),
           footerBottom: this.clampNumber(
             this.graphicCharterForm.footerBottom,
             0,
@@ -911,6 +1104,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.destroyGraphicCharterEditors();
     this.applyGraphicCharterToCurrentState(false);
     this.notifications.showSuccess("Charte graphique enregistrée");
+    this.cdr.markForCheck();
   }
 
   async deleteCurrentGraphicCharter(): Promise<void> {
@@ -940,11 +1134,13 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.applyGraphicCharterToCurrentState(false);
     this.saveStatus = "Modifié";
     this.notifications.showSuccess("Charte graphique supprimée");
+    this.cdr.markForCheck();
   }
 
   closeGraphicCharterModal(): void {
     this.graphicCharterModalOpen = false;
     this.destroyGraphicCharterEditors();
+    this.cdr.markForCheck();
   }
 
   switchSection(section: AdminSection): void {
@@ -956,6 +1152,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       void this.refreshTemplateFilters();
     }
     this.rebindEditorSoon();
+    this.cdr.markForCheck();
   }
 
   toggleTemplateSection(section: "header" | "footer"): void {
@@ -973,6 +1170,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     this.saveStatus = "Modifié";
     this.rebindEditorSoon();
+    this.cdr.markForCheck();
   }
 
   updateSectionContent(value: string): void {
@@ -1017,6 +1215,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     } catch {
       // Keep normalized local entries if SQL option resolution fails.
     }
+    this.cdr.markForCheck();
   }
 
   getTemplateFilterProfileEntry(
@@ -1123,8 +1322,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.saveStatus = "Modifié";
   }
 
+  // ─── CHANGED: reads private field, no longer causes excessive CD ─────────────
   isEditorActive(name: string, attrs?: Record<string, unknown>): boolean {
-    void this.toolbarStateVersion;
+    void this._toolbarStateVersion;
     try {
       return !!this.editor?.isActive(name, attrs);
     } catch {
@@ -1133,7 +1333,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   isEditorAlignActive(align: "left" | "center" | "right" | "justify"): boolean {
-    void this.toolbarStateVersion;
+    void this._toolbarStateVersion;
     try {
       return !!this.editor?.isActive({ textAlign: align });
     } catch {
@@ -1202,6 +1402,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     reader.onload = () => {
       this.graphicCharterForm.backgroundImage = String(reader.result || "");
       this.graphicCharterForm.backgroundEnabled = true;
+      this.cdr.markForCheck();
     };
     reader.readAsDataURL(file);
   }
@@ -1209,6 +1410,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   clearGraphicCharterBackground(): void {
     this.graphicCharterForm.backgroundEnabled = false;
     this.graphicCharterForm.backgroundImage = "";
+    this.cdr.markForCheck();
   }
 
   insertGraphicCharterVariable(
@@ -1235,8 +1437,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (command === "blockquote") chain.toggleBlockquote().run();
     if (command === "liftListItem") chain.liftListItem("listItem").run();
     if (command === "sinkListItem") chain.sinkListItem("listItem").run();
-    this.toolbarStateVersion += 1;
     this.saveStatus = "Modifié";
+    // ─── CHANGED: markForCheck instead of incrementing version in hot path ────
+    this.cdr.markForCheck();
   }
 
   applyDirection(direction: "ltr" | "rtl"): void {
@@ -1250,12 +1453,13 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.notifications.showInfo(
       direction === "rtl" ? "Mode RTL activé" : "Mode LTR activé",
     );
+    this.cdr.markForCheck();
   }
 
   applyAlign(align: "left" | "center" | "right" | "justify"): void {
     this.editor?.chain().focus().setTextAlign(align).run();
-    this.toolbarStateVersion += 1;
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   applyHeading(value: string): void {
@@ -1285,16 +1489,19 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   toggleColorPopover(kind: "text" | "highlight", event: MouseEvent): void {
     event.stopPropagation();
     this.activeColorPopover = this.activeColorPopover === kind ? null : kind;
+    this.cdr.markForCheck();
   }
 
   chooseTextColor(color: string): void {
     this.applyTextColor(color);
     this.activeColorPopover = null;
+    this.cdr.markForCheck();
   }
 
   chooseHighlightColor(color: string): void {
     this.applyHighlightColor(color === "transparent" ? "" : color);
     this.activeColorPopover = null;
+    this.cdr.markForCheck();
   }
 
   applyTextColor(color: string): void {
@@ -1340,15 +1547,18 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   setZoom(delta: number): void {
     this.zoomLevel =
       delta === 0 ? 100 : Math.max(40, Math.min(220, this.zoomLevel + delta));
+    this.cdr.markForCheck();
   }
 
   toggleSearchPanel(): void {
     this.searchPanelOpen = !this.searchPanelOpen;
     if (this.searchPanelOpen) this.doSearch();
+    this.cdr.markForCheck();
   }
 
   closeSearchPanel(): void {
     this.searchPanelOpen = false;
+    this.cdr.markForCheck();
   }
 
   doSearch(): void {
@@ -1356,6 +1566,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.searchFind) {
       this.searchMatchCount = 0;
       this.searchMatchIndex = 0;
+      this.cdr.markForCheck();
       return;
     }
     this.searchMatchCount = this.searchMatches.length;
@@ -1363,6 +1574,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       ? Math.min(this.searchMatchIndex || 1, this.searchMatches.length)
       : 0;
     this.selectCurrentSearchMatch();
+    this.cdr.markForCheck();
   }
 
   searchNavigate(delta: number): void {
@@ -1375,6 +1587,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.searchMatchCount) +
       1;
     this.selectCurrentSearchMatch();
+    this.cdr.markForCheck();
   }
 
   replaceOne(): void {
@@ -1409,14 +1622,17 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.editor) return;
     this.selectedDateVariable = "{{date_du_jour}}";
     this.dateVariableModalOpen = true;
+    this.cdr.markForCheck();
   }
 
   closeDateVariableModal(): void {
     this.dateVariableModalOpen = false;
+    this.cdr.markForCheck();
   }
 
   selectDateVariable(value: string): void {
     this.selectedDateVariable = value || "{{date_du_jour}}";
+    this.cdr.markForCheck();
   }
 
   insertSelectedDateVariable(): void {
@@ -1424,11 +1640,13 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.editor.chain().focus().insertContent(this.selectedDateVariable).run();
     this.dateVariableModalOpen = false;
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   openLinkModal(): void {
     this.linkUrl = "";
     this.linkModalOpen = true;
+    this.cdr.markForCheck();
   }
 
   insertLink(): void {
@@ -1438,6 +1656,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.linkModalOpen = false;
     this.linkUrl = "";
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   openImageModal(): void {
@@ -1449,6 +1668,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.imageAlign = "center";
     this.imageCaption = "";
     this.imageModalOpen = true;
+    this.cdr.markForCheck();
   }
 
   onImageFileChange(event: Event): void {
@@ -1461,6 +1681,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.imageUrl = src;
       this.imagePreviewSrc = src;
       this.imageAlt = this.imageAlt || file.name.replace(/\.[^.]+$/, "");
+      this.cdr.markForCheck();
     };
     reader.readAsDataURL(file);
   }
@@ -1468,6 +1689,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   onImageUrlChange(value: string): void {
     this.imageUrl = value;
     this.imagePreviewSrc = value.trim();
+    this.cdr.markForCheck();
   }
 
   insertImage(): void {
@@ -1475,7 +1697,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.editor || !src) return;
     const style = [
       "max-width:100%",
-      this.imageWidth.trim() ? `width:${this.escapeHtmlAttribute(this.imageWidth.trim())}` : "",
+      this.imageWidth.trim()
+        ? `width:${this.escapeHtmlAttribute(this.imageWidth.trim())}`
+        : "",
       this.imageHeight.trim()
         ? `height:${this.escapeHtmlAttribute(this.imageHeight.trim())}`
         : "",
@@ -1486,11 +1710,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       ? `<div style="font-size:10pt;color:#666;margin-top:4px">${this.escapeHtml(this.imageCaption.trim())}</div>`
       : "";
     const html = `<div style="text-align:${this.imageAlign}"><img src="${this.escapeHtmlAttribute(src)}" alt="${this.escapeHtmlAttribute(this.imageAlt || this.imageCaption || "")}" style="${style}" />${caption}</div><p></p>`;
-    this.editor
-      .chain()
-      .focus()
-      .insertContent(html)
-      .run();
+    this.editor.chain().focus().insertContent(html).run();
     this.imageModalOpen = false;
     this.imageUrl = "";
     this.imageAlt = "";
@@ -1500,12 +1720,14 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.imageAlign = "center";
     this.imageCaption = "";
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   openTableModal(): void {
     this.tableRows = 3;
     this.tableCols = 3;
     this.tableModalOpen = true;
+    this.cdr.markForCheck();
   }
 
   insertTable(): void {
@@ -1521,6 +1743,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       .run();
     this.tableModalOpen = false;
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   closeEditorModal(): void {
@@ -1528,6 +1751,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.imageModalOpen = false;
     this.tableModalOpen = false;
     this.dateVariableModalOpen = false;
+    this.cdr.markForCheck();
   }
 
   openPageSettings(): void {
@@ -1539,10 +1763,12 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.selectedTemplate,
     );
     this.pageSettingsModalOpen = true;
+    this.cdr.markForCheck();
   }
 
   closePageSettingsModal(): void {
     this.pageSettingsModalOpen = false;
+    this.cdr.markForCheck();
   }
 
   updatePageSetting(
@@ -1555,6 +1781,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
         orientation: value === "landscape" ? "landscape" : "portrait",
       };
       this.saveStatus = "Modifié";
+      this.cdr.markForCheck();
       return;
     }
     this.pageSettingsForm = {
@@ -1562,6 +1789,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       [field]: this.coerceNumber(value, this.pageSettingsForm[field] as number),
     };
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   runTableCommand(command: string): void {
@@ -1583,6 +1811,51 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!action) return;
     action();
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
+  }
+
+  toggleTablePopover(kind: "background" | "text", event: MouseEvent): void {
+    event.stopPropagation();
+    this.activeTablePopover = this.activeTablePopover === kind ? null : kind;
+    this.cdr.markForCheck();
+  }
+
+  applyTableCellBackground(color: string): void {
+    this.applyTableCellAttribute("backgroundColor", color);
+    this.selectedTableBackgroundColor = color;
+    this.activeTablePopover = null;
+    this.cdr.markForCheck();
+  }
+
+  applyTableCellTextColor(color: string): void {
+    this.applyTableCellAttribute("textColor", color);
+    this.selectedTableTextColor = color;
+    this.activeTablePopover = null;
+    this.cdr.markForCheck();
+  }
+
+  applyTableCellAlign(align: "left" | "center" | "right" | "justify"): void {
+    this.applyTableCellAttribute("textAlign", align);
+  }
+
+  applyTableCellVerticalAlign(align: "top" | "middle" | "bottom"): void {
+    this.applyTableCellAttribute("verticalAlign", align);
+  }
+
+  private applyTableCellAttribute(
+    attribute: "backgroundColor" | "textColor" | "textAlign" | "verticalAlign",
+    value: string,
+  ): void {
+    if (!this.editor) return;
+    const attrs = { [attribute]: value === "transparent" ? null : value };
+    const chain = this.editor.chain().focus();
+    if (this.editor.isActive("tableHeader")) {
+      chain.updateAttributes("tableHeader", attrs).run();
+    } else {
+      chain.updateAttributes("tableCell", attrs).run();
+    }
+    this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   resetPageMargins(): void {
@@ -1601,6 +1874,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       footerBottom: charterConfig.layout.headerFooterDistances.footerBottom,
     };
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   applyPageMargins(): void {
@@ -1624,6 +1898,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.notifications.showSuccess(
       `Marges : haut ${this.pageSettingsForm.mt}mm - bas ${this.pageSettingsForm.mb}mm - gauche ${this.pageSettingsForm.ml}mm - droite ${this.pageSettingsForm.mr}mm - orientation ${this.pageSettingsForm.orientation}`,
     );
+    this.cdr.markForCheck();
   }
 
   openWatermarkModal(): void {
@@ -1633,10 +1908,12 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     this.watermarkForm = this.getWatermarkFromTemplate(this.selectedTemplate);
     this.watermarkModalOpen = true;
+    this.cdr.markForCheck();
   }
 
   closeWatermarkModal(): void {
     this.watermarkModalOpen = false;
+    this.cdr.markForCheck();
   }
 
   updateWatermark(
@@ -1646,6 +1923,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (field === "enabled") {
       this.watermarkForm = { ...this.watermarkForm, enabled: !!value };
       this.saveStatus = "Modifié";
+      this.cdr.markForCheck();
       return;
     }
     if (field === "opacity") {
@@ -1654,6 +1932,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
         opacity: this.clampNumber(Number(value) / 100, 0.01, 0.8, 0.07),
       };
       this.saveStatus = "Modifié";
+      this.cdr.markForCheck();
       return;
     }
     if (field === "size") {
@@ -1662,10 +1941,12 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
         size: this.clampNumber(value, 20, 250, 80),
       };
       this.saveStatus = "Modifié";
+      this.cdr.markForCheck();
       return;
     }
     this.watermarkForm = { ...this.watermarkForm, [field]: String(value) };
     this.saveStatus = "Modifié";
+    this.cdr.markForCheck();
   }
 
   applyWatermark(): void {
@@ -1679,16 +1960,15 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.watermarkModalOpen = false;
     this.saveStatus = "Modifié";
     this.notifications.showSuccess("Filigrane appliqué");
+    this.cdr.markForCheck();
   }
 
   removeWatermark(): void {
-    this.watermarkForm = {
-      ...this.watermarkForm,
-      enabled: false,
-    };
+    this.watermarkForm = { ...this.watermarkForm, enabled: false };
     this.watermarkModalOpen = false;
     this.saveStatus = "Modifié";
     this.notifications.showSuccess("Filigrane supprimé");
+    this.cdr.markForCheck();
   }
 
   async openPreviewModal(): Promise<void> {
@@ -1700,15 +1980,18 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     this.previewOpen = true;
     this.previewLoading = true;
+    this.cdr.markForCheck();
     await this.refreshPreviewFilters(false);
     await this.loadPreviewBeneficiaries();
     await this.refreshPreviewHtml();
     this.previewLoading = false;
+    this.cdr.markForCheck();
   }
 
   async onPreviewBeneficiaryChange(beneficiaryId: string): Promise<void> {
     this.selectedPreviewBeneficiaryId = beneficiaryId;
     await this.refreshPreviewHtml();
+    this.cdr.markForCheck();
   }
 
   async onPreviewFilterChange(filterId: string, value: unknown): Promise<void> {
@@ -1718,10 +2001,12 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     };
     this.selectedPreviewBeneficiaryId = "";
     this.previewLoading = true;
+    this.cdr.markForCheck();
     await this.refreshPreviewFilters(true);
     await this.loadPreviewBeneficiaries();
     await this.refreshPreviewHtml();
     this.previewLoading = false;
+    this.cdr.markForCheck();
   }
 
   async refreshPreviewHtml(): Promise<void> {
@@ -1751,7 +2036,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     } as TemplateRecord;
     const family = this.selectedFamily;
     const person =
-      family && (this.selectedPreviewBeneficiaryId || family.beneficiaryMode === "organization")
+      family &&
+      (this.selectedPreviewBeneficiaryId ||
+        family.beneficiaryMode === "organization")
         ? await this.documentData.getDocumentDataForFamily(
             family.id,
             this.selectedPreviewBeneficiaryId || null,
@@ -1764,10 +2051,12 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       person || this.currentOrganization || {},
     );
     this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(html);
+    this.cdr.markForCheck();
   }
 
   closePreviewModal(): void {
     this.previewOpen = false;
+    this.cdr.markForCheck();
   }
 
   async printPreview(): Promise<void> {
@@ -1775,7 +2064,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!template) return;
     const family = this.selectedFamily;
     const person =
-      family && (this.selectedPreviewBeneficiaryId || family.beneficiaryMode === "organization")
+      family &&
+      (this.selectedPreviewBeneficiaryId ||
+        family.beneficiaryMode === "organization")
         ? await this.documentData.getDocumentDataForFamily(
             family.id,
             this.selectedPreviewBeneficiaryId || null,
@@ -1821,7 +2112,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       : "-";
   }
 
-  getBeneficiaryLabel(beneficiary: BeneficiaryRecord | null | undefined): string {
+  getBeneficiaryLabel(
+    beneficiary: BeneficiaryRecord | null | undefined,
+  ): string {
     return String(
       beneficiary?._displayLabel ||
         beneficiary?.["nom_prenom"] ||
@@ -1886,16 +2179,18 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.selectedPreviewBeneficiaryId = "";
       return;
     }
-    this.previewBeneficiaries = await this.familiesService.getBeneficiariesForFamily(
-      family.id,
-      this.currentUserOrganizationId,
-      this.previewFilterValues,
-    );
+    this.previewBeneficiaries =
+      await this.familiesService.getBeneficiariesForFamily(
+        family.id,
+        this.currentUserOrganizationId,
+        this.previewFilterValues,
+      );
     const exists = this.previewBeneficiaries.some(
       (beneficiary) => beneficiary.id === this.selectedPreviewBeneficiaryId,
     );
     if (!exists) {
-      this.selectedPreviewBeneficiaryId = this.previewBeneficiaries[0]?.id || "";
+      this.selectedPreviewBeneficiaryId =
+        this.previewBeneficiaries[0]?.id || "";
     }
   }
 
@@ -1922,6 +2217,8 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
+  // ─── CHANGED: entire method runs outside Angular zone.
+  //             Only state-changing callbacks re-enter the zone. ──────────────
   private ensureEditorInstance(): void {
     if (this.activeSection === "filters" || !this.selectedTemplate) {
       this.destroyEditor();
@@ -1941,35 +2238,36 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.destroyEditor();
     this.editorBoundElement = element;
     this.editorSection = section;
-    this.editor = new Editor({
-      element,
-      extensions: [
-        StarterKit.configure({ heading: { levels: [1, 2, 3, 4] } }),
-        TextStyle,
-        FontSize,
-        Color,
-        FontFamily,
-        Underline,
-        Highlight.configure({ multicolor: true }),
-        Link.configure({ openOnClick: false, autolink: true }),
-        Image.configure({ inline: true, allowBase64: true }),
-        TextAlign.configure({ types: ["heading", "paragraph"] }),
-        Table.configure({ resizable: true }),
-        TableRow,
-        TableCell,
-        TableHeader,
-      ],
-      content: this.editorContent[section] || "<p></p>",
-      onUpdate: ({ editor }) => {
-        if (!this.editorSection) return;
-        this.editorContent[this.editorSection] = editor.getHTML();
-        this.toolbarStateVersion += 1;
-        this.saveStatus = "Modifié";
-      },
-      onSelectionUpdate: () => {
-        this.toolbarStateVersion += 1;
-      },
+
+    // ─── Run Tiptap completely outside Angular's zone so its internal
+    //     DOM mutations never trigger change detection. ──────────────
+    this.ngZone.runOutsideAngular(() => {
+      this.editor = new Editor({
+        element,
+        extensions: SHARED_EXTENSIONS,
+        content: this.editorContent[section] || "<p></p>",
+        onUpdate: ({ editor }) => {
+          if (!this.editorSection) return;
+          const html = editor.getHTML();
+          // Update content outside zone (no CD needed for raw string)
+          this.editorContent[this.editorSection] = html;
+          // Re-enter zone only for UI-visible state
+          this.ngZone.run(() => {
+            this.saveStatus = "Modifié";
+            this._toolbarStateVersion += 1;
+            this.cdr.markForCheck();
+          });
+        },
+        onSelectionUpdate: () => {
+          // Only re-enter zone to refresh toolbar active states
+          this.ngZone.run(() => {
+            this._toolbarStateVersion += 1;
+            this.cdr.markForCheck();
+          });
+        },
+      });
     });
+
     this.applyDirectionToCurrentEditor();
   }
 
@@ -1987,6 +2285,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.editorSection = null;
   }
 
+  // ─── CHANGED: graphic charter editors also run outside zone ──────────────────
   private ensureGraphicCharterEditors(): void {
     if (!this.graphicCharterModalOpen) {
       this.destroyGraphicCharterEditors();
@@ -2013,32 +2312,24 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     content: string,
     field: "headerHtml" | "footerHtml",
   ): Editor {
-    return new Editor({
-      element,
-      extensions: [
-        StarterKit.configure({ heading: { levels: [1, 2, 3, 4] } }),
-        TextStyle,
-        FontSize,
-        Color,
-        FontFamily,
-        Underline,
-        Highlight.configure({ multicolor: true }),
-        Link.configure({ openOnClick: false, autolink: true }),
-        Image.configure({ inline: true, allowBase64: true }),
-        TextAlign.configure({ types: ["heading", "paragraph"] }),
-        Table.configure({ resizable: true }),
-        TableRow,
-        TableCell,
-        TableHeader,
-      ],
-      content: content || "<p></p>",
-      onUpdate: ({ editor }) => {
-        this.graphicCharterForm[field] = editor.getHTML();
-      },
-      onSelectionUpdate: () => {
-        this.toolbarStateVersion += 1;
-      },
+    let editorInstance!: Editor;
+    this.ngZone.runOutsideAngular(() => {
+      editorInstance = new Editor({
+        element,
+        extensions: SHARED_EXTENSIONS,
+        content: content || "<p></p>",
+        onUpdate: ({ editor }) => {
+          this.graphicCharterForm[field] = editor.getHTML();
+        },
+        onSelectionUpdate: () => {
+          this.ngZone.run(() => {
+            this._toolbarStateVersion += 1;
+            this.cdr.markForCheck();
+          });
+        },
+      });
     });
+    return editorInstance;
   }
 
   private getGraphicCharterEditor(
@@ -2071,15 +2362,35 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
+  // ─── CHANGED: uses setTimeout instead of queueMicrotask.
+  //             Clears any pending timer before setting a new one
+  //             to prevent duplicate editor instances. ───────────────────────
   private rebindEditorSoon(): void {
-    queueMicrotask(() => this.ensureEditorInstance());
+    if (this.rebindTimer !== null) {
+      clearTimeout(this.rebindTimer);
+    }
+    this.rebindTimer = setTimeout(() => {
+      this.rebindTimer = null;
+      this.ngZone.run(() => this.ensureEditorInstance());
+    }, 0);
+  }
+
+  // ─── CHANGED: gc editors use the same debounce pattern ───────────────────────
+  private scheduleGcEditorsEnsure(): void {
+    if (this.gcEnsureTimer !== null) return; // already queued
+    this.gcEnsureTimer = setTimeout(() => {
+      this.gcEnsureTimer = null;
+      this.ensureGraphicCharterEditors();
+    }, 0);
   }
 
   private resolveTemplateGraphicCharterId(template: TemplateRecord): string {
     const currentId = String(template.graphicCharterId || "");
     if (
       currentId &&
-      this.organizationGraphicCharters.some((charter) => charter.id === currentId)
+      this.organizationGraphicCharters.some(
+        (charter) => charter.id === currentId,
+      )
     ) {
       return currentId;
     }
@@ -2142,7 +2453,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     return "simple";
   }
 
-  private normalizeVariablePanelType(value: string): "simple" | "list" | "table" {
+  private normalizeVariablePanelType(
+    value: string,
+  ): "simple" | "list" | "table" {
     return value === "list" || value === "table" ? value : "simple";
   }
 
@@ -2309,11 +2622,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     "header" | "body" | "footer",
     "ltr" | "rtl"
   > {
-    return {
-      header: "ltr",
-      body: "ltr",
-      footer: "ltr",
-    };
+    return { header: "ltr", body: "ltr", footer: "ltr" };
   }
 
   private getSectionDirectionsFromTemplate(
@@ -2413,13 +2722,8 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     actionType?: "delete" | "warning" | "success" | "info" | "error";
   }): Promise<boolean> {
     const ref = this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        cancelText: "Annuler",
-        ...data,
-      },
+      data: { cancelText: "Annuler", ...data },
     });
     return firstValueFrom(ref.afterClosed());
   }
 }
-
-

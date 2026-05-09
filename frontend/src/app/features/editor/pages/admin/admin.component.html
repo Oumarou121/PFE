@@ -753,6 +753,71 @@
     - col
   </button>
   <span class="tbl-tb-sep"></span>
+  <button class="tbl-tb-btn" type="button" (click)="applyTableCellAlign('left')" title="Aligner gauche">
+    gauche
+  </button>
+  <button class="tbl-tb-btn" type="button" (click)="applyTableCellAlign('center')" title="Aligner centre">
+    centre
+  </button>
+  <button class="tbl-tb-btn" type="button" (click)="applyTableCellAlign('right')" title="Aligner droite">
+    droite
+  </button>
+  <button class="tbl-tb-btn" type="button" (click)="applyTableCellVerticalAlign('top')" title="Aligner haut">
+    haut
+  </button>
+  <button class="tbl-tb-btn" type="button" (click)="applyTableCellVerticalAlign('middle')" title="Aligner milieu">
+    milieu
+  </button>
+  <span class="tbl-tb-sep"></span>
+  <div class="tbl-cell-clr-wrap">
+    <button class="tbl-tb-btn" type="button" (click)="toggleTablePopover('background', $event)" title="Fond de cellule">
+      fond
+      <span
+        style="width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(255, 255, 255, 0.4); display: inline-block"
+        [style.background]="selectedTableBackgroundColor === 'transparent' ? '#fff' : selectedTableBackgroundColor"
+      ></span>
+    </button>
+    <div class="tbl-clr-pop" [class.on]="activeTablePopover === 'background'" (click)="$event.stopPropagation()">
+      <div style="font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px">
+        Fond de cellule
+      </div>
+      <div class="tbl-clr-swatches">
+        <button
+          class="cswatch"
+          type="button"
+          *ngFor="let color of tableCellColors"
+          [style.background]="color === 'transparent' ? 'linear-gradient(135deg, #fff 0 45%, #ef4444 46% 54%, #fff 55% 100%)' : color"
+          (click)="applyTableCellBackground(color)"
+        ></button>
+      </div>
+      <input type="color" [value]="selectedTableBackgroundColor === 'transparent' ? '#ffffff' : selectedTableBackgroundColor" (change)="applyTableCellBackground($any($event.target).value)" />
+    </div>
+  </div>
+  <div class="tbl-cell-clr-wrap">
+    <button class="tbl-tb-btn" type="button" (click)="toggleTablePopover('text', $event)" title="Couleur texte">
+      texte
+      <span
+        style="width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(255, 255, 255, 0.4); display: inline-block"
+        [style.background]="selectedTableTextColor"
+      ></span>
+    </button>
+    <div class="tbl-clr-pop" [class.on]="activeTablePopover === 'text'" (click)="$event.stopPropagation()">
+      <div style="font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px">
+        Couleur du texte
+      </div>
+      <div class="tbl-clr-swatches">
+        <button
+          class="cswatch"
+          type="button"
+          *ngFor="let color of tableTextColors"
+          [style.background]="color"
+          (click)="applyTableCellTextColor(color)"
+        ></button>
+      </div>
+      <input type="color" [value]="selectedTableTextColor" (change)="applyTableCellTextColor($any($event.target).value)" />
+    </div>
+  </div>
+  <span class="tbl-tb-sep"></span>
   <button class="tbl-tb-btn" type="button" (click)="runTableCommand('mergeCells')" title="Fusionner">
     fusionner
   </button>
@@ -1354,4 +1419,3 @@
     </div>
   </div>
 </div>
-
