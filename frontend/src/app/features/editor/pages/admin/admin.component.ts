@@ -1989,7 +1989,7 @@ export class AdminComponent
   }
 
   async onPreviewBeneficiaryChange(beneficiaryId: string): Promise<void> {
-    this.selectedPreviewBeneficiaryId = beneficiaryId;
+    this.selectedPreviewBeneficiaryId = String(beneficiaryId || "");
     await this.refreshPreviewHtml();
     this.cdr.markForCheck();
   }
@@ -2083,7 +2083,8 @@ export class AdminComponent
         footer: this.editorContent.footer,
         hasHeader: this.hasHeader,
         hasFooter: this.hasFooter,
-        graphicCharterId: this.selectedGraphicCharterId || null,organizationId: this.currentUserOrganizationId,
+        graphicCharterId: this.selectedGraphicCharterId || null,
+        organizationId: this.currentUserOrganizationId,
         orientation: this.pageSettingsForm.orientation,
         pageMargins: {
           mt: this.pageSettingsForm.mt,
@@ -2186,13 +2187,20 @@ export class AdminComponent
         this.currentUserOrganizationId,
         this.previewFilterValues,
       );
+    const selectedBeneficiaryId = String(
+      this.selectedPreviewBeneficiaryId || "",
+    );
     const exists = this.previewBeneficiaries.some(
-      (beneficiary) => beneficiary.id === this.selectedPreviewBeneficiaryId,
+      (beneficiary) => String(beneficiary.id || "") === selectedBeneficiaryId,
     );
     if (!exists) {
-      this.selectedPreviewBeneficiaryId =
-        this.previewBeneficiaries[0]?.id || "";
+      this.selectedPreviewBeneficiaryId = String(
+        this.previewBeneficiaries[0]?.id || "",
+      );
+    } else {
+      this.selectedPreviewBeneficiaryId = selectedBeneficiaryId;
     }
+    this.cdr.markForCheck();
   }
 
   private clearEditor(): void {

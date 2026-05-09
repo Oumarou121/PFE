@@ -43,7 +43,8 @@ export class DocumentRenderService {
     const pages = this.renderDocumentPages(template, person, {
       mode: "preview",
     });
-    return `<div class="preview-pages">${this.buildDocumentPagesHtml(template, pages, "preview-page", { mode: "preview" })}</div>`;
+    const themeStyle = this.getDocumentThemeStyleAttr(template);
+    return `<div class="preview-pages" style="${themeStyle}">${this.buildDocumentPagesHtml(template, pages, "preview-page", { mode: "preview" })}</div>`;
   }
 
   renderDocumentPages(

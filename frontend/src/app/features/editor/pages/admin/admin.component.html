@@ -1765,7 +1765,9 @@
               [value]="selectedPreviewBeneficiaryId"
               (change)="onPreviewBeneficiaryChange($any($event.target).value)"
             >
-              <option value="">-- Sélectionner --</option>
+              <option *ngIf="!filteredPreviewBeneficiaries.length" value="">
+                -- Sélectionner --
+              </option>
               <option
                 *ngFor="let b of filteredPreviewBeneficiaries"
                 [value]="b.id"
