@@ -551,6 +551,14 @@ export class DocumentRenderService {
   }
 
   private getTemplateGraphicCharter(template: TemplateRecord) {
+    const organizationId = getScopedOrganizationId(template);
+    if (organizationId) {
+      const record = this.graphicCharters.getOrganizationGraphicCharter(
+        organizationId,
+        template?.graphicCharterId || null,
+      );
+      if (record?.config) return normalizeGraphicCharterConfig(record.config);
+    }
     return template?.id
       ? this.graphicCharters.getTemplateGraphicCharter(template.id)
       : normalizeGraphicCharterConfig({});

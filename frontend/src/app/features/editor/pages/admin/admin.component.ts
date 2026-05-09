@@ -52,10 +52,14 @@ import {
   normalizeTemplateFilterProfileEntry,
   normalizeTemplateRecord,
 } from "../../services/editor-normalizers";
-import { GraphicCharterRecord } from "../../models/graphic-charter.model";
+import {
+  GraphicCharterConfig,
+  GraphicCharterRecord,
+} from "../../models/graphic-charter.model";
 
 type AdminSection = "header" | "body" | "footer" | "filters";
 type PageOrientation = "portrait" | "landscape";
+type GraphicCharterEditorSection = "header" | "footer";
 
 interface PageSettingsForm {
   orientation: PageOrientation;
@@ -73,6 +77,13 @@ interface WatermarkForm {
   color: string;
   opacity: number;
   size: number;
+}
+
+interface AdminVariableGroup {
+  id: "simple" | "list" | "table";
+  nom: string;
+  name: string;
+  count: number;
 }
 
 const FontSize = TextStyle.extend({
@@ -171,7 +182,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     { label: "Date courte", value: "{{date_du_jour_courte}}" },
     { label: "Date ISO", value: "{{date_du_jour_iso}}" },
   ];
-  activeVariableGroupId = "all";
+  activeVariableGroupId = "simple";
   templateFilterProfile: TemplateFilterProfileEntry[] = [];
   runtimeAdminFilters: RuntimeFilterEntry[] = [];
   graphicCharterModalOpen = false;
@@ -218,6 +229,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   private graphicCharterHeaderEditor: Editor | null = null;
   private graphicCharterFooterEditor: Editor | null = null;
   private searchMatches: Array<{ from: number; to: number }> = [];
+  toolbarStateVersion = 0;
 
   families: FamilyRecord[] = [];
   templates: TemplateRecord[] = [];
@@ -313,20 +325,71 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     return (this.selectedFamily?.classes || []) as any[];
   }
 
-  get variableGroups(): any[] {
+  get variableGroups(): AdminVariableGroup[] {
+    const counts = {
+      simple: this.organizationVariableGroup.vars.length,
+      list: 0,
+      table: 0,
+    };
+    this.variableClasses.forEach((cls) => {
+      (cls.vars || []).forEach((variable: any) => {
+        counts[this.getVariableBucket(variable?.type)] += 1;
+      });
+    });
     return [
-      { id: "all", nom: "Toutes", name: "Toutes", vars: [] },
-      ...this.variableClasses,
+      {
+        id: "simple",
+        nom: `Simple (${counts.simple})`,
+        name: `Simple (${counts.simple})`,
+        count: counts.simple,
+      },
+      {
+        id: "list",
+        nom: `Liste (${counts.list})`,
+        name: `Liste (${counts.list})`,
+        count: counts.list,
+      },
+      {
+        id: "table",
+        nom: `Table (${counts.table})`,
+        name: `Table (${counts.table})`,
+        count: counts.table,
+      },
     ];
   }
 
   get visibleVariableClasses(): any[] {
-    if (this.activeVariableGroupId === "all") return this.variableClasses;
-    return this.variableClasses.filter(
-      (cls) =>
-        String(cls.id || cls.key || cls.nom || cls.name) ===
-        this.activeVariableGroupId,
+    const bucket = this.normalizeVariablePanelType(this.activeVariableGroupId);
+    const groups = this.variableClasses
+      .map((cls) => ({
+        ...cls,
+        vars: (cls.vars || []).filter(
+          (variable: any) => this.getVariableBucket(variable?.type) === bucket,
+        ),
+      }))
+      .filter((cls) => (cls.vars || []).length);
+    return bucket === "simple" && this.organizationVariableGroup.vars.length
+      ? [this.organizationVariableGroup, ...groups]
+      : groups;
+  }
+
+  get organizationVariableGroup(): any {
+    const settings = this.getOrganizationVariableSettings();
+    const vars = this.buildVisibleOrganizationVariables(settings).map(
+      ({ key, label }) => ({
+        tech: key,
+        key,
+        label,
+      }),
     );
+    return {
+      id: "organization",
+      key: "organization",
+      nom: "Variables Organization",
+      name: "Variables Organization",
+      couleur: "#0f766e",
+      vars,
+    };
   }
 
   get filteredPreviewBeneficiaries(): BeneficiaryRecord[] {
@@ -350,6 +413,38 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
         (charter) => charter.id === this.selectedGraphicCharterId,
       ) || null
     );
+  }
+
+  get selectedGraphicCharterConfig(): GraphicCharterConfig {
+    return this.selectedGraphicCharter?.config
+      ? this.graphicCharters.normalizeGraphicCharterConfig(
+          this.selectedGraphicCharter.config,
+        )
+      : this.graphicCharters.normalizeGraphicCharterConfig({});
+  }
+
+  get liveDocumentThemeStyles(): Record<string, string> {
+    const config = this.selectedGraphicCharterConfig;
+    const background = config.layout.pageBackground;
+    const image =
+      background.enabled && background.image
+        ? `url("${String(background.image).replace(/"/g, '\\"')}")`
+        : "none";
+    return {
+      "--doc-font-body": config.typography.bodyFont,
+      "--doc-font-heading": config.typography.headingFont,
+      "--doc-color-primary": config.colors["primary"],
+      "--doc-color-secondary": config.colors["secondary"],
+      "--doc-color-text": config.colors["text"],
+      "--doc-color-heading": config.colors["heading"],
+      "--doc-color-border": config.colors["border"],
+      "--doc-table-header-bg": config.colors["tableHeaderBg"],
+      "--doc-table-alt-row-bg": config.colors["tableAltRowBg"],
+      "--doc-page-bg-image": image,
+      "--doc-page-bg-size": background.size || "cover",
+      "--doc-page-bg-position": background.position || "center center",
+      "--doc-page-bg-repeat": background.repeat || "no-repeat",
+    };
   }
 
   get activeEditorSection(): "header" | "body" | "footer" {
@@ -400,9 +495,13 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   openTemplate(templateId: string): void {
     const template = this.templatesService.getTemplate(templateId);
     if (!template) return;
+    this.persistEditorContent();
+    this.destroyEditor();
     this.selectedTemplateId = template.id;
     this.templateNameDraft = String(template["nom"] || template["name"] || "");
-    this.selectedGraphicCharterId = String(template.graphicCharterId || "");
+    this.selectedGraphicCharterId = this.resolveTemplateGraphicCharterId(
+      template,
+    );
     this.hasHeader = template.hasHeader === true;
     this.hasFooter = template.hasFooter === true;
     this.pageSettingsForm = this.getPageSettingsFromTemplate(template);
@@ -416,6 +515,13 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.templateFilterProfile = normalizeTemplateFilterProfile(
       template.filterProfile || [],
     );
+    this.previewOpen = false;
+    this.previewHtml = "";
+    this.previewBeneficiaries = [];
+    this.previewBeneficiarySearch = "";
+    this.selectedPreviewBeneficiaryId = "";
+    this.previewRuntimeFilters = [];
+    this.previewFilterValues = {};
     void this.refreshTemplateFilters();
     this.activeSection = "body";
     this.saveStatus = "Prêt";
@@ -438,6 +544,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       footer: "",
       hasHeader: false,
       hasFooter: false,
+      graphicCharterId: this.resolveDefaultGraphicCharterId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -523,6 +630,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   onGraphicCharterChange(charterId: string): void {
     this.selectedGraphicCharterId = charterId;
+    this.applyGraphicCharterToCurrentState(false);
     this.saveStatus = "Modifié";
   }
 
@@ -535,6 +643,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.notifications.showWarning("Choisissez une charte graphique");
       return;
     }
+    this.applyGraphicCharterToCurrentState(true);
     await this.saveTemplate();
     this.notifications.showSuccess("Charte appliquée au document");
   }
@@ -739,6 +848,8 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.refreshCollections();
     this.selectedGraphicCharterId = saved?.id || "";
     this.graphicCharterModalOpen = false;
+    this.destroyGraphicCharterEditors();
+    this.applyGraphicCharterToCurrentState(false);
     this.notifications.showSuccess("Charte graphique enregistrée");
   }
 
@@ -765,7 +876,8 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       updatedAt: new Date().toISOString(),
     } as OrganizationRecord);
     this.refreshCollections();
-    this.selectedGraphicCharterId = "";
+    this.selectedGraphicCharterId = this.resolveDefaultGraphicCharterId();
+    this.applyGraphicCharterToCurrentState(false);
     this.saveStatus = "Modifié";
     this.notifications.showSuccess("Charte graphique supprimée");
   }
@@ -951,6 +1063,98 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.saveStatus = "Modifié";
   }
 
+  isEditorActive(name: string, attrs?: Record<string, unknown>): boolean {
+    void this.toolbarStateVersion;
+    try {
+      return !!this.editor?.isActive(name, attrs);
+    } catch {
+      return false;
+    }
+  }
+
+  isEditorAlignActive(align: "left" | "center" | "right" | "justify"): boolean {
+    void this.toolbarStateVersion;
+    try {
+      return !!this.editor?.isActive({ textAlign: align });
+    } catch {
+      return false;
+    }
+  }
+
+  isGraphicCharterEditorActive(
+    section: GraphicCharterEditorSection,
+    name: string,
+    attrs?: Record<string, unknown>,
+  ): boolean {
+    const editor = this.getGraphicCharterEditor(section);
+    try {
+      return !!editor?.isActive(name, attrs);
+    } catch {
+      return false;
+    }
+  }
+
+  runGraphicCharterCommand(
+    section: GraphicCharterEditorSection,
+    command: string,
+  ): void {
+    const editor = this.getGraphicCharterEditor(section);
+    if (!editor) return;
+    const chain = editor.chain().focus();
+    if (command === "bold") chain.toggleBold().run();
+    if (command === "italic") chain.toggleItalic().run();
+    if (command === "underline") chain.toggleUnderline().run();
+    if (command === "strike") chain.toggleStrike().run();
+    if (command === "bulletList") chain.toggleBulletList().run();
+    if (command === "orderedList") chain.toggleOrderedList().run();
+    if (command === "clear") chain.unsetAllMarks().clearNodes().run();
+    if (command === "undo") chain.undo().run();
+    if (command === "redo") chain.redo().run();
+    this.persistGraphicCharterEditors();
+  }
+
+  applyGraphicCharterAlign(
+    section: GraphicCharterEditorSection,
+    align: "left" | "center" | "right",
+  ): void {
+    const editor = this.getGraphicCharterEditor(section);
+    editor?.chain().focus().setTextAlign(align).run();
+    this.persistGraphicCharterEditors();
+  }
+
+  applyGraphicCharterFontSize(
+    section: GraphicCharterEditorSection,
+    value: string,
+  ): void {
+    const editor = this.getGraphicCharterEditor(section);
+    if (!editor) return;
+    const chain = editor.chain().focus() as any;
+    if (value) chain.setMark("textStyle", { fontSize: value }).run();
+    else chain.setMark("textStyle", { fontSize: null }).run();
+    this.persistGraphicCharterEditors();
+  }
+
+  onGraphicCharterBackgroundFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.graphicCharterForm.backgroundImage = String(reader.result || "");
+      this.graphicCharterForm.backgroundEnabled = true;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  insertGraphicCharterVariable(
+    section: GraphicCharterEditorSection,
+    tech: string,
+  ): void {
+    const editor = this.getGraphicCharterEditor(section);
+    editor?.chain().focus().insertContent(`{{${tech}}}`).run();
+    this.persistGraphicCharterEditors();
+  }
+
   runEditorCommand(command: string): void {
     if (!this.editor) return;
     const chain = this.editor.chain().focus();
@@ -966,6 +1170,8 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (command === "blockquote") chain.toggleBlockquote().run();
     if (command === "liftListItem") chain.liftListItem("listItem").run();
     if (command === "sinkListItem") chain.sinkListItem("listItem").run();
+    this.toolbarStateVersion += 1;
+    this.saveStatus = "Modifié";
   }
 
   applyDirection(direction: "ltr" | "rtl"): void {
@@ -983,6 +1189,8 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   applyAlign(align: "left" | "center" | "right" | "justify"): void {
     this.editor?.chain().focus().setTextAlign(align).run();
+    this.toolbarStateVersion += 1;
+    this.saveStatus = "Modifié";
   }
 
   applyHeading(value: string): void {
@@ -1394,6 +1602,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       footer: this.editorContent.footer,
       hasHeader: this.hasHeader,
       hasFooter: this.hasFooter,
+      graphicCharterId: this.selectedGraphicCharterId || null,
       orientation: this.pageSettingsForm.orientation,
       pageMargins: {
         mt: this.pageSettingsForm.mt,
@@ -1450,6 +1659,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
         footer: this.editorContent.footer,
         hasHeader: this.hasHeader,
         hasFooter: this.hasFooter,
+        graphicCharterId: this.selectedGraphicCharterId || null,
         orientation: this.pageSettingsForm.orientation,
         pageMargins: {
           mt: this.pageSettingsForm.mt,
@@ -1621,7 +1831,11 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       onUpdate: ({ editor }) => {
         if (!this.editorSection) return;
         this.editorContent[this.editorSection] = editor.getHTML();
+        this.toolbarStateVersion += 1;
         this.saveStatus = "Modifié";
+      },
+      onSelectionUpdate: () => {
+        this.toolbarStateVersion += 1;
       },
     });
     this.applyDirectionToCurrentEditor();
@@ -1689,7 +1903,18 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       onUpdate: ({ editor }) => {
         this.graphicCharterForm[field] = editor.getHTML();
       },
+      onSelectionUpdate: () => {
+        this.toolbarStateVersion += 1;
+      },
     });
+  }
+
+  private getGraphicCharterEditor(
+    section: GraphicCharterEditorSection,
+  ): Editor | null {
+    return section === "header"
+      ? this.graphicCharterHeaderEditor
+      : this.graphicCharterFooterEditor;
   }
 
   private persistGraphicCharterEditors(): void {
@@ -1718,6 +1943,157 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     queueMicrotask(() => this.ensureEditorInstance());
   }
 
+  private resolveTemplateGraphicCharterId(template: TemplateRecord): string {
+    const currentId = String(template.graphicCharterId || "");
+    if (
+      currentId &&
+      this.organizationGraphicCharters.some((charter) => charter.id === currentId)
+    ) {
+      return currentId;
+    }
+    return this.resolveDefaultGraphicCharterId();
+  }
+
+  private resolveDefaultGraphicCharterId(): string {
+    const defaultCharter =
+      this.organizationGraphicCharters.find((charter) => charter.isDefault) ||
+      this.organizationGraphicCharters[0] ||
+      null;
+    return defaultCharter?.id || "";
+  }
+
+  private applyGraphicCharterToCurrentState(includeSections: boolean): void {
+    const charter = this.selectedGraphicCharter;
+    if (!charter) return;
+    const config = this.graphicCharters.normalizeGraphicCharterConfig(
+      charter.config,
+    );
+    this.pageSettingsForm = {
+      orientation: config.layout.orientation,
+      mt: config.layout.pageMargins.mt,
+      mb: config.layout.pageMargins.mb,
+      ml: config.layout.pageMargins.ml,
+      mr: config.layout.pageMargins.mr,
+      headerTop: config.layout.headerFooterDistances.headerTop,
+      footerBottom: config.layout.headerFooterDistances.footerBottom,
+    };
+    this.watermarkForm = {
+      enabled: config.watermark.enabled,
+      text: config.watermark.text || "CONFIDENTIEL",
+      color: config.watermark.color || "#000000",
+      opacity: config.watermark.opacity || 0.07,
+      size: 80,
+    };
+    if (!includeSections) return;
+    this.hasHeader = config.header.enabledByDefault;
+    this.hasFooter = config.footer.enabledByDefault;
+    this.editorContent = {
+      ...this.editorContent,
+      header: config.header.html || "",
+      footer: config.footer.html || "",
+    };
+    if (this.activeSection === "header" || this.activeSection === "footer") {
+      this.setActiveEditorHtml(this.editorContent[this.activeSection]);
+    }
+    if (this.activeSection === "header" && !this.hasHeader) {
+      this.activeSection = "body";
+    }
+    if (this.activeSection === "footer" && !this.hasFooter) {
+      this.activeSection = "body";
+    }
+    this.rebindEditorSoon();
+  }
+
+  private getVariableBucket(type: unknown): "simple" | "list" | "table" {
+    if (type === "list-object") return "table";
+    if (type === "list") return "list";
+    return "simple";
+  }
+
+  private normalizeVariablePanelType(value: string): "simple" | "list" | "table" {
+    return value === "list" || value === "table" ? value : "simple";
+  }
+
+  private getOrganizationVariableSettings(): {
+    visibleKeys: string[];
+    configured: boolean;
+    labels: Record<string, string>;
+  } {
+    const settings = (this.editorState.getState().settings || {}) as any;
+    const configured = Array.isArray(settings.organizationVisibleVarKeys);
+    const visibleKeys = configured
+      ? (settings.organizationVisibleVarKeys || [])
+          .map((value: unknown) => this.normalizeVariableKey(value))
+          .filter(Boolean)
+      : [];
+    const rawLabels =
+      settings.organizationVariableLabels &&
+      typeof settings.organizationVariableLabels === "object"
+        ? settings.organizationVariableLabels
+        : {};
+    const labels = Object.fromEntries(
+      Object.entries(rawLabels)
+        .map(([key, label]) => [
+          this.normalizeVariableKey(String(key || "").replace(/^org_/, "")),
+          String(label || "").trim(),
+        ])
+        .filter(([key]) => key),
+    );
+    return { visibleKeys, configured, labels };
+  }
+
+  private buildVisibleOrganizationVariables(settings: {
+    visibleKeys: string[];
+    configured: boolean;
+    labels: Record<string, string>;
+  }): Array<{ key: string; label: string }> {
+    const org = (this.currentOrganization || {}) as Record<string, unknown>;
+    const raw =
+      org?.["raw"] && typeof org["raw"] === "object"
+        ? (org["raw"] as Record<string, unknown>)
+        : {};
+    const candidates: Record<string, unknown> = {
+      nom_etab: org["nom"] || org["name"],
+      adresse_etab: org["adresse"],
+      tel_etab: org["tel"],
+      ville_etab: org["ville"],
+      email_etab: org["email"],
+      directeur: this.selectedGraphicCharterConfig.identity.directorName,
+      slogan_etab: this.selectedGraphicCharterConfig.identity.slogan,
+      logo_etab: this.selectedGraphicCharterConfig.identity.logoText,
+      annee_univ: "",
+    };
+    Object.entries(raw).forEach(([key, value]) => {
+      const normalized = this.normalizeVariableKey(key);
+      if (normalized) candidates[normalized] = value;
+    });
+    const visible = new Set(settings.visibleKeys);
+    return Object.keys(candidates)
+      .filter((key) => !settings.configured || visible.has(key))
+      .sort((a, b) => a.localeCompare(b))
+      .map((key) => ({
+        key,
+        label: settings.labels[key] || this.humanizeVariableKey(key),
+      }));
+  }
+
+  private normalizeVariableKey(value: unknown): string {
+    return String(value || "")
+      .trim()
+      .replace(/^org_/, "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .toLowerCase();
+  }
+
+  private humanizeVariableKey(key: string): string {
+    return key
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (match) => match.toUpperCase());
+  }
+
   private genId(prefix: string): string {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   }
@@ -1737,7 +2113,16 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   private getPageSettingsFromTemplate(
     template: TemplateRecord,
   ): PageSettingsForm {
-    const defaults = this.getDefaultPageSettings();
+    const charterConfig = this.selectedGraphicCharterConfig;
+    const defaults = {
+      orientation: charterConfig.layout.orientation,
+      mt: charterConfig.layout.pageMargins.mt,
+      mb: charterConfig.layout.pageMargins.mb,
+      ml: charterConfig.layout.pageMargins.ml,
+      mr: charterConfig.layout.pageMargins.mr,
+      headerTop: charterConfig.layout.headerFooterDistances.headerTop,
+      footerBottom: charterConfig.layout.headerFooterDistances.footerBottom,
+    };
     const margins = (template["pageMargins"] || {}) as Record<string, unknown>;
     const distances = (template.headerFooterDistances ||
       template["pageHeaderFooterDistances"] ||
@@ -1770,7 +2155,14 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private getWatermarkFromTemplate(template: TemplateRecord): WatermarkForm {
-    const defaults = this.getDefaultWatermark();
+    const charterConfig = this.selectedGraphicCharterConfig;
+    const defaults: WatermarkForm = {
+      enabled: charterConfig.watermark.enabled,
+      text: charterConfig.watermark.text || "CONFIDENTIEL",
+      color: charterConfig.watermark.color || "#000000",
+      opacity: charterConfig.watermark.opacity || 0.07,
+      size: 80,
+    };
     const raw = (template["watermark"] || {}) as Record<string, unknown>;
     return {
       enabled: raw["enabled"] === true,
