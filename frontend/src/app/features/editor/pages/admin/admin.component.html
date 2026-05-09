@@ -253,7 +253,7 @@
             (change)="onGraphicCharterChange($any($event.target).value)"
           >
             <option value="" [selected]="!selectedGraphicCharterId">
-              -- Choisir un charte -- 
+              -- Choisir un charte --
             </option>
             <option
               *ngFor="let charter of organizationGraphicCharters"
@@ -1108,161 +1108,274 @@
                 <div>
                   <h3>Configuration des filtres</h3>
                   <p>
-                    Activez les filtres disponibles pour ce template et
-                    définissez leurs règles côté admin.
+                    Activez les filtres utiles pour ce template, définissez les
+                    valeurs par défaut et gérez les restrictions sans encombrer
+                    la zone d'édition.
                   </p>
                 </div>
+                <div class="filter-panel-pill">Vue dédiée</div>
               </div>
-              <div
-                class="filter-profile-list"
-                *ngIf="runtimeAdminFilters.length; else noTemplateFilters"
-              >
-                <div
-                  class="filter-profile-card"
-                  *ngFor="let filter of runtimeAdminFilters; let i = index"
-                >
-                  <div class="filter-profile-head">
-                    <div>
-                      <strong>{{ filter.label || filter.key }}</strong>
-                      <div class="text-muted">
-                        {{ filter.key }} · {{ filter.type }}
+              <div class="filter-panel-body">
+                <div *ngIf="runtimeAdminFilters.length; else noTemplateFilters">
+                  <div
+                    class="filter-profile-card legacy-filter-card"
+                    *ngFor="let filter of runtimeAdminFilters; let i = index"
+                  >
+                    <div class="legacy-filter-head">
+                      <label class="legacy-filter-title">
+                        <input
+                          type="checkbox"
+                          [checked]="
+                            filter.profile.enabled &&
+                            filter.profile.adminEnabled !== false
+                          "
+                          (change)="
+                            toggleTemplateFilter(
+                              filter.id,
+                              $any($event.target).checked
+                            )
+                          "
+                        />
+                        {{ filter.label || filter.key }}
+                      </label>
+                      <span class="legacy-filter-key">:{{ filter.key }}</span>
+                      <span class="legacy-filter-type">{{ filter.type }}</span>
+                    </div>
+
+                    <div class="legacy-filter-bools">
+                      <label>
+                        <input
+                          type="checkbox"
+                          [checked]="filter.profile.adminEnabled !== false"
+                          (change)="
+                            updateTemplateFilterBool(
+                              filter.id,
+                              'adminEnabled',
+                              $any($event.target).checked
+                            )
+                          "
+                        />
+                        Utilisable dans l'admin
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          [checked]="filter.profile.userEnabled !== false"
+                          (change)="
+                            updateTemplateFilterBool(
+                              filter.id,
+                              'userEnabled',
+                              $any($event.target).checked
+                            )
+                          "
+                        />
+                        Utilisable côté user
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          [checked]="filter.profile.required"
+                          (change)="
+                            updateTemplateFilterBool(
+                              filter.id,
+                              'required',
+                              $any($event.target).checked
+                            )
+                          "
+                        />
+                        Obligatoire
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          [checked]="filter.profile.locked"
+                          (change)="
+                            updateTemplateFilterBool(
+                              filter.id,
+                              'locked',
+                              $any($event.target).checked
+                            )
+                          "
+                        />
+                        Verrouillé
+                      </label>
+                    </div>
+
+                    <div class="legacy-filter-fields">
+                      <div>
+                        <div class="legacy-filter-field-label">
+                          Valeur par défaut
+                        </div>
+                        <select
+                          *ngIf="
+                            filter.type === 'select';
+                            else textFilterDefault
+                          "
+                          class="charter-bar-select"
+                          style="width: 100%"
+                          [value]="
+                            getPreviewOptionValue(filter.profile.defaultValue)
+                          "
+                          (change)="
+                            updateTemplateFilterDefault(
+                              filter.id,
+                              $any($event.target).value
+                            )
+                          "
+                        >
+                          <option value="">— Aucune —</option>
+                          <option
+                            *ngFor="let option of filter.options || []"
+                            [value]="getPreviewOptionValue(option.value)"
+                            [selected]="
+                              filter.profile.defaultValue === option.value
+                            "
+                          >
+                            {{ option.label }}
+                          </option>
+                        </select>
+                        <ng-template #textFilterDefault>
+                          <input
+                            class="tname-input"
+                            style="width: 100%; height: 34px"
+                            [value]="filter.profile.defaultValue || ''"
+                            (change)="
+                              updateTemplateFilterDefault(
+                                filter.id,
+                                $any($event.target).value
+                              )
+                            "
+                            [placeholder]="
+                              filter.placeholder || 'Valeur par défaut'
+                            "
+                          />
+                        </ng-template>
+                      </div>
+
+                      <div
+                        *ngIf="filter.type === 'select'; else freeFilterHelp"
+                      >
+                        <div class="legacy-filter-field-label">
+                          Valeurs autorisées
+                        </div>
+                        <select
+                          class="charter-bar-select"
+                          style="width: 100%"
+                          [value]="filter.profile.allowedValueMode"
+                          (change)="
+                            updateTemplateFilterAllowedMode(
+                              filter.id,
+                              $any($event.target).value
+                            )
+                          "
+                        >
+                          <option value="all">
+                            Toutes les valeurs possibles
+                          </option>
+                          <option value="subset">Sous-ensemble choisi</option>
+                        </select>
+                      </div>
+                      <ng-template #freeFilterHelp>
+                        <div class="legacy-filter-help">
+                          {{
+                            filter.helpText ||
+                              "Filtre libre sans liste prédéfinie."
+                          }}
+                        </div>
+                      </ng-template>
+                    </div>
+
+                    <div
+                      class="legacy-filter-subset"
+                      *ngIf="
+                        filter.type === 'select' &&
+                        filter.profile.allowedValueMode === 'subset'
+                      "
+                    >
+                      <div class="legacy-filter-field-label">
+                        Choisissez les valeurs autorisées pour ce template.
+                      </div>
+                      <div class="legacy-filter-options">
+                        <label *ngFor="let option of filter.options || []">
+                          <input
+                            type="checkbox"
+                            [checked]="
+                              isAllowedFilterValueSelected(
+                                filter.profile,
+                                option.value
+                              )
+                            "
+                            (change)="
+                              toggleTemplateFilterAllowedValue(
+                                filter.id,
+                                option,
+                                $any($event.target).checked
+                              )
+                            "
+                          />
+                          {{
+                            option.label === option.value
+                              ? option.label
+                              : option.label + " (" + option.value + ")"
+                          }}
+                        </label>
+                        <span
+                          class="text-muted"
+                          *ngIf="!(filter.options || []).length"
+                        >
+                          Aucune valeur détectée pour le moment.
+                        </span>
+                      </div>
+                      <div class="legacy-filter-custom">
+                        <input
+                          class="tname-input"
+                          style="height: 34px; flex: 1; min-width: 180px"
+                          placeholder="Valeur personnalisée"
+                          #customAllowedValue
+                        />
+                        <input
+                          class="tname-input"
+                          style="height: 34px; flex: 1; min-width: 180px"
+                          placeholder="Libellé (optionnel)"
+                          #customAllowedLabel
+                        />
+                        <button
+                          class="btn ghost sm"
+                          type="button"
+                          (click)="
+                            addCustomTemplateAllowedValue(
+                              filter.id,
+                              customAllowedValue.value,
+                              customAllowedLabel.value
+                            );
+                            customAllowedValue.value = '';
+                            customAllowedLabel.value = ''
+                          "
+                        >
+                          Ajouter
+                        </button>
+                      </div>
+                      <div
+                        class="legacy-filter-selection"
+                        *ngIf="(filter.profile.allowedValues || []).length"
+                      >
+                        Sélection actuelle :
+                        {{
+                          formatAllowedFilterValues(
+                            filter.profile.allowedValues
+                          )
+                        }}
                       </div>
                     </div>
-                    <label class="filter-toggle">
-                      <input
-                        type="checkbox"
-                        [checked]="
-                          filter.profile.enabled &&
-                          filter.profile.adminEnabled !== false
-                        "
-                        (change)="
-                          toggleTemplateFilter(
-                            filter.id,
-                            $any($event.target).checked
-                          )
-                        "
-                      />
-                      Actif admin
-                    </label>
-                  </div>
-
-                  <div class="filter-profile-grid">
-                    <label>
-                      <input
-                        type="checkbox"
-                        [checked]="filter.profile.userEnabled !== false"
-                        (change)="
-                          updateTemplateFilterBool(
-                            filter.id,
-                            'userEnabled',
-                            $any($event.target).checked
-                          )
-                        "
-                      />
-                      Disponible user
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        [checked]="filter.profile.required"
-                        (change)="
-                          updateTemplateFilterBool(
-                            filter.id,
-                            'required',
-                            $any($event.target).checked
-                          )
-                        "
-                      />
-                      Obligatoire
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        [checked]="filter.profile.locked"
-                        (change)="
-                          updateTemplateFilterBool(
-                            filter.id,
-                            'locked',
-                            $any($event.target).checked
-                          )
-                        "
-                      />
-                      Verrouillé
-                    </label>
-                  </div>
-
-                  <div class="filter-profile-grid">
-                    <div>
-                      <label class="flabel">Valeur par défaut</label>
-                      <input
-                        class="finput"
-                        [value]="filter.profile.defaultValue || ''"
-                        (change)="
-                          updateTemplateFilterDefault(
-                            filter.id,
-                            $any($event.target).value
-                          )
-                        "
-                      />
-                    </div>
-                    <div *ngIf="filter.type === 'select'">
-                      <label class="flabel">Valeurs autorisées</label>
-                      <select
-                        class="finput"
-                        [value]="filter.profile.allowedValueMode"
-                        (change)="
-                          updateTemplateFilterAllowedMode(
-                            filter.id,
-                            $any($event.target).value
-                          )
-                        "
-                      >
-                        <option value="all">Toutes les valeurs</option>
-                        <option value="subset">Limiter à une sélection</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div
-                    class="filter-options-list"
-                    *ngIf="
-                      filter.type === 'select' &&
-                      filter.profile.allowedValueMode === 'subset'
-                    "
-                  >
-                    <label *ngFor="let option of filter.options || []">
-                      <input
-                        type="checkbox"
-                        [checked]="
-                          isAllowedFilterValueSelected(
-                            filter.profile,
-                            option.value
-                          )
-                        "
-                        (change)="
-                          toggleTemplateFilterAllowedValue(
-                            filter.id,
-                            option,
-                            $any($event.target).checked
-                          )
-                        "
-                      />
-                      {{ option.label }}
-                    </label>
-                    <div
-                      class="text-muted"
-                      *ngIf="!(filter.options || []).length"
-                    >
-                      Aucune option disponible pour ce filtre.
-                    </div>
                   </div>
                 </div>
+                <ng-template #noTemplateFilters>
+                  <div class="vars-panel-empty">
+                    Aucun filtre de famille défini. Configurez-les côté Super
+                    Admin pour activer le filtrage dynamique.
+                  </div>
+                </ng-template>
               </div>
-              <ng-template #noTemplateFilters>
-                <div class="vars-panel-empty">
-                  Aucun filtre disponible pour cette famille.
-                </div>
-              </ng-template>
             </div>
           </div>
         </div>
@@ -2706,4 +2819,3 @@
     </div>
   </div>
 </div>
-

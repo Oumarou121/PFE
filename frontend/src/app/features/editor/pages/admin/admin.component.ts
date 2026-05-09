@@ -1258,7 +1258,7 @@ export class AdminComponent
 
   updateTemplateFilterBool(
     filterId: string,
-    field: "required" | "locked" | "userEnabled",
+    field: "required" | "locked" | "adminEnabled" | "userEnabled",
     checked: boolean,
   ): void {
     this.updateTemplateFilterProfile(filterId, (entry) => ({
@@ -1300,6 +1300,36 @@ export class AdminComponent
           : current.filter((item) => item.value !== option.value),
       };
     });
+  }
+
+  addCustomTemplateAllowedValue(
+    filterId: string,
+    value: string,
+    label: string,
+  ): void {
+    const normalizedValue = String(value || "").trim();
+    if (!normalizedValue) {
+      this.notifications.showWarning("Saisissez une valeur personnalisée");
+      return;
+    }
+    this.toggleTemplateFilterAllowedValue(
+      filterId,
+      {
+        value: normalizedValue,
+        label: String(label || "").trim() || normalizedValue,
+      },
+      true,
+    );
+  }
+
+  formatAllowedFilterValues(options: { value: string; label: string }[] = []): string {
+    return options
+      .map((option) =>
+        option.label && option.label !== option.value
+          ? `${option.label} (${option.value})`
+          : option.value,
+      )
+      .join(" - ");
   }
 
   isAllowedFilterValueSelected(
@@ -2055,6 +2085,10 @@ export class AdminComponent
         beneficiary?.["_sourceTable"] ||
         "",
     );
+  }
+
+  getPreviewOptionValue(value: unknown): string {
+    return String(value ?? "");
   }
 
   isPreviewFilterRequiredMissing(entry: RuntimeFilterEntry): boolean {

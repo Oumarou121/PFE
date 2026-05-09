@@ -28,12 +28,6 @@ export const routes: Routes = [
   },
   {
     path: "admin",
-    loadComponent: legacyPage,
-    canActivate: [roleGuard],
-    data: { page: "admin", roles: ["admin"] },
-  },
-  {
-    path: "admin-angular",
     loadComponent: () =>
       import("./features/editor/pages/admin/admin.component").then(
         (m) => m.AdminComponent,
@@ -41,6 +35,7 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: { page: "admin", roles: ["admin"] },
   },
+
   {
     path: "user",
     loadComponent: () =>
