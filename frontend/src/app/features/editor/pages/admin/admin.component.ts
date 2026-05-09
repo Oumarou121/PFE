@@ -263,7 +263,6 @@ export class AdminComponent
   imageCaption = "";
   tableRows = 3;
   tableCols = 3;
-  pageSettingsModalOpen = false;
   watermarkModalOpen = false;
   pageSettingsForm: PageSettingsForm = {
     orientation: "portrait",
@@ -1754,44 +1753,6 @@ export class AdminComponent
     this.cdr.markForCheck();
   }
 
-  openPageSettings(): void {
-    if (!this.selectedTemplate) {
-      this.notifications.showWarning("Ouvrez d'abord un template");
-      return;
-    }
-    this.pageSettingsForm = this.getPageSettingsFromTemplate(
-      this.selectedTemplate,
-    );
-    this.pageSettingsModalOpen = true;
-    this.cdr.markForCheck();
-  }
-
-  closePageSettingsModal(): void {
-    this.pageSettingsModalOpen = false;
-    this.cdr.markForCheck();
-  }
-
-  updatePageSetting(
-    field: keyof PageSettingsForm,
-    value: string | number,
-  ): void {
-    if (field === "orientation") {
-      this.pageSettingsForm = {
-        ...this.pageSettingsForm,
-        orientation: value === "landscape" ? "landscape" : "portrait",
-      };
-      this.saveStatus = "Modifié";
-      this.cdr.markForCheck();
-      return;
-    }
-    this.pageSettingsForm = {
-      ...this.pageSettingsForm,
-      [field]: this.coerceNumber(value, this.pageSettingsForm[field] as number),
-    };
-    this.saveStatus = "Modifié";
-    this.cdr.markForCheck();
-  }
-
   runTableCommand(command: string): void {
     if (!this.editor) return;
     const chain = this.editor.chain().focus() as any;
@@ -1855,49 +1816,6 @@ export class AdminComponent
       chain.updateAttributes("tableCell", attrs).run();
     }
     this.saveStatus = "Modifié";
-    this.cdr.markForCheck();
-  }
-
-  resetPageMargins(): void {
-    const charterConfig = this.selectedGraphicCharter?.config
-      ? this.graphicCharters.normalizeGraphicCharterConfig(
-          this.selectedGraphicCharter.config,
-        )
-      : this.graphicCharters.normalizeGraphicCharterConfig({});
-    this.pageSettingsForm = {
-      orientation: charterConfig.layout.orientation,
-      mt: charterConfig.layout.pageMargins.mt,
-      mb: charterConfig.layout.pageMargins.mb,
-      ml: charterConfig.layout.pageMargins.ml,
-      mr: charterConfig.layout.pageMargins.mr,
-      headerTop: charterConfig.layout.headerFooterDistances.headerTop,
-      footerBottom: charterConfig.layout.headerFooterDistances.footerBottom,
-    };
-    this.saveStatus = "Modifié";
-    this.cdr.markForCheck();
-  }
-
-  applyPageMargins(): void {
-    if (!this.selectedTemplate) return;
-    this.pageSettingsForm = {
-      orientation: this.pageSettingsForm.orientation,
-      mt: this.clampNumber(this.pageSettingsForm.mt, 5, 60, 20),
-      mb: this.clampNumber(this.pageSettingsForm.mb, 5, 60, 20),
-      ml: this.clampNumber(this.pageSettingsForm.ml, 5, 60, 25),
-      mr: this.clampNumber(this.pageSettingsForm.mr, 5, 60, 25),
-      headerTop: this.clampNumber(this.pageSettingsForm.headerTop, 0, 30, 5),
-      footerBottom: this.clampNumber(
-        this.pageSettingsForm.footerBottom,
-        0,
-        30,
-        5,
-      ),
-    };
-    this.pageSettingsModalOpen = false;
-    this.saveStatus = "Modifié";
-    this.notifications.showSuccess(
-      `Marges : haut ${this.pageSettingsForm.mt}mm - bas ${this.pageSettingsForm.mb}mm - gauche ${this.pageSettingsForm.ml}mm - droite ${this.pageSettingsForm.mr}mm - orientation ${this.pageSettingsForm.orientation}`,
-    );
     this.cdr.markForCheck();
   }
 

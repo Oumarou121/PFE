@@ -90,6 +90,7 @@ namespace DocApi.Controllers
         }
 
         [HttpPut("state")]
+        [Authorize]
         public async Task<ActionResult> ReplaceState([FromBody] EditorStateRequest request)
         {
             if (request.State is null) return BadRequest(new EditorApiResponse(false, Error: "state is required"));
