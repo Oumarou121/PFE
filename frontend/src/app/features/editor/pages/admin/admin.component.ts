@@ -151,6 +151,11 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   linkUrl = "";
   imageUrl = "";
   imageAlt = "";
+  imagePreviewSrc = "";
+  imageWidth = "";
+  imageHeight = "";
+  imageAlign: "left" | "center" | "right" = "center";
+  imageCaption = "";
   tableRows = 3;
   tableCols = 3;
   pageSettingsModalOpen = false;
@@ -182,6 +187,53 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     { label: "Date courte", value: "{{date_du_jour_courte}}" },
     { label: "Date ISO", value: "{{date_du_jour_iso}}" },
   ];
+  readonly textColors = [
+    "#000000",
+    "#1a1d2e",
+    "#374151",
+    "#6b7280",
+    "#9ca3af",
+    "#d1d5db",
+    "#dc2626",
+    "#ea580c",
+    "#d97706",
+    "#16a34a",
+    "#0284c7",
+    "#7c3aed",
+    "#db2777",
+    "#ffffff",
+    "#fef9c3",
+    "#dbeafe",
+    "#dcfce7",
+    "#fce7f3",
+    "#f3e8ff",
+    "#ffedd5",
+    "#fee2e2",
+    "#e0f2fe",
+  ];
+  readonly highlightColors = [
+    "transparent",
+    "#fef9c3",
+    "#dbeafe",
+    "#dcfce7",
+    "#fce7f3",
+    "#f3e8ff",
+    "#ffedd5",
+    "#fee2e2",
+    "#e0f2fe",
+    "#f0fdf4",
+    "#fdf4ff",
+    "#fff1f2",
+    "#1e293b",
+    "#1d4ed8",
+    "#15803d",
+    "#7e22ce",
+    "#9f1239",
+    "#c2410c",
+  ];
+  activeColorPopover: "text" | "highlight" | null = null;
+  selectedTextColor = "#1a1d2e";
+  selectedHighlightColor = "#fef9c3";
   activeVariableGroupId = "simple";
   templateFilterProfile: TemplateFilterProfileEntry[] = [];
   runtimeAdminFilters: RuntimeFilterEntry[] = [];
@@ -281,6 +333,14 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       event.preventDefault();
       this.searchPanelOpen = true;
       this.doSearch();
+    }
+  }
+
+  @HostListener("document:click", ["$event"])
+  handleDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest(".tb-clr")) {
+      this.activeColorPopover = null;
     }
   }
 
@@ -1146,6 +1206,11 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     reader.readAsDataURL(file);
   }
 
+  clearGraphicCharterBackground(): void {
+    this.graphicCharterForm.backgroundEnabled = false;
+    this.graphicCharterForm.backgroundImage = "";
+  }
+
   insertGraphicCharterVariable(
     section: GraphicCharterEditorSection,
     tech: string,
@@ -1217,15 +1282,40 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     else chain.setMark("textStyle", { fontSize: null }).run();
   }
 
+  toggleColorPopover(kind: "text" | "highlight", event: MouseEvent): void {
+    event.stopPropagation();
+    this.activeColorPopover = this.activeColorPopover === kind ? null : kind;
+  }
+
+  chooseTextColor(color: string): void {
+    this.applyTextColor(color);
+    this.activeColorPopover = null;
+  }
+
+  chooseHighlightColor(color: string): void {
+    this.applyHighlightColor(color === "transparent" ? "" : color);
+    this.activeColorPopover = null;
+  }
+
   applyTextColor(color: string): void {
     if (!this.editor) return;
-    if (color) this.editor.chain().focus().setColor(color).run();
+    if (color) {
+      this.selectedTextColor = color;
+      this.editor.chain().focus().setColor(color).run();
+      this.saveStatus = "Modifié";
+    }
   }
 
   applyHighlightColor(color: string): void {
     if (!this.editor) return;
-    if (color) this.editor.chain().focus().setHighlight({ color }).run();
-    else this.editor.chain().focus().unsetHighlight().run();
+    if (color) {
+      this.selectedHighlightColor = color;
+      this.editor.chain().focus().setHighlight({ color }).run();
+    } else {
+      this.selectedHighlightColor = "transparent";
+      this.editor.chain().focus().unsetHighlight().run();
+    }
+    this.saveStatus = "Modifié";
   }
 
   insertHorizontalRule(): void {
@@ -1353,20 +1443,62 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   openImageModal(): void {
     this.imageUrl = "";
     this.imageAlt = "";
+    this.imagePreviewSrc = "";
+    this.imageWidth = "";
+    this.imageHeight = "";
+    this.imageAlign = "center";
+    this.imageCaption = "";
     this.imageModalOpen = true;
+  }
+
+  onImageFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const src = String(reader.result || "");
+      this.imageUrl = src;
+      this.imagePreviewSrc = src;
+      this.imageAlt = this.imageAlt || file.name.replace(/\.[^.]+$/, "");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  onImageUrlChange(value: string): void {
+    this.imageUrl = value;
+    this.imagePreviewSrc = value.trim();
   }
 
   insertImage(): void {
     const src = this.imageUrl.trim();
     if (!this.editor || !src) return;
+    const style = [
+      "max-width:100%",
+      this.imageWidth.trim() ? `width:${this.escapeHtmlAttribute(this.imageWidth.trim())}` : "",
+      this.imageHeight.trim()
+        ? `height:${this.escapeHtmlAttribute(this.imageHeight.trim())}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(";");
+    const caption = this.imageCaption.trim()
+      ? `<div style="font-size:10pt;color:#666;margin-top:4px">${this.escapeHtml(this.imageCaption.trim())}</div>`
+      : "";
+    const html = `<div style="text-align:${this.imageAlign}"><img src="${this.escapeHtmlAttribute(src)}" alt="${this.escapeHtmlAttribute(this.imageAlt || this.imageCaption || "")}" style="${style}" />${caption}</div><p></p>`;
     this.editor
       .chain()
       .focus()
-      .setImage({ src, alt: this.imageAlt || "" })
+      .insertContent(html)
       .run();
     this.imageModalOpen = false;
     this.imageUrl = "";
     this.imageAlt = "";
+    this.imagePreviewSrc = "";
+    this.imageWidth = "";
+    this.imageHeight = "";
+    this.imageAlign = "center";
+    this.imageCaption = "";
     this.saveStatus = "Modifié";
   }
 
@@ -2240,6 +2372,19 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       .focus()
       .setTextSelection({ from: match.from, to: match.to })
       .run();
+  }
+
+  private escapeHtml(value: string): string {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  private escapeHtmlAttribute(value: string): string {
+    return this.escapeHtml(value).replace(/`/g, "&#96;");
   }
 
   private escapeRegex(value: string): string {

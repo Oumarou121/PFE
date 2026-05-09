@@ -247,34 +247,167 @@
             </select>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" data-tip="Annuler Ctrl+Z" (click)="runEditorCommand('undo')">↶</button>
-            <button class="tb-btn" type="button" data-tip="Rétablir Ctrl+Y" (click)="runEditorCommand('redo')">↷</button>
+            <button class="tb-btn" type="button" data-tip="Annuler Ctrl+Z" (click)="runEditorCommand('undo')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 7v6h6" />
+                <path d="M3 13a9 9 0 106-8.5" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" data-tip="Rétablir Ctrl+Y" (click)="runEditorCommand('redo')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 7v6h-6" />
+                <path d="M21 13a9 9 0 11-6-8.5" />
+              </svg>
+            </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('bold')" data-tip="Gras Ctrl+B" (click)="runEditorCommand('bold')">B</button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('italic')" data-tip="Italique Ctrl+I" (click)="runEditorCommand('italic')">I</button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('underline')" data-tip="Souligné Ctrl+U" (click)="runEditorCommand('underline')">U</button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('strike')" data-tip="Barré" (click)="runEditorCommand('strike')">S</button>
-            <button class="tb-btn" type="button" data-tip="Effacer mise en forme" (click)="runEditorCommand('clear')">×</button>
+            <button class="tb-btn" type="button" [class.on]="isEditorActive('bold')" data-tip="Gras Ctrl+B" (click)="runEditorCommand('bold')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M6 4h8a4 4 0 010 8H6z" />
+                <path d="M6 12h9a4 4 0 010 8H6z" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" [class.on]="isEditorActive('italic')" data-tip="Italique Ctrl+I" (click)="runEditorCommand('italic')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="4" x2="10" y2="4" />
+                <line x1="14" y1="20" x2="5" y2="20" />
+                <line x1="15" y1="4" x2="9" y2="20" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" [class.on]="isEditorActive('underline')" data-tip="Souligné Ctrl+U" (click)="runEditorCommand('underline')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 3v7a6 6 0 0012 0V3" />
+                <line x1="4" y1="21" x2="20" y2="21" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" [class.on]="isEditorActive('strike')" data-tip="Barré" (click)="runEditorCommand('strike')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <path d="M17.5 6.5C16.5 5.3 14.8 4.5 12 4.5c-3 0-5 1.5-5 4" />
+                <path d="M6.5 17.5C7.5 18.7 9.2 19.5 12 19.5c3 0 5-1.5 5-4" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" data-tip="Effacer mise en forme" (click)="runEditorCommand('clear')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('bulletList')" data-tip="Liste" (click)="runEditorCommand('bulletList')">•</button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('orderedList')" data-tip="Liste numérotée" (click)="runEditorCommand('orderedList')">1.</button>
-            <button class="tb-btn" type="button" data-tip="Réduire retrait" (click)="runEditorCommand('liftListItem')">&lt;</button>
-            <button class="tb-btn" type="button" data-tip="Augmenter retrait" (click)="runEditorCommand('sinkListItem')">&gt;</button>
+            <button class="tb-btn" type="button" [class.on]="isEditorActive('bulletList')" data-tip="Liste à puces" (click)="runEditorCommand('bulletList')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="9" y1="6" x2="20" y2="6" />
+                <line x1="9" y1="12" x2="20" y2="12" />
+                <line x1="9" y1="18" x2="20" y2="18" />
+                <circle cx="4" cy="6" r="1.5" fill="currentColor" />
+                <circle cx="4" cy="12" r="1.5" fill="currentColor" />
+                <circle cx="4" cy="18" r="1.5" fill="currentColor" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" [class.on]="isEditorActive('orderedList')" data-tip="Liste numérotée" (click)="runEditorCommand('orderedList')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="10" y1="6" x2="21" y2="6" />
+                <line x1="10" y1="12" x2="21" y2="12" />
+                <line x1="10" y1="18" x2="21" y2="18" />
+                <path d="M4 6h1v4M4 10h2M4 15a2 2 0 014 0v1a2 2 0 01-4 0" stroke-width="1.5" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" data-tip="Réduire retrait" (click)="runEditorCommand('liftListItem')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="11 17 6 12 11 7" />
+                <line x1="18" y1="12" x2="6" y2="12" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" data-tip="Augmenter retrait" (click)="runEditorCommand('sinkListItem')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="13 17 18 12 13 7" />
+                <line x1="6" y1="12" x2="18" y2="12" />
+              </svg>
+            </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('left')" data-tip="Aligner à gauche" (click)="applyAlign('left')">G</button>
-            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('center')" data-tip="Centrer" (click)="applyAlign('center')">C</button>
-            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('right')" data-tip="Aligner à droite" (click)="applyAlign('right')">D</button>
+            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('left')" data-tip="Gauche" (click)="applyAlign('left')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="15" y2="12" />
+                <line x1="3" y1="18" x2="18" y2="18" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('center')" data-tip="Centrer" (click)="applyAlign('center')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="6" y1="12" x2="18" y2="12" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('right')" data-tip="Droite" (click)="applyAlign('right')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="9" y1="12" x2="21" y2="12" />
+                <line x1="6" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('justify')" data-tip="Justifier" (click)="applyAlign('justify')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             <button class="tb-btn" type="button" [class.on]="activeSectionDirection === 'ltr'" data-tip="LTR" style="font-size: 9px; font-weight: 700" (click)="applyDirection('ltr')">LTR</button>
             <button class="tb-btn" type="button" [class.on]="activeSectionDirection === 'rtl'" data-tip="RTL" style="font-size: 9px; font-weight: 700" (click)="applyDirection('rtl')">RTL</button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('blockquote')" data-tip="Citation" (click)="runEditorCommand('blockquote')">"</button>
+            <button class="tb-btn" type="button" [class.on]="isEditorActive('blockquote')" data-tip="Citation" (click)="runEditorCommand('blockquote')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
+                <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
+              </svg>
+            </button>
           </div>
           <div class="tb-grp">
-            <input class="tb-btn" type="color" title="Couleur texte" value="#111111" (input)="applyTextColor($any($event.target).value)" />
-            <input class="tb-btn" type="color" title="Surlignage" value="#fff59d" (input)="applyHighlightColor($any($event.target).value)" />
-            <button class="tb-btn" type="button" data-tip="Retirer surlignage" (click)="applyHighlightColor('')">HL</button>
+            <div class="tb-clr" data-tip="Couleur texte" (click)="toggleColorPopover('text', $event)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 20h4l10.5-10.5a2.121 2.121 0 00-3-3L5 17v3z" />
+              </svg>
+              <div class="tb-clr-bar" [style.background]="selectedTextColor"></div>
+              <div class="cpop" [class.on]="activeColorPopover === 'text'" (click)="$event.stopPropagation()">
+                <div style="font-size: 9px; color: var(--text3); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em">
+                  Couleur du texte
+                </div>
+                <div class="cswatches">
+                  <button
+                    class="cswatch"
+                    type="button"
+                    *ngFor="let color of textColors"
+                    [style.background]="color"
+                    (click)="chooseTextColor(color)"
+                  ></button>
+                </div>
+                <input type="color" [value]="selectedTextColor" (change)="chooseTextColor($any($event.target).value)" />
+              </div>
+            </div>
+            <div class="tb-clr" data-tip="Surligner" (click)="toggleColorPopover('highlight', $event)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l-6 6v3h3l6-6m0 0l3.5-3.5a2 2 0 00-3-3L9 11" />
+                <line x1="14" y1="7" x2="17" y2="10" />
+              </svg>
+              <div class="tb-clr-bar" [style.background]="selectedHighlightColor" [style.border-color]="selectedHighlightColor === 'transparent' ? '#d4b800' : selectedHighlightColor"></div>
+              <div class="cpop" [class.on]="activeColorPopover === 'highlight'" (click)="$event.stopPropagation()">
+                <div style="font-size: 9px; color: var(--text3); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em">
+                  Surligneur
+                </div>
+                <div class="cswatches">
+                  <button
+                    class="cswatch"
+                    type="button"
+                    *ngFor="let color of highlightColors"
+                    [style.background]="color === 'transparent' ? 'linear-gradient(135deg, #fff 0 45%, #ef4444 46% 54%, #fff 55% 100%)' : color"
+                    (click)="chooseHighlightColor(color)"
+                  ></button>
+                </div>
+                <input type="color" [value]="selectedHighlightColor === 'transparent' ? '#fef9c3' : selectedHighlightColor" (change)="chooseHighlightColor($any($event.target).value)" />
+              </div>
+            </div>
           </div>
           <div class="tb-grp">
             <button class="tb-btn" type="button" data-tip="Image" (click)="openImageModal()">
@@ -306,28 +439,28 @@
             </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" data-tip="Ligne avant" (click)="runTableCommand('addRowBefore')">R+</button>
-            <button class="tb-btn" type="button" data-tip="Ligne après" (click)="runTableCommand('addRowAfter')">+R</button>
-            <button class="tb-btn" type="button" data-tip="Supprimer ligne" (click)="runTableCommand('deleteRow')">R-</button>
-            <button class="tb-btn" type="button" data-tip="Colonne avant" (click)="runTableCommand('addColumnBefore')">C+</button>
-            <button class="tb-btn" type="button" data-tip="Colonne après" (click)="runTableCommand('addColumnAfter')">+C</button>
-            <button class="tb-btn" type="button" data-tip="Supprimer colonne" (click)="runTableCommand('deleteColumn')">C-</button>
-            <button class="tb-btn" type="button" data-tip="Fusionner cellules" (click)="runTableCommand('mergeCells')">M</button>
-            <button class="tb-btn" type="button" data-tip="Scinder cellule" (click)="runTableCommand('splitCell')">S</button>
-            <button class="tb-btn" type="button" data-tip="En-tête tableau" (click)="runTableCommand('toggleHeaderRow')">TH</button>
-            <button class="tb-btn" type="button" data-tip="Supprimer tableau" (click)="runTableCommand('deleteTable')">T-</button>
-          </div>
-          <div class="tb-grp">
             <button class="tb-btn" type="button" data-tip="Variable établissement" (click)="insertVariable('nom_etab')">{{ "{}" }}</button>
-            <button class="tb-btn" type="button" data-tip="Date du jour" (click)="openDateVariableModal()">Date</button>
-            <button class="tb-btn" type="button" data-tip="Bloc signature" (click)="insertSignatureBlock()">Sign</button>
-          </div>
-          <div class="tb-grp">
-            <button class="tb-btn" type="button" data-tip="Filigrane" (click)="openWatermarkModal()">WM</button>
-            <button class="tb-btn" type="button" data-tip="Mise en page" (click)="openPageSettings()">Page</button>
-          </div>
-          <div class="tb-grp">
-            <button class="tb-btn" type="button" data-tip="Rechercher Ctrl+F" (click)="toggleSearchPanel()">Find</button>
+            <button class="tb-btn" type="button" data-tip="Date du jour" style="font-size: 13px" (click)="openDateVariableModal()">📅</button>
+            <button class="tb-btn" type="button" data-tip="Bloc signature" style="font-size: 13px" (click)="insertSignatureBlock()">✍</button>
+            <button class="tb-btn" type="button" data-tip="Filigrane" (click)="openWatermarkModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" data-tip="Mise en page" (click)="openPageSettings()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="3" width="14" height="18" rx="1" />
+                <line x1="8" y1="7" x2="16" y2="7" />
+                <line x1="8" y1="11" x2="16" y2="11" />
+                <line x1="8" y1="15" x2="13" y2="15" />
+              </svg>
+            </button>
+            <button class="tb-btn" type="button" data-tip="Rechercher Ctrl+F" (click)="toggleSearchPanel()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
           </div>
           <div class="tb-grp" style="align-items: center; gap: 4px">
             <span style="font-size: 9px; color: var(--text3); font-weight: 600">ZOOM</span>
@@ -593,6 +726,45 @@
     />
     Respecter la casse
   </label>
+</div>
+
+<div
+  class="tbl-toolbar on"
+  *ngIf="activeSection !== 'filters' && isEditorActive('table')"
+  style="left: 50%; bottom: 22px; transform: translateX(-50%)"
+>
+  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('addRowBefore')" title="Ligne avant">
+    + ligne avant
+  </button>
+  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('addRowAfter')" title="Ligne après">
+    + ligne après
+  </button>
+  <button class="tbl-tb-btn danger" type="button" (click)="runTableCommand('deleteRow')" title="Supprimer ligne">
+    - ligne
+  </button>
+  <span class="tbl-tb-sep"></span>
+  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('addColumnBefore')" title="Colonne avant">
+    + col avant
+  </button>
+  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('addColumnAfter')" title="Colonne après">
+    + col après
+  </button>
+  <button class="tbl-tb-btn danger" type="button" (click)="runTableCommand('deleteColumn')" title="Supprimer colonne">
+    - col
+  </button>
+  <span class="tbl-tb-sep"></span>
+  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('mergeCells')" title="Fusionner">
+    fusionner
+  </button>
+  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('splitCell')" title="Diviser">
+    diviser
+  </button>
+  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('toggleHeaderRow')" title="En-tête">
+    en-tête
+  </button>
+  <button class="tbl-tb-btn danger" type="button" (click)="runTableCommand('deleteTable')" title="Supprimer tableau">
+    tableau
+  </button>
 </div>
 
 <div class="modal-overlay open" *ngIf="previewOpen">
@@ -938,6 +1110,7 @@
       </div>
     </div>
     <div class="mactions">
+      <button class="btn" type="button" (click)="clearGraphicCharterBackground()">Retirer l'image</button>
       <button class="btn" type="button" (click)="closeGraphicCharterModal()">Annuler</button>
       <button class="btn primary" type="button" (click)="saveGraphicCharterModal()">Enregistrer</button>
     </div>
@@ -967,11 +1140,46 @@
       <span class="mtitle">Insérer une image</span>
       <button class="mclose" type="button" (click)="closeEditorModal()">×</button>
     </div>
-    <div class="modal-body">
-      <label class="flabel">URL de l'image</label>
-      <input class="finput" [value]="imageUrl" (input)="imageUrl = $any($event.target).value" placeholder="https://..." />
-      <label class="flabel">Légende / texte alternatif</label>
-      <input class="finput" [value]="imageAlt" (input)="imageAlt = $any($event.target).value" />
+    <div>
+      <div class="frow">
+        <label class="flabel">Fichier local</label>
+        <input type="file" accept="image/*" style="font-size: 12px" (change)="onImageFileChange($event)" />
+      </div>
+      <div class="img-pre-wrap" *ngIf="imagePreviewSrc">
+        <img [src]="imagePreviewSrc" [alt]="imageAlt || imageCaption || ''" />
+      </div>
+      <div class="frow">
+        <label class="flabel">URL de l'image</label>
+        <input
+          class="finput"
+          type="url"
+          [value]="imageUrl"
+          (input)="onImageUrlChange($any($event.target).value)"
+          placeholder="https://exemple.com/image.png"
+        />
+      </div>
+      <div class="fgrid2">
+        <div class="frow" style="margin: 0">
+          <label class="flabel">Largeur (px, mm, cm, %)</label>
+          <input class="finput" type="text" [value]="imageWidth" (input)="imageWidth = $any($event.target).value" placeholder="Auto" />
+        </div>
+        <div class="frow" style="margin: 0">
+          <label class="flabel">Alignement</label>
+          <select class="finput" [value]="imageAlign" (change)="imageAlign = $any($event.target).value">
+            <option value="center">Centré</option>
+            <option value="left">Gauche</option>
+            <option value="right">Droite</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow" style="margin-top: 8px">
+        <label class="flabel">Hauteur (px, mm, cm)</label>
+        <input class="finput" type="text" [value]="imageHeight" (input)="imageHeight = $any($event.target).value" placeholder="Auto" />
+      </div>
+      <div class="frow" style="margin-top: 8px">
+        <label class="flabel">Légende (optionnel)</label>
+        <input class="finput" [value]="imageCaption" (input)="imageCaption = $any($event.target).value" placeholder="Texte de légende..." />
+      </div>
     </div>
     <div class="mactions">
       <button class="btn" type="button" (click)="closeEditorModal()">Annuler</button>
