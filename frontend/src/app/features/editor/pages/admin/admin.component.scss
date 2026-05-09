@@ -920,6 +920,9 @@ button {
 /* ── PAGE CANVAS ── */
 .pcanvas {
   flex: 1;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
   overflow: auto;
   background: #c8cdd8;
   display: flex;
@@ -958,6 +961,8 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: max-content;
+  min-width: var(--page-w);
 }
 .body-editor-wrap {
   /* PaginationPlus gère ses propres pages A4 — on ne met qu'un conteneur neutre */
@@ -1014,9 +1019,6 @@ button {
 }
 
 .editor-host .ProseMirror {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
   width: 100%;
   min-height: var(--page-h);
   outline: none;
@@ -1028,20 +1030,14 @@ button {
 }
 
 .document-page-node {
-  width: var(--page-w);
-  min-height: var(--page-h);
-  background-color: #fff;
-  background-image: var(--doc-page-bg-image, none);
-  background-size: var(--doc-page-bg-size, cover);
-  background-position: var(--doc-page-bg-position, center center);
-  background-repeat: var(--doc-page-bg-repeat, no-repeat);
-  box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  display: block;
+  width: 100%;
+  min-height: 0;
   position: relative;
+  background: transparent;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
 }
 
 .document-page-header,
@@ -1051,21 +1047,19 @@ button {
 }
 
 .document-page-header {
-  padding: var(--page-header-top) var(--page-mr) 3mm var(--page-ml);
+  padding: 0 0 3mm;
   border-bottom: 1px dashed var(--doc-color-border);
 }
 
 .document-page-body {
-  flex: 1;
-  padding: var(--page-mt) var(--page-mr) var(--page-mb) var(--page-ml);
+  min-height: 0;
   position: relative;
   isolation: isolate;
 }
 
 .document-page-footer {
-  padding: 3mm var(--page-mr) var(--page-footer-bottom) var(--page-ml);
+  padding: 3mm 0 0;
   border-top: 1px dashed var(--doc-color-border);
-  margin-top: auto;
 }
 
 .document-page-header::before,
@@ -1093,6 +1087,30 @@ button {
 .document-page-footer:focus-within {
   outline: 2px solid var(--accent-bdr);
   outline-offset: -2px;
+}
+
+.editor-host .rm-with-pagination {
+  background-color: #fff;
+  background-image: var(--doc-page-bg-image, none);
+  background-size: var(--doc-page-bg-size, cover);
+  background-position: var(--doc-page-bg-position, center center);
+  background-repeat: var(--doc-page-bg-repeat, no-repeat);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.editor-host .rm-pagination-gap {
+  // background: var(--surface3);
+  background: #c8cdd8 !important;
+  box-shadow: none;
+}
+
+.editor-host .rm-page-break {
+  border: 0;
+  margin: 0;
 }
 
 /* ── TIPTAP ── */
@@ -1316,9 +1334,11 @@ button {
   display: none;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 .editor-section-panel.on {
   display: flex;
+  min-height: 0;
 }
 .filter-section-panel {
   flex-direction: column;

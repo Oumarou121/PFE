@@ -349,8 +349,13 @@ export function buildEditorExtensions(
   return [...BASE_EXTENSIONS];
 }
 
-export function buildStructuredDocumentExtensions() {
-  return [...STRUCTURED_DOCUMENT_EXTENSIONS];
+export function buildStructuredDocumentExtensions(
+  paginationConfig?: PaginationConfig,
+) {
+  return [
+    ...STRUCTURED_DOCUMENT_EXTENSIONS,
+    buildPaginationPlusConfig(paginationConfig),
+  ];
 }
 
 // ─── SHARED_EXTENSIONS (compatibilité rétrograde) ────────────────────────────

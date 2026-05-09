@@ -580,6 +580,11 @@ export class AdminComponent
     return this.sectionDirections[this.activeEditorSection] || "ltr";
   }
 
+  get documentPageCount(): number {
+    const pages = this.editor?.view.dom.querySelectorAll(".rm-page-break");
+    return Math.max(1, pages?.length || 1);
+  }
+
   private async loadState(): Promise<void> {
     this.isLoading = true;
     await this.editorState.loadBootstrap();
@@ -2130,9 +2135,14 @@ export class AdminComponent
     this._editorPaginationCacheKey = documentCacheKey;
 
     this.ngZone.runOutsideAngular(() => {
+      const paginationConfig = this.buildPaginationConfig();
       this.editor = new Editor({
         element,
-        extensions: buildStructuredDocumentExtensions(),
+        extensions: buildStructuredDocumentExtensions({
+          ...paginationConfig,
+          headerHtml: "",
+          footerHtml: "",
+        }),
         content: this.buildStructuredDocumentHtml(),
         onUpdate: ({ editor }) => {
           const html = editor.getHTML();

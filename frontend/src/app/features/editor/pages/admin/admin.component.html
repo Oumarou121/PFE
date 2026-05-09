@@ -1011,7 +1011,7 @@
             *ngIf="editorPanel === 'document'"
           >
             <div class="pcanvas">
-              <div class="page-live-badge">Page 1 / 1</div>
+              <div class="page-live-badge">Page 1 / {{ documentPageCount }}</div>
               <div
                 class="zoom-scaler"
                 [style.transform]="'scale(' + zoomLevel / 100 + ')'"
