@@ -16,22 +16,48 @@
     <span class="tetab">{{ organizationLabel }}</span>
     <div class="tright">
       <div class="nlink" role="button" tabindex="0" (click)="toggleSidebar()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="18" x2="21" y2="18" />
         </svg>
         Panneau
       </div>
-      <div class="nlink" id="varsTopToggleBtn" role="button" tabindex="0" (click)="toggleVarsPanel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div
+        class="nlink"
+        id="varsTopToggleBtn"
+        role="button"
+        tabindex="0"
+        (click)="toggleVarsPanel()"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <rect x="3" y="4" width="18" height="16" rx="2" />
           <line x1="15" y1="4" x2="15" y2="20" />
         </svg>
         Variables
       </div>
-      <div class="nlink" role="button" tabindex="0" (click)="logoutAndRedirect()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div
+        class="nlink"
+        role="button"
+        tabindex="0"
+        (click)="logoutAndRedirect()"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
           <polyline points="10 17 15 12 10 7" />
           <line x1="15" y1="12" x2="3" y2="12" />
@@ -60,7 +86,13 @@
       <div class="sbsec" style="padding-bottom: 4px; border-bottom: none">
         <div class="sblabel">Templates</div>
         <div class="tpl-add" role="button" tabindex="0" (click)="newTemplate()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 11px; height: 11px">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            style="width: 11px; height: 11px"
+          >
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
@@ -71,13 +103,25 @@
       <div class="tpl-scroll">
         <div
           *ngIf="!selectedFamilyId"
-          style="padding: 18px; font-size: 11px; color: var(--text3); text-align: center; line-height: 1.6"
+          style="
+            padding: 18px;
+            font-size: 11px;
+            color: var(--text3);
+            text-align: center;
+            line-height: 1.6;
+          "
         >
           Sélectionnez une famille<br />pour voir les templates
         </div>
         <div
           *ngIf="selectedFamilyId && !visibleTemplates.length"
-          style="padding: 18px; font-size: 11px; color: var(--text3); text-align: center; line-height: 1.6"
+          style="
+            padding: 18px;
+            font-size: 11px;
+            color: var(--text3);
+            text-align: center;
+            line-height: 1.6;
+          "
         >
           Aucun template pour cette famille
         </div>
@@ -87,25 +131,62 @@
           [class.on]="selectedTemplateId === template.id"
           (click)="openTemplate(template.id)"
         >
-          <span style="font-size: 16px; flex-shrink: 0; margin-top: 1px">•</span>
+          <span style="font-size: 16px; flex-shrink: 0; margin-top: 1px"
+            >•</span
+          >
           <div class="tpl-body">
             <div class="tpl-name">{{ getTemplateTitle(template) }}</div>
             <div class="tpl-meta">
               {{ formatDate(template["updatedAt"]) }}
-              <span style="background: #dcfce7; color: #15803d; padding: 1px 5px; border-radius: 2px; font-size: 8px; font-weight: 700">Publié</span>
+              <span
+                style="
+                  background: #dcfce7;
+                  color: #15803d;
+                  padding: 1px 5px;
+                  border-radius: 2px;
+                  font-size: 8px;
+                  font-weight: 700;
+                "
+                >Publié</span
+              >
               <span *ngIf="template.hasHeader" title="Avec en-tête">•</span>
               <span *ngIf="template.hasFooter" title="Avec pied">•</span>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 6px" (click)="$event.stopPropagation()">
-            <button class="tpl-del" title="Dupliquer" type="button" (click)="duplicateTemplate(template.id)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div
+            style="display: flex; align-items: center; gap: 6px"
+            (click)="$event.stopPropagation()"
+          >
+            <button
+              class="tpl-del"
+              title="Dupliquer"
+              type="button"
+              (click)="duplicateTemplate(template.id)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <rect x="9" y="9" width="13" height="13" rx="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                <path
+                  d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                />
               </svg>
             </button>
-            <button class="tpl-del" title="Supprimer" type="button" (click)="confirmDeleteTemplate(template.id)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tpl-del"
+              title="Supprimer"
+              type="button"
+              (click)="confirmDeleteTemplate(template.id)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6l-1 14H6L5 6" />
               </svg>
@@ -117,26 +198,45 @@
 
     <div class="ed-zone">
       <div class="empty-state" *ngIf="!selectedTemplate">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
           <polyline points="14 2 14 8 20 8" />
           <line x1="16" y1="13" x2="8" y2="13" />
           <line x1="16" y1="17" x2="8" y2="17" />
         </svg>
         <h3>Aucun template ouvert</h3>
-        <p>Sélectionnez une famille puis un template, ou créez un nouveau template.</p>
+        <p>
+          Sélectionnez une famille puis un template, ou créez un nouveau
+          template.
+        </p>
       </div>
 
-      <div id="editorInner" *ngIf="selectedTemplate" style="display: flex; flex-direction: column; flex: 1; overflow: hidden">
+      <div
+        id="editorInner"
+        *ngIf="selectedTemplate"
+        style="display: flex; flex-direction: column; flex: 1; overflow: hidden"
+      >
         <div class="tname-bar">
           <input
             class="tname-input"
             placeholder="Nom du template"
             [value]="templateNameDraft"
-            (input)="templateNameDraft = $any($event.target).value; saveStatus = 'Modifié'"
+            (input)="
+              templateNameDraft = $any($event.target).value;
+              saveStatus = 'Modifié'
+            "
           />
           <span class="save-st">{{ saveStatus }}</span>
-          <button class="btn ghost sm" type="button" (click)="openPreviewModal()">
+          <button
+            class="btn ghost sm"
+            type="button"
+            (click)="openPreviewModal()"
+          >
             Aperçu
           </button>
           <button class="btn success" type="button" (click)="saveTemplate()">
@@ -149,19 +249,34 @@
           <span class="charter-bar-label">Charte graphique</span>
           <select
             class="charter-bar-select"
-            [value]="selectedGraphicCharterId"
+            style="-webkit-appearance: none; appearance: none"
             (change)="onGraphicCharterChange($any($event.target).value)"
           >
-            <option value="">— Charte —</option>
+            <option value="" [selected]="!selectedGraphicCharterId">
+              -- Choisir un charte -- 
+            </option>
             <option
               *ngFor="let charter of organizationGraphicCharters"
               [value]="charter.id"
+              [selected]="selectedGraphicCharterId === charter.id"
             >
               {{ charter.name }}{{ charter.isDefault ? " — défaut" : "" }}
             </option>
           </select>
-          <button class="btn ghost sm" type="button" (click)="openGraphicCharterModal()">Nouvelle</button>
-          <button class="btn ghost sm" type="button" (click)="editCurrentGraphicCharter()">Modifier</button>
+          <button
+            class="btn ghost sm"
+            type="button"
+            (click)="openGraphicCharterModal()"
+          >
+            Nouvelle
+          </button>
+          <button
+            class="btn ghost sm"
+            type="button"
+            (click)="editCurrentGraphicCharter()"
+          >
+            Modifier
+          </button>
           <button
             class="btn ghost sm"
             type="button"
@@ -183,22 +298,68 @@
           >
             Enregistrer dans la charte
           </button>
-          <button class="btn danger sm" type="button" (click)="deleteCurrentGraphicCharter()">Supprimer</button>
+          <button
+            class="btn danger sm"
+            type="button"
+            (click)="deleteCurrentGraphicCharter()"
+          >
+            Supprimer
+          </button>
           <span class="charter-bar-note">
             {{ selectedGraphicCharter?.description || "" }}
           </span>
         </div>
 
         <div class="sec-tabs">
-          <button class="sec-tab" [class.on]="activeSection === 'header'" [class.disabled]="!hasHeader" type="button" (click)="switchSection('header')">• En-tête</button>
-          <button class="sec-tab" [class.on]="activeSection === 'body'" type="button" (click)="switchSection('body')">• Corps</button>
-          <button class="sec-tab" [class.on]="activeSection === 'footer'" [class.disabled]="!hasFooter" type="button" (click)="switchSection('footer')">• Pied de page</button>
-          <button class="sec-tab" [class.on]="activeSection === 'filters'" type="button" (click)="switchSection('filters')">• Filtres</button>
+          <button
+            class="sec-tab"
+            [class.on]="activeSection === 'header'"
+            [class.disabled]="!hasHeader"
+            type="button"
+            (click)="switchSection('header')"
+          >
+            • En-tête
+          </button>
+          <button
+            class="sec-tab"
+            [class.on]="activeSection === 'body'"
+            type="button"
+            (click)="switchSection('body')"
+          >
+            • Corps
+          </button>
+          <button
+            class="sec-tab"
+            [class.on]="activeSection === 'footer'"
+            [class.disabled]="!hasFooter"
+            type="button"
+            (click)="switchSection('footer')"
+          >
+            • Pied de page
+          </button>
+          <button
+            class="sec-tab"
+            [class.on]="activeSection === 'filters'"
+            type="button"
+            (click)="switchSection('filters')"
+          >
+            • Filtres
+          </button>
           <div class="sec-toggle">
-            <button class="toggle-btn" [class.on]="hasHeader" type="button" (click)="toggleTemplateSection('header')">
+            <button
+              class="toggle-btn"
+              [class.on]="hasHeader"
+              type="button"
+              (click)="toggleTemplateSection('header')"
+            >
               • En-tête {{ hasHeader ? "ON" : "OFF" }}
             </button>
-            <button class="toggle-btn" [class.on]="hasFooter" type="button" (click)="toggleTemplateSection('footer')">
+            <button
+              class="toggle-btn"
+              [class.on]="hasFooter"
+              type="button"
+              (click)="toggleTemplateSection('footer')"
+            >
               • Pied {{ hasFooter ? "ON" : "OFF" }}
             </button>
           </div>
@@ -206,7 +367,11 @@
 
         <div class="ed-toolbar" *ngIf="activeSection !== 'filters'">
           <div class="tb-grp">
-            <select class="tb-sel" style="min-width: 110px" (change)="applyHeading($any($event.target).value)">
+            <select
+              class="tb-sel"
+              style="min-width: 110px"
+              (change)="applyHeading($any($event.target).value)"
+            >
               <option value="paragraph">Paragraphe</option>
               <option value="h1">Titre 1</option>
               <option value="h2">Titre 2</option>
@@ -215,21 +380,33 @@
             </select>
           </div>
           <div class="tb-grp">
-            <select class="tb-sel" style="min-width: 120px" (change)="applyFontFamily($any($event.target).value)">
+            <select
+              class="tb-sel"
+              style="min-width: 120px"
+              (change)="applyFontFamily($any($event.target).value)"
+            >
               <option value="">— Police —</option>
               <option value="Arial,Helvetica,sans-serif">Arial</option>
               <option value="Georgia,serif">Georgia</option>
-              <option value="'Times New Roman',Times,serif" selected>Times New Roman</option>
+              <option value="'Times New Roman',Times,serif" selected>
+                Times New Roman
+              </option>
               <option value="Verdana,Geneva,sans-serif">Verdana</option>
               <option value="Calibri,sans-serif">Calibri</option>
-              <option value="'Courier New',Courier,monospace">Courier New</option>
+              <option value="'Courier New',Courier,monospace">
+                Courier New
+              </option>
               <option value="Amiri,serif">Amiri (Ø¹)</option>
               <option value="Cairo,sans-serif">Cairo (Ø¹)</option>
               <option value="Tajawal,sans-serif">Tajawal (Ø¹)</option>
             </select>
           </div>
           <div class="tb-grp">
-            <select class="tb-sel" style="min-width: 62px" (change)="applyFontSize($any($event.target).value)">
+            <select
+              class="tb-sel"
+              style="min-width: 62px"
+              (change)="applyFontSize($any($event.target).value)"
+            >
               <option value="">— pt —</option>
               <option value="8pt">8</option>
               <option value="9pt">9</option>
@@ -247,56 +424,142 @@
             </select>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" data-tip="Annuler Ctrl+Z" (click)="runEditorCommand('undo')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Annuler Ctrl+Z"
+              (click)="runEditorCommand('undo')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M3 7v6h6" />
                 <path d="M3 13a9 9 0 106-8.5" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Rétablir Ctrl+Y" (click)="runEditorCommand('redo')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Rétablir Ctrl+Y"
+              (click)="runEditorCommand('redo')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M21 7v6h-6" />
                 <path d="M21 13a9 9 0 11-6-8.5" />
               </svg>
             </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('bold')" data-tip="Gras Ctrl+B" (click)="runEditorCommand('bold')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorActive('bold')"
+              data-tip="Gras Ctrl+B"
+              (click)="runEditorCommand('bold')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
                 <path d="M6 4h8a4 4 0 010 8H6z" />
                 <path d="M6 12h9a4 4 0 010 8H6z" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('italic')" data-tip="Italique Ctrl+I" (click)="runEditorCommand('italic')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorActive('italic')"
+              data-tip="Italique Ctrl+I"
+              (click)="runEditorCommand('italic')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="19" y1="4" x2="10" y2="4" />
                 <line x1="14" y1="20" x2="5" y2="20" />
                 <line x1="15" y1="4" x2="9" y2="20" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('underline')" data-tip="Souligné Ctrl+U" (click)="runEditorCommand('underline')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorActive('underline')"
+              data-tip="Souligné Ctrl+U"
+              (click)="runEditorCommand('underline')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M6 3v7a6 6 0 0012 0V3" />
                 <line x1="4" y1="21" x2="20" y2="21" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('strike')" data-tip="Barré" (click)="runEditorCommand('strike')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorActive('strike')"
+              data-tip="Barré"
+              (click)="runEditorCommand('strike')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="4" y1="12" x2="20" y2="12" />
                 <path d="M17.5 6.5C16.5 5.3 14.8 4.5 12 4.5c-3 0-5 1.5-5 4" />
                 <path d="M6.5 17.5C7.5 18.7 9.2 19.5 12 19.5c3 0 5-1.5 5-4" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Effacer mise en forme" (click)="runEditorCommand('clear')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Effacer mise en forme"
+              (click)="runEditorCommand('clear')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                style="width: 12px; height: 12px"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('bulletList')" data-tip="Liste à puces" (click)="runEditorCommand('bulletList')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorActive('bulletList')"
+              data-tip="Liste à puces"
+              (click)="runEditorCommand('bulletList')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="9" y1="6" x2="20" y2="6" />
                 <line x1="9" y1="12" x2="20" y2="12" />
                 <line x1="9" y1="18" x2="20" y2="18" />
@@ -305,73 +568,209 @@
                 <circle cx="4" cy="18" r="1.5" fill="currentColor" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('orderedList')" data-tip="Liste numérotée" (click)="runEditorCommand('orderedList')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorActive('orderedList')"
+              data-tip="Liste numérotée"
+              (click)="runEditorCommand('orderedList')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="10" y1="6" x2="21" y2="6" />
                 <line x1="10" y1="12" x2="21" y2="12" />
                 <line x1="10" y1="18" x2="21" y2="18" />
-                <path d="M4 6h1v4M4 10h2M4 15a2 2 0 014 0v1a2 2 0 01-4 0" stroke-width="1.5" />
+                <path
+                  d="M4 6h1v4M4 10h2M4 15a2 2 0 014 0v1a2 2 0 01-4 0"
+                  stroke-width="1.5"
+                />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Réduire retrait" (click)="runEditorCommand('liftListItem')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Réduire retrait"
+              (click)="runEditorCommand('liftListItem')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="11 17 6 12 11 7" />
                 <line x1="18" y1="12" x2="6" y2="12" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Augmenter retrait" (click)="runEditorCommand('sinkListItem')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Augmenter retrait"
+              (click)="runEditorCommand('sinkListItem')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="13 17 18 12 13 7" />
                 <line x1="6" y1="12" x2="18" y2="12" />
               </svg>
             </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('left')" data-tip="Gauche" (click)="applyAlign('left')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorAlignActive('left')"
+              data-tip="Gauche"
+              (click)="applyAlign('left')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="15" y2="12" />
                 <line x1="3" y1="18" x2="18" y2="18" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('center')" data-tip="Centrer" (click)="applyAlign('center')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorAlignActive('center')"
+              data-tip="Centrer"
+              (click)="applyAlign('center')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="6" y1="12" x2="18" y2="12" />
                 <line x1="4" y1="18" x2="20" y2="18" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('right')" data-tip="Droite" (click)="applyAlign('right')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorAlignActive('right')"
+              data-tip="Droite"
+              (click)="applyAlign('right')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="9" y1="12" x2="21" y2="12" />
                 <line x1="6" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" [class.on]="isEditorAlignActive('justify')" data-tip="Justifier" (click)="applyAlign('justify')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorAlignActive('justify')"
+              data-tip="Justifier"
+              (click)="applyAlign('justify')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" [class.on]="activeSectionDirection === 'ltr'" data-tip="LTR" style="font-size: 9px; font-weight: 700" (click)="applyDirection('ltr')">LTR</button>
-            <button class="tb-btn" type="button" [class.on]="activeSectionDirection === 'rtl'" data-tip="RTL" style="font-size: 9px; font-weight: 700" (click)="applyDirection('rtl')">RTL</button>
-            <button class="tb-btn" type="button" [class.on]="isEditorActive('blockquote')" data-tip="Citation" (click)="runEditorCommand('blockquote')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
-                <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="activeSectionDirection === 'ltr'"
+              data-tip="LTR"
+              style="font-size: 9px; font-weight: 700"
+              (click)="applyDirection('ltr')"
+            >
+              LTR
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="activeSectionDirection === 'rtl'"
+              data-tip="RTL"
+              style="font-size: 9px; font-weight: 700"
+              (click)="applyDirection('rtl')"
+            >
+              RTL
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isEditorActive('blockquote')"
+              data-tip="Citation"
+              (click)="runEditorCommand('blockquote')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"
+                />
+                <path
+                  d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"
+                />
               </svg>
             </button>
           </div>
           <div class="tb-grp">
-            <div class="tb-clr" data-tip="Couleur texte" (click)="toggleColorPopover('text', $event)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div
+              class="tb-clr"
+              data-tip="Couleur texte"
+              (click)="toggleColorPopover('text', $event)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M4 20h4l10.5-10.5a2.121 2.121 0 00-3-3L5 17v3z" />
               </svg>
-              <div class="tb-clr-bar" [style.background]="selectedTextColor"></div>
-              <div class="cpop" [class.on]="activeColorPopover === 'text'" (click)="$event.stopPropagation()">
-                <div style="font-size: 9px; color: var(--text3); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em">
+              <div
+                class="tb-clr-bar"
+                [style.background]="selectedTextColor"
+              ></div>
+              <div
+                class="cpop"
+                [class.on]="activeColorPopover === 'text'"
+                (click)="$event.stopPropagation()"
+              >
+                <div
+                  style="
+                    font-size: 9px;
+                    color: var(--text3);
+                    margin-bottom: 6px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                  "
+                >
                   Couleur du texte
                 </div>
                 <div class="cswatches">
@@ -383,17 +782,51 @@
                     (click)="chooseTextColor(color)"
                   ></button>
                 </div>
-                <input type="color" [value]="selectedTextColor" (change)="chooseTextColor($any($event.target).value)" />
+                <input
+                  type="color"
+                  [value]="selectedTextColor"
+                  (change)="chooseTextColor($any($event.target).value)"
+                />
               </div>
             </div>
-            <div class="tb-clr" data-tip="Surligner" (click)="toggleColorPopover('highlight', $event)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div
+              class="tb-clr"
+              data-tip="Surligner"
+              (click)="toggleColorPopover('highlight', $event)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M9 11l-6 6v3h3l6-6m0 0l3.5-3.5a2 2 0 00-3-3L9 11" />
                 <line x1="14" y1="7" x2="17" y2="10" />
               </svg>
-              <div class="tb-clr-bar" [style.background]="selectedHighlightColor" [style.border-color]="selectedHighlightColor === 'transparent' ? '#d4b800' : selectedHighlightColor"></div>
-              <div class="cpop" [class.on]="activeColorPopover === 'highlight'" (click)="$event.stopPropagation()">
-                <div style="font-size: 9px; color: var(--text3); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em">
+              <div
+                class="tb-clr-bar"
+                [style.background]="selectedHighlightColor"
+                [style.border-color]="
+                  selectedHighlightColor === 'transparent'
+                    ? '#d4b800'
+                    : selectedHighlightColor
+                "
+              ></div>
+              <div
+                class="cpop"
+                [class.on]="activeColorPopover === 'highlight'"
+                (click)="$event.stopPropagation()"
+              >
+                <div
+                  style="
+                    font-size: 9px;
+                    color: var(--text3);
+                    margin-bottom: 6px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                  "
+                >
                   Surligneur
                 </div>
                 <div class="cswatches">
@@ -401,24 +834,56 @@
                     class="cswatch"
                     type="button"
                     *ngFor="let color of highlightColors"
-                    [style.background]="color === 'transparent' ? 'linear-gradient(135deg, #fff 0 45%, #ef4444 46% 54%, #fff 55% 100%)' : color"
+                    [style.background]="
+                      color === 'transparent'
+                        ? 'linear-gradient(135deg, #fff 0 45%, #ef4444 46% 54%, #fff 55% 100%)'
+                        : color
+                    "
                     (click)="chooseHighlightColor(color)"
                   ></button>
                 </div>
-                <input type="color" [value]="selectedHighlightColor === 'transparent' ? '#fef9c3' : selectedHighlightColor" (change)="chooseHighlightColor($any($event.target).value)" />
+                <input
+                  type="color"
+                  [value]="
+                    selectedHighlightColor === 'transparent'
+                      ? '#fef9c3'
+                      : selectedHighlightColor
+                  "
+                  (change)="chooseHighlightColor($any($event.target).value)"
+                />
               </div>
             </div>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" data-tip="Image" (click)="openImageModal()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Image"
+              (click)="openImageModal()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <polyline points="21 15 16 10 5 21" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Tableau" (click)="openTableModal()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Tableau"
+              (click)="openTableModal()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <rect x="3" y="3" width="18" height="18" rx="1" />
                 <line x1="3" y1="9" x2="21" y2="9" />
                 <line x1="3" y1="15" x2="21" y2="15" />
@@ -426,74 +891,199 @@
                 <line x1="15" y1="3" x2="15" y2="21" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Lien" (click)="openLinkModal()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Lien"
+              (click)="openLinkModal()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
+                />
+                <path
+                  d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
+                />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Ligne horizontale" (click)="insertHorizontalRule()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Ligne horizontale"
+              (click)="insertHorizontalRule()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <line x1="3" y1="12" x2="21" y2="12" />
               </svg>
             </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" data-tip="Variable établissement" (click)="insertVariable('nom_etab')">{{ "{}" }}</button>
-            <button class="tb-btn" type="button" data-tip="Date du jour" style="font-size: 13px" (click)="openDateVariableModal()">📅</button>
-            <button class="tb-btn" type="button" data-tip="Bloc signature" style="font-size: 13px" (click)="insertSignatureBlock()">✍</button>
-            <button class="tb-btn" type="button" data-tip="Filigrane" (click)="openWatermarkModal()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Variable établissement"
+              (click)="insertVariable('nom_etab')"
+            >
+              {{ "{}" }}
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Date du jour"
+              style="font-size: 13px"
+              (click)="openDateVariableModal()"
+            >
+              📅
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Bloc signature"
+              style="font-size: 13px"
+              (click)="insertSignatureBlock()"
+            >
+              ✍
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Filigrane"
+              (click)="openWatermarkModal()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Mise en page" (click)="openPageSettings()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Mise en page"
+              (click)="openPageSettings()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <rect x="5" y="3" width="14" height="18" rx="1" />
                 <line x1="8" y1="7" x2="16" y2="7" />
                 <line x1="8" y1="11" x2="16" y2="11" />
                 <line x1="8" y1="15" x2="13" y2="15" />
               </svg>
             </button>
-            <button class="tb-btn" type="button" data-tip="Rechercher Ctrl+F" (click)="toggleSearchPanel()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button
+              class="tb-btn"
+              type="button"
+              data-tip="Rechercher Ctrl+F"
+              (click)="toggleSearchPanel()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </button>
           </div>
           <div class="tb-grp" style="align-items: center; gap: 4px">
-            <span style="font-size: 9px; color: var(--text3); font-weight: 600">ZOOM</span>
-            <button class="btn xs ghost" type="button" style="font-size: 14px; width: 22px; padding: 0" (click)="setZoom(-10)">-</button>
-            <span style="font-size: 11px; min-width: 36px; text-align: center; font-weight: 600; color: var(--text2)">{{ zoomLevel }}%</span>
-            <button class="btn xs ghost" type="button" style="font-size: 14px; width: 22px; padding: 0" (click)="setZoom(10)">+</button>
-            <button class="btn xs ghost" type="button" (click)="setZoom(0)">100</button>
+            <span style="font-size: 9px; color: var(--text3); font-weight: 600"
+              >ZOOM</span
+            >
+            <button
+              class="btn xs ghost"
+              type="button"
+              style="font-size: 14px; width: 22px; padding: 0"
+              (click)="setZoom(-10)"
+            >
+              -
+            </button>
+            <span
+              style="
+                font-size: 11px;
+                min-width: 36px;
+                text-align: center;
+                font-weight: 600;
+                color: var(--text2);
+              "
+              >{{ zoomLevel }}%</span
+            >
+            <button
+              class="btn xs ghost"
+              type="button"
+              style="font-size: 14px; width: 22px; padding: 0"
+              (click)="setZoom(10)"
+            >
+              +
+            </button>
+            <button class="btn xs ghost" type="button" (click)="setZoom(0)">
+              100
+            </button>
           </div>
         </div>
 
         <div class="editor-content-stack">
-          <div class="editor-section-panel on" *ngIf="activeSection !== 'filters'">
+          <div
+            class="editor-section-panel on"
+            *ngIf="activeSection !== 'filters'"
+          >
             <div class="pcanvas">
               <div class="page-live-badge">Page 1 / 1</div>
               <div
                 class="zoom-scaler"
                 [style.transform]="'scale(' + zoomLevel / 100 + ')'"
-                [style.margin-bottom]="zoomLevel < 100 ? (((100 - zoomLevel) / 100) * -500) + 'px' : '0'"
+                [style.margin-bottom]="
+                  zoomLevel < 100
+                    ? ((100 - zoomLevel) / 100) * -500 + 'px'
+                    : '0'
+                "
               >
                 <div
                   class="a4-page"
-                  [style.--page-w]="pageSettingsForm.orientation === 'landscape' ? '297mm' : '210mm'"
-                  [style.--page-h]="pageSettingsForm.orientation === 'landscape' ? '210mm' : '297mm'"
+                  [style.--page-w]="
+                    pageSettingsForm.orientation === 'landscape'
+                      ? '297mm'
+                      : '210mm'
+                  "
+                  [style.--page-h]="
+                    pageSettingsForm.orientation === 'landscape'
+                      ? '210mm'
+                      : '297mm'
+                  "
                   [style.--page-mt]="pageSettingsForm.mt + 'mm'"
                   [style.--page-mb]="pageSettingsForm.mb + 'mm'"
                   [style.--page-ml]="pageSettingsForm.ml + 'mm'"
                   [style.--page-mr]="pageSettingsForm.mr + 'mm'"
                   [style.--page-header-top]="pageSettingsForm.headerTop + 'mm'"
-                  [style.--page-footer-bottom]="pageSettingsForm.footerBottom + 'mm'"
+                  [style.--page-footer-bottom]="
+                    pageSettingsForm.footerBottom + 'mm'
+                  "
                   [style.--page-orientation]="pageSettingsForm.orientation"
                   [ngStyle]="liveDocumentThemeStyles"
                 >
-                  <div class="a4-watermark" *ngIf="watermarkForm.enabled" [style.display]="'flex'">
+                  <div
+                    class="a4-watermark"
+                    *ngIf="watermarkForm.enabled"
+                    [style.display]="'flex'"
+                  >
                     <span
                       [style.color]="watermarkForm.color"
                       [style.opacity]="watermarkForm.opacity"
@@ -527,26 +1117,48 @@
             </div>
           </div>
 
-          <div class="editor-section-panel filter-section-panel on" *ngIf="activeSection === 'filters'">
+          <div
+            class="editor-section-panel filter-section-panel on"
+            *ngIf="activeSection === 'filters'"
+          >
             <div class="filter-panel-shell">
               <div class="filter-panel-hero">
                 <div>
                   <h3>Configuration des filtres</h3>
-                  <p>Activez les filtres disponibles pour ce template et définissez leurs règles côté admin.</p>
+                  <p>
+                    Activez les filtres disponibles pour ce template et
+                    définissez leurs règles côté admin.
+                  </p>
                 </div>
               </div>
-              <div class="filter-profile-list" *ngIf="runtimeAdminFilters.length; else noTemplateFilters">
-                <div class="filter-profile-card" *ngFor="let filter of runtimeAdminFilters; let i = index">
+              <div
+                class="filter-profile-list"
+                *ngIf="runtimeAdminFilters.length; else noTemplateFilters"
+              >
+                <div
+                  class="filter-profile-card"
+                  *ngFor="let filter of runtimeAdminFilters; let i = index"
+                >
                   <div class="filter-profile-head">
                     <div>
                       <strong>{{ filter.label || filter.key }}</strong>
-                      <div class="text-muted">{{ filter.key }} · {{ filter.type }}</div>
+                      <div class="text-muted">
+                        {{ filter.key }} · {{ filter.type }}
+                      </div>
                     </div>
                     <label class="filter-toggle">
                       <input
                         type="checkbox"
-                        [checked]="filter.profile.enabled && filter.profile.adminEnabled !== false"
-                        (change)="toggleTemplateFilter(filter.id, $any($event.target).checked)"
+                        [checked]="
+                          filter.profile.enabled &&
+                          filter.profile.adminEnabled !== false
+                        "
+                        (change)="
+                          toggleTemplateFilter(
+                            filter.id,
+                            $any($event.target).checked
+                          )
+                        "
                       />
                       Actif admin
                     </label>
@@ -557,7 +1169,13 @@
                       <input
                         type="checkbox"
                         [checked]="filter.profile.userEnabled !== false"
-                        (change)="updateTemplateFilterBool(filter.id, 'userEnabled', $any($event.target).checked)"
+                        (change)="
+                          updateTemplateFilterBool(
+                            filter.id,
+                            'userEnabled',
+                            $any($event.target).checked
+                          )
+                        "
                       />
                       Disponible user
                     </label>
@@ -565,7 +1183,13 @@
                       <input
                         type="checkbox"
                         [checked]="filter.profile.required"
-                        (change)="updateTemplateFilterBool(filter.id, 'required', $any($event.target).checked)"
+                        (change)="
+                          updateTemplateFilterBool(
+                            filter.id,
+                            'required',
+                            $any($event.target).checked
+                          )
+                        "
                       />
                       Obligatoire
                     </label>
@@ -573,7 +1197,13 @@
                       <input
                         type="checkbox"
                         [checked]="filter.profile.locked"
-                        (change)="updateTemplateFilterBool(filter.id, 'locked', $any($event.target).checked)"
+                        (change)="
+                          updateTemplateFilterBool(
+                            filter.id,
+                            'locked',
+                            $any($event.target).checked
+                          )
+                        "
                       />
                       Verrouillé
                     </label>
@@ -585,7 +1215,12 @@
                       <input
                         class="finput"
                         [value]="filter.profile.defaultValue || ''"
-                        (change)="updateTemplateFilterDefault(filter.id, $any($event.target).value)"
+                        (change)="
+                          updateTemplateFilterDefault(
+                            filter.id,
+                            $any($event.target).value
+                          )
+                        "
                       />
                     </div>
                     <div *ngIf="filter.type === 'select'">
@@ -593,7 +1228,12 @@
                       <select
                         class="finput"
                         [value]="filter.profile.allowedValueMode"
-                        (change)="updateTemplateFilterAllowedMode(filter.id, $any($event.target).value)"
+                        (change)="
+                          updateTemplateFilterAllowedMode(
+                            filter.id,
+                            $any($event.target).value
+                          )
+                        "
                       >
                         <option value="all">Toutes les valeurs</option>
                         <option value="subset">Limiter à une sélection</option>
@@ -603,24 +1243,43 @@
 
                   <div
                     class="filter-options-list"
-                    *ngIf="filter.type === 'select' && filter.profile.allowedValueMode === 'subset'"
+                    *ngIf="
+                      filter.type === 'select' &&
+                      filter.profile.allowedValueMode === 'subset'
+                    "
                   >
                     <label *ngFor="let option of filter.options || []">
                       <input
                         type="checkbox"
-                        [checked]="isAllowedFilterValueSelected(filter.profile, option.value)"
-                        (change)="toggleTemplateFilterAllowedValue(filter.id, option, $any($event.target).checked)"
+                        [checked]="
+                          isAllowedFilterValueSelected(
+                            filter.profile,
+                            option.value
+                          )
+                        "
+                        (change)="
+                          toggleTemplateFilterAllowedValue(
+                            filter.id,
+                            option,
+                            $any($event.target).checked
+                          )
+                        "
                       />
                       {{ option.label }}
                     </label>
-                    <div class="text-muted" *ngIf="!(filter.options || []).length">
+                    <div
+                      class="text-muted"
+                      *ngIf="!(filter.options || []).length"
+                    >
                       Aucune option disponible pour ce filtre.
                     </div>
                   </div>
                 </div>
               </div>
               <ng-template #noTemplateFilters>
-                <div class="vars-panel-empty">Aucun filtre disponible pour cette famille.</div>
+                <div class="vars-panel-empty">
+                  Aucun filtre disponible pour cette famille.
+                </div>
               </ng-template>
             </div>
           </div>
@@ -633,11 +1292,14 @@
         <div class="vars-sidepanel-headrow">
           <div class="vars-sidepanel-title">
             <strong>Variables disponibles</strong>
-            <span class="filter-panel-pill" style="padding: 5px 9px">Insertion rapide</span>
+            <span class="filter-panel-pill" style="padding: 5px 9px"
+              >Insertion rapide</span
+            >
           </div>
         </div>
         <div class="vars-sidepanel-sub">
-          Organisées par type pour trouver plus vite la bonne variable. Cliquez pour l'insérer dans la section active.
+          Organisées par type pour trouver plus vite la bonne variable. Cliquez
+          pour l'insérer dans la section active.
         </div>
       </div>
       <div class="vars-panel-tabs" *ngIf="selectedFamily">
@@ -652,32 +1314,39 @@
         </button>
       </div>
       <div class="vars-panel-scroll">
-        <div class="vars-panel-empty" *ngIf="!selectedFamily">Choisissez une famille pour afficher les variables.</div>
+        <div class="vars-panel-empty" *ngIf="!selectedFamily">
+          Choisissez une famille pour afficher les variables.
+        </div>
         <ng-container *ngIf="selectedFamily">
-          <div class="var-group-card" *ngFor="let cls of visibleVariableClasses">
+          <div
+            class="var-group-card"
+            *ngFor="let cls of visibleVariableClasses"
+          >
             <div class="var-group-topline">
               <div class="vc-hdr" [style.color]="cls.couleur || '#555'">
                 {{ cls.nom || cls.name || "Classe" }}
               </div>
               <div class="var-group-count">
-                {{ (cls.vars || []).length }} variable{{ (cls.vars || []).length > 1 ? "s" : "" }}
+                {{ (cls.vars || []).length }} variable{{
+                  (cls.vars || []).length > 1 ? "s" : ""
+                }}
               </div>
             </div>
             <div class="vchips">
-            <button
-              class="var-chip"
-              type="button"
-              *ngFor="let variable of cls.vars || []"
-              [class.vchip]="true"
-              [class.is-list]="variable.type === 'list'"
-              [class.is-table]="variable.type === 'list-object'"
-              [style.background]="(cls.couleur || '#555') + '12'"
-              [style.color]="cls.couleur || '#555'"
-              [style.border-color]="(cls.couleur || '#555') + '33'"
-              (click)="insertVariable(variable.tech || variable.key)"
-            >
-              {{ variable.label || variable.tech || variable.key }}
-            </button>
+              <button
+                class="var-chip"
+                type="button"
+                *ngFor="let variable of cls.vars || []"
+                [class.vchip]="true"
+                [class.is-list]="variable.type === 'list'"
+                [class.is-table]="variable.type === 'list-object'"
+                [style.background]="(cls.couleur || '#555') + '12'"
+                [style.color]="cls.couleur || '#555'"
+                [style.border-color]="(cls.couleur || '#555') + '33'"
+                (click)="insertVariable(variable.tech || variable.key)"
+              >
+                {{ variable.label || variable.tech || variable.key }}
+              </button>
             </div>
           </div>
         </ng-container>
@@ -687,12 +1356,22 @@
 </div>
 
 <div class="search-panel" [class.on]="searchPanelOpen">
-  <div style="display: flex; align-items: center; justify-content: space-between">
-    <span style="font-size: 12px; font-weight: 700; color: var(--text)">Rechercher / Remplacer</span>
+  <div
+    style="display: flex; align-items: center; justify-content: space-between"
+  >
+    <span style="font-size: 12px; font-weight: 700; color: var(--text)"
+      >Rechercher / Remplacer</span
+    >
     <button
       type="button"
       (click)="closeSearchPanel()"
-      style="background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text3)"
+      style="
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text3);
+      "
     >
       ×
     </button>
@@ -703,11 +1382,22 @@
       [value]="searchFind"
       (input)="searchFind = $any($event.target).value; doSearch()"
     />
-    <span style="font-size: 10px; color: var(--text3); white-space: nowrap; min-width: 36px">
+    <span
+      style="
+        font-size: 10px;
+        color: var(--text3);
+        white-space: nowrap;
+        min-width: 36px;
+      "
+    >
       {{ searchMatchCount ? searchMatchIndex + "/" + searchMatchCount : "0/0" }}
     </span>
-    <button class="btn sm ghost" type="button" (click)="searchNavigate(-1)">‹</button>
-    <button class="btn sm ghost" type="button" (click)="searchNavigate(1)">›</button>
+    <button class="btn sm ghost" type="button" (click)="searchNavigate(-1)">
+      ‹
+    </button>
+    <button class="btn sm ghost" type="button" (click)="searchNavigate(1)">
+      ›
+    </button>
   </div>
   <div style="display: flex; gap: 6px; align-items: center">
     <input
@@ -718,7 +1408,16 @@
     <button class="btn sm" type="button" (click)="replaceOne()">1er</button>
     <button class="btn sm" type="button" (click)="replaceAll()">Tout</button>
   </div>
-  <label style="font-size: 10px; display: flex; gap: 5px; align-items: center; cursor: pointer; color: var(--text2)">
+  <label
+    style="
+      font-size: 10px;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      cursor: pointer;
+      color: var(--text2);
+    "
+  >
     <input
       type="checkbox"
       [checked]="searchCaseSensitive"
@@ -733,52 +1432,135 @@
   *ngIf="activeSection !== 'filters' && isEditorActive('table')"
   style="left: 50%; bottom: 22px; transform: translateX(-50%)"
 >
-  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('addRowBefore')" title="Ligne avant">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="runTableCommand('addRowBefore')"
+    title="Ligne avant"
+  >
     + ligne avant
   </button>
-  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('addRowAfter')" title="Ligne après">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="runTableCommand('addRowAfter')"
+    title="Ligne après"
+  >
     + ligne après
   </button>
-  <button class="tbl-tb-btn danger" type="button" (click)="runTableCommand('deleteRow')" title="Supprimer ligne">
+  <button
+    class="tbl-tb-btn danger"
+    type="button"
+    (click)="runTableCommand('deleteRow')"
+    title="Supprimer ligne"
+  >
     - ligne
   </button>
   <span class="tbl-tb-sep"></span>
-  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('addColumnBefore')" title="Colonne avant">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="runTableCommand('addColumnBefore')"
+    title="Colonne avant"
+  >
     + col avant
   </button>
-  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('addColumnAfter')" title="Colonne après">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="runTableCommand('addColumnAfter')"
+    title="Colonne après"
+  >
     + col après
   </button>
-  <button class="tbl-tb-btn danger" type="button" (click)="runTableCommand('deleteColumn')" title="Supprimer colonne">
+  <button
+    class="tbl-tb-btn danger"
+    type="button"
+    (click)="runTableCommand('deleteColumn')"
+    title="Supprimer colonne"
+  >
     - col
   </button>
   <span class="tbl-tb-sep"></span>
-  <button class="tbl-tb-btn" type="button" (click)="applyTableCellAlign('left')" title="Aligner gauche">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="applyTableCellAlign('left')"
+    title="Aligner gauche"
+  >
     gauche
   </button>
-  <button class="tbl-tb-btn" type="button" (click)="applyTableCellAlign('center')" title="Aligner centre">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="applyTableCellAlign('center')"
+    title="Aligner centre"
+  >
     centre
   </button>
-  <button class="tbl-tb-btn" type="button" (click)="applyTableCellAlign('right')" title="Aligner droite">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="applyTableCellAlign('right')"
+    title="Aligner droite"
+  >
     droite
   </button>
-  <button class="tbl-tb-btn" type="button" (click)="applyTableCellVerticalAlign('top')" title="Aligner haut">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="applyTableCellVerticalAlign('top')"
+    title="Aligner haut"
+  >
     haut
   </button>
-  <button class="tbl-tb-btn" type="button" (click)="applyTableCellVerticalAlign('middle')" title="Aligner milieu">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="applyTableCellVerticalAlign('middle')"
+    title="Aligner milieu"
+  >
     milieu
   </button>
   <span class="tbl-tb-sep"></span>
   <div class="tbl-cell-clr-wrap">
-    <button class="tbl-tb-btn" type="button" (click)="toggleTablePopover('background', $event)" title="Fond de cellule">
+    <button
+      class="tbl-tb-btn"
+      type="button"
+      (click)="toggleTablePopover('background', $event)"
+      title="Fond de cellule"
+    >
       fond
       <span
-        style="width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(255, 255, 255, 0.4); display: inline-block"
-        [style.background]="selectedTableBackgroundColor === 'transparent' ? '#fff' : selectedTableBackgroundColor"
+        style="
+          width: 12px;
+          height: 12px;
+          border-radius: 2px;
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          display: inline-block;
+        "
+        [style.background]="
+          selectedTableBackgroundColor === 'transparent'
+            ? '#fff'
+            : selectedTableBackgroundColor
+        "
       ></span>
     </button>
-    <div class="tbl-clr-pop" [class.on]="activeTablePopover === 'background'" (click)="$event.stopPropagation()">
-      <div style="font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px">
+    <div
+      class="tbl-clr-pop"
+      [class.on]="activeTablePopover === 'background'"
+      (click)="$event.stopPropagation()"
+    >
+      <div
+        style="
+          font-size: 9px;
+          color: var(--text3);
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 6px;
+        "
+      >
         Fond de cellule
       </div>
       <div class="tbl-clr-swatches">
@@ -786,23 +1568,59 @@
           class="cswatch"
           type="button"
           *ngFor="let color of tableCellColors"
-          [style.background]="color === 'transparent' ? 'linear-gradient(135deg, #fff 0 45%, #ef4444 46% 54%, #fff 55% 100%)' : color"
+          [style.background]="
+            color === 'transparent'
+              ? 'linear-gradient(135deg, #fff 0 45%, #ef4444 46% 54%, #fff 55% 100%)'
+              : color
+          "
           (click)="applyTableCellBackground(color)"
         ></button>
       </div>
-      <input type="color" [value]="selectedTableBackgroundColor === 'transparent' ? '#ffffff' : selectedTableBackgroundColor" (change)="applyTableCellBackground($any($event.target).value)" />
+      <input
+        type="color"
+        [value]="
+          selectedTableBackgroundColor === 'transparent'
+            ? '#ffffff'
+            : selectedTableBackgroundColor
+        "
+        (change)="applyTableCellBackground($any($event.target).value)"
+      />
     </div>
   </div>
   <div class="tbl-cell-clr-wrap">
-    <button class="tbl-tb-btn" type="button" (click)="toggleTablePopover('text', $event)" title="Couleur texte">
+    <button
+      class="tbl-tb-btn"
+      type="button"
+      (click)="toggleTablePopover('text', $event)"
+      title="Couleur texte"
+    >
       texte
       <span
-        style="width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(255, 255, 255, 0.4); display: inline-block"
+        style="
+          width: 12px;
+          height: 12px;
+          border-radius: 2px;
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          display: inline-block;
+        "
         [style.background]="selectedTableTextColor"
       ></span>
     </button>
-    <div class="tbl-clr-pop" [class.on]="activeTablePopover === 'text'" (click)="$event.stopPropagation()">
-      <div style="font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px">
+    <div
+      class="tbl-clr-pop"
+      [class.on]="activeTablePopover === 'text'"
+      (click)="$event.stopPropagation()"
+    >
+      <div
+        style="
+          font-size: 9px;
+          color: var(--text3);
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 6px;
+        "
+      >
         Couleur du texte
       </div>
       <div class="tbl-clr-swatches">
@@ -814,109 +1632,168 @@
           (click)="applyTableCellTextColor(color)"
         ></button>
       </div>
-      <input type="color" [value]="selectedTableTextColor" (change)="applyTableCellTextColor($any($event.target).value)" />
+      <input
+        type="color"
+        [value]="selectedTableTextColor"
+        (change)="applyTableCellTextColor($any($event.target).value)"
+      />
     </div>
   </div>
   <span class="tbl-tb-sep"></span>
-  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('mergeCells')" title="Fusionner">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="runTableCommand('mergeCells')"
+    title="Fusionner"
+  >
     fusionner
   </button>
-  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('splitCell')" title="Diviser">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="runTableCommand('splitCell')"
+    title="Diviser"
+  >
     diviser
   </button>
-  <button class="tbl-tb-btn" type="button" (click)="runTableCommand('toggleHeaderRow')" title="En-tête">
+  <button
+    class="tbl-tb-btn"
+    type="button"
+    (click)="runTableCommand('toggleHeaderRow')"
+    title="En-tête"
+  >
     en-tête
   </button>
-  <button class="tbl-tb-btn danger" type="button" (click)="runTableCommand('deleteTable')" title="Supprimer tableau">
+  <button
+    class="tbl-tb-btn danger"
+    type="button"
+    (click)="runTableCommand('deleteTable')"
+    title="Supprimer tableau"
+  >
     tableau
   </button>
 </div>
 
-<div class="modal-overlay open" *ngIf="previewOpen">
-  <div class="modal" style="max-width: 880px">
-    <div class="mhdr">
-      <span class="mtitle">Aperçu du document</span>
-      <button class="mclose" type="button" (click)="closePreviewModal()">×</button>
+<div class="modal-overlay--preview modal-overlay" [class.open]="previewOpen">
+  <div class="pm-shell">
+    <!-- header -->
+    <div class="pm-hdr">
+      <div class="pm-hdr-icon"><i class="ti ti-file-text"></i></div>
+      <span class="pm-hdr-title">Aperçu — {{ templateNameDraft }}</span>
+      <span class="pm-hdr-badge">Live preview</span>
+      <div class="pm-hdr-spacer"></div>
+      <button class="pm-hdr-btn" type="button" (click)="printPreview()">
+        <i class="ti ti-printer"></i> Imprimer
+      </button>
+      <button class="pm-close" type="button" (click)="closePreviewModal()">
+        ×
+      </button>
     </div>
-    <div>
-      <div
-        *ngIf="previewRuntimeFilters.length"
-        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px"
-      >
-        <div
-          *ngFor="let filter of previewRuntimeFilters"
-          style="border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: #fff"
-        >
-          <label class="flabel">
-            {{ filter.label || filter.key }}{{ filter.profile.required ? " *" : "" }}
-          </label>
-          <select
-            *ngIf="filter.type === 'select'; else previewPlainFilter"
-            class="finput"
-            [value]="previewFilterValues[filter.id] || ''"
-            (change)="onPreviewFilterChange(filter.id, $any($event.target).value)"
-          >
-            <option value="">— Tous —</option>
-            <option
-              *ngFor="let option of filter.options || []"
-              [value]="option.value"
+
+    <div class="pm-body">
+      <!-- sidebar filtres + bénéficiaire -->
+      <div class="pm-sidebar">
+        <div class="pm-sb-scroll">
+          <div class="pm-sb-section" *ngIf="previewRuntimeFilters.length">
+            <div class="pm-sb-label">Filtres</div>
+            <div
+              class="pm-filter-card"
+              *ngFor="let filter of previewRuntimeFilters"
             >
-              {{ option.label }}
-            </option>
-          </select>
-          <ng-template #previewPlainFilter>
-            <input
-              class="finput"
-              [type]="filter.type === 'number' ? 'number' : filter.type === 'date' ? 'date' : 'text'"
-              [value]="previewFilterValues[filter.id] || ''"
-              (change)="onPreviewFilterChange(filter.id, $any($event.target).value)"
-              [placeholder]="filter.placeholder || ''"
-            />
-          </ng-template>
-          <div
-            *ngIf="isPreviewFilterRequiredMissing(filter)"
-            style="font-size: 10px; color: var(--red); margin-top: 6px"
-          >
-            Filtre obligatoire.
+              <div class="f-label">
+                {{ filter.label || filter.key }}
+                <span *ngIf="filter.profile.required" style="color: #f87171">
+                  *</span
+                >
+              </div>
+              <select
+                *ngIf="filter.type === 'select'"
+                class="pm-select"
+                (change)="
+                  onPreviewFilterChange(filter.id, $any($event.target).value)
+                "
+              >
+                <option value="" [selected]="!previewFilterValues[filter.id]">
+                  — Tous —
+                </option>
+                <option
+                  *ngFor="let opt of filter.options || []"
+                  [value]="opt.value"
+                  [selected]="previewFilterValues[filter.id] === opt.value"
+                >
+                  {{ opt.label }}
+                </option>
+              </select>
+              <input
+                *ngIf="filter.type !== 'select'"
+                class="pm-input"
+                [type]="
+                  filter.type === 'number'
+                    ? 'number'
+                    : filter.type === 'date'
+                      ? 'date'
+                      : 'text'
+                "
+                [value]="previewFilterValues[filter.id] || ''"
+                (change)="
+                  onPreviewFilterChange(filter.id, $any($event.target).value)
+                "
+                [placeholder]="filter.placeholder || ''"
+              />
+              <div
+                *ngIf="isPreviewFilterRequiredMissing(filter)"
+                class="pm-required-warn"
+              >
+                <i class="ti ti-alert-circle"></i> Filtre obligatoire
+              </div>
+            </div>
+          </div>
+
+          <div class="pm-sb-section">
+            <div class="pm-sb-label">Bénéficiaire</div>
+            <div class="pm-search-wrap">
+              <i class="ti ti-search"></i>
+              <input
+                class="pm-search-input"
+                placeholder="Rechercher..."
+                [value]="previewBeneficiarySearch"
+                (input)="previewBeneficiarySearch = $any($event.target).value"
+              />
+            </div>
+            <select
+              class="pm-bene-select"
+              [value]="selectedPreviewBeneficiaryId"
+              (change)="onPreviewBeneficiaryChange($any($event.target).value)"
+            >
+              <option value="">-- Sélectionner --</option>
+              <option
+                *ngFor="let b of filteredPreviewBeneficiaries"
+                [value]="b.id"
+              >
+                {{ getBeneficiaryLabel(b) }}
+              </option>
+            </select>
+            <div class="pm-bene-count">
+              <span class="pm-bene-dot"></span>
+              {{ previewBeneficiaries.length }} bénéficiaire(s)
+            </div>
           </div>
         </div>
+        <button class="pm-print-btn" type="button" (click)="printPreview()">
+          <i class="ti ti-printer"></i> Imprimer ce document
+        </button>
       </div>
-      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap">
-        <div style="font-size: 12px; color: var(--text2); font-weight: 600">
-          Bénéficiaire :
+
+      <!-- canvas A4 -->
+      <div class="pm-canvas">
+        <div class="pm-page-strip">Page 1 / 1</div>
+        <div class="preview-pages">
+          <div *ngIf="previewLoading" class="preview-modal__loading">
+            <div class="preview-modal__loading-spinner"></div>
+            Génération de l'aperçu...
+          </div>
+          <div *ngIf="!previewLoading" [innerHTML]="previewHtml"></div>
         </div>
-        <input
-          class="finput"
-          style="max-width: 260px"
-          placeholder="Rechercher un bénéficiaire..."
-          [value]="previewBeneficiarySearch"
-          (input)="previewBeneficiarySearch = $any($event.target).value"
-        />
-        <select
-          class="finput"
-          style="max-width: 360px"
-          [value]="selectedPreviewBeneficiaryId"
-          (change)="onPreviewBeneficiaryChange($any($event.target).value)"
-        >
-          <option value="">Organization</option>
-          <option
-            *ngFor="let beneficiary of filteredPreviewBeneficiaries"
-            [value]="beneficiary.id"
-          >
-            {{ getBeneficiaryLabel(beneficiary) }}{{ getBeneficiarySubtitle(beneficiary) ? " - " + getBeneficiarySubtitle(beneficiary) : "" }}
-          </option>
-        </select>
-        <span class="charter-bar-note">
-          {{ previewBeneficiaries.length }} bénéficiaire(s)
-        </span>
-        <button class="btn sm primary" type="button" (click)="printPreview()">• Imprimer</button>
-        <span style="font-size: 10px; color: var(--text3); background: var(--accent-bg); padding: 2px 8px; border-radius: 3px; border: 1px solid var(--accent-bdr)">
-          Aperçu identique à l'impression
-        </span>
-      </div>
-      <div class="preview-a4-wrap">
-        <div *ngIf="previewLoading" class="vars-panel-empty">Chargement de l'aperçu...</div>
-        <div *ngIf="!previewLoading" [innerHTML]="previewHtml"></div>
       </div>
     </div>
   </div>
@@ -926,9 +1803,15 @@
   <div class="modal" style="max-width: 880px">
     <div class="mhdr">
       <span class="mtitle">
-        {{ editingGraphicCharterId ? "Modifier la charte graphique" : "Nouvelle charte graphique" }}
+        {{
+          editingGraphicCharterId
+            ? "Modifier la charte graphique"
+            : "Nouvelle charte graphique"
+        }}
       </span>
-      <button class="mclose" type="button" (click)="closeGraphicCharterModal()">×</button>
+      <button class="mclose" type="button" (click)="closeGraphicCharterModal()">
+        ×
+      </button>
     </div>
     <div>
       <div class="fgrid2">
@@ -954,7 +1837,13 @@
       <div class="fgrid3" style="margin-top: 14px">
         <div class="frow" style="margin: 0">
           <label class="flabel">Orientation</label>
-          <select class="finput" [value]="graphicCharterForm.orientation" (change)="graphicCharterForm.orientation = $any($event.target).value">
+          <select
+            class="finput"
+            [value]="graphicCharterForm.orientation"
+            (change)="
+              graphicCharterForm.orientation = $any($event.target).value
+            "
+          >
             <option value="portrait">Portrait</option>
             <option value="landscape">Paysage</option>
           </select>
@@ -962,15 +1851,51 @@
         <div class="frow" style="margin: 0">
           <label class="flabel">Marges haut / bas (mm)</label>
           <div class="fgrid2" style="gap: 8px">
-            <input class="finput" type="number" min="5" max="60" [value]="graphicCharterForm.marginTop" (input)="graphicCharterForm.marginTop = +$any($event.target).value" />
-            <input class="finput" type="number" min="5" max="60" [value]="graphicCharterForm.marginBottom" (input)="graphicCharterForm.marginBottom = +$any($event.target).value" />
+            <input
+              class="finput"
+              type="number"
+              min="5"
+              max="60"
+              [value]="graphicCharterForm.marginTop"
+              (input)="
+                graphicCharterForm.marginTop = +$any($event.target).value
+              "
+            />
+            <input
+              class="finput"
+              type="number"
+              min="5"
+              max="60"
+              [value]="graphicCharterForm.marginBottom"
+              (input)="
+                graphicCharterForm.marginBottom = +$any($event.target).value
+              "
+            />
           </div>
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Marges gauche / droite (mm)</label>
           <div class="fgrid2" style="gap: 8px">
-            <input class="finput" type="number" min="5" max="60" [value]="graphicCharterForm.marginLeft" (input)="graphicCharterForm.marginLeft = +$any($event.target).value" />
-            <input class="finput" type="number" min="5" max="60" [value]="graphicCharterForm.marginRight" (input)="graphicCharterForm.marginRight = +$any($event.target).value" />
+            <input
+              class="finput"
+              type="number"
+              min="5"
+              max="60"
+              [value]="graphicCharterForm.marginLeft"
+              (input)="
+                graphicCharterForm.marginLeft = +$any($event.target).value
+              "
+            />
+            <input
+              class="finput"
+              type="number"
+              min="5"
+              max="60"
+              [value]="graphicCharterForm.marginRight"
+              (input)="
+                graphicCharterForm.marginRight = +$any($event.target).value
+              "
+            />
           </div>
         </div>
       </div>
@@ -978,73 +1903,186 @@
         <div class="frow" style="margin: 0">
           <label class="flabel">Distance en-tête / pied (mm)</label>
           <div class="fgrid2" style="gap: 8px">
-            <input class="finput" type="number" min="0" max="30" [value]="graphicCharterForm.headerTop" (input)="graphicCharterForm.headerTop = +$any($event.target).value" />
-            <input class="finput" type="number" min="0" max="30" [value]="graphicCharterForm.footerBottom" (input)="graphicCharterForm.footerBottom = +$any($event.target).value" />
+            <input
+              class="finput"
+              type="number"
+              min="0"
+              max="30"
+              [value]="graphicCharterForm.headerTop"
+              (input)="
+                graphicCharterForm.headerTop = +$any($event.target).value
+              "
+            />
+            <input
+              class="finput"
+              type="number"
+              min="0"
+              max="30"
+              [value]="graphicCharterForm.footerBottom"
+              (input)="
+                graphicCharterForm.footerBottom = +$any($event.target).value
+              "
+            />
           </div>
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Typographie corps / titres</label>
           <div class="fgrid2" style="gap: 8px">
-            <input class="finput" [value]="graphicCharterForm.bodyFont" (input)="graphicCharterForm.bodyFont = $any($event.target).value" />
-            <input class="finput" [value]="graphicCharterForm.headingFont" (input)="graphicCharterForm.headingFont = $any($event.target).value" />
+            <input
+              class="finput"
+              [value]="graphicCharterForm.bodyFont"
+              (input)="graphicCharterForm.bodyFont = $any($event.target).value"
+            />
+            <input
+              class="finput"
+              [value]="graphicCharterForm.headingFont"
+              (input)="
+                graphicCharterForm.headingFont = $any($event.target).value
+              "
+            />
           </div>
         </div>
       </div>
-      <div style="margin: 16px 0 10px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text3)">
+      <div
+        style="
+          margin: 16px 0 10px;
+          padding-top: 12px;
+          border-top: 1px solid var(--border);
+          font-size: 11px;
+          color: var(--text3);
+        "
+      >
         Couleurs de la charte
       </div>
       <div class="fgrid3">
         <div class="frow" style="margin: 0">
           <label class="flabel">Primaire</label>
-          <input class="finput" type="color" [value]="graphicCharterForm.primary" (input)="graphicCharterForm.primary = $any($event.target).value" />
+          <input
+            class="finput"
+            type="color"
+            [value]="graphicCharterForm.primary"
+            (input)="graphicCharterForm.primary = $any($event.target).value"
+          />
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Secondaire</label>
-          <input class="finput" type="color" [value]="graphicCharterForm.secondary" (input)="graphicCharterForm.secondary = $any($event.target).value" />
+          <input
+            class="finput"
+            type="color"
+            [value]="graphicCharterForm.secondary"
+            (input)="graphicCharterForm.secondary = $any($event.target).value"
+          />
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Texte</label>
-          <input class="finput" type="color" [value]="graphicCharterForm.text" (input)="graphicCharterForm.text = $any($event.target).value" />
+          <input
+            class="finput"
+            type="color"
+            [value]="graphicCharterForm.text"
+            (input)="graphicCharterForm.text = $any($event.target).value"
+          />
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Titres</label>
-          <input class="finput" type="color" [value]="graphicCharterForm.heading" (input)="graphicCharterForm.heading = $any($event.target).value" />
+          <input
+            class="finput"
+            type="color"
+            [value]="graphicCharterForm.heading"
+            (input)="graphicCharterForm.heading = $any($event.target).value"
+          />
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Bordures</label>
-          <input class="finput" type="color" [value]="graphicCharterForm.border" (input)="graphicCharterForm.border = $any($event.target).value" />
+          <input
+            class="finput"
+            type="color"
+            [value]="graphicCharterForm.border"
+            (input)="graphicCharterForm.border = $any($event.target).value"
+          />
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Table alternée</label>
-          <input class="finput" type="color" [value]="graphicCharterForm.tableAltRowBg" (input)="graphicCharterForm.tableAltRowBg = $any($event.target).value" />
+          <input
+            class="finput"
+            type="color"
+            [value]="graphicCharterForm.tableAltRowBg"
+            (input)="
+              graphicCharterForm.tableAltRowBg = $any($event.target).value
+            "
+          />
         </div>
       </div>
-      <div style="margin: 16px 0 10px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text3)">
+      <div
+        style="
+          margin: 16px 0 10px;
+          padding-top: 12px;
+          border-top: 1px solid var(--border);
+          font-size: 11px;
+          color: var(--text3);
+        "
+      >
         Fond de page et sections
       </div>
-      <label class="flabel" style="display: flex; gap: 8px; align-items: center">
-        <input type="checkbox" [checked]="graphicCharterForm.backgroundEnabled" (change)="graphicCharterForm.backgroundEnabled = $any($event.target).checked" />
+      <label
+        class="flabel"
+        style="display: flex; gap: 8px; align-items: center"
+      >
+        <input
+          type="checkbox"
+          [checked]="graphicCharterForm.backgroundEnabled"
+          (change)="
+            graphicCharterForm.backgroundEnabled = $any($event.target).checked
+          "
+        />
         Activer l'image de fond sur chaque page
       </label>
-      <input class="finput" placeholder="https://exemple.com/fond.jpg" [value]="graphicCharterForm.backgroundImage" (input)="graphicCharterForm.backgroundImage = $any($event.target).value" />
+      <input
+        class="finput"
+        placeholder="https://exemple.com/fond.jpg"
+        [value]="graphicCharterForm.backgroundImage"
+        (input)="graphicCharterForm.backgroundImage = $any($event.target).value"
+      />
       <div class="frow">
         <label class="flabel">Ou choisir un fichier</label>
-        <input class="finput" type="file" accept="image/*" (change)="onGraphicCharterBackgroundFileChange($event)" />
+        <input
+          class="finput"
+          type="file"
+          accept="image/*"
+          (change)="onGraphicCharterBackgroundFileChange($event)"
+        />
       </div>
       <div class="fgrid3" style="margin-top: 10px">
-        <select class="finput" [value]="graphicCharterForm.backgroundSize" (change)="graphicCharterForm.backgroundSize = $any($event.target).value">
+        <select
+          class="finput"
+          [value]="graphicCharterForm.backgroundSize"
+          (change)="
+            graphicCharterForm.backgroundSize = $any($event.target).value
+          "
+        >
           <option value="cover">Couvrir la page</option>
           <option value="contain">Contenir l'image</option>
           <option value="100% 100%">Étendre à la page</option>
         </select>
-        <select class="finput" [value]="graphicCharterForm.backgroundPosition" (change)="graphicCharterForm.backgroundPosition = $any($event.target).value">
+        <select
+          class="finput"
+          [value]="graphicCharterForm.backgroundPosition"
+          (change)="
+            graphicCharterForm.backgroundPosition = $any($event.target).value
+          "
+        >
           <option value="center center">Centre</option>
           <option value="top center">Haut</option>
           <option value="bottom center">Bas</option>
           <option value="center left">Gauche</option>
           <option value="center right">Droite</option>
         </select>
-        <select class="finput" [value]="graphicCharterForm.backgroundRepeat" (change)="graphicCharterForm.backgroundRepeat = $any($event.target).value">
+        <select
+          class="finput"
+          [value]="graphicCharterForm.backgroundRepeat"
+          (change)="
+            graphicCharterForm.backgroundRepeat = $any($event.target).value
+          "
+        >
           <option value="no-repeat">Sans répétition</option>
           <option value="repeat">Répéter</option>
           <option value="repeat-x">Répéter X</option>
@@ -1053,30 +2091,78 @@
       </div>
       <div style="margin-top: 12px">
         <div
-          style="width: 100%; height: 130px; border-radius: 14px; border: 1px dashed var(--border2); background-color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7)"
-          [style.background-image]="graphicCharterForm.backgroundEnabled && graphicCharterForm.backgroundImage ? 'url(' + graphicCharterForm.backgroundImage + ')' : 'none'"
+          style="
+            width: 100%;
+            height: 130px;
+            border-radius: 14px;
+            border: 1px dashed var(--border2);
+            background-color: #fff;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+          "
+          [style.background-image]="
+            graphicCharterForm.backgroundEnabled &&
+            graphicCharterForm.backgroundImage
+              ? 'url(' + graphicCharterForm.backgroundImage + ')'
+              : 'none'
+          "
           [style.background-size]="graphicCharterForm.backgroundSize"
           [style.background-position]="graphicCharterForm.backgroundPosition"
           [style.background-repeat]="graphicCharterForm.backgroundRepeat"
         ></div>
-        <div style="margin-top: 8px; font-size: 11px; color: var(--text3); line-height: 1.5">
-          {{ graphicCharterForm.backgroundEnabled && graphicCharterForm.backgroundImage ? "Image de fond active." : "Aucune image de fond sélectionnée." }}
+        <div
+          style="
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text3);
+            line-height: 1.5;
+          "
+        >
+          {{
+            graphicCharterForm.backgroundEnabled &&
+            graphicCharterForm.backgroundImage
+              ? "Image de fond active."
+              : "Aucune image de fond sélectionnée."
+          }}
         </div>
       </div>
       <div class="fgrid2" style="margin-top: 12px">
-        <label class="flabel" style="display: flex; gap: 8px; align-items: center">
-          <input type="checkbox" [checked]="graphicCharterForm.headerEnabled" (change)="graphicCharterForm.headerEnabled = $any($event.target).checked" />
+        <label
+          class="flabel"
+          style="display: flex; gap: 8px; align-items: center"
+        >
+          <input
+            type="checkbox"
+            [checked]="graphicCharterForm.headerEnabled"
+            (change)="
+              graphicCharterForm.headerEnabled = $any($event.target).checked
+            "
+          />
           Activer l'en-tête à la création
         </label>
-        <label class="flabel" style="display: flex; gap: 8px; align-items: center">
-          <input type="checkbox" [checked]="graphicCharterForm.footerEnabled" (change)="graphicCharterForm.footerEnabled = $any($event.target).checked" />
+        <label
+          class="flabel"
+          style="display: flex; gap: 8px; align-items: center"
+        >
+          <input
+            type="checkbox"
+            [checked]="graphicCharterForm.footerEnabled"
+            (change)="
+              graphicCharterForm.footerEnabled = $any($event.target).checked
+            "
+          />
           Activer le pied à la création
         </label>
       </div>
       <div class="fgrid2">
         <div>
           <label class="flabel">Afficher l'en-tête</label>
-          <select class="finput" [value]="graphicCharterForm.headerDisplay" (change)="graphicCharterForm.headerDisplay = $any($event.target).value">
+          <select
+            class="finput"
+            [value]="graphicCharterForm.headerDisplay"
+            (change)="
+              graphicCharterForm.headerDisplay = $any($event.target).value
+            "
+          >
             <option value="all">Sur toutes les pages</option>
             <option value="first">Seulement sur la 1re page</option>
             <option value="even">Seulement sur les pages paires</option>
@@ -1085,7 +2171,13 @@
         </div>
         <div>
           <label class="flabel">Afficher le pied de page</label>
-          <select class="finput" [value]="graphicCharterForm.footerDisplay" (change)="graphicCharterForm.footerDisplay = $any($event.target).value">
+          <select
+            class="finput"
+            [value]="graphicCharterForm.footerDisplay"
+            (change)="
+              graphicCharterForm.footerDisplay = $any($event.target).value
+            "
+          >
             <option value="all">Sur toutes les pages</option>
             <option value="first">Seulement sur la 1re page</option>
             <option value="even">Seulement sur les pages paires</option>
@@ -1094,21 +2186,78 @@
         </div>
       </div>
       <label class="flabel">En-tête par défaut</label>
-      <div style="border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; background: #fff">
+      <div
+        style="
+          border: 1px solid var(--border);
+          border-radius: var(--r);
+          overflow: hidden;
+          background: #fff;
+        "
+      >
         <div class="gc-mini-tb">
           <div class="tb-grp">
-            <button class="tb-btn" type="button" [class.on]="isGraphicCharterEditorActive('header', 'bold')" (click)="runGraphicCharterCommand('header', 'bold')">B</button>
-            <button class="tb-btn" type="button" [class.on]="isGraphicCharterEditorActive('header', 'italic')" (click)="runGraphicCharterCommand('header', 'italic')">I</button>
-            <button class="tb-btn" type="button" [class.on]="isGraphicCharterEditorActive('header', 'underline')" (click)="runGraphicCharterCommand('header', 'underline')">U</button>
-            <button class="tb-btn" type="button" (click)="runGraphicCharterCommand('header', 'clear')">×</button>
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isGraphicCharterEditorActive('header', 'bold')"
+              (click)="runGraphicCharterCommand('header', 'bold')"
+            >
+              B
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isGraphicCharterEditorActive('header', 'italic')"
+              (click)="runGraphicCharterCommand('header', 'italic')"
+            >
+              I
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isGraphicCharterEditorActive('header', 'underline')"
+              (click)="runGraphicCharterCommand('header', 'underline')"
+            >
+              U
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="runGraphicCharterCommand('header', 'clear')"
+            >
+              ×
+            </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" (click)="applyGraphicCharterAlign('header', 'left')">G</button>
-            <button class="tb-btn" type="button" (click)="applyGraphicCharterAlign('header', 'center')">C</button>
-            <button class="tb-btn" type="button" (click)="applyGraphicCharterAlign('header', 'right')">D</button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="applyGraphicCharterAlign('header', 'left')"
+            >
+              G
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="applyGraphicCharterAlign('header', 'center')"
+            >
+              C
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="applyGraphicCharterAlign('header', 'right')"
+            >
+              D
+            </button>
           </div>
           <div class="tb-grp">
-            <select class="tb-sel" (change)="applyGraphicCharterFontSize('header', $any($event.target).value)">
+            <select
+              class="tb-sel"
+              (change)="
+                applyGraphicCharterFontSize('header', $any($event.target).value)
+              "
+            >
               <option value="">pt</option>
               <option value="9pt">9</option>
               <option value="10pt">10</option>
@@ -1116,29 +2265,99 @@
               <option value="14pt">14</option>
               <option value="18pt">18</option>
             </select>
-            <button class="tb-btn" type="button" (click)="insertGraphicCharterVariable('header', 'nom_etab')">{{ "{}" }}</button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="insertGraphicCharterVariable('header', 'nom_etab')"
+            >
+              {{ "{}" }}
+            </button>
           </div>
         </div>
-        <div style="padding: 8px 12px; min-height: 80px; max-height: 160px; overflow-y: auto">
+        <div
+          style="
+            padding: 8px 12px;
+            min-height: 80px;
+            max-height: 160px;
+            overflow-y: auto;
+          "
+        >
           <div class="tiptap-wrapper" #graphicCharterHeaderHost></div>
         </div>
       </div>
       <label class="flabel">Pied de page par défaut</label>
-      <div style="border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; background: #fff">
+      <div
+        style="
+          border: 1px solid var(--border);
+          border-radius: var(--r);
+          overflow: hidden;
+          background: #fff;
+        "
+      >
         <div class="gc-mini-tb">
           <div class="tb-grp">
-            <button class="tb-btn" type="button" [class.on]="isGraphicCharterEditorActive('footer', 'bold')" (click)="runGraphicCharterCommand('footer', 'bold')">B</button>
-            <button class="tb-btn" type="button" [class.on]="isGraphicCharterEditorActive('footer', 'italic')" (click)="runGraphicCharterCommand('footer', 'italic')">I</button>
-            <button class="tb-btn" type="button" [class.on]="isGraphicCharterEditorActive('footer', 'underline')" (click)="runGraphicCharterCommand('footer', 'underline')">U</button>
-            <button class="tb-btn" type="button" (click)="runGraphicCharterCommand('footer', 'clear')">×</button>
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isGraphicCharterEditorActive('footer', 'bold')"
+              (click)="runGraphicCharterCommand('footer', 'bold')"
+            >
+              B
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isGraphicCharterEditorActive('footer', 'italic')"
+              (click)="runGraphicCharterCommand('footer', 'italic')"
+            >
+              I
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              [class.on]="isGraphicCharterEditorActive('footer', 'underline')"
+              (click)="runGraphicCharterCommand('footer', 'underline')"
+            >
+              U
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="runGraphicCharterCommand('footer', 'clear')"
+            >
+              ×
+            </button>
           </div>
           <div class="tb-grp">
-            <button class="tb-btn" type="button" (click)="applyGraphicCharterAlign('footer', 'left')">G</button>
-            <button class="tb-btn" type="button" (click)="applyGraphicCharterAlign('footer', 'center')">C</button>
-            <button class="tb-btn" type="button" (click)="applyGraphicCharterAlign('footer', 'right')">D</button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="applyGraphicCharterAlign('footer', 'left')"
+            >
+              G
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="applyGraphicCharterAlign('footer', 'center')"
+            >
+              C
+            </button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="applyGraphicCharterAlign('footer', 'right')"
+            >
+              D
+            </button>
           </div>
           <div class="tb-grp">
-            <select class="tb-sel" (change)="applyGraphicCharterFontSize('footer', $any($event.target).value)">
+            <select
+              class="tb-sel"
+              (change)="
+                applyGraphicCharterFontSize('footer', $any($event.target).value)
+              "
+            >
               <option value="">pt</option>
               <option value="9pt">9</option>
               <option value="10pt">10</option>
@@ -1146,38 +2365,101 @@
               <option value="14pt">14</option>
               <option value="18pt">18</option>
             </select>
-            <button class="tb-btn" type="button" (click)="insertGraphicCharterVariable('footer', 'nom_etab')">{{ "{}" }}</button>
+            <button
+              class="tb-btn"
+              type="button"
+              (click)="insertGraphicCharterVariable('footer', 'nom_etab')"
+            >
+              {{ "{}" }}
+            </button>
           </div>
         </div>
-        <div style="padding: 8px 12px; min-height: 80px; max-height: 160px; overflow-y: auto">
+        <div
+          style="
+            padding: 8px 12px;
+            min-height: 80px;
+            max-height: 160px;
+            overflow-y: auto;
+          "
+        >
           <div class="tiptap-wrapper" #graphicCharterFooterHost></div>
         </div>
       </div>
       <div class="fgrid3" style="margin-top: 12px">
-        <label class="flabel" style="display: flex; gap: 8px; align-items: center">
-          <input type="checkbox" [checked]="graphicCharterForm.watermarkEnabled" (change)="graphicCharterForm.watermarkEnabled = $any($event.target).checked" />
+        <label
+          class="flabel"
+          style="display: flex; gap: 8px; align-items: center"
+        >
+          <input
+            type="checkbox"
+            [checked]="graphicCharterForm.watermarkEnabled"
+            (change)="
+              graphicCharterForm.watermarkEnabled = $any($event.target).checked
+            "
+          />
           Filigrane
         </label>
-        <input class="finput" [value]="graphicCharterForm.watermarkText" (input)="graphicCharterForm.watermarkText = $any($event.target).value" placeholder="CONFIDENTIEL" />
-        <input class="finput" type="color" [value]="graphicCharterForm.watermarkColor" (input)="graphicCharterForm.watermarkColor = $any($event.target).value" />
+        <input
+          class="finput"
+          [value]="graphicCharterForm.watermarkText"
+          (input)="graphicCharterForm.watermarkText = $any($event.target).value"
+          placeholder="CONFIDENTIEL"
+        />
+        <input
+          class="finput"
+          type="color"
+          [value]="graphicCharterForm.watermarkColor"
+          (input)="
+            graphicCharterForm.watermarkColor = $any($event.target).value
+          "
+        />
       </div>
       <label class="flabel">Opacité du filigrane</label>
-      <input class="finput" type="number" min="0.01" max="0.8" step="0.01" [value]="graphicCharterForm.watermarkOpacity" (input)="graphicCharterForm.watermarkOpacity = +$any($event.target).value" />
+      <input
+        class="finput"
+        type="number"
+        min="0.01"
+        max="0.8"
+        step="0.01"
+        [value]="graphicCharterForm.watermarkOpacity"
+        (input)="
+          graphicCharterForm.watermarkOpacity = +$any($event.target).value
+        "
+      />
       <div class="frow" style="margin-top: 14px">
-        <label class="flabel" style="display: flex; gap: 8px; align-items: center">
+        <label
+          class="flabel"
+          style="display: flex; gap: 8px; align-items: center"
+        >
           <input
             type="checkbox"
             [checked]="graphicCharterForm.isDefault"
-            (change)="graphicCharterForm.isDefault = $any($event.target).checked"
+            (change)="
+              graphicCharterForm.isDefault = $any($event.target).checked
+            "
           />
           Utiliser cette charte par défaut pour les nouveaux templates
         </label>
       </div>
     </div>
     <div class="mactions">
-      <button class="btn" type="button" (click)="clearGraphicCharterBackground()">Retirer l'image</button>
-      <button class="btn" type="button" (click)="closeGraphicCharterModal()">Annuler</button>
-      <button class="btn primary" type="button" (click)="saveGraphicCharterModal()">Enregistrer</button>
+      <button
+        class="btn"
+        type="button"
+        (click)="clearGraphicCharterBackground()"
+      >
+        Retirer l'image
+      </button>
+      <button class="btn" type="button" (click)="closeGraphicCharterModal()">
+        Annuler
+      </button>
+      <button
+        class="btn primary"
+        type="button"
+        (click)="saveGraphicCharterModal()"
+      >
+        Enregistrer
+      </button>
     </div>
   </div>
 </div>
@@ -1186,15 +2468,26 @@
   <div class="modal">
     <div class="mhdr">
       <span class="mtitle">Insérer un lien</span>
-      <button class="mclose" type="button" (click)="closeEditorModal()">×</button>
+      <button class="mclose" type="button" (click)="closeEditorModal()">
+        ×
+      </button>
     </div>
     <div class="modal-body">
       <label class="flabel">URL</label>
-      <input class="finput" [value]="linkUrl" (input)="linkUrl = $any($event.target).value" placeholder="https://..." />
+      <input
+        class="finput"
+        [value]="linkUrl"
+        (input)="linkUrl = $any($event.target).value"
+        placeholder="https://..."
+      />
     </div>
     <div class="mactions">
-      <button class="btn" type="button" (click)="closeEditorModal()">Annuler</button>
-      <button class="btn primary" type="button" (click)="insertLink()">Insérer</button>
+      <button class="btn" type="button" (click)="closeEditorModal()">
+        Annuler
+      </button>
+      <button class="btn primary" type="button" (click)="insertLink()">
+        Insérer
+      </button>
     </div>
   </div>
 </div>
@@ -1203,12 +2496,19 @@
   <div class="modal">
     <div class="mhdr">
       <span class="mtitle">Insérer une image</span>
-      <button class="mclose" type="button" (click)="closeEditorModal()">×</button>
+      <button class="mclose" type="button" (click)="closeEditorModal()">
+        ×
+      </button>
     </div>
     <div>
       <div class="frow">
         <label class="flabel">Fichier local</label>
-        <input type="file" accept="image/*" style="font-size: 12px" (change)="onImageFileChange($event)" />
+        <input
+          type="file"
+          accept="image/*"
+          style="font-size: 12px"
+          (change)="onImageFileChange($event)"
+        />
       </div>
       <div class="img-pre-wrap" *ngIf="imagePreviewSrc">
         <img [src]="imagePreviewSrc" [alt]="imageAlt || imageCaption || ''" />
@@ -1226,11 +2526,21 @@
       <div class="fgrid2">
         <div class="frow" style="margin: 0">
           <label class="flabel">Largeur (px, mm, cm, %)</label>
-          <input class="finput" type="text" [value]="imageWidth" (input)="imageWidth = $any($event.target).value" placeholder="Auto" />
+          <input
+            class="finput"
+            type="text"
+            [value]="imageWidth"
+            (input)="imageWidth = $any($event.target).value"
+            placeholder="Auto"
+          />
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Alignement</label>
-          <select class="finput" [value]="imageAlign" (change)="imageAlign = $any($event.target).value">
+          <select
+            class="finput"
+            [value]="imageAlign"
+            (change)="imageAlign = $any($event.target).value"
+          >
             <option value="center">Centré</option>
             <option value="left">Gauche</option>
             <option value="right">Droite</option>
@@ -1239,16 +2549,31 @@
       </div>
       <div class="frow" style="margin-top: 8px">
         <label class="flabel">Hauteur (px, mm, cm)</label>
-        <input class="finput" type="text" [value]="imageHeight" (input)="imageHeight = $any($event.target).value" placeholder="Auto" />
+        <input
+          class="finput"
+          type="text"
+          [value]="imageHeight"
+          (input)="imageHeight = $any($event.target).value"
+          placeholder="Auto"
+        />
       </div>
       <div class="frow" style="margin-top: 8px">
         <label class="flabel">Légende (optionnel)</label>
-        <input class="finput" [value]="imageCaption" (input)="imageCaption = $any($event.target).value" placeholder="Texte de légende..." />
+        <input
+          class="finput"
+          [value]="imageCaption"
+          (input)="imageCaption = $any($event.target).value"
+          placeholder="Texte de légende..."
+        />
       </div>
     </div>
     <div class="mactions">
-      <button class="btn" type="button" (click)="closeEditorModal()">Annuler</button>
-      <button class="btn primary" type="button" (click)="insertImage()">Insérer</button>
+      <button class="btn" type="button" (click)="closeEditorModal()">
+        Annuler
+      </button>
+      <button class="btn primary" type="button" (click)="insertImage()">
+        Insérer
+      </button>
     </div>
   </div>
 </div>
@@ -1257,17 +2582,35 @@
   <div class="modal">
     <div class="mhdr">
       <span class="mtitle">Insérer un tableau</span>
-      <button class="mclose" type="button" (click)="closeEditorModal()">×</button>
+      <button class="mclose" type="button" (click)="closeEditorModal()">
+        ×
+      </button>
     </div>
     <div class="modal-body">
       <label class="flabel">Lignes</label>
-      <input class="finput" type="number" min="1" [value]="tableRows" (input)="tableRows = +$any($event.target).value" />
+      <input
+        class="finput"
+        type="number"
+        min="1"
+        [value]="tableRows"
+        (input)="tableRows = +$any($event.target).value"
+      />
       <label class="flabel">Colonnes</label>
-      <input class="finput" type="number" min="1" [value]="tableCols" (input)="tableCols = +$any($event.target).value" />
+      <input
+        class="finput"
+        type="number"
+        min="1"
+        [value]="tableCols"
+        (input)="tableCols = +$any($event.target).value"
+      />
     </div>
     <div class="mactions">
-      <button class="btn" type="button" (click)="closeEditorModal()">Annuler</button>
-      <button class="btn primary" type="button" (click)="insertTable()">Insérer</button>
+      <button class="btn" type="button" (click)="closeEditorModal()">
+        Annuler
+      </button>
+      <button class="btn primary" type="button" (click)="insertTable()">
+        Insérer
+      </button>
     </div>
   </div>
 </div>
@@ -1276,7 +2619,9 @@
   <div class="modal modal-sm">
     <div class="mhdr">
       <span class="mtitle">Insérer une date</span>
-      <button class="mclose" type="button" (click)="closeDateVariableModal()">×</button>
+      <button class="mclose" type="button" (click)="closeDateVariableModal()">
+        ×
+      </button>
     </div>
     <div class="modal-body">
       <div style="font-size: 12px; color: var(--text2); line-height: 1.6">
@@ -1300,8 +2645,16 @@
       </div>
     </div>
     <div class="mactions">
-      <button class="btn" type="button" (click)="closeDateVariableModal()">Annuler</button>
-      <button class="btn primary" type="button" (click)="insertSelectedDateVariable()">Insérer</button>
+      <button class="btn" type="button" (click)="closeDateVariableModal()">
+        Annuler
+      </button>
+      <button
+        class="btn primary"
+        type="button"
+        (click)="insertSelectedDateVariable()"
+      >
+        Insérer
+      </button>
     </div>
   </div>
 </div>
@@ -1310,7 +2663,9 @@
   <div class="modal modal-sm">
     <div class="mhdr">
       <span class="mtitle">Filigrane de page</span>
-      <button class="mclose" type="button" (click)="closeWatermarkModal()">×</button>
+      <button class="mclose" type="button" (click)="closeWatermarkModal()">
+        ×
+      </button>
     </div>
     <div class="modal-body">
       <label class="flabel">Texte</label>
@@ -1355,9 +2710,15 @@
       </div>
     </div>
     <div class="mactions">
-      <button class="btn danger" type="button" (click)="removeWatermark()">Supprimer</button>
-      <button class="btn" type="button" (click)="closeWatermarkModal()">Annuler</button>
-      <button class="btn primary" type="button" (click)="applyWatermark()">Appliquer</button>
+      <button class="btn danger" type="button" (click)="removeWatermark()">
+        Supprimer
+      </button>
+      <button class="btn" type="button" (click)="closeWatermarkModal()">
+        Annuler
+      </button>
+      <button class="btn primary" type="button" (click)="applyWatermark()">
+        Appliquer
+      </button>
     </div>
   </div>
 </div>
@@ -1366,11 +2727,14 @@
   <div class="modal">
     <div class="mhdr">
       <span class="mtitle">Mise en page - Page A4</span>
-      <button class="mclose" type="button" (click)="closePageSettingsModal()">×</button>
+      <button class="mclose" type="button" (click)="closePageSettingsModal()">
+        ×
+      </button>
     </div>
     <div class="modal-body">
       <div style="font-size: 11px; color: var(--text3); margin-bottom: 14px">
-        Les marges haut/bas s'appliquent au corps du document. L'en-tête et le pied utilisent leur propre distance au bord, comme dans Word.
+        Les marges haut/bas s'appliquent au corps du document. L'en-tête et le
+        pied utilisent leur propre distance au bord, comme dans Word.
       </div>
       <div class="frow">
         <label class="flabel">Orientation</label>
@@ -1386,36 +2750,86 @@
       <div class="fgrid2">
         <div class="frow">
           <label class="flabel">Marge corps haut (mm)</label>
-          <input class="finput" type="number" min="5" max="60" [value]="pageSettingsForm.mt" (input)="updatePageSetting('mt', $any($event.target).value)" />
+          <input
+            class="finput"
+            type="number"
+            min="5"
+            max="60"
+            [value]="pageSettingsForm.mt"
+            (input)="updatePageSetting('mt', $any($event.target).value)"
+          />
         </div>
         <div class="frow">
           <label class="flabel">Marge corps bas (mm)</label>
-          <input class="finput" type="number" min="5" max="60" [value]="pageSettingsForm.mb" (input)="updatePageSetting('mb', $any($event.target).value)" />
+          <input
+            class="finput"
+            type="number"
+            min="5"
+            max="60"
+            [value]="pageSettingsForm.mb"
+            (input)="updatePageSetting('mb', $any($event.target).value)"
+          />
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Marge corps gauche (mm)</label>
-          <input class="finput" type="number" min="5" max="60" [value]="pageSettingsForm.ml" (input)="updatePageSetting('ml', $any($event.target).value)" />
+          <input
+            class="finput"
+            type="number"
+            min="5"
+            max="60"
+            [value]="pageSettingsForm.ml"
+            (input)="updatePageSetting('ml', $any($event.target).value)"
+          />
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Marge corps droite (mm)</label>
-          <input class="finput" type="number" min="5" max="60" [value]="pageSettingsForm.mr" (input)="updatePageSetting('mr', $any($event.target).value)" />
+          <input
+            class="finput"
+            type="number"
+            min="5"
+            max="60"
+            [value]="pageSettingsForm.mr"
+            (input)="updatePageSetting('mr', $any($event.target).value)"
+          />
         </div>
       </div>
       <div class="fgrid2" style="margin-top: 10px">
         <div class="frow">
           <label class="flabel">Distance en-tête depuis le bord (mm)</label>
-          <input class="finput" type="number" min="0" max="30" [value]="pageSettingsForm.headerTop" (input)="updatePageSetting('headerTop', $any($event.target).value)" />
+          <input
+            class="finput"
+            type="number"
+            min="0"
+            max="30"
+            [value]="pageSettingsForm.headerTop"
+            (input)="updatePageSetting('headerTop', $any($event.target).value)"
+          />
         </div>
         <div class="frow">
           <label class="flabel">Distance pied depuis le bord (mm)</label>
-          <input class="finput" type="number" min="0" max="30" [value]="pageSettingsForm.footerBottom" (input)="updatePageSetting('footerBottom', $any($event.target).value)" />
+          <input
+            class="finput"
+            type="number"
+            min="0"
+            max="30"
+            [value]="pageSettingsForm.footerBottom"
+            (input)="
+              updatePageSetting('footerBottom', $any($event.target).value)
+            "
+          />
         </div>
       </div>
     </div>
     <div class="mactions">
-      <button class="btn" type="button" (click)="resetPageMargins()">Réinitialiser</button>
-      <button class="btn" type="button" (click)="closePageSettingsModal()">Annuler</button>
-      <button class="btn primary" type="button" (click)="applyPageMargins()">Appliquer</button>
+      <button class="btn" type="button" (click)="resetPageMargins()">
+        Réinitialiser
+      </button>
+      <button class="btn" type="button" (click)="closePageSettingsModal()">
+        Annuler
+      </button>
+      <button class="btn primary" type="button" (click)="applyPageMargins()">
+        Appliquer
+      </button>
     </div>
   </div>
 </div>

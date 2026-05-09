@@ -2020,6 +2020,7 @@ export class AdminComponent
       hasHeader: this.hasHeader,
       hasFooter: this.hasFooter,
       graphicCharterId: this.selectedGraphicCharterId || null,
+      organizationId: this.currentUserOrganizationId,
       orientation: this.pageSettingsForm.orientation,
       pageMargins: {
         mt: this.pageSettingsForm.mt,
@@ -2082,7 +2083,7 @@ export class AdminComponent
         footer: this.editorContent.footer,
         hasHeader: this.hasHeader,
         hasFooter: this.hasFooter,
-        graphicCharterId: this.selectedGraphicCharterId || null,
+        graphicCharterId: this.selectedGraphicCharterId || null,organizationId: this.currentUserOrganizationId,
         orientation: this.pageSettingsForm.orientation,
         pageMargins: {
           mt: this.pageSettingsForm.mt,
