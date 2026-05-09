@@ -33,6 +33,7 @@ import TextAlign from "@tiptap/extension-text-align";
 
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
+import { EditorImageResizeService } from "../../services/editor-image-resize.service";
 import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
 import { BeneficiaryRecord, FamilyRecord } from "../../models/family.model";
 import { TemplateRecord } from "../../models/template.model";
@@ -185,6 +186,28 @@ const TableHeaderExt = TableHeader.extend({
 });
 
 // ─── SHARED TIPTAP EXTENSIONS (created once, reused) ──────────────────────────
+const ResizableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      style: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("style") || "",
+        renderHTML: (attributes) =>
+          attributes["style"] ? { style: attributes["style"] } : {},
+      },
+      dataKeepRatio: {
+        default: "true",
+        parseHTML: (element) =>
+          element.getAttribute("data-keep-ratio") || "true",
+        renderHTML: (attributes) => ({
+          "data-keep-ratio": attributes["dataKeepRatio"] || "true",
+        }),
+      },
+    };
+  },
+});
+
 const SHARED_EXTENSIONS = [
   StarterKit.configure({ heading: { levels: [1, 2, 3, 4] } }),
   TextStyle,
@@ -194,7 +217,7 @@ const SHARED_EXTENSIONS = [
   Underline,
   Highlight.configure({ multicolor: true }),
   Link.configure({ openOnClick: false, autolink: true }),
-  Image.configure({ inline: true, allowBase64: true }),
+  ResizableImage.configure({ inline: true, allowBase64: true }),
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   Table.configure({ resizable: true }),
   TableRow,
@@ -464,6 +487,7 @@ export class AdminComponent
     private dialog: MatDialog,
     private sanitizer: DomSanitizer,
     private elementRef: ElementRef<HTMLElement>,
+    private imageResizeService: EditorImageResizeService,
     // ─── ADDED: NgZone and ChangeDetectorRef for performance ─────────────────
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef,
@@ -2238,6 +2262,9 @@ export class AdminComponent
       });
     });
 
+    if (this.editor) {
+      this.imageResizeService.attach(this.editor);
+    }
     this.applyDirectionToCurrentEditor();
   }
 
@@ -2248,6 +2275,7 @@ export class AdminComponent
 
   private destroyEditor(): void {
     if (this.editor) {
+      this.imageResizeService.detach(this.editor);
       this.editor.destroy();
       this.editor = null;
     }
@@ -2299,6 +2327,7 @@ export class AdminComponent
         },
       });
     });
+    this.imageResizeService.attach(editorInstance);
     return editorInstance;
   }
 
@@ -2323,10 +2352,12 @@ export class AdminComponent
 
   private destroyGraphicCharterEditors(): void {
     if (this.graphicCharterHeaderEditor) {
+      this.imageResizeService.detach(this.graphicCharterHeaderEditor);
       this.graphicCharterHeaderEditor.destroy();
       this.graphicCharterHeaderEditor = null;
     }
     if (this.graphicCharterFooterEditor) {
+      this.imageResizeService.detach(this.graphicCharterFooterEditor);
       this.graphicCharterFooterEditor.destroy();
       this.graphicCharterFooterEditor = null;
     }
