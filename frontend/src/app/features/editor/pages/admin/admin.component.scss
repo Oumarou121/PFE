@@ -60,7 +60,11 @@
   --doc-table-row-alt-bg: #f8fafc;
 }
 
-html,
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   height: 100%;
   overflow: hidden;
@@ -151,7 +155,7 @@ button {
 
 /* ── APP SHELL ── */
 #app {
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   opacity: 0;
@@ -632,9 +636,18 @@ button {
   appearance: none;
   outline: none;
   cursor: pointer;
-  color-scheme: light; /* ← AJOUT : force le navigateur à ne pas écraser le style custom */
+  color-scheme: light;
   -webkit-user-select: none;
   user-select: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+/* Highlight when a charter is selected */
+.charter-bar-select:not([value=""]) {
+  border-color: var(--accent-bdr);
+  background-color: var(--accent-bg);
+  color: var(--accent2);
 }
 .charter-bar-select:focus {
   border-color: var(--accent);
@@ -647,6 +660,7 @@ button {
 .charter-bar-note {
   font-size: 11px;
   color: var(--text3);
+  font-style: italic;
 }
 
 /* ── SEC-TABS ── */
@@ -913,6 +927,14 @@ button {
   align-items: center;
   padding: 24px 20px 40px;
   position: relative;
+
+  /* PaginationPlus injecte ses propres pages — on les laisse centrer naturellement */
+  & > .body-editor-wrap {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 }
 .page-live-badge {
   position: sticky;
@@ -937,9 +959,77 @@ button {
   flex-direction: column;
   align-items: center;
 }
-.a4-page {
+.body-editor-wrap {
+  /* PaginationPlus gère ses propres pages A4 — on ne met qu'un conteneur neutre */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.body-editor-wrap .tiptap-wrapper {
+  width: 100%;
+}
+
+/* ── Zones header / footer : feuille A4 réduite ── */
+.hf-editor-wrap {
+  width: var(--page-w, 210mm);
+  background: #fff;
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  padding: var(--page-header-top, 5mm) var(--page-mr, 25mm)
+    var(--page-footer-bottom, 5mm) var(--page-ml, 25mm);
+  position: relative;
+  min-height: 40mm;
+}
+
+.hf-label {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #bbb;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hf-editor-wrap .tiptap-wrapper {
+  width: 100%;
+}
+
+.editor-shell {
   width: var(--page-w);
-  height: var(--page-h);
+  min-height: var(--page-h);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.editor-host {
+  width: 100%;
+}
+
+.editor-host .ProseMirror {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  width: 100%;
+  min-height: var(--page-h);
+  outline: none;
+  caret-color: var(--accent);
+  font-family: var(--doc-font-body);
+  font-size: 12pt;
+  line-height: 1.6;
+  color: var(--doc-color-text);
+}
+
+.document-page-node {
+  width: var(--page-w);
+  min-height: var(--page-h);
   background-color: #fff;
   background-image: var(--doc-page-bg-image, none);
   background-size: var(--doc-page-bg-size, cover);
@@ -948,26 +1038,38 @@ button {
   box-shadow:
     0 2px 12px rgba(0, 0, 0, 0.18),
     0 0 0 1px rgba(0, 0, 0, 0.08);
-  position: relative;
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
-.a4-header {
+
+.document-page-header,
+.document-page-footer {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.document-page-header {
   padding: var(--page-header-top) var(--page-mr) 3mm var(--page-ml);
   border-bottom: 1px dashed var(--doc-color-border);
-  flex-shrink: 0;
-  position: relative;
 }
-.a4-footer {
+
+.document-page-body {
+  flex: 1;
+  padding: var(--page-mt) var(--page-mr) var(--page-mb) var(--page-ml);
+  position: relative;
+  isolation: isolate;
+}
+
+.document-page-footer {
   padding: 3mm var(--page-mr) var(--page-footer-bottom) var(--page-ml);
   border-top: 1px dashed var(--doc-color-border);
-  flex-shrink: 0;
-  position: relative;
   margin-top: auto;
 }
-.a4-hf-label {
+
+.document-page-header::before,
+.document-page-footer::before {
   position: absolute;
   right: 4px;
   top: 4px;
@@ -977,52 +1079,18 @@ button {
   letter-spacing: 0.05em;
   pointer-events: none;
 }
-#sec-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--page-mt) var(--page-mr) var(--page-mb) var(--page-ml);
-  position: relative;
-  isolation: isolate;
+
+.document-page-header::before {
+  content: "EN-TÊTE";
 }
-#sec-body.no-header {
-  padding-top: var(--page-mt);
+
+.document-page-footer::before {
+  content: "PIED DE PAGE";
 }
-#sec-body.no-footer {
-  padding-bottom: var(--page-mb);
-}
-.a4-watermark {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-.a4-watermark span {
-  font-weight: 900;
-  transform: rotate(-35deg);
-  user-select: none;
-  white-space: nowrap;
-  display: block;
-}
-.a4-page:before {
-  content: attr(data-page-num);
-  position: absolute;
-  bottom: 5px;
-  right: 10px;
-  font-size: 10px;
-  color: #ddd;
-  pointer-events: none;
-  z-index: 0;
-}
-.a4-header:focus-within,
-#sec-body:focus-within,
-.a4-footer:focus-within {
+
+.document-page-header:focus-within,
+.document-page-body:focus-within,
+.document-page-footer:focus-within {
   outline: 2px solid var(--accent-bdr);
   outline-offset: -2px;
 }
@@ -1164,6 +1232,77 @@ button {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+.editor-host .ProseMirror p {
+  font-size: 12pt;
+  line-height: 1.6;
+  color: var(--doc-color-text);
+  margin: 0 0 0.4em;
+  min-height: 1.6em;
+}
+.editor-host .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+.editor-host .ProseMirror h1,
+.editor-host .ProseMirror h2,
+.editor-host .ProseMirror h3,
+.editor-host .ProseMirror h4 {
+  font-family: var(--doc-font-heading);
+  color: var(--doc-color-heading);
+}
+.editor-host .ProseMirror h1 {
+  font-size: 22pt;
+  margin: 0.8em 0 0.4em;
+}
+.editor-host .ProseMirror h2 {
+  font-size: 18pt;
+  margin: 0.7em 0 0.3em;
+}
+.editor-host .ProseMirror h3 {
+  font-size: 14pt;
+  margin: 0.6em 0 0.3em;
+}
+.editor-host .ProseMirror h4 {
+  font-size: 12pt;
+  margin: 0.5em 0 0.2em;
+}
+.editor-host .ProseMirror ul,
+.editor-host .ProseMirror ol {
+  padding-left: 2em;
+  margin: 0.4em 0;
+}
+.editor-host .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  margin: 8px 0;
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+.editor-host .ProseMirror td,
+.editor-host .ProseMirror th {
+  border: 1px solid var(--doc-color-border);
+  padding: 7px 10px;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+.editor-host .ProseMirror th:not([style]) {
+  background: var(--doc-table-header-bg, transparent);
+}
+.editor-host .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+}
+.editor-host .ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: 1px;
 }
 
 /* ── EDITOR SECTION PANEL ── */
@@ -2338,6 +2477,267 @@ button {
 //   font-size: 0.9em;
 //   font-style: italic;
 // }
+
+/* ── PREVIEW PAGES (restored) ── */
+.preview-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  padding: 20px 0 40px;
+}
+
+.preview-modal__loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text2);
+  font-size: 12px;
+  min-height: 300px;
+}
+
+.preview-modal__loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A4 page in preview */
+.preview-page,
+.document-render {
+  background-color: #fff;
+  background-image: var(--doc-page-bg-image, none);
+  background-size: var(--doc-page-bg-size, cover);
+  background-position: var(--doc-page-bg-position, center center);
+  background-repeat: var(--doc-page-bg-repeat, no-repeat);
+  border-radius: 2px;
+  width: var(--page-w, 210mm);
+  min-height: var(--page-h, 297mm);
+  margin: 0 auto;
+  box-shadow:
+    0 6px 32px rgba(0, 0, 0, 0.22),
+    0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.preview-page .doc-page-watermark,
+.document-render .doc-page-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-32deg);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.preview-page .doc-page-header,
+.document-render .doc-page-header {
+  padding: var(--page-header-top, 5mm) var(--page-mr, 25mm) 3mm
+    var(--page-ml, 25mm);
+  border-bottom: 1px solid var(--doc-color-border, #c8cdd8);
+  flex-shrink: 0;
+  font-family: var(--doc-font-body, "Times New Roman", Times, serif);
+  font-size: 10pt;
+  line-height: 1.5;
+  color: var(--doc-color-text, #111111);
+}
+
+.preview-page .doc-page-body,
+.document-render .doc-page-body {
+  flex: 1;
+  padding: var(--page-mt, 20mm) var(--page-mr, 25mm) var(--page-mb, 20mm)
+    var(--page-ml, 25mm);
+  overflow: hidden;
+  font-family: var(--doc-font-body, "Times New Roman", Times, serif);
+  font-size: 12pt;
+  line-height: 1.6;
+  color: var(--doc-color-text, #111111);
+}
+
+.preview-page .doc-page-body.no-header,
+.document-render .doc-page-body.no-header {
+  padding-top: var(--page-mt, 20mm);
+}
+
+.preview-page .doc-page-body.no-footer,
+.document-render .doc-page-body.no-footer {
+  padding-bottom: var(--page-mb, 20mm);
+}
+
+.preview-page .doc-page-footer,
+.document-render .doc-page-footer {
+  padding: 3mm var(--page-mr, 25mm) var(--page-footer-bottom, 5mm)
+    var(--page-ml, 25mm);
+  flex-shrink: 0;
+  margin-top: auto;
+  border-top: 1px solid var(--doc-color-border, #c8cdd8);
+  font-family: var(--doc-font-body, "Times New Roman", Times, serif);
+  font-size: 10pt;
+  line-height: 1.5;
+  color: var(--doc-color-text, #111111);
+}
+
+.preview-page .doc-page-footer.is-empty,
+.document-render .doc-page-footer.is-empty {
+  border-top-color: transparent !important;
+}
+
+/* Typography inside preview */
+.preview-page p,
+.document-render p {
+  min-height: 1.4em;
+  margin: 0 0 0.4em;
+}
+
+.preview-page ul,
+.preview-page ol,
+.document-render ul,
+.document-render ol {
+  padding-left: 2em;
+  margin: 0.4em 0;
+}
+
+.preview-page ul {
+  list-style-type: disc;
+}
+.preview-page ol {
+  list-style-type: decimal;
+}
+.document-render ul {
+  list-style-type: disc;
+}
+.document-render ol {
+  list-style-type: decimal;
+}
+
+.preview-page li,
+.document-render li {
+  display: list-item;
+}
+
+/* Tables inside preview */
+.preview-page table,
+.document-render table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+}
+
+.preview-page td,
+.preview-page th,
+.document-render td,
+.document-render th {
+  border: 1px solid var(--doc-color-border, #c8cdd8);
+  padding: 6px 10px;
+  font-size: inherit;
+}
+
+.preview-page th:not([style]),
+.document-render th:not([style]) {
+  background: var(--doc-table-header-bg, transparent);
+  color: var(--doc-color-text, #111111);
+  font-weight: 700;
+  text-align: left;
+}
+
+.preview-page td p,
+.preview-page th p,
+.document-render td p,
+.document-render th p {
+  color: inherit;
+  margin: 0;
+}
+
+/* Alternating rows */
+.preview-page tr:nth-child(even) td,
+.document-render tr:nth-child(even) td {
+  background-color: var(--doc-table-alt-row-bg, #f8fafc);
+}
+
+/* Variable highlights in preview */
+.document-render--preview .var-resolved {
+  color: #2563eb !important;
+  font-weight: 500 !important;
+  background: #eff6ff !important;
+  padding: 0 3px !important;
+  border-radius: 2px !important;
+}
+
+.preview-page .var-missing,
+.document-render .var-missing {
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 0 3px;
+  border-radius: 2px;
+  font-size: 0.9em;
+  font-style: italic;
+}
+
+/* Page number badge under each preview page */
+.preview-page-num {
+  text-align: center;
+  color: var(--text3);
+  font-size: 10px;
+  margin-top: 6px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Headings inside document */
+.preview-page h1,
+.document-render h1 {
+  font-family: var(--doc-font-heading, "Times New Roman", Times, serif);
+  color: var(--doc-color-heading, #0f172a);
+  font-size: 20pt;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+  line-height: 1.25;
+}
+.preview-page h2,
+.document-render h2 {
+  font-family: var(--doc-font-heading, "Times New Roman", Times, serif);
+  color: var(--doc-color-heading, #0f172a);
+  font-size: 16pt;
+  font-weight: 700;
+  margin: 0.5em 0 0.25em;
+}
+.preview-page h3,
+.document-render h3 {
+  font-family: var(--doc-font-heading, "Times New Roman", Times, serif);
+  color: var(--doc-color-heading, #0f172a);
+  font-size: 13pt;
+  font-weight: 600;
+  margin: 0.4em 0 0.2em;
+}
+.preview-page a,
+.document-render a {
+  color: var(--doc-color-primary, #1d4ed8);
+  text-decoration: underline;
+}
 
 /* ── TABLE TOOLBAR ── */
 .tbl-toolbar {

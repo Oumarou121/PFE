@@ -34,8 +34,13 @@
     "@tiptap/extension-text-align": "^2.27.2",
     "@tiptap/extension-text-style": "^2.27.2",
     "@tiptap/extension-underline": "^2.27.2",
+    "@tiptap/pm": "^2.27.2",
     "@tiptap/starter-kit": "^2.27.2",
     "rxjs": "~7.8.0",
+    "tiptap-image-plus": "^3.0.0",
+    "tiptap-pagination-plus": "tiptap-v2",
+    "tiptap-table-plus": "^2.1.0",
+    "tiptap-utility": "^1.0.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.0"
   },

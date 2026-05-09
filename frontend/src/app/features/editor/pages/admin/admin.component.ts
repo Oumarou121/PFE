@@ -1,4 +1,4 @@
-﻿import { CommonModule } from "@angular/common";
+import { CommonModule } from "@angular/common";
 import {
   AfterViewChecked,
   AfterViewInit,
@@ -16,24 +16,18 @@ import {
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { firstValueFrom } from "rxjs";
-import { Editor, Extension } from "@tiptap/core";
-import StarterKit from "@tiptap/starter-kit";
-import TextStyle from "@tiptap/extension-text-style";
-import Color from "@tiptap/extension-color";
-import Highlight from "@tiptap/extension-highlight";
-import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
-import Table from "@tiptap/extension-table";
-import TableRow from "@tiptap/extension-table-row";
-import TableCell from "@tiptap/extension-table-cell";
-import TableHeader from "@tiptap/extension-table-header";
-import FontFamily from "@tiptap/extension-font-family";
-import Underline from "@tiptap/extension-underline";
-import TextAlign from "@tiptap/extension-text-align";
+import { Editor } from "@tiptap/core";
+// PHASE 1: All Tiptap extension definitions extracted to editor-extensions.ts.
+// SHARED_EXTENSIONS is a drop-in replacement for the previous module-scope array.
+import {
+  buildEditorExtensions,
+  buildStructuredDocumentExtensions,
+  PaginationConfig,
+  SHARED_EXTENSIONS,
+} from "../../services/editor-extensions";
 
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
-import { EditorImageResizeService } from "../../services/editor-image-resize.service";
 import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
 import { BeneficiaryRecord, FamilyRecord } from "../../models/family.model";
 import { TemplateRecord } from "../../models/template.model";
@@ -62,7 +56,7 @@ import {
   GraphicCharterRecord,
 } from "../../models/graphic-charter.model";
 
-type AdminSection = "header" | "body" | "footer" | "filters";
+type AdminPanel = "document" | "filters";
 type PageOrientation = "portrait" | "landscape";
 type GraphicCharterEditorSection = "header" | "footer";
 
@@ -91,139 +85,9 @@ interface AdminVariableGroup {
   count: number;
 }
 
-const FontSize = Extension.create({
-  name: "fontSize",
-  addGlobalAttributes() {
-    return [
-      {
-        types: ["textStyle"],
-        attributes: {
-          fontSize: {
-            default: null,
-            parseHTML: (element) => element.style.fontSize || null,
-            renderHTML: (attributes) =>
-              attributes["fontSize"]
-                ? { style: `font-size: ${attributes["fontSize"]}` }
-                : {},
-          },
-        },
-      },
-    ];
-  },
-});
-
-function renderTableCellStyle(
-  attributes: Record<string, unknown>,
-): Record<string, string> {
-  const styles = [
-    attributes["backgroundColor"] &&
-    attributes["backgroundColor"] !== "transparent"
-      ? `background-color:${attributes["backgroundColor"]}`
-      : "",
-    attributes["textColor"] ? `color:${attributes["textColor"]}` : "",
-    attributes["textAlign"] ? `text-align:${attributes["textAlign"]}` : "",
-    attributes["verticalAlign"]
-      ? `vertical-align:${attributes["verticalAlign"]}`
-      : "",
-  ].filter(Boolean);
-  return styles.length ? { style: styles.join(";") } : {};
-}
-
-const TableCellExt = TableCell.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      backgroundColor: {
-        default: null,
-        parseHTML: (element) => element.style.backgroundColor || null,
-        renderHTML: renderTableCellStyle,
-      },
-      textColor: {
-        default: null,
-        parseHTML: (element) => element.style.color || null,
-        renderHTML: () => ({}),
-      },
-      textAlign: {
-        default: null,
-        parseHTML: (element) => element.style.textAlign || null,
-        renderHTML: () => ({}),
-      },
-      verticalAlign: {
-        default: null,
-        parseHTML: (element) => element.style.verticalAlign || null,
-        renderHTML: () => ({}),
-      },
-    };
-  },
-});
-
-const TableHeaderExt = TableHeader.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      backgroundColor: {
-        default: null,
-        parseHTML: (element) => element.style.backgroundColor || null,
-        renderHTML: renderTableCellStyle,
-      },
-      textColor: {
-        default: null,
-        parseHTML: (element) => element.style.color || null,
-        renderHTML: () => ({}),
-      },
-      textAlign: {
-        default: null,
-        parseHTML: (element) => element.style.textAlign || null,
-        renderHTML: () => ({}),
-      },
-      verticalAlign: {
-        default: null,
-        parseHTML: (element) => element.style.verticalAlign || null,
-        renderHTML: () => ({}),
-      },
-    };
-  },
-});
-
-// ─── SHARED TIPTAP EXTENSIONS (created once, reused) ──────────────────────────
-const ResizableImage = Image.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      style: {
-        default: "",
-        parseHTML: (element) => element.getAttribute("style") || "",
-        renderHTML: (attributes) =>
-          attributes["style"] ? { style: attributes["style"] } : {},
-      },
-      dataKeepRatio: {
-        default: "true",
-        parseHTML: (element) =>
-          element.getAttribute("data-keep-ratio") || "true",
-        renderHTML: (attributes) => ({
-          "data-keep-ratio": attributes["dataKeepRatio"] || "true",
-        }),
-      },
-    };
-  },
-});
-
-const SHARED_EXTENSIONS = [
-  StarterKit.configure({ heading: { levels: [1, 2, 3, 4] } }),
-  TextStyle,
-  FontSize,
-  Color,
-  FontFamily,
-  Underline,
-  Highlight.configure({ multicolor: true }),
-  Link.configure({ openOnClick: false, autolink: true }),
-  ResizableImage.configure({ inline: true, allowBase64: true }),
-  TextAlign.configure({ types: ["heading", "paragraph"] }),
-  Table.configure({ resizable: true }),
-  TableRow,
-  TableCellExt,
-  TableHeaderExt,
-];
+// PHASE 1: FontSize, renderTableCellStyle, TableCellExt, TableHeaderExt,
+// ResizableImage and SHARED_EXTENSIONS have been moved to
+// ../../services/editor-extensions.ts and are imported above.
 
 @Component({
   selector: "app-admin",
@@ -248,7 +112,7 @@ export class AdminComponent
   isLoading = true;
   sidebarOpen = true;
   varsPanelVisible = false;
-  activeSection: AdminSection = "body";
+  editorPanel: AdminPanel = "document";
   selectedFamilyId = "";
   selectedTemplateId = "";
   templateNameDraft = "";
@@ -444,6 +308,9 @@ export class AdminComponent
   private editor: Editor | null = null;
   private editorBoundElement: HTMLElement | null = null;
   private editorSection: "header" | "body" | "footer" | null = null;
+  // ─── FIX: clé de cache incluant headerHtml/footerHtml pour forcer
+  //     la recréation de PaginationPlus quand la charte graphique change.
+  private _editorPaginationCacheKey = "";
   private graphicCharterHeaderEditor: Editor | null = null;
   private graphicCharterFooterEditor: Editor | null = null;
   private searchMatches: Array<{ from: number; to: number }> = [];
@@ -487,7 +354,6 @@ export class AdminComponent
     private dialog: MatDialog,
     private sanitizer: DomSanitizer,
     private elementRef: ElementRef<HTMLElement>,
-    private imageResizeService: EditorImageResizeService,
     // ─── ADDED: NgZone and ChangeDetectorRef for performance ─────────────────
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef,
@@ -707,12 +573,10 @@ export class AdminComponent
   }
 
   get activeEditorSection(): "header" | "body" | "footer" {
-    return this.activeSection === "header" || this.activeSection === "footer"
-      ? this.activeSection
-      : "body";
+    return this.getSelectedDocumentSection();
   }
 
-  get activeSectionDirection(): "ltr" | "rtl" {
+  get activeDocumentDirection(): "ltr" | "rtl" {
     return this.sectionDirections[this.activeEditorSection] || "ltr";
   }
 
@@ -786,7 +650,7 @@ export class AdminComponent
     this.previewRuntimeFilters = [];
     this.previewFilterValues = {};
     void this.refreshTemplateFilters();
-    this.activeSection = "body";
+    this.editorPanel = "document";
     this.saveStatus = "Prêt";
     this.rebindEditorSoon();
     this.cdr.markForCheck();
@@ -924,9 +788,9 @@ export class AdminComponent
       this.notifications.showWarning("Choisissez une charte graphique");
       return;
     }
-    if (this.activeSection === "header") {
+    if (this.activeEditorSection === "header") {
       this.setActiveEditorHtml(charter.config.header.html || "");
-    } else if (this.activeSection === "footer") {
+    } else if (this.activeEditorSection === "footer") {
       this.setActiveEditorHtml(charter.config.footer.html || "");
     } else {
       this.notifications.showInfo(
@@ -949,9 +813,9 @@ export class AdminComponent
     const config = this.graphicCharters.normalizeGraphicCharterConfig(
       charter.config,
     );
-    if (this.activeSection === "header") {
+    if (this.activeEditorSection === "header") {
       config.header.html = this.editorContent.header;
-    } else if (this.activeSection === "footer") {
+    } else if (this.activeEditorSection === "footer") {
       config.footer.html = this.editorContent.footer;
     } else {
       this.notifications.showInfo(
@@ -965,6 +829,10 @@ export class AdminComponent
     );
     this.refreshCollections();
     this.selectedGraphicCharterId = saved?.id || charter.id;
+    // ─── FIX: invalider le cache PaginationPlus pour que le body editor
+    //     soit recréé avec le nouveau headerHtml/footerHtml au prochain
+    //     passage en section body.
+    this._editorPaginationCacheKey = "";
     this.notifications.showSuccess("Section enregistrée dans la charte");
     this.cdr.markForCheck();
   }
@@ -1015,6 +883,11 @@ export class AdminComponent
     };
     this.graphicCharterModalOpen = true;
     this.cdr.markForCheck();
+    // Ensure gc editors are initialized after modal DOM is fully rendered
+    setTimeout(() => {
+      this.ensureGraphicCharterEditors();
+      this.cdr.markForCheck();
+    }, 50);
   }
 
   editCurrentGraphicCharter(): void {
@@ -1163,16 +1036,15 @@ export class AdminComponent
   }
 
   closeGraphicCharterModal(): void {
+    this.persistGraphicCharterEditors(); // ← persist HTML before destroying editors
     this.graphicCharterModalOpen = false;
     this.destroyGraphicCharterEditors();
     this.cdr.markForCheck();
   }
 
-  switchSection(section: AdminSection): void {
-    if (section === "header" && !this.hasHeader) return;
-    if (section === "footer" && !this.hasFooter) return;
+  switchSection(section: "body" | "filters"): void {
     this.persistEditorContent();
-    this.activeSection = section;
+    this.editorPanel = section === "filters" ? "filters" : "document";
     if (section === "filters") {
       void this.refreshTemplateFilters();
     }
@@ -1184,23 +1056,21 @@ export class AdminComponent
     this.persistEditorContent();
     if (section === "header") {
       this.hasHeader = !this.hasHeader;
-      if (!this.hasHeader && this.activeSection === "header") {
-        this.activeSection = "body";
-      }
     } else {
       this.hasFooter = !this.hasFooter;
-      if (!this.hasFooter && this.activeSection === "footer") {
-        this.activeSection = "body";
-      }
     }
     this.saveStatus = "Modifié";
+    // ─── FIX: forcer la recréation du body editor avec la nouvelle config
+    //     PaginationPlus (hasHeader/hasFooter ont changé → headerHtml/footerHtml
+    //     passés à PaginationPlus doivent être mis à jour).
+    this._editorPaginationCacheKey = "";
     this.rebindEditorSoon();
     this.cdr.markForCheck();
   }
 
   updateSectionContent(value: string): void {
-    if (this.activeSection === "filters") return;
-    this.editorContent[this.activeSection] = value;
+    if (this.editorPanel === "filters") return;
+    this.editorContent[this.activeEditorSection] = value;
     this.saveStatus = "Modifié";
   }
 
@@ -1370,11 +1240,11 @@ export class AdminComponent
   }
 
   insertVariable(tech: string): void {
-    if (this.activeSection === "filters") return;
+    if (this.editorPanel === "filters") return;
     if (this.editor) {
       this.editor.chain().focus().insertContent(`{{${tech}}}`).run();
     } else {
-      this.editorContent[this.activeSection] += `{{${tech}}}`;
+      this.editorContent[this.activeEditorSection] += `{{${tech}}}`;
     }
     this.saveStatus = "Modifié";
   }
@@ -1500,7 +1370,7 @@ export class AdminComponent
   }
 
   applyDirection(direction: "ltr" | "rtl"): void {
-    if (this.activeSection === "filters") return;
+    if (this.editorPanel === "filters") return;
     this.sectionDirections = {
       ...this.sectionDirections,
       [this.activeEditorSection]: direction,
@@ -1669,7 +1539,11 @@ export class AdminComponent
     const re = new RegExp(this.escapeRegex(this.searchFind), flags);
     const html = this.editor.getHTML();
     const count = (html.match(re) || []).length;
-    this.setActiveEditorHtml(html.replace(re, this.searchReplace));
+    this.editor.commands.setContent(
+      html.replace(re, this.searchReplace),
+      false,
+    );
+    this.persistEditorContent();
     this.saveStatus = "Modifié";
     this.doSearch();
     this.notifications.showSuccess(`${count} occurrence(s) remplacée(s)`);
@@ -1817,9 +1691,11 @@ export class AdminComponent
     const commands: Record<string, () => void> = {
       addRowBefore: () => chain.addRowBefore().run(),
       addRowAfter: () => chain.addRowAfter().run(),
+      duplicateRow: () => chain.duplicateRow(true).run(),
       deleteRow: () => chain.deleteRow().run(),
       addColumnBefore: () => chain.addColumnBefore().run(),
       addColumnAfter: () => chain.addColumnAfter().run(),
+      duplicateColumn: () => chain.duplicateColumn(true).run(),
       deleteColumn: () => chain.deleteColumn().run(),
       mergeCells: () => chain.mergeCells().run(),
       splitCell: () => chain.splitCell().run(),
@@ -2193,7 +2069,7 @@ export class AdminComponent
     this.selectedTemplateId = "";
     this.templateNameDraft = "";
     this.editorContent = { header: "", body: "", footer: "" };
-    this.activeSection = "body";
+    this.editorPanel = "document";
     this.saveStatus = "Prêt";
     this.selectedGraphicCharterId = "";
     this.hasHeader = false;
@@ -2204,47 +2080,63 @@ export class AdminComponent
   }
 
   private setActiveEditorHtml(html: string): void {
-    if (this.activeSection === "filters") return;
-    this.editorContent[this.activeSection] = html;
+    if (this.editorPanel === "filters") return;
+    const section = this.activeEditorSection;
+    this.editorContent[section] = html;
     if (this.editor) {
-      this.editor.commands.setContent(html || "<p></p>", false);
+      this.editor.commands.setContent(
+        this.buildStructuredDocumentHtml(),
+        false,
+      );
     }
   }
 
   // ─── CHANGED: entire method runs outside Angular zone.
   //             Only state-changing callbacks re-enter the zone. ──────────────
   private ensureEditorInstance(): void {
-    if (this.activeSection === "filters" || !this.selectedTemplate) {
+    if (this.editorPanel === "filters" || !this.selectedTemplate) {
       this.destroyEditor();
       return;
     }
     const element = this.editorHost?.nativeElement || null;
     if (!element) return;
-    const section = this.activeSection as "header" | "body" | "footer";
+    const documentCacheKey = [
+      this.hasHeader,
+      this.hasFooter,
+      this.pageSettingsForm.orientation,
+      this.pageSettingsForm.mt,
+      this.pageSettingsForm.mb,
+      this.pageSettingsForm.ml,
+      this.pageSettingsForm.mr,
+      this.pageSettingsForm.headerTop,
+      this.pageSettingsForm.footerBottom,
+    ].join("|");
+
+    // ─── FIX: Pour la section body, inclure headerHtml/footerHtml dans la clé
+    //     de cache pour forcer la recréation quand la charte graphique change.
+    //     Sans ça, PaginationPlus garde l'ancien en-tête/pied de page
+    //     même après un changement de charte, car element+section sont identiques.
     if (
       this.editor &&
       this.editorBoundElement === element &&
-      this.editorSection === section
+      this._editorPaginationCacheKey === documentCacheKey
     ) {
       return;
     }
     this.persistEditorContent();
     this.destroyEditor();
     this.editorBoundElement = element;
-    this.editorSection = section;
+    this.editorSection = "body";
+    this._editorPaginationCacheKey = documentCacheKey;
 
-    // ─── Run Tiptap completely outside Angular's zone so its internal
-    //     DOM mutations never trigger change detection. ──────────────
     this.ngZone.runOutsideAngular(() => {
       this.editor = new Editor({
         element,
-        extensions: SHARED_EXTENSIONS,
-        content: this.editorContent[section] || "<p></p>",
+        extensions: buildStructuredDocumentExtensions(),
+        content: this.buildStructuredDocumentHtml(),
         onUpdate: ({ editor }) => {
-          if (!this.editorSection) return;
           const html = editor.getHTML();
-          // Update content outside zone (no CD needed for raw string)
-          this.editorContent[this.editorSection] = html;
+          this.syncStructuredEditorContent(html);
           // Re-enter zone only for UI-visible state
           this.ngZone.run(() => {
             this.saveStatus = "Modifié";
@@ -2262,25 +2154,90 @@ export class AdminComponent
       });
     });
 
-    if (this.editor) {
-      this.imageResizeService.attach(this.editor);
-    }
     this.applyDirectionToCurrentEditor();
   }
 
   private persistEditorContent(): void {
-    if (!this.editor || !this.editorSection) return;
-    this.editorContent[this.editorSection] = this.editor.getHTML();
+    if (!this.editor) return;
+    this.syncStructuredEditorContent(this.editor.getHTML());
+  }
+
+  private buildStructuredDocumentHtml(): string {
+    const header = this.normalizeEditorHtml(this.editorContent.header);
+    const body = this.normalizeEditorHtml(this.editorContent.body);
+    const footer = this.normalizeEditorHtml(this.editorContent.footer);
+    return `
+      <div data-document-page="true" class="document-page-node">
+        ${
+          this.hasHeader
+            ? `<section data-page-header="true" class="document-page-header">${header}</section>`
+            : ""
+        }
+        <main data-page-body="true" class="document-page-body">${body}</main>
+        ${
+          this.hasFooter
+            ? `<section data-page-footer="true" class="document-page-footer">${footer}</section>`
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  private syncStructuredEditorContent(html: string): void {
+    const body = this.extractStructuredSectionHtml(html, "[data-page-body]");
+    const header = this.extractStructuredSectionHtml(
+      html,
+      "[data-page-header]",
+    );
+    const footer = this.extractStructuredSectionHtml(
+      html,
+      "[data-page-footer]",
+    );
+    this.editorContent = {
+      header: header ?? this.editorContent.header,
+      body: body ?? this.normalizeEditorHtml(html),
+      footer: footer ?? this.editorContent.footer,
+    };
+  }
+
+  private extractStructuredSectionHtml(
+    html: string,
+    selector: string,
+  ): string | null {
+    if (typeof DOMParser === "undefined") return null;
+    const doc = new DOMParser().parseFromString(
+      `<div>${html || ""}</div>`,
+      "text/html",
+    );
+    const element = doc.querySelector(selector);
+    return element ? this.normalizeEditorHtml(element.innerHTML) : null;
+  }
+
+  private normalizeEditorHtml(html: string | null | undefined): string {
+    const value = String(html || "").trim();
+    return value || "<p></p>";
+  }
+
+  private getSelectedDocumentSection(): "header" | "body" | "footer" {
+    if (!this.editor || this.editorPanel === "filters") return "body";
+    const { $from } = this.editor.state.selection;
+    for (let depth = $from.depth; depth >= 0; depth -= 1) {
+      const name = $from.node(depth).type.name;
+      if (name === "pageHeader") return "header";
+      if (name === "pageFooter") return "footer";
+      if (name === "pageBody") return "body";
+    }
+    return "body";
   }
 
   private destroyEditor(): void {
     if (this.editor) {
-      this.imageResizeService.detach(this.editor);
       this.editor.destroy();
       this.editor = null;
     }
     this.editorBoundElement = null;
     this.editorSection = null;
+    this._editorPaginationCacheKey = "";
   }
 
   // ─── CHANGED: graphic charter editors also run outside zone ──────────────────
@@ -2314,7 +2271,7 @@ export class AdminComponent
     this.ngZone.runOutsideAngular(() => {
       editorInstance = new Editor({
         element,
-        extensions: SHARED_EXTENSIONS,
+        extensions: buildEditorExtensions("header"),
         content: content || "<p></p>",
         onUpdate: ({ editor }) => {
           this.graphicCharterForm[field] = editor.getHTML();
@@ -2327,7 +2284,6 @@ export class AdminComponent
         },
       });
     });
-    this.imageResizeService.attach(editorInstance);
     return editorInstance;
   }
 
@@ -2352,12 +2308,10 @@ export class AdminComponent
 
   private destroyGraphicCharterEditors(): void {
     if (this.graphicCharterHeaderEditor) {
-      this.imageResizeService.detach(this.graphicCharterHeaderEditor);
       this.graphicCharterHeaderEditor.destroy();
       this.graphicCharterHeaderEditor = null;
     }
     if (this.graphicCharterFooterEditor) {
-      this.imageResizeService.detach(this.graphicCharterFooterEditor);
       this.graphicCharterFooterEditor.destroy();
       this.graphicCharterFooterEditor = null;
     }
@@ -2378,7 +2332,7 @@ export class AdminComponent
 
   // ─── CHANGED: gc editors use the same debounce pattern ───────────────────────
   private scheduleGcEditorsEnsure(): void {
-    if (this.gcEnsureTimer !== null) return; // already queued
+    if (this.gcEnsureTimer !== null) clearTimeout(this.gcEnsureTimer); // always reschedule to catch modal open
     this.gcEnsureTimer = setTimeout(() => {
       this.gcEnsureTimer = null;
       this.ensureGraphicCharterEditors();
@@ -2436,15 +2390,14 @@ export class AdminComponent
       header: config.header.html || "",
       footer: config.footer.html || "",
     };
-    if (this.activeSection === "header" || this.activeSection === "footer") {
-      this.setActiveEditorHtml(this.editorContent[this.activeSection]);
+    if (this.editorPanel !== "filters") {
+      this.editorPanel = "document";
     }
-    if (this.activeSection === "header" && !this.hasHeader) {
-      this.activeSection = "body";
-    }
-    if (this.activeSection === "footer" && !this.hasFooter) {
-      this.activeSection = "body";
-    }
+    // ─── FIX: réinitialiser la clé de cache pour forcer la recréation de
+    //     l'éditeur body avec la nouvelle config PaginationPlus (nouveau
+    //     headerHtml/footerHtml de la charte). Sans ça, le body editor
+    //     conserve l'en-tête/pied de page de l'ancienne charte.
+    this._editorPaginationCacheKey = "";
     this.rebindEditorSoon();
   }
 
@@ -2644,7 +2597,7 @@ export class AdminComponent
   private applyDirectionToCurrentEditor(): void {
     const element = this.editor?.view?.dom as HTMLElement | undefined;
     if (!element) return;
-    const direction = this.activeSectionDirection;
+    const direction = this.activeDocumentDirection;
     element.style.direction = direction;
     element.style.textAlign = direction === "rtl" ? "right" : "left";
     element.setAttribute("dir", direction);
@@ -2726,5 +2679,21 @@ export class AdminComponent
       data: { cancelText: "Annuler", ...data },
     });
     return firstValueFrom(ref.afterClosed());
+  }
+  private buildPaginationConfig(): PaginationConfig {
+    // ─── FIX: transmettre headerHtml et footerHtml à PaginationPlus ──────────
+    // Sans ces valeurs, PaginationPlus affiche des pages vides sans en-tête ni
+    // pied de page dans la section body. On utilise editorContent (persisté)
+    // plutôt que selectedGraphicCharter pour refléter les modifications
+    // non sauvegardées dans la charte.
+    return {
+      orientation: this.pageSettingsForm.orientation,
+      marginTop: this.pageSettingsForm.mt,
+      marginBottom: this.pageSettingsForm.mb,
+      marginLeft: this.pageSettingsForm.ml,
+      marginRight: this.pageSettingsForm.mr,
+      headerHtml: this.hasHeader ? this.editorContent.header || "" : "",
+      footerHtml: this.hasFooter ? this.editorContent.footer || "" : "",
+    };
   }
 }

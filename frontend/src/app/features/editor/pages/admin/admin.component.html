@@ -250,6 +250,7 @@
           <select
             class="charter-bar-select"
             style="-webkit-appearance: none; appearance: none"
+            [value]="selectedGraphicCharterId"
             (change)="onGraphicCharterChange($any($event.target).value)"
           >
             <option value="" [selected]="!selectedGraphicCharterId">
@@ -313,33 +314,15 @@
         <div class="sec-tabs">
           <button
             class="sec-tab"
-            [class.on]="activeSection === 'header'"
-            [class.disabled]="!hasHeader"
-            type="button"
-            (click)="switchSection('header')"
-          >
-            • En-tête
-          </button>
-          <button
-            class="sec-tab"
-            [class.on]="activeSection === 'body'"
+            [class.on]="editorPanel === 'document'"
             type="button"
             (click)="switchSection('body')"
           >
-            • Corps
+            • Document
           </button>
           <button
             class="sec-tab"
-            [class.on]="activeSection === 'footer'"
-            [class.disabled]="!hasFooter"
-            type="button"
-            (click)="switchSection('footer')"
-          >
-            • Pied de page
-          </button>
-          <button
-            class="sec-tab"
-            [class.on]="activeSection === 'filters'"
+            [class.on]="editorPanel === 'filters'"
             type="button"
             (click)="switchSection('filters')"
           >
@@ -365,7 +348,7 @@
           </div>
         </div>
 
-        <div class="ed-toolbar" *ngIf="activeSection !== 'filters'">
+        <div class="ed-toolbar" *ngIf="editorPanel === 'document'">
           <div class="tb-grp">
             <select
               class="tb-sel"
@@ -699,7 +682,7 @@
             <button
               class="tb-btn"
               type="button"
-              [class.on]="activeSectionDirection === 'ltr'"
+              [class.on]="activeDocumentDirection === 'ltr'"
               data-tip="LTR"
               style="font-size: 9px; font-weight: 700"
               (click)="applyDirection('ltr')"
@@ -709,7 +692,7 @@
             <button
               class="tb-btn"
               type="button"
-              [class.on]="activeSectionDirection === 'rtl'"
+              [class.on]="activeDocumentDirection === 'rtl'"
               data-tip="RTL"
               style="font-size: 9px; font-weight: 700"
               (click)="applyDirection('rtl')"
@@ -1025,7 +1008,7 @@
         <div class="editor-content-stack">
           <div
             class="editor-section-panel on"
-            *ngIf="activeSection !== 'filters'"
+            *ngIf="editorPanel === 'document'"
           >
             <div class="pcanvas">
               <div class="page-live-badge">Page 1 / 1</div>
@@ -1039,7 +1022,7 @@
                 "
               >
                 <div
-                  class="a4-page"
+                  class="editor-shell"
                   [style.--page-w]="
                     pageSettingsForm.orientation === 'landscape'
                       ? '297mm'
@@ -1061,39 +1044,7 @@
                   [style.--page-orientation]="pageSettingsForm.orientation"
                   [ngStyle]="liveDocumentThemeStyles"
                 >
-                  <div
-                    class="a4-watermark"
-                    *ngIf="watermarkForm.enabled"
-                    [style.display]="'flex'"
-                  >
-                    <span
-                      [style.color]="watermarkForm.color"
-                      [style.opacity]="watermarkForm.opacity"
-                      [style.font-size.px]="watermarkForm.size"
-                    >
-                      {{ watermarkForm.text }}
-                    </span>
-                  </div>
-                  <div *ngIf="activeSection === 'header' && hasHeader">
-                    <div class="a4-header">
-                      <div class="a4-hf-label">EN-TÊTE</div>
-                      <div class="tiptap-wrapper" #editorHost></div>
-                    </div>
-                  </div>
-                  <div
-                    id="sec-body"
-                    *ngIf="activeSection === 'body'"
-                    [class.no-header]="!hasHeader"
-                    [class.no-footer]="!hasFooter"
-                  >
-                    <div class="tiptap-wrapper" #editorHost></div>
-                  </div>
-                  <div *ngIf="activeSection === 'footer' && hasFooter">
-                    <div class="a4-footer">
-                      <div class="a4-hf-label">PIED DE PAGE</div>
-                      <div class="tiptap-wrapper" #editorHost></div>
-                    </div>
-                  </div>
+                  <div #editorHost class="editor-host"></div>
                 </div>
               </div>
             </div>
@@ -1101,7 +1052,7 @@
 
           <div
             class="editor-section-panel filter-section-panel on"
-            *ngIf="activeSection === 'filters'"
+            *ngIf="editorPanel === 'filters'"
           >
             <div class="filter-panel-shell">
               <div class="filter-panel-hero">
@@ -1524,7 +1475,7 @@
 
 <div
   class="tbl-toolbar on"
-  *ngIf="activeSection !== 'filters' && isEditorActive('table')"
+  *ngIf="editorPanel === 'document' && isEditorActive('table')"
   style="left: 50%; bottom: 22px; transform: translateX(-50%)"
 >
   <button
@@ -1884,13 +1835,11 @@
       <!-- canvas A4 -->
       <div class="pm-canvas">
         <div class="pm-page-strip">Page 1 / 1</div>
-        <div class="preview-pages">
-          <div *ngIf="previewLoading" class="preview-modal__loading">
-            <div class="preview-modal__loading-spinner"></div>
-            Génération de l'aperçu...
-          </div>
-          <div *ngIf="!previewLoading" [innerHTML]="previewHtml"></div>
+        <div *ngIf="previewLoading" class="preview-modal__loading">
+          <div class="preview-modal__loading-spinner"></div>
+          Génération de l'aperçu...
         </div>
+        <div *ngIf="!previewLoading" [innerHTML]="previewHtml"></div>
       </div>
     </div>
   </div>
