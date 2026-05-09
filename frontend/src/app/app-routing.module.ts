@@ -33,6 +33,15 @@ export const routes: Routes = [
     data: { page: "admin", roles: ["admin"] },
   },
   {
+    path: "admin-angular",
+    loadComponent: () =>
+      import("./features/editor/pages/admin/admin.component").then(
+        (m) => m.AdminComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "admin", roles: ["admin"] },
+  },
+  {
     path: "user",
     loadComponent: () =>
       import("./features/editor/pages/user/user-page.component").then(

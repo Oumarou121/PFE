@@ -119,6 +119,10 @@ export class DocumentRenderService {
     const bodyDir = this.getSectionDirectionAttrs(template, "body");
     const footerDir = this.getSectionDirectionAttrs(template, "footer");
     const themeStyle = this.getDocumentThemeStyleAttr(template);
+    const watermark = this.getTemplateWatermark(template);
+    const watermarkHtml = watermark.enabled
+      ? `<div class="doc-page-watermark" aria-hidden="true" style="color:${this.escapeHtml(watermark.color)};opacity:${watermark.opacity};font-size:${watermark.size}px">${this.escapeHtml(watermark.text)}</div>`
+      : "";
     const mode = this.getDocumentRenderMode(options);
     const renderClass =
       mode === "preview"
@@ -137,6 +141,7 @@ export class DocumentRenderService {
         const noFooterClass = hasFooterSlot ? "" : " no-footer";
         return `
         <div class="${className} ${renderClass}" data-render-mode="${mode}" style="${themeStyle}">
+          ${watermarkHtml}
           ${headerHtml ? `<div class="doc-page-header" dir="${headerDir.dir}" style="${themeStyle};${headerDir.style}">${headerHtml}</div>` : ""}
           <div class="doc-page-body${noHeaderClass}${noFooterClass}" dir="${bodyDir.dir}" style="${themeStyle};${bodyDir.style}">${page.content || ""}</div>
           ${hasFooterSlot ? `<div class="doc-page-footer${footerHtml ? "" : " is-empty"}" aria-hidden="${footerHtml ? "false" : "true"}" dir="${footerDir.dir}" style="${themeStyle};${footerDir.style}${emptyFooterStyle}">${footerHtml || "&nbsp;"}</div>` : ""}
@@ -176,6 +181,11 @@ export class DocumentRenderService {
         font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
         color: var(--doc-color-text, #111); background: transparent;
         overflow: hidden; white-space: normal; overflow-wrap: anywhere;
+      }
+      .doc-page-watermark {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        transform: rotate(-32deg); font-weight: 800; letter-spacing: 0.08em; pointer-events: none;
+        z-index: 0; user-select: none; text-align: center; white-space: nowrap;
       }
       .doc-page-body {
         grid-row: 2; min-height: 0; box-sizing: border-box; padding: ${paddings.body};
@@ -514,8 +524,10 @@ export class DocumentRenderService {
       "--doc-color-border": charter.colors["border"],
       "--doc-table-header-bg": charter.colors["tableHeaderBg"],
       "--doc-table-row-alt-bg": charter.colors["tableAltRowBg"],
-      "--doc-watermark-color": charter.watermark.color,
-      "--doc-watermark-opacity": String(charter.watermark.opacity),
+      "--doc-watermark-color": this.getTemplateWatermark(template).color,
+      "--doc-watermark-opacity": String(
+        this.getTemplateWatermark(template).opacity,
+      ),
       "--doc-page-bg-image":
         pageBackground.enabled && pageBackground.image
           ? this.toCssUrlValue(
@@ -582,6 +594,26 @@ export class DocumentRenderService {
         "portrait",
     ).toLowerCase();
     return raw === "landscape" ? "landscape" : "portrait";
+  }
+
+  private getTemplateWatermark(template: TemplateRecord): {
+    enabled: boolean;
+    text: string;
+    color: string;
+    opacity: number;
+    size: number;
+  } {
+    const charter = this.getTemplateGraphicCharter(template);
+    const raw = (template["watermark"] || {}) as UnknownRecord;
+    const toNum = (value: unknown, fallback: number) =>
+      Number.isFinite(Number(value)) ? Number(value) : fallback;
+    return {
+      enabled: raw["enabled"] === true,
+      text: String(raw["text"] || charter.watermark.text || "CONFIDENTIEL"),
+      color: String(raw["color"] || charter.watermark.color || "#000000"),
+      opacity: toNum(raw["opacity"], charter.watermark.opacity || 0.07),
+      size: toNum(raw["size"], 80),
+    };
   }
 
   private getPageSectionPaddings(template: TemplateRecord): {
