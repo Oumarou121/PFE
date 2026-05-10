@@ -288,8 +288,8 @@ function buildPaginationPlusConfig(config?: PaginationConfig) {
     pageHeight,
     pageGap: 40,
     pageGapBorderSize: 1,
-    pageGapBorderColor: "#e5e7eb",
-    pageBreakBackground: "#c8cdd8",
+    pageGapBorderColor: "#d1d5db", // Gris un peu plus soutenu pour la ligne de séparation
+    pageBreakBackground: "#f0f2f5", // Doit correspondre au fond du pcanvas dans admin.component.scss
     marginTop:    config ? mmToPx(config.headerTop ?? config.marginTop)    : mmToPx(20),
     marginBottom: config ? mmToPx(config.footerBottom ?? config.marginBottom) : mmToPx(20),
     marginLeft:   config ? mmToPx(config.marginLeft)   : mmToPx(25),

@@ -1069,14 +1069,14 @@ button {
   width: 100%;
   min-height: 0;
   overflow: auto;
-  background: #c8cdd8;
+  background: #f0f2f5; // Gris clair style Word moderne
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 20px 0;
+  padding: 40px 20px 0;
   position: relative;
   outline: none;
-  scroll-padding-top: 16px;
+  scroll-padding-top: 40px;
   scroll-padding-bottom: 32vh;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -1096,14 +1096,14 @@ button {
   align-self: flex-end;
   margin: 0 12px 10px 0;
   z-index: 25;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(37, 99, 235, 0.18);
-  color: var(--accent2);
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text2);
   font-size: 11px;
   font-weight: 700;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(8px);
 }
 
@@ -1116,13 +1116,14 @@ button {
   width: max-content;
   min-width: var(--page-w);
   pointer-events: auto;
+  padding-bottom: 100px;
 }
 
 .page-scroll-spacer {
   flex: 0 0 clamp(180px, 34vh, 420px);
   width: 100%;
   min-height: clamp(180px, 34vh, 420px);
-  background: #c8cdd8;
+  background: transparent;
   pointer-events: none;
 }
 
@@ -1199,8 +1200,10 @@ button {
   background-position: var(--doc-page-bg-position, center center);
   background-repeat: var(--doc-page-bg-repeat, no-repeat);
   box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(0, 0, 0, 0.08);
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border-radius: 0; // Word has sharp corners
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1339,8 +1342,9 @@ button {
 }
 
 .editor-host .rm-pagination-gap {
-  background: #c8cdd8 !important;
+  background: transparent !important;
   box-shadow: none;
+  border: none;
 }
 
 .editor-host .rm-page-break {
