@@ -130,14 +130,48 @@ button {
   border-radius: 3px;
   animation: lf 1.6s ease forwards;
 }
+
 @keyframes lf {
   from {
     width: 0;
   }
+
   to {
     width: 100%;
   }
 }
+
+/* Ensure scroll handles pointer/wheel events and keep action bars on top */
+
+#editorInner {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pcanvas {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
+}
+
+.zoom-scaler,
+.editor-shell,
+.editor-host {
+  pointer-events: auto;
+}
+
+.tname-bar,
+.charter-bar,
+.sec-tabs,
+.ed-toolbar {
+  position: relative;
+  z-index: 40;
+  background: var(--surface);
+}
+
 .lsub {
   font-size: 11px;
   color: var(--text3);
@@ -558,6 +592,8 @@ button {
 /* ── EDITOR ZONE ── */
 .ed-zone {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -919,10 +955,9 @@ button {
 
 /* ── PAGE CANVAS ── */
 .pcanvas {
-  flex: 1;
+  flex: 1 1 0;
+  width: 100%;
   min-height: 0;
-  height: 100%;
-  max-height: 100%;
   overflow: auto;
   background: #c8cdd8;
   display: flex;
@@ -1326,18 +1361,21 @@ button {
 /* ── EDITOR SECTION PANEL ── */
 .editor-content-stack {
   display: flex;
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  overflow: hidden;
   position: relative;
 }
 .editor-section-panel {
   display: none;
-  flex: 1;
+  flex: 1 1 0;
+  width: 100%;
   min-height: 0;
   overflow: hidden;
 }
 .editor-section-panel.on {
   display: flex;
+  flex-direction: column;
   min-height: 0;
 }
 .filter-section-panel {
