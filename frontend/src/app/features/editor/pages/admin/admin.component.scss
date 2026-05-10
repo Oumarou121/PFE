@@ -1248,9 +1248,11 @@ button {
 
 /* ── Document page sections ── */
 .document-page-node {
-  display: block;
-  width: 100%;
-  min-height: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  min-height: 100% !important; /* Stretch to fill physical page height */
   position: relative;
   background: transparent;
   box-shadow: none;
@@ -1258,27 +1260,65 @@ button {
   padding: 0;
 }
 
+/* Style partagé entre zones éditables et clones */
 .document-page-header,
-.document-page-footer {
-  flex-shrink: 0;
-  position: relative;
+.editor-host .rm-page-header,
+.document-page-footer,
+.editor-host .rm-page-footer {
+  padding: 0 var(--page-mr) 0 var(--page-ml) !important;
+  font-family: var(--doc-font-body);
+  font-size: 10pt;
+  color: var(--doc-color-text);
+  box-sizing: border-box !important;
+  background: transparent !important;
 }
 
+/* ALIGNEMENT GÉOMÉTRIQUE : 
+   Les zones réelles sont remontées/descendues dans les marges de PaginationPlus */
+
 .document-page-header {
-  padding: var(--page-header-top) var(--page-mr) 3mm var(--page-ml);
-  border-bottom: 1px dashed var(--doc-color-border);
+  height: max-content;
+  /* On remonte le nœud réel dans la marge marginTop */
+  margin-top: calc(var(--page-header-top) - var(--page-mt)) !important;
+  padding-bottom: 3mm !important;
+  border-bottom: 1px dashed var(--doc-color-border) !important;
+}
+
+.editor-host .rm-page-header {
+  position: absolute;
+  top: var(--page-header-top);
+  left: 0;
+  right: 0;
+  // border-bottom: 1px solid var(--doc-color-border) !important;
 }
 
 .document-page-body {
-  min-height: 0;
+  flex: 1 0 auto !important; /* Stretch pour pousser le footer */
+  min-height: 0 !important;
   position: relative;
   isolation: isolate;
-  padding: var(--page-mt) var(--page-mr) var(--page-mb) var(--page-ml);
+  padding: 0 var(--page-mr) 0 var(--page-ml) !important;
+  font-family: var(--doc-font-body);
+  font-size: 12pt;
+  color: var(--doc-color-text);
+  box-sizing: border-box !important;
 }
 
 .document-page-footer {
-  padding: 3mm var(--page-mr) var(--page-footer-bottom) var(--page-ml);
-  border-top: 1px dashed var(--doc-color-border);
+  height: max-content;
+  margin-top: auto !important;
+  /* On descend le nœud réel dans la marge marginBottom */
+  margin-bottom: calc(var(--page-footer-bottom) - var(--page-mb)) !important;
+  padding-top: 3mm !important;
+  border-top: 1px dashed var(--doc-color-border) !important;
+}
+
+.editor-host .rm-page-footer {
+  position: absolute;
+  bottom: var(--page-footer-bottom);
+  left: 0;
+  right: 0;
+  // border-top: 1px solid var(--doc-color-border) !important;
 }
 
 .document-page-header::before,
@@ -1316,6 +1356,34 @@ button {
   overflow: visible;
 }
 
+/* Assure que la page physique de l'éditeur se comporte comme une colonne flex 
+   pour pouvoir pousser le pied de page vers le bas. */
+.editor-host .rm-pagination-page {
+  display: flex !important;
+  flex-direction: column !important;
+  /* On force la hauteur de la page physique à celle définie (ex: 297mm) */
+  height: var(--page-h) !important;
+  min-height: var(--page-h) !important;
+  max-height: var(--page-h) !important;
+  position: relative !important; /* Crucial pour clones absolus */
+  box-sizing: border-box !important;
+}
+
+.editor-host .rm-page-content {
+  flex: 1 1 0% !important; /* Prend tout l'espace restant entre header/footer clones */
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* Cache les clones vides pour ne pas créer de marges inutiles */
+.editor-host .rm-page-header:empty,
+.editor-host .rm-page-footer:empty {
+  display: none !important;
+}
+
 /* On ne cache plus l'en-tête et le pied de page du document, 
    car ce sont les zones éditables "maîtres". 
    La duplication est gérée côté TypeScript en demandant à PaginationPlus
@@ -1323,15 +1391,6 @@ button {
 .editor-host .rm-with-pagination .document-page-header,
 .editor-host .rm-with-pagination .document-page-footer {
   display: block;
-}
-
-.editor-host .rm-page-header,
-.editor-host .rm-page-footer {
-  color: var(--doc-color-text);
-  font-family: var(--doc-font-body);
-  font-size: 12pt;
-  line-height: 1.6;
-  background: transparent;
 }
 
 .editor-host .rm-page-header-content,

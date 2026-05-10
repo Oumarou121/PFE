@@ -2963,15 +2963,15 @@ export class AdminComponent
 
     return {
       orientation: this.pageSettingsForm.orientation,
-      // On met les marges de la page physique à 0 pour éviter le doublage avec le CSS.
-      marginTop: 0,
-      marginBottom: 0,
-      marginLeft: 0,
-      marginRight: 0,
-      // Ces valeurs ne sont plus utilisées par PaginationPlus car on gère tout en CSS.
-      headerTop: 0,
-      footerBottom: 0,
-      // On garde une marge de contenu nulle pour laisser le CSS des nœuds gérer les mt/mb.
+      // Marges de la page physique (PaginationPlus réserve cet espace)
+      marginTop: mt,
+      marginBottom: mb,
+      marginLeft: this.pageSettingsForm.ml,
+      marginRight: this.pageSettingsForm.mr,
+      // On positionne les clones au même endroit que les zones réelles
+      headerTop: this.pageSettingsForm.headerTop,
+      footerBottom: this.pageSettingsForm.footerBottom,
+      // On laisse PaginationPlus gérer le flux du body
       contentMarginTop: 0,
       contentMarginBottom: 0,
       headerHtml: header.common,
@@ -3005,14 +3005,11 @@ export class AdminComponent
     const custom: Record<number, { headerLeft: string; headerRight: string }> =
       {};
 
-    // Enveloppe pour que le clone ait les mêmes marges/paddings que le nœud réel.
-    const wrappedHtml = `<div class="document-page-header" data-page-header="true">${html}</div>`;
-
     for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
       const shouldShow =
         pageNumber > 1 && this.shouldShowLiveSection(mode, pageNumber);
       custom[pageNumber] = {
-        headerLeft: shouldShow ? wrappedHtml : "",
+        headerLeft: shouldShow ? html : "",
         headerRight: "",
       };
     }
@@ -3032,15 +3029,12 @@ export class AdminComponent
     const custom: Record<number, { footerLeft: string; footerRight: string }> =
       {};
 
-    // Enveloppe pour le pied de page
-    const wrappedHtml = `<div class="document-page-footer" data-page-footer="true">${html}</div>`;
-
     for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
       const isLastPage = pageNumber === lastPage;
       const shouldShow =
         !isLastPage && this.shouldShowLiveSection(mode, pageNumber);
       custom[pageNumber] = {
-        footerLeft: shouldShow ? wrappedHtml : "",
+        footerLeft: shouldShow ? html : "",
         footerRight: "",
       };
     }
