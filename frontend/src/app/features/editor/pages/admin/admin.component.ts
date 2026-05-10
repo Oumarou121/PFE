@@ -585,6 +585,36 @@ export class AdminComponent
     return Math.max(1, pages?.length || 1);
   }
 
+  public onEditorViewportKeydown(event: KeyboardEvent): void {
+    const target = event.currentTarget as HTMLElement | null;
+    if (!target) return;
+
+    const step = Math.max(Math.round(target.clientHeight * 0.85), 320);
+
+    switch (event.key) {
+      case "PageDown":
+        target.scrollBy({ top: step, behavior: "smooth" });
+        event.preventDefault();
+        break;
+      case "PageUp":
+        target.scrollBy({ top: -step, behavior: "smooth" });
+        event.preventDefault();
+        break;
+      case "Home":
+        if (event.ctrlKey || event.metaKey) {
+          target.scrollTo({ top: 0, behavior: "smooth" });
+          event.preventDefault();
+        }
+        break;
+      case "End":
+        if (event.ctrlKey || event.metaKey) {
+          target.scrollTo({ top: target.scrollHeight, behavior: "smooth" });
+          event.preventDefault();
+        }
+        break;
+    }
+  }
+
   private async loadState(): Promise<void> {
     this.isLoading = true;
     await this.editorState.loadBootstrap();

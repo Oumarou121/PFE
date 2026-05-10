@@ -1021,6 +1021,7 @@
               tabindex="0"
               role="region"
               aria-label="Zone des pages"
+              (keydown)="onEditorViewportKeydown($event)"
             >
               <div class="page-live-badge">
                 Page 1 / {{ documentPageCount }}
