@@ -1248,12 +1248,10 @@ button {
 
 /* ── Document page sections ── */
 .document-page-node {
-  display: flex !important;
-  flex-direction: column !important;
+  display: block !important;
   width: 100% !important;
-  flex: 1 1 auto !important;
-  height: 100% !important;
-  min-height: 100% !important; /* Stretch to fill physical page height */
+  height: auto !important;
+  min-height: 0 !important;
   position: relative;
   background: transparent;
   box-shadow: none;
@@ -1294,7 +1292,8 @@ button {
 }
 
 .document-page-body {
-  flex: 1 0 auto !important; /* Stretch pour pousser le footer */
+  display: block !important;
+  flex: none !important;
   min-height: 0 !important;
   position: relative;
   isolation: isolate;
@@ -1414,6 +1413,22 @@ button {
 .editor-host .rm-page-break {
   border: 0;
   margin: 0;
+}
+
+.editor-host .rm-pagination-page {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  position: static !important;
+}
+
+.editor-host .rm-page-content {
+  display: block !important;
+  flex: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════
