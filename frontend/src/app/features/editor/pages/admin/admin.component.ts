@@ -1109,8 +1109,20 @@ export class AdminComponent
     this.persistEditorContent();
     if (section === "header") {
       this.hasHeader = !this.hasHeader;
+      if (this.hasHeader && this.isBlankEditorHtml(this.editorContent.header)) {
+        this.editorContent = {
+          ...this.editorContent,
+          header: this.selectedGraphicCharterConfig.header.html || "<p></p>",
+        };
+      }
     } else {
       this.hasFooter = !this.hasFooter;
+      if (this.hasFooter && this.isBlankEditorHtml(this.editorContent.footer)) {
+        this.editorContent = {
+          ...this.editorContent,
+          footer: this.selectedGraphicCharterConfig.footer.html || "<p></p>",
+        };
+      }
     }
     this.saveStatus = "Modifié";
     // ─── FIX: forcer la recréation du body editor avec la nouvelle config
@@ -2473,6 +2485,17 @@ export class AdminComponent
     return value || "<p></p>";
   }
 
+  private isBlankEditorHtml(html: string | null | undefined): boolean {
+    const value = String(html || "").trim();
+    if (!value) return true;
+    if (/<(img|table|ul|ol|li|svg|canvas)\b/i.test(value)) return false;
+    const text = value
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;|&#160;/gi, "")
+      .trim();
+    return !text;
+  }
+
   private getSelectedDocumentSection(): "header" | "body" | "footer" {
     if (!this.editor || this.editorPanel === "filters") return "body";
     const { $from } = this.editor.state.selection;
@@ -2969,11 +2992,11 @@ export class AdminComponent
       marginLeft: this.pageSettingsForm.ml,
       marginRight: this.pageSettingsForm.mr,
       // On positionne les clones au même endroit que les zones réelles
-      headerTop: this.pageSettingsForm.headerTop,
-      footerBottom: this.pageSettingsForm.footerBottom,
+      headerTop: headerHtml ? this.pageSettingsForm.headerTop : undefined,
+      footerBottom: footerHtml ? this.pageSettingsForm.footerBottom : undefined,
       // On laisse PaginationPlus gérer le flux du body
-      contentMarginTop: 0,
-      contentMarginBottom: 0,
+      contentMarginTop: headerHtml ? mt + 3 : 0,
+      contentMarginBottom: footerHtml ? mb + 3 : 0,
       headerHtml: header.common,
       footerHtml: footer.common,
       customHeader: header.custom,
@@ -3001,13 +3024,13 @@ export class AdminComponent
     custom: Record<number, { headerLeft: string; headerRight: string }>;
   } {
     if (!html) return { common: "", custom: {} };
+    if (mode === "all") return { common: html, custom: {} };
     const maxPage = Math.max(this.documentPageCount + 10, 100);
     const custom: Record<number, { headerLeft: string; headerRight: string }> =
       {};
 
     for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
-      const shouldShow =
-        pageNumber > 1 && this.shouldShowLiveSection(mode, pageNumber);
+      const shouldShow = this.shouldShowLiveSection(mode, pageNumber);
       custom[pageNumber] = {
         headerLeft: shouldShow ? html : "",
         headerRight: "",
@@ -3024,15 +3047,13 @@ export class AdminComponent
     custom: Record<number, { footerLeft: string; footerRight: string }>;
   } {
     if (!html) return { common: "", custom: {} };
+    if (mode === "all") return { common: html, custom: {} };
     const maxPage = Math.max(this.documentPageCount + 10, 100);
-    const lastPage = this.documentPageCount;
     const custom: Record<number, { footerLeft: string; footerRight: string }> =
       {};
 
     for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
-      const isLastPage = pageNumber === lastPage;
-      const shouldShow =
-        !isLastPage && this.shouldShowLiveSection(mode, pageNumber);
+      const shouldShow = this.shouldShowLiveSection(mode, pageNumber);
       custom[pageNumber] = {
         footerLeft: shouldShow ? html : "",
         footerRight: "",

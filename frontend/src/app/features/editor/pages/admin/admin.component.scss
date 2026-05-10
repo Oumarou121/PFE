@@ -1252,6 +1252,7 @@ button {
   flex-direction: column !important;
   width: 100% !important;
   flex: 1 1 auto !important;
+  height: 100% !important;
   min-height: 100% !important; /* Stretch to fill physical page height */
   position: relative;
   background: transparent;
@@ -1285,10 +1286,10 @@ button {
 }
 
 .editor-host .rm-page-header {
-  position: absolute;
-  top: var(--page-header-top);
-  left: 0;
-  right: 0;
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
   // border-bottom: 1px solid var(--doc-color-border) !important;
 }
 
@@ -1314,10 +1315,10 @@ button {
 }
 
 .editor-host .rm-page-footer {
-  position: absolute;
-  bottom: var(--page-footer-bottom);
-  left: 0;
-  right: 0;
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
   // border-top: 1px solid var(--doc-color-border) !important;
 }
 
@@ -1390,7 +1391,7 @@ button {
    de ne pas afficher ses clones sur les pages où les originaux sont présents. */
 .editor-host .rm-with-pagination .document-page-header,
 .editor-host .rm-with-pagination .document-page-footer {
-  display: block;
+  display: none !important;
 }
 
 .editor-host .rm-page-header-content,
@@ -2633,6 +2634,7 @@ body.resize-cursor * {
   background-repeat: var(--doc-page-bg-repeat, no-repeat);
   border-radius: 2px;
   width: var(--page-w, 210mm);
+  height: var(--page-h, 297mm);
   min-height: var(--page-h, 297mm);
   margin: 0 auto;
   box-shadow:
