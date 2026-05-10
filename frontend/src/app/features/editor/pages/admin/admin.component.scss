@@ -1316,9 +1316,13 @@ button {
   overflow: visible;
 }
 
+/* On ne cache plus l'en-tête et le pied de page du document, 
+   car ce sont les zones éditables "maîtres". 
+   La duplication est gérée côté TypeScript en demandant à PaginationPlus
+   de ne pas afficher ses clones sur les pages où les originaux sont présents. */
 .editor-host .rm-with-pagination .document-page-header,
 .editor-host .rm-with-pagination .document-page-footer {
-  display: none;
+  display: block;
 }
 
 .editor-host .rm-page-header,

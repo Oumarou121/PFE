@@ -2988,13 +2988,18 @@ export class AdminComponent
     custom: Record<number, { headerLeft: string; headerRight: string }>;
   } {
     if (!html) return { common: "", custom: {} };
-    if (mode === "all") return { common: html, custom: {} };
-    const maxPage = Math.max(this.documentPageCount + 6, 80);
+    // On n'utilise plus 'common' car on doit exclure la page 1 (où se trouve le nœud éditable).
+    // On génère une config custom pour chaque page.
+    const maxPage = Math.max(this.documentPageCount + 10, 100);
     const custom: Record<number, { headerLeft: string; headerRight: string }> =
       {};
     for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
+      // Page 1 : vide car le nœud PageHeader original est visible.
+      // Autres pages : affiche le clone si le mode (all, even, odd) correspond.
+      const shouldShow =
+        pageNumber > 1 && this.shouldShowLiveSection(mode, pageNumber);
       custom[pageNumber] = {
-        headerLeft: this.shouldShowLiveSection(mode, pageNumber) ? html : "",
+        headerLeft: shouldShow ? html : "",
         headerRight: "",
       };
     }
@@ -3009,13 +3014,18 @@ export class AdminComponent
     custom: Record<number, { footerLeft: string; footerRight: string }>;
   } {
     if (!html) return { common: "", custom: {} };
-    if (mode === "all") return { common: html, custom: {} };
-    const maxPage = Math.max(this.documentPageCount + 6, 80);
+    const maxPage = Math.max(this.documentPageCount + 10, 100);
+    const lastPage = this.documentPageCount;
     const custom: Record<number, { footerLeft: string; footerRight: string }> =
       {};
     for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
+      // Le nœud PageFooter se trouve à la toute fin du document, donc sur la dernière page.
+      // On n'affiche pas le clone sur la dernière page pour éviter les doublons.
+      const isLastPage = pageNumber === lastPage;
+      const shouldShow =
+        !isLastPage && this.shouldShowLiveSection(mode, pageNumber);
       custom[pageNumber] = {
-        footerLeft: this.shouldShowLiveSection(mode, pageNumber) ? html : "",
+        footerLeft: shouldShow ? html : "",
         footerRight: "",
       };
     }
