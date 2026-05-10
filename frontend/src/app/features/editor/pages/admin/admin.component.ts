@@ -260,6 +260,8 @@ export class AdminComponent
   ];
   activeColorPopover: "text" | "highlight" | null = null;
   activeTablePopover: "background" | "text" | null = null;
+  // Position dynamique de la toolbar tableau — calculée par computeTableToolbarStyle()
+  tableToolbarStyle: Record<string, string> = {};
   selectedTextColor = "#1a1d2e";
   selectedHighlightColor = "#fef9c3";
   selectedTableBackgroundColor = "#ffffff";
@@ -1595,6 +1597,7 @@ export class AdminComponent
 
   openDateVariableModal(): void {
     if (!this.editor) return;
+    this.closeAllModals();
     this.selectedDateVariable = "{{date_du_jour}}";
     this.dateVariableModalOpen = true;
     this.cdr.markForCheck();
@@ -1619,6 +1622,7 @@ export class AdminComponent
   }
 
   openLinkModal(): void {
+    this.closeAllModals();
     this.linkUrl = "";
     this.linkModalOpen = true;
     this.cdr.markForCheck();
@@ -1635,6 +1639,7 @@ export class AdminComponent
   }
 
   openImageModal(): void {
+    this.closeAllModals();
     this.imageUrl = "";
     this.imageAlt = "";
     this.imagePreviewSrc = "";
@@ -1727,6 +1732,7 @@ export class AdminComponent
   }
 
   openTableModal(): void {
+    this.closeAllModals();
     this.tableRows = 3;
     this.tableCols = 3;
     this.tableModalOpen = true;
@@ -1755,6 +1761,73 @@ export class AdminComponent
     this.tableModalOpen = false;
     this.dateVariableModalOpen = false;
     this.cdr.markForCheck();
+  }
+
+  /**
+   * Ferme TOUS les modals/panneaux flottants avant d'en ouvrir un autre.
+   * Évite que deux modals soient ouverts simultanément.
+   */
+  private closeAllModals(): void {
+    this.linkModalOpen = false;
+    this.imageModalOpen = false;
+    this.tableModalOpen = false;
+    this.dateVariableModalOpen = false;
+    this.watermarkModalOpen = false;
+    this.activeTablePopover = null;
+    this.activeColorPopover = null;
+    this.searchPanelOpen = false;
+  }
+
+  /**
+   * Calcule la position CSS de la toolbar tableau pour la placer
+   * AU-DESSUS du nœud table actif, en respectant les marges de page.
+   * Doit être appelée à chaque sélection / mise à jour de l'éditeur.
+   */
+  computeTableToolbarStyle(): Record<string, string> {
+    if (!this.editor || !this.isEditorActive("table")) {
+      return {};
+    }
+    try {
+      const { state, view } = this.editor;
+      // Remonter jusqu'au nœud table à partir de la sélection courante
+      let tablePos: number | null = null;
+      state.doc.nodesBetween(
+        state.selection.from,
+        state.selection.to,
+        (node, pos) => {
+          if (node.type.name === "table" && tablePos === null) {
+            tablePos = pos;
+          }
+        },
+      );
+      if (tablePos === null) return {};
+
+      // Coordonnées DOM du nœud table
+      const coords = view.coordsAtPos(tablePos + 1);
+      const editorEl =
+        this.editorHost?.nativeElement as HTMLElement | undefined;
+      const editorRect = editorEl?.getBoundingClientRect();
+
+      // On positionne la toolbar juste au-dessus du bord supérieur du tableau,
+      // centrée horizontalement sur la zone d'édition (viewport).
+      const TOOLBAR_HEIGHT = 38; // hauteur estimée en px
+      const MARGIN = 6;          // espace entre toolbar et tableau
+
+      const top = Math.max(
+        (editorRect?.top ?? 0) + 4,
+        coords.top - TOOLBAR_HEIGHT - MARGIN,
+      );
+
+      return {
+        position: "fixed",
+        top: `${top}px`,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: "4000",
+      };
+    } catch {
+      return {};
+    }
   }
 
   runTableCommand(command: string): void {
@@ -1844,6 +1917,7 @@ export class AdminComponent
       this.notifications.showWarning("Ouvrez d'abord un template");
       return;
     }
+    this.closeAllModals();
     this.watermarkForm = this.getWatermarkFromTemplate(this.selectedTemplate);
     this.watermarkModalOpen = true;
     this.cdr.markForCheck();

@@ -1492,7 +1492,7 @@
 <div
   class="tbl-toolbar on"
   *ngIf="editorPanel === 'document' && isEditorActive('table')"
-  style="left: 50%; bottom: 22px; transform: translateX(-50%)"
+  [ngStyle]="computeTableToolbarStyle()"
 >
   <button
     class="tbl-tb-btn"

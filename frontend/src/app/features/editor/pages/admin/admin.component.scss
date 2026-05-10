@@ -1111,6 +1111,9 @@ button {
   font-size: 12pt;
   line-height: 1.6;
   color: var(--doc-color-text);
+  /* Empêche le tableau de déborder dans les marges de page */
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .document-page-node {
@@ -1299,11 +1302,17 @@ button {
 }
 .tiptap-wrapper .ProseMirror table {
   border-collapse: collapse;
-  width: 100%;
-  max-width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   table-layout: fixed;
   margin: 8px 0;
   word-wrap: break-word;
+  box-sizing: border-box;
+}
+.tiptap-wrapper .ProseMirror table.table-plus {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed;
   box-sizing: border-box;
 }
 .tiptap-wrapper .ProseMirror td,
@@ -1416,12 +1425,32 @@ button {
 }
 .editor-host .ProseMirror table {
   border-collapse: collapse;
-  width: 100%;
-  max-width: 100%;
+  /* Le tableau doit occuper TOUTE la largeur de la zone de texte,
+     quel que soit le nombre de colonnes. */
+  width: 100% !important;
+  max-width: 100% !important;
   table-layout: fixed;
   margin: 8px 0;
   word-wrap: break-word;
   box-sizing: border-box;
+}
+/* Le wrapper NodeView de TablePlus (.dom) doit aussi être contraint */
+.editor-host .ProseMirror .table-plus-wrapper,
+.editor-host .ProseMirror > div[style*="position: relative"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+/* La table interne générée par TablePlusNodeView */
+.editor-host .ProseMirror table.table-plus {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed;
+  box-sizing: border-box;
+}
+/* Le slider de redimensionnement doit se limiter à la zone de texte */
+.editor-host .ProseMirror .handle {
+  z-index: 10;
 }
 .editor-host .ProseMirror td,
 .editor-host .ProseMirror th {
@@ -2908,8 +2937,6 @@ button {
 
 /* ── TABLE TOOLBAR ── */
 .tbl-toolbar {
-  position: fixed;
-  z-index: 4000;
   border-radius: 8px;
   display: none;
   align-items: center;
@@ -2921,7 +2948,10 @@ button {
   pointer-events: auto;
 }
 .tbl-toolbar.on {
+  /* position/top/left sont injectés via [ngStyle]="computeTableToolbarStyle()" */
   display: flex;
+  position: fixed;
+  z-index: 4000;
 }
 .tbl-tb-btn {
   display: flex;
