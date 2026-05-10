@@ -17,8 +17,6 @@ import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { firstValueFrom } from "rxjs";
 import { Editor } from "@tiptap/core";
-// PHASE 1: All Tiptap extension definitions extracted to editor-extensions.ts.
-// SHARED_EXTENSIONS is a drop-in replacement for the previous module-scope array.
 import {
   buildEditorExtensions,
   buildStructuredDocumentExtensions,

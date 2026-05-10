@@ -1,0 +1,296 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usepackage{xcolor}
+
+\geometry{
+    top=2.5cm,
+    bottom=2.5cm,
+    left=2.5cm,
+    right=2.5cm
+}
+
+\setstretch{1.15}
+
+\begin{document}
+
+%==================================
+% TITRE PERSONNALISÉ
+%==================================
+
+\vspace*{0.5cm}
+
+\noindent
+\begin{tikzpicture}
+
+% Rectangle noir
+\fill[black] (0,0) rectangle (0.9,1.8);
+
+% Ligne horizontale
+\draw[line width=0.5pt] (1.2,0.9) -- (14.8,0.9);
+
+% Titre
+\node[
+anchor=west,
+font=\fontsize{24}{28}\bfseries
+] at (1.2,0.25)
+{TABLE DES MATIÈRES};
+
+\end{tikzpicture}
+
+\vspace{1.2cm}
+
+\tableofcontents
+\clearpage
+
+%=================================================
+% INTRODUCTION GENERALE
+%=================================================
+
+\chapter*{Introduction générale}
+\addcontentsline{toc}{chapter}{Introduction générale}
+
+Texte introduction...
+
+%=================================================
+% CHAPITRE 1
+%=================================================
+
+\chapter{Cadre général du projet}
+
+\section{Introduction}
+
+\section{Présentation de l'organisme d'accueil}
+
+\section{Présentation du projet}
+\subsection{Contexte du projet}
+\subsection{Problématique}
+\subsection{Étude critique de l'existant}
+\subsection{Solution proposée}
+
+\section{Méthodologie de travail}
+\subsection{Méthodologie Agile Scrum}
+\subsection{Planification globale du projet}
+
+\section{Environnement technique}
+\subsection{Technologies backend}
+\subsection{Technologies frontend}
+\subsection{Base de données et accès aux données}
+\subsection{Outils de développement et de test}
+
+\section{Conclusion}
+
+%=================================================
+% CHAPITRE 2
+%=================================================
+
+\chapter{Analyse et spécification des besoins}
+
+\section{Introduction}
+
+\section{Identification des acteurs}
+\subsection{Super administrateur}
+\subsection{Administrateur}
+\subsection{Utilisateur final}
+
+\section{Clarification du vocabulaire métier}
+\subsection{Famille de documents}
+\subsection{Modèle de document ou template}
+\subsection{Charte graphique}
+\subsection{Configuration de vue de table}
+\subsection{Instance de document}
+
+\section{Analyse des besoins fonctionnels}
+\subsection{Gestion des utilisateurs}
+\subsection{Gestion des rôles et permissions}
+\subsection{Gestion des familles de documents}
+\subsection{Gestion des modèles de documents}
+\subsection{Gestion des chartes graphiques}
+\subsection{Gestion des configurations de vues de tables}
+\subsection{Édition et génération des documents}
+\subsection{Gestion des bénéficiaires et des données métier}
+
+\section{Analyse des besoins non fonctionnels}
+\subsection{Sécurité}
+\subsection{Performance}
+\subsection{Ergonomie et expérience utilisateur}
+\subsection{Maintenabilité}
+
+\section{Backlog du produit}
+\subsection{User stories principales}
+\subsection{Priorisation des besoins}
+\subsection{Critères d'acceptation}
+
+\section{Planification des sprints}
+\subsection{Découpage temporel}
+\subsection{Objectifs par sprint}
+\subsection{Livrables attendus}
+
+\section{Diagrammes UML globaux}
+\subsection{Diagramme de cas d'utilisation général}
+\subsection{Diagramme de classes global}
+\subsection{Diagramme de séquence global}
+
+\section{Conclusion}
+
+%=================================================
+% CHAPITRE 3
+%=================================================
+
+\chapter{Sprint 1 : Authentification et socle applicatif}
+
+\section{Introduction}
+\section{Objectifs du sprint}
+\section{Backlog du sprint}
+\subsection{Authentification JWT}
+\subsection{Gestion du profil utilisateur}
+\subsection{Configuration du backend}
+\subsection{Connexion à la base de données}
+\section{Analyse et conception}
+\subsection{Diagramme de cas d'utilisation}
+\subsection{Diagramme de classes}
+\subsection{Diagrammes de séquence}
+\section{Réalisation}
+\subsection{Mise en place du backend ASP.NET Core}
+\subsection{Implémentation de l'authentification}
+\subsection{Configuration CORS, Swagger et middlewares}
+\subsection{Configuration de la base SQL Server}
+\section{Tests et validation}
+\section{Conclusion}
+
+%=================================================
+% CHAPITRE 4
+%=================================================
+
+\chapter{Sprint 2 : Gestion des rôles et gouvernance d'accès}
+
+\section{Introduction}
+\section{Objectifs du sprint}
+\section{Backlog du sprint}
+\subsection{Définition des rôles}
+\subsection{Protection des routes et des endpoints}
+\subsection{Gestion des utilisateurs et profils}
+\section{Analyse et conception}
+\subsection{Diagramme de cas d'utilisation}
+\subsection{Diagramme de classes}
+\subsection{Diagrammes de séquence}
+\section{Réalisation}
+\subsection{Implémentation du système RBAC}
+\subsection{Mise en place des autorisations backend}
+\subsection{Gestion des guards côté frontend}
+\subsection{Sécurisation des accès par profil}
+\section{Tests et validation}
+\section{Conclusion}
+
+%=================================================
+% CHAPITRE 5
+%=================================================
+
+\chapter{Sprint 3 : Module coeur d'édition documentaire}
+
+\section{Introduction}
+\section{Objectifs du sprint}
+\section{Backlog du sprint}
+\subsection{Intégration de l'éditeur riche}
+\subsection{Création et modification du contenu documentaire}
+\subsection{Sauvegarde et chargement des contenus}
+\subsection{Prévisualisation du document}
+\section{Analyse et conception}
+\subsection{Diagramme de cas d'utilisation}
+\subsection{Diagramme de classes}
+\subsection{Diagrammes de séquence}
+\section{Réalisation}
+\subsection{Intégration de l'éditeur Tiptap}
+\subsection{Gestion du contenu des modèles de documents}
+\subsection{Application des en-têtes, corps et pieds de page}
+\subsection{Prévisualisation et rendu des documents}
+\section{Tests et validation}
+\section{Conclusion}
+
+%=================================================
+% CHAPITRE 6
+%=================================================
+
+\chapter{Sprint 4 : Administration des modules métier}
+
+\section{Introduction}
+\section{Objectifs du sprint}
+\section{Backlog du sprint}
+\subsection{Gestion des familles de documents}
+\subsection{Gestion des modèles de documents}
+\subsection{Gestion des chartes graphiques}
+\subsection{Gestion des configurations de vues de tables}
+\subsection{Gestion des bénéficiaires et filtres métier}
+\section{Analyse et conception}
+\subsection{Diagramme de cas d'utilisation}
+\subsection{Diagramme de classes}
+\subsection{Diagrammes de séquence}
+\section{Réalisation}
+\subsection{CRUD des familles de documents}
+\subsection{CRUD des modèles de documents}
+\subsection{CRUD des chartes graphiques}
+\subsection{CRUD des configurations de vues de tables}
+\subsection{Association famille, modèle et charte graphique}
+\subsection{Configuration des données métier et des filtres}
+\section{Tests et validation}
+\section{Conclusion}
+
+%=================================================
+% CHAPITRE 7
+%=================================================
+
+\chapter{Sprint 5 : Intégration, qualité et livraison}
+
+\section{Introduction}
+\section{Objectifs du sprint}
+\section{Backlog du sprint}
+\subsection{Intégration frontend/backend}
+\subsection{Tests fonctionnels et tests d'intégration}
+\subsection{Optimisation des performances}
+\subsection{Préparation de la livraison}
+\section{Réalisation}
+\subsection{Validation des parcours utilisateurs}
+\subsection{Gestion des erreurs}
+\subsection{Optimisation et renforcement de la sécurité}
+\subsection{Documentation technique et utilisateur}
+\subsection{Préparation de la démonstration PFE}
+\section{Tests et validation}
+\section{Conclusion}
+
+%=================================================
+% CONCLUSION
+%=================================================
+
+\chapter*{Conclusion générale}
+\addcontentsline{toc}{chapter}{Conclusion générale}
+
+Texte conclusion...
+
+%=================================================
+% WEBOGRAPHIE
+%=================================================
+
+\chapter*{Webographie}
+\addcontentsline{toc}{chapter}{Webographie}
+
+%=================================================
+% BIBLIOGRAPHIE
+%=================================================
+
+\chapter*{Bibliographie}
+\addcontentsline{toc}{chapter}{Bibliographie}
+
+%=================================================
+% ANNEXES
+%=================================================
+
+\chapter*{Annexes}
+\addcontentsline{toc}{chapter}{Annexes}
+
+\end{document}
