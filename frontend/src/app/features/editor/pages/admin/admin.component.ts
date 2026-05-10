@@ -317,6 +317,8 @@ export class AdminComponent
   // ─── FIX: clé de cache incluant headerHtml/footerHtml pour forcer
   //     la recréation de PaginationPlus quand la charte graphique change.
   private _editorPaginationCacheKey = "";
+  private paginationObserver: MutationObserver | null = null;
+  documentPageCountValue = 1;
   private graphicCharterHeaderEditor: Editor | null = null;
   private graphicCharterFooterEditor: Editor | null = null;
   private searchMatches: Array<{ from: number; to: number }> = [];
@@ -587,8 +589,7 @@ export class AdminComponent
   }
 
   get documentPageCount(): number {
-    const pages = this.editor?.view.dom.querySelectorAll(".rm-page-break");
-    return Math.max(1, pages?.length || 1);
+    return this.documentPageCountValue;
   }
 
   get documentPageIndexes(): number[] {
@@ -2351,6 +2352,8 @@ export class AdminComponent
     });
 
     this.applyDirectionToCurrentEditor();
+    this.startPaginationObserver();
+    this.syncPaginationPageCount();
   }
 
   private updateTablePanelState(): void {
@@ -2509,6 +2512,7 @@ export class AdminComponent
   }
 
   private destroyEditor(): void {
+    this.stopPaginationObserver();
     if (this.editor) {
       this.editor.destroy();
       this.editor = null;
@@ -2516,9 +2520,45 @@ export class AdminComponent
     this.editorBoundElement = null;
     this.editorSection = null;
     this._editorPaginationCacheKey = "";
+    this.documentPageCountValue = 1;
   }
 
   // ─── CHANGED: graphic charter editors also run outside zone ──────────────────
+  private startPaginationObserver(): void {
+    this.stopPaginationObserver();
+    const target = this.editor?.view.dom;
+    if (!target || typeof MutationObserver === "undefined") return;
+    let frame: number | null = null;
+    this.paginationObserver = new MutationObserver(() => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        this.syncPaginationPageCount();
+      });
+    });
+    this.paginationObserver.observe(target, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
+  }
+
+  private stopPaginationObserver(): void {
+    this.paginationObserver?.disconnect();
+    this.paginationObserver = null;
+  }
+
+  private syncPaginationPageCount(): void {
+    const pages = this.editor?.view.dom.querySelectorAll(".rm-page-break");
+    const next = Math.max(1, pages?.length || 1);
+    if (next === this.documentPageCountValue) return;
+    this.ngZone.run(() => {
+      this.documentPageCountValue = next;
+      this.cdr.markForCheck();
+    });
+  }
+
   private ensureGraphicCharterEditors(): void {
     if (!this.graphicCharterModalOpen) {
       this.destroyGraphicCharterEditors();
