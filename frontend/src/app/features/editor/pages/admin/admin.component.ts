@@ -2938,6 +2938,20 @@ export class AdminComponent
   private buildPaginationConfig(): PaginationConfig {
     const headerHtml = this.hasHeader ? this.editorContent.header || "" : "";
     const footerHtml = this.hasFooter ? this.editorContent.footer || "" : "";
+
+    // ─── ALIGNEMENT AVEC PagePaginator.ts ───
+    // Dans l'éditeur (PaginationPlus), marginTop et marginBottom définissent
+    // la zone INTERNE de la page où le contenu peut couler.
+    //
+    // Si l'en-tête est ON :
+    //   La marge haute doit être au moins égale à la marge du template (mt).
+    //   On ajoute un petit décalage pour ne pas que le texte colle à l'en-tête.
+    // Si l'en-tête est OFF :
+    //   On utilise simplement la marge mt du template.
+
+    const mt = this.pageSettingsForm.mt;
+    const mb = this.pageSettingsForm.mb;
+
     const header = this.buildLivePaginationHeader(
       headerHtml,
       this.getLiveHeaderDisplayMode(),
@@ -2946,21 +2960,20 @@ export class AdminComponent
       footerHtml,
       this.getLiveFooterDisplayMode(),
     );
-    // ─── FIX: transmettre headerHtml et footerHtml à PaginationPlus ──────────
-    // Sans ces valeurs, PaginationPlus affiche des pages vides sans en-tête ni
-    // pied de page dans la section body. On utilise editorContent (persisté)
-    // plutôt que selectedGraphicCharter pour refléter les modifications
-    // non sauvegardées dans la charte.
+
     return {
       orientation: this.pageSettingsForm.orientation,
-      marginTop: this.pageSettingsForm.mt,
-      marginBottom: this.pageSettingsForm.mb,
-      marginLeft: this.pageSettingsForm.ml,
-      marginRight: this.pageSettingsForm.mr,
-      headerTop: headerHtml ? this.pageSettingsForm.headerTop : undefined,
-      footerBottom: footerHtml ? this.pageSettingsForm.footerBottom : undefined,
-      contentMarginTop: headerHtml ? this.pageSettingsForm.mt + 3 : 0,
-      contentMarginBottom: footerHtml ? this.pageSettingsForm.mb + 3 : 0,
+      // On met les marges de la page physique à 0 pour éviter le doublage avec le CSS.
+      marginTop: 0,
+      marginBottom: 0,
+      marginLeft: 0,
+      marginRight: 0,
+      // Ces valeurs ne sont plus utilisées par PaginationPlus car on gère tout en CSS.
+      headerTop: 0,
+      footerBottom: 0,
+      // On garde une marge de contenu nulle pour laisser le CSS des nœuds gérer les mt/mb.
+      contentMarginTop: 0,
+      contentMarginBottom: 0,
       headerHtml: header.common,
       footerHtml: footer.common,
       customHeader: header.custom,
@@ -2988,18 +3001,18 @@ export class AdminComponent
     custom: Record<number, { headerLeft: string; headerRight: string }>;
   } {
     if (!html) return { common: "", custom: {} };
-    // On n'utilise plus 'common' car on doit exclure la page 1 (où se trouve le nœud éditable).
-    // On génère une config custom pour chaque page.
     const maxPage = Math.max(this.documentPageCount + 10, 100);
     const custom: Record<number, { headerLeft: string; headerRight: string }> =
       {};
+
+    // Enveloppe pour que le clone ait les mêmes marges/paddings que le nœud réel.
+    const wrappedHtml = `<div class="document-page-header" data-page-header="true">${html}</div>`;
+
     for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
-      // Page 1 : vide car le nœud PageHeader original est visible.
-      // Autres pages : affiche le clone si le mode (all, even, odd) correspond.
       const shouldShow =
         pageNumber > 1 && this.shouldShowLiveSection(mode, pageNumber);
       custom[pageNumber] = {
-        headerLeft: shouldShow ? html : "",
+        headerLeft: shouldShow ? wrappedHtml : "",
         headerRight: "",
       };
     }
@@ -3018,14 +3031,16 @@ export class AdminComponent
     const lastPage = this.documentPageCount;
     const custom: Record<number, { footerLeft: string; footerRight: string }> =
       {};
+
+    // Enveloppe pour le pied de page
+    const wrappedHtml = `<div class="document-page-footer" data-page-footer="true">${html}</div>`;
+
     for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
-      // Le nœud PageFooter se trouve à la toute fin du document, donc sur la dernière page.
-      // On n'affiche pas le clone sur la dernière page pour éviter les doublons.
       const isLastPage = pageNumber === lastPage;
       const shouldShow =
         !isLastPage && this.shouldShowLiveSection(mode, pageNumber);
       custom[pageNumber] = {
-        footerLeft: shouldShow ? html : "",
+        footerLeft: shouldShow ? wrappedHtml : "",
         footerRight: "",
       };
     }
