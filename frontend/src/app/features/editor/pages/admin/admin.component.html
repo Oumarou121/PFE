@@ -1014,12 +1014,7 @@
               <div class="page-live-badge">Page 1 / {{ documentPageCount }}</div>
               <div
                 class="zoom-scaler"
-                [style.transform]="'scale(' + zoomLevel / 100 + ')'"
-                [style.margin-bottom]="
-                  zoomLevel < 100
-                    ? ((100 - zoomLevel) / 100) * -500 + 'px'
-                    : '0'
-                "
+                [style.zoom]="zoomLevel + '%'"
               >
                 <div
                   class="editor-shell"
@@ -1047,6 +1042,7 @@
                   <div #editorHost class="editor-host"></div>
                 </div>
               </div>
+              <div class="page-scroll-spacer" aria-hidden="true"></div>
             </div>
           </div>
 
