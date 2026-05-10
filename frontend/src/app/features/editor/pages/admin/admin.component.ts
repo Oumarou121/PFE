@@ -1670,22 +1670,50 @@ export class AdminComponent
   insertImage(): void {
     const src = this.imageUrl.trim();
     if (!this.editor || !src) return;
-    const style = [
-      "max-width:100%",
-      this.imageWidth.trim()
-        ? `width:${this.escapeHtmlAttribute(this.imageWidth.trim())}`
-        : "",
-      this.imageHeight.trim()
-        ? `height:${this.escapeHtmlAttribute(this.imageHeight.trim())}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join(";");
-    const caption = this.imageCaption.trim()
-      ? `<div style="font-size:10pt;color:#666;margin-top:4px">${this.escapeHtml(this.imageCaption.trim())}</div>`
-      : "";
-    const html = `<div style="text-align:${this.imageAlign}"><img src="${this.escapeHtmlAttribute(src)}" alt="${this.escapeHtmlAttribute(this.imageAlt || this.imageCaption || "")}" style="${style}" />${caption}</div><p></p>`;
-    this.editor.chain().focus().insertContent(html).run();
+
+    // BUG FIX: utiliser la commande native setImage de ImagePlus au lieu
+    // d'insérer du HTML brut. Le HTML brut court-circuite la NodeView
+    // (pas de poignées de redimensionnement, alignment ignoré, width perdue
+    // au re-parse car ImagePlus ne lit que l'attribut width en pourcentage).
+    //
+    // ImagePlus stocke :
+    //   • src      → URL ou base64
+    //   • alt      → texte alternatif
+    //   • width    → largeur en % (ex: "50%") — les valeurs px/mm ne sont
+    //                pas persistées par la NodeView ; on les convertit en %
+    //                ou on les laisse vides pour laisser l'utilisateur
+    //                redimensionner via les poignées.
+    //   • alignment → "left" | "center" | "right" (justifyContent du wrapper)
+
+    // Normalisation de la largeur : ImagePlus ne persiste que les valeurs "%".
+    // Si l'utilisateur saisit une valeur absolue (px, mm, cm) on la laisse
+    // passer telle quelle dans l'attribut width — elle sera ignorée par
+    // parseHTML mais visible au premier rendu via setupDOMStructure.
+    const rawWidth = this.imageWidth.trim();
+    const width = rawWidth || "";
+
+    const chain = this.editor.chain().focus() as any;
+    chain
+      .setImage({
+        src,
+        alt: this.imageAlt || this.imageCaption || "",
+        width,
+        alignment: this.imageAlign,
+      })
+      .run();
+
+    // Si une légende est définie, on l'insère comme paragraphe juste après
+    // l'image (ImagePlus ne gère pas nativement les captions).
+    if (this.imageCaption.trim()) {
+      this.editor
+        .chain()
+        .focus()
+        .insertContent(
+          `<p style="font-size:10pt;color:#666;text-align:${this.imageAlign};margin-top:4px">${this.escapeHtml(this.imageCaption.trim())}</p>`,
+        )
+        .run();
+    }
+
     this.imageModalOpen = false;
     this.imageUrl = "";
     this.imageAlt = "";
@@ -1788,10 +1816,24 @@ export class AdminComponent
     if (!this.editor) return;
     const attrs = { [attribute]: value === "transparent" ? null : value };
     const chain = this.editor.chain().focus();
+    // BUG FIX: on vérifie d'abord tableHeader, puis tableCell.
+    // updateAttributes utilise le nom exact du node tel qu'enregistré par
+    // l'extension (hérité de @tiptap/extension-table-header → "tableHeader",
+    // et @tiptap/extension-table-cell → "tableCell").
+    // On tente les deux pour couvrir le cas d'une sélection mixte.
     if (this.editor.isActive("tableHeader")) {
       chain.updateAttributes("tableHeader", attrs).run();
-    } else {
+    } else if (this.editor.isActive("tableCell")) {
       chain.updateAttributes("tableCell", attrs).run();
+    } else {
+      // Fallback : curseur peut être dans un paragraphe imbriqué dans la cellule.
+      // On tente les deux commandes ; Tiptap ignorera celle qui ne s'applique pas.
+      (this.editor.chain().focus() as any)
+        .updateAttributes("tableHeader", attrs)
+        .run();
+      (this.editor.chain().focus() as any)
+        .updateAttributes("tableCell", attrs)
+        .run();
     }
     this.saveStatus = "Modifié";
     this.cdr.markForCheck();

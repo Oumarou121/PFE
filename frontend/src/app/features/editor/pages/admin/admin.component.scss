@@ -1342,6 +1342,26 @@ button {
   max-width: 100%;
   height: auto;
 }
+/* ── ImagePlus NodeView (tiptap-image-plus) ── */
+/* BUG FIX: Sans ces règles, l'alignement (justifyContent) et le
+   redimensionnement n'ont aucun effet visuel. */
+.tiptap-wrapper .ProseMirror .image-plus-wrapper {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+.tiptap-wrapper .ProseMirror .image-plus-container {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  cursor: pointer;
+  line-height: 0;
+}
+.tiptap-wrapper .ProseMirror .image-plus-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
 .tiptap-wrapper .ProseMirror a {
   color: #2563eb;
   text-decoration: underline;
@@ -1417,6 +1437,24 @@ button {
   background: var(--doc-table-header-bg, transparent);
 }
 .editor-host .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+}
+/* ── ImagePlus NodeView (tiptap-image-plus) ── */
+.editor-host .ProseMirror .image-plus-wrapper {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+.editor-host .ProseMirror .image-plus-container {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  cursor: pointer;
+  line-height: 0;
+}
+.editor-host .ProseMirror .image-plus-img {
+  display: block;
   max-width: 100%;
   height: auto;
 }

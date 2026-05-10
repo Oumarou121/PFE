@@ -2587,14 +2587,17 @@
       </div>
       <div class="fgrid2">
         <div class="frow" style="margin: 0">
-          <label class="flabel">Largeur (px, mm, cm, %)</label>
+          <label class="flabel">Largeur initiale (%)</label>
           <input
             class="finput"
             type="text"
             [value]="imageWidth"
             (input)="imageWidth = $any($event.target).value"
-            placeholder="Auto"
+            placeholder="Auto (ex: 50%)"
           />
+          <!-- BUG FIX: ImagePlus persiste uniquement les valeurs en %.
+               Utilisez les poignées de redimensionnement dans l'éditeur
+               pour ajuster après insertion. -->
         </div>
         <div class="frow" style="margin: 0">
           <label class="flabel">Alignement</label>
@@ -2608,16 +2611,6 @@
             <option value="right">Droite</option>
           </select>
         </div>
-      </div>
-      <div class="frow" style="margin-top: 8px">
-        <label class="flabel">Hauteur (px, mm, cm)</label>
-        <input
-          class="finput"
-          type="text"
-          [value]="imageHeight"
-          (input)="imageHeight = $any($event.target).value"
-          placeholder="Auto"
-        />
       </div>
       <div class="frow" style="margin-top: 8px">
         <label class="flabel">Légende (optionnel)</label>

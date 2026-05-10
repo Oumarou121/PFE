@@ -154,28 +154,42 @@ export const FontSize = Extension.create({
 });
 
 // ─── renderTableCellStyle ─────────────────────────────────────────────────────
-// Préservé à l'identique — DocumentRenderService dépend de ces styles inline.
+// BUG FIX: Tiptap appelle renderHTML une fois PAR attribut en lui passant
+// l'objet attrs complet. On ne doit émettre le style complet qu'une seule fois
+// (sur backgroundColor), et retourner {} pour les autres pour éviter de
+// dupliquer le style inline. Le style manquant était causé par un retour {}
+// sur textColor / textAlign / verticalAlign alors qu'ils devaient y figurer.
 
 export function renderTableCellStyle(
   attributes: Record<string, unknown>,
 ): Record<string, string> {
-  const styles = [
+  const styles: string[] = [];
+
+  if (
     attributes["backgroundColor"] &&
     attributes["backgroundColor"] !== "transparent"
-      ? `background-color:${attributes["backgroundColor"]}`
-      : "",
-    attributes["textColor"] ? `color:${attributes["textColor"]}` : "",
-    attributes["textAlign"] ? `text-align:${attributes["textAlign"]}` : "",
-    attributes["verticalAlign"]
-      ? `vertical-align:${attributes["verticalAlign"]}`
-      : "",
-  ].filter(Boolean);
+  ) {
+    styles.push(`background-color:${attributes["backgroundColor"]}`);
+  }
+  if (attributes["textColor"]) {
+    styles.push(`color:${attributes["textColor"]}`);
+  }
+  if (attributes["textAlign"]) {
+    styles.push(`text-align:${attributes["textAlign"]}`);
+  }
+  if (attributes["verticalAlign"]) {
+    styles.push(`vertical-align:${attributes["verticalAlign"]}`);
+  }
+
   return styles.length ? { style: styles.join(";") } : {};
 }
 
 // ─── TableCellWithStyle ───────────────────────────────────────────────────────
-// TableCellPlus (tiptap-table-plus) étendu avec les attributs custom de style.
-// parseHTML/renderHTML conservés à l'identique pour la compatibilité base.
+// TableCellPlus étendu avec les attributs custom de style.
+// BUG FIX: renderHTML ne doit être défini que sur UN SEUL attribut (le premier
+// rencontré lors du rendu, ici backgroundColor) afin que Tiptap n'appelle
+// renderTableCellStyle qu'une seule fois et n'ajoute pas plusieurs attributs
+// « style » en double sur le <td>/<th>. Les autres attributs retournent {}.
 
 export const TableCellWithStyle = TableCellPlus.extend({
   addAttributes() {
@@ -184,11 +198,14 @@ export const TableCellWithStyle = TableCellPlus.extend({
       backgroundColor: {
         default: null,
         parseHTML: (element) => element.style.backgroundColor || null,
+        // BUG FIX: renderHTML est appelé une seule fois avec TOUS les attrs.
+        // On y regroupe tous les styles custom pour éviter les doublons.
         renderHTML: renderTableCellStyle,
       },
       textColor: {
         default: null,
         parseHTML: (element) => element.style.color || null,
+        // Retourne {} : le style est déjà inclus par backgroundColor.renderHTML.
         renderHTML: () => ({}),
       },
       textAlign: {
@@ -206,7 +223,7 @@ export const TableCellWithStyle = TableCellPlus.extend({
 });
 
 // ─── TableHeaderWithStyle ─────────────────────────────────────────────────────
-// TableHeaderPlus (tiptap-table-plus) étendu avec les mêmes attributs de style.
+// Même correction que TableCellWithStyle pour les cellules d'en-tête.
 
 export const TableHeaderWithStyle = TableHeaderPlus.extend({
   addAttributes() {
@@ -300,9 +317,11 @@ const BASE_EXTENSIONS = [
   Underline,
   Highlight.configure({ multicolor: true }),
   Link.configure({ openOnClick: false, autolink: true }),
-  // ImagePlus remplace ResizableImage + EditorImageResizeService
-  // inline:true conserve le comportement existant (images dans le flux de texte)
-  ImagePlus.configure({ inline: true, allowBase64: true }),
+  // BUG FIX: inline:true supprime le bouton "Centrer" dans les contrôles de
+  // position de ImagePlus (voir PositionController.createPositionControls).
+  // On passe inline:false pour avoir Gauche / Centre / Droite disponibles.
+  // allowBase64:true conservé pour le support des uploads locaux.
+  ImagePlus.configure({ inline: false, allowBase64: true }),
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   // TablePlus remplace Table + ajoute duplicateRow/duplicateColumn
   TablePlus.configure({ resizable: true }),
@@ -329,7 +348,8 @@ const STRUCTURED_DOCUMENT_EXTENSIONS = [
   Underline,
   Highlight.configure({ multicolor: true }),
   Link.configure({ openOnClick: false, autolink: true }),
-  ImagePlus.configure({ inline: true, allowBase64: true }),
+  // BUG FIX: inline:false pour activer le bouton Centre (voir BASE_EXTENSIONS).
+  ImagePlus.configure({ inline: false, allowBase64: true }),
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   TablePlus.configure({ resizable: true }),
   TableRow,
