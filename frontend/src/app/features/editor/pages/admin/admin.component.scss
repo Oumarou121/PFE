@@ -3130,21 +3130,30 @@ body.resize-cursor * {
   }
 }
 
-/* ══ RIBBON TABLEAU — UNE SEULE LIGNE COMPACTE ══ */
 .tbl-bar {
-  height: 40px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.tbl-bar-row {
+  height: 40px;
   display: flex;
   align-items: center;
   padding: 0 6px;
   gap: 0;
-  flex-shrink: 0;
   overflow-x: auto;
   overflow-y: hidden;
 
   &::-webkit-scrollbar {
     height: 0;
+  }
+
+  &--bottom {
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
   }
 }
 
