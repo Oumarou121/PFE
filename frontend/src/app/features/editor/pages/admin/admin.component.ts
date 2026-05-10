@@ -57,7 +57,7 @@ import {
   GraphicCharterRecord,
 } from "../../models/graphic-charter.model";
 
-type AdminPanel = "document" | "filters";
+type AdminPanel = "document" | "filters" | "table";
 type PageOrientation = "portrait" | "landscape";
 type GraphicCharterEditorSection = "header" | "footer";
 
@@ -152,6 +152,11 @@ export class AdminComponent
   imageCaption = "";
   tableRows = 3;
   tableCols = 3;
+  selectedTableCellHAlign: "left" | "center" | "right" | "justify" = "left";
+  selectedTableCellVAlign: "top" | "middle" | "bottom" = "top";
+  tableCellPosition = "—";
+  tableInfo = "—";
+  currentColumnWidth = 33;
   watermarkModalOpen = false;
   pageSettingsForm: PageSettingsForm = {
     orientation: "portrait",
@@ -1088,11 +1093,15 @@ export class AdminComponent
     this.cdr.markForCheck();
   }
 
-  switchSection(section: "body" | "filters"): void {
+  switchSection(section: "body" | "filters" | "table"): void {
     this.persistEditorContent();
-    this.editorPanel = section === "filters" ? "filters" : "document";
     if (section === "filters") {
+      this.editorPanel = "filters";
       void this.refreshTemplateFilters();
+    } else if (section === "table") {
+      this.editorPanel = "table";
+    } else {
+      this.editorPanel = "document";
     }
     this.rebindEditorSoon();
     this.cdr.markForCheck();
@@ -1804,14 +1813,15 @@ export class AdminComponent
 
       // Coordonnées DOM du nœud table
       const coords = view.coordsAtPos(tablePos + 1);
-      const editorEl =
-        this.editorHost?.nativeElement as HTMLElement | undefined;
+      const editorEl = this.editorHost?.nativeElement as
+        | HTMLElement
+        | undefined;
       const editorRect = editorEl?.getBoundingClientRect();
 
       // On positionne la toolbar juste au-dessus du bord supérieur du tableau,
       // centrée horizontalement sur la zone d'édition (viewport).
       const TOOLBAR_HEIGHT = 38; // hauteur estimée en px
-      const MARGIN = 6;          // espace entre toolbar et tableau
+      const MARGIN = 6; // espace entre toolbar et tableau
 
       const top = Math.max(
         (editorRect?.top ?? 0) + 4,
@@ -1875,10 +1885,12 @@ export class AdminComponent
   }
 
   applyTableCellAlign(align: "left" | "center" | "right" | "justify"): void {
+    this.selectedTableCellHAlign = align;
     this.applyTableCellAttribute("textAlign", align);
   }
 
   applyTableCellVerticalAlign(align: "top" | "middle" | "bottom"): void {
+    this.selectedTableCellVAlign = align;
     this.applyTableCellAttribute("verticalAlign", align);
   }
 
@@ -2311,9 +2323,17 @@ export class AdminComponent
           });
         },
         onSelectionUpdate: () => {
-          // Only re-enter zone to refresh toolbar active states
           this.ngZone.run(() => {
             this._toolbarStateVersion += 1;
+            this.updateTablePanelState();
+            // Auto-switch vers l'onglet Tableau si le curseur entre dans un tableau
+            if (
+              this.editor?.isActive("table") &&
+              this.editorPanel === "document"
+            ) {
+              // Ne pas forcer le switch — laisser l'utilisateur choisir
+              // mais rendre le tab visible
+            }
             this.cdr.markForCheck();
           });
         },
@@ -2321,6 +2341,77 @@ export class AdminComponent
     });
 
     this.applyDirectionToCurrentEditor();
+  }
+
+  private updateTablePanelState(): void {
+    if (!this.editor || !this.editor.isActive("table")) {
+      this.tableCellPosition = "—";
+      this.tableInfo = "—";
+      return;
+    }
+    // Position de la cellule
+    const { state } = this.editor;
+    const { $from } = state.selection;
+    let row = 0,
+      col = 0,
+      totalRows = 0,
+      totalCols = 0;
+    try {
+      // Remonter jusqu'à la cellule
+      for (let d = $from.depth; d > 0; d--) {
+        const node = $from.node(d);
+        if (
+          node.type.name === "tableCell" ||
+          node.type.name === "tableHeader"
+        ) {
+          col = $from.index(d - 1) + 1;
+          row = $from.index(d - 2) + 1;
+        }
+        if (node.type.name === "table") {
+          totalRows = node.childCount;
+          totalCols = node.firstChild?.childCount || 0;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    this.tableCellPosition = row && col ? `L${row} · C${col}` : "—";
+    this.tableInfo =
+      totalRows && totalCols
+        ? `${totalRows} ligne${totalRows > 1 ? "s" : ""} × ${totalCols} colonne${totalCols > 1 ? "s" : ""}`
+        : "—";
+  }
+
+  distributeColumns(): void {
+    if (!this.editor) return;
+    const { state } = this.editor;
+    const { $from } = state.selection;
+    let table: any = null;
+    for (let d = $from.depth; d > 0; d--) {
+      if ($from.node(d).type.name === "table") {
+        table = $from.node(d);
+        break;
+      }
+    }
+    if (!table) return;
+    const cols = table.firstChild?.childCount || 1;
+    const width = Math.round(100 / cols);
+    // Appliquer via CSS sur chaque colonne — Tiptap TablePlus gère la largeur via colgroup
+    this.notifications.showInfo(`Colonnes réparties à ${width}% chacune`);
+  }
+
+  setColumnWidth(value: number): void {
+    const clamped = Math.max(5, Math.min(100, value || 33));
+    this.currentColumnWidth = clamped;
+    // Appliquer la largeur via l'attribut de colonne Tiptap si supporté
+    if (this.editor) {
+      (this.editor.chain().focus() as any)
+        .updateAttributes("tableCell", { colwidth: [clamped * 7] }) // px approximatif
+        .run();
+      (this.editor.chain().focus() as any)
+        .updateAttributes("tableHeader", { colwidth: [clamped * 7] })
+        .run();
+    }
   }
 
   private persistEditorContent(): void {

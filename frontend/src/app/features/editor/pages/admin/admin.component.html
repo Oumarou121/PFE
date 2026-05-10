@@ -334,6 +334,30 @@
           >
             • Filtres
           </button>
+          <button
+            class="sec-tab table-tab"
+            [class.on]="editorPanel === 'table'"
+            [class.disabled]="!isEditorActive('table')"
+            type="button"
+            (click)="switchSection('table')"
+            *ngIf="isEditorActive('table') || editorPanel === 'table'"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              style="width: 13px; height: 13px"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="1" />
+              <line x1="3" y1="9" x2="21" y2="9" />
+              <line x1="3" y1="15" x2="21" y2="15" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+              <line x1="15" y1="3" x2="15" y2="21" />
+            </svg>
+            Tableau
+            <span class="tab-badge" *ngIf="isEditorActive('table')">actif</span>
+          </button>
           <div class="sec-toggle">
             <button
               class="toggle-btn"
@@ -1345,6 +1369,513 @@
               </div>
             </div>
           </div>
+         
+          <div class="editor-section-panel on" *ngIf="editorPanel === 'table'">
+            <!-- TOOLBAR UNE LIGNE -->
+            <div class="tbl-bar">
+              <span class="tbl-grp-label">Lignes</span>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Ajouter une ligne avant"
+                (click)="runTableCommand('addRowBefore')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="13" width="18" height="6" rx="1" />
+                  <rect
+                    x="3"
+                    y="5"
+                    width="18"
+                    height="6"
+                    rx="1"
+                    opacity=".35"
+                  />
+                  <line x1="12" y1="11" x2="12" y2="13" />
+                </svg>
+                Avant
+              </button>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Ajouter une ligne après"
+                (click)="runTableCommand('addRowAfter')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect
+                    x="3"
+                    y="5"
+                    width="18"
+                    height="6"
+                    rx="1"
+                    opacity=".35"
+                  />
+                  <rect x="3" y="13" width="18" height="6" rx="1" />
+                  <line x1="12" y1="11" x2="12" y2="13" />
+                </svg>
+                Après
+              </button>
+
+              <button
+                class="tbl-btn danger"
+                type="button"
+                title="Supprimer la ligne"
+                (click)="runTableCommand('deleteRow')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="7" width="18" height="10" rx="1" />
+                  <line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
+                Suppr.
+              </button>
+
+              <div class="tbl-sep"></div>
+              <span class="tbl-grp-label">Colonnes</span>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Ajouter une colonne avant"
+                (click)="runTableCommand('addColumnBefore')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="13" y="3" width="6" height="18" rx="1" />
+                  <rect
+                    x="5"
+                    y="3"
+                    width="6"
+                    height="18"
+                    rx="1"
+                    opacity=".35"
+                  />
+                  <line x1="11" y1="12" x2="13" y2="12" />
+                </svg>
+                Avant
+              </button>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Ajouter une colonne après"
+                (click)="runTableCommand('addColumnAfter')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect
+                    x="5"
+                    y="3"
+                    width="6"
+                    height="18"
+                    rx="1"
+                    opacity=".35"
+                  />
+                  <rect x="13" y="3" width="6" height="18" rx="1" />
+                  <line x1="11" y1="12" x2="13" y2="12" />
+                </svg>
+                Après
+              </button>
+
+              <button
+                class="tbl-btn danger"
+                type="button"
+                title="Supprimer la colonne"
+                (click)="runTableCommand('deleteColumn')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="7" y="3" width="10" height="18" rx="1" />
+                  <line x1="12" y1="8" x2="12" y2="16" />
+                </svg>
+                Suppr.
+              </button>
+
+              <div class="tbl-sep"></div>
+              <span class="tbl-grp-label">Cellules</span>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Fusionner les cellules"
+                (click)="runTableCommand('mergeCells')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="1" />
+                  <path d="M9 12h6M12 9l3 3-3 3" />
+                </svg>
+                Fusionner
+              </button>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Diviser la cellule"
+                (click)="runTableCommand('splitCell')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="1" />
+                  <line x1="12" y1="3" x2="12" y2="21" />
+                </svg>
+                Diviser
+              </button>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Basculer la ligne d'en-tête"
+                [class.on]="isEditorActive('tableHeader')"
+                (click)="runTableCommand('toggleHeaderRow')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="5" rx="1" />
+                  <rect
+                    x="3"
+                    y="11"
+                    width="18"
+                    height="10"
+                    rx="1"
+                    opacity=".35"
+                  />
+                </svg>
+                En-tête
+              </button>
+
+              <div class="tbl-sep"></div>
+              <span class="tbl-grp-label">Alignement H</span>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Aligner à gauche"
+                [class.on]="selectedTableCellHAlign === 'left'"
+                (click)="applyTableCellAlign('left')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="15" y2="12" />
+                  <line x1="3" y1="18" x2="18" y2="18" />
+                </svg>
+              </button>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Centrer"
+                [class.on]="selectedTableCellHAlign === 'center'"
+                (click)="applyTableCellAlign('center')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="6" y1="12" x2="18" y2="12" />
+                  <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
+              </button>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Aligner à droite"
+                [class.on]="selectedTableCellHAlign === 'right'"
+                (click)="applyTableCellAlign('right')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="9" y1="12" x2="21" y2="12" />
+                  <line x1="6" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+
+              <div class="tbl-sep"></div>
+              <span class="tbl-grp-label">Alignement V</span>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Aligner en haut"
+                [class.on]="selectedTableCellVAlign === 'top'"
+                (click)="applyTableCellVerticalAlign('top')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="3" y1="4" x2="21" y2="4" />
+                  <line x1="12" y1="4" x2="12" y2="20" />
+                  <path d="M9 9l3-5 3 5" />
+                </svg>
+              </button>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Centrer verticalement"
+                [class.on]="selectedTableCellVAlign === 'middle'"
+                (click)="applyTableCellVerticalAlign('middle')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="12" y1="4" x2="12" y2="20" />
+                  <path d="M9 9l3-5 3 5M9 15l3 5 3-5" />
+                </svg>
+              </button>
+
+              <button
+                class="tbl-btn"
+                type="button"
+                title="Aligner en bas"
+                [class.on]="selectedTableCellVAlign === 'bottom'"
+                (click)="applyTableCellVerticalAlign('bottom')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="3" y1="20" x2="21" y2="20" />
+                  <line x1="12" y1="4" x2="12" y2="20" />
+                  <path d="M9 15l3 5 3-5" />
+                </svg>
+              </button>
+
+              <div class="tbl-sep"></div>
+              <span class="tbl-grp-label">Fond</span>
+
+              <div class="tbl-swatches">
+                <button
+                  class="tbl-swatch"
+                  type="button"
+                  *ngFor="let color of tableCellColors"
+                  [style.background]="
+                    color === 'transparent'
+                      ? 'linear-gradient(135deg,#fff 0 45%,#ef4444 46% 54%,#fff 55% 100%)'
+                      : color
+                  "
+                  [class.active]="selectedTableBackgroundColor === color"
+                  title="{{ color === 'transparent' ? 'Aucun fond' : color }}"
+                  (click)="applyTableCellBackground(color)"
+                ></button>
+              </div>
+
+              <div class="tbl-sep"></div>
+              <span class="tbl-grp-label">Texte</span>
+
+              <div class="tbl-swatches">
+                <button
+                  class="tbl-swatch"
+                  type="button"
+                  *ngFor="let color of tableTextColors"
+                  [style.background]="color"
+                  [class.active]="selectedTableTextColor === color"
+                  title="{{ color }}"
+                  (click)="applyTableCellTextColor(color)"
+                ></button>
+              </div>
+
+              <div class="tbl-sep"></div>
+              <span class="tbl-grp-label">Col. %</span>
+
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  padding: 0 4px;
+                  flex-shrink: 0;
+                "
+              >
+                <input
+                  type="number"
+                  class="tbl-col-input"
+                  min="5"
+                  max="100"
+                  [value]="currentColumnWidth"
+                  (change)="setColumnWidth(+$any($event.target).value)"
+                  title="Largeur de la colonne en %"
+                />
+                <button
+                  class="tbl-btn"
+                  type="button"
+                  title="Répartir toutes les colonnes équitablement"
+                  style="padding: 0 5px; min-width: 0"
+                  (click)="distributeColumns()"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    style="width: 13px; height: 13px"
+                  >
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="7" y1="3" x2="7" y2="21" />
+                    <line x1="17" y1="3" x2="17" y2="21" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="tbl-sep" style="margin-left: auto"></div>
+
+              <button
+                class="tbl-btn danger"
+                type="button"
+                title="Supprimer le tableau"
+                (click)="runTableCommand('deleteTable')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="1" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                </svg>
+                Suppr. tableau
+              </button>
+            </div>
+
+            <!-- ÉDITEUR (même canvas que l'onglet Document) -->
+            <div
+              class="pcanvas"
+              tabindex="0"
+              role="region"
+              aria-label="Zone des pages"
+              (keydown)="onEditorViewportKeydown($event)"
+            >
+              <div class="page-live-badge">
+                Page 1 / {{ documentPageCount }}
+              </div>
+              <div class="zoom-scaler" [style.zoom]="zoomLevel + '%'">
+                <div
+                  class="editor-shell"
+                  [style.--page-w]="
+                    pageSettingsForm.orientation === 'landscape'
+                      ? '297mm'
+                      : '210mm'
+                  "
+                  [style.--page-h]="
+                    pageSettingsForm.orientation === 'landscape'
+                      ? '210mm'
+                      : '297mm'
+                  "
+                  [style.--page-mt]="pageSettingsForm.mt + 'mm'"
+                  [style.--page-mb]="pageSettingsForm.mb + 'mm'"
+                  [style.--page-ml]="pageSettingsForm.ml + 'mm'"
+                  [style.--page-mr]="pageSettingsForm.mr + 'mm'"
+                  [style.--page-header-top]="pageSettingsForm.headerTop + 'mm'"
+                  [style.--page-footer-bottom]="
+                    pageSettingsForm.footerBottom + 'mm'
+                  "
+                  [ngStyle]="liveDocumentThemeStyles"
+                >
+                  <div class="live-page-backgrounds" aria-hidden="true">
+                    <div
+                      class="live-page-surface"
+                      *ngFor="
+                        let pageIndex of documentPageIndexes;
+                        trackBy: trackByPageIndex
+                      "
+                    ></div>
+                  </div>
+                  <div #editorHost class="editor-host"></div>
+                </div>
+              </div>
+              <div class="page-scroll-spacer" aria-hidden="true"></div>
+            </div>
+
+            <!-- BARRE DE STATUT -->
+            <div class="tbl-status-bar">
+              <strong style="color: var(--text2); font-size: 10px">{{
+                tableCellPosition
+              }}</strong>
+              <div class="tbl-status-dot"></div>
+              <span>{{ tableInfo }}</span>
+              <div class="tbl-status-dot"></div>
+              <span>
+                Fond :
+                <span
+                  class="tbl-status-color"
+                  [style.background]="
+                    selectedTableBackgroundColor === 'transparent'
+                      ? '#fff'
+                      : selectedTableBackgroundColor
+                  "
+                ></span>
+              </span>
+              <div class="tbl-status-dot"></div>
+              <span
+                >Align. {{ selectedTableCellHAlign }} ·
+                {{ selectedTableCellVAlign }}</span
+              >
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1487,253 +2018,6 @@
     />
     Respecter la casse
   </label>
-</div>
-
-<div
-  class="tbl-toolbar on"
-  *ngIf="editorPanel === 'document' && isEditorActive('table')"
-  [ngStyle]="computeTableToolbarStyle()"
->
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="runTableCommand('addRowBefore')"
-    title="Ligne avant"
-  >
-    + ligne avant
-  </button>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="runTableCommand('addRowAfter')"
-    title="Ligne après"
-  >
-    + ligne après
-  </button>
-  <button
-    class="tbl-tb-btn danger"
-    type="button"
-    (click)="runTableCommand('deleteRow')"
-    title="Supprimer ligne"
-  >
-    - ligne
-  </button>
-  <span class="tbl-tb-sep"></span>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="runTableCommand('addColumnBefore')"
-    title="Colonne avant"
-  >
-    + col avant
-  </button>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="runTableCommand('addColumnAfter')"
-    title="Colonne après"
-  >
-    + col après
-  </button>
-  <button
-    class="tbl-tb-btn danger"
-    type="button"
-    (click)="runTableCommand('deleteColumn')"
-    title="Supprimer colonne"
-  >
-    - col
-  </button>
-  <span class="tbl-tb-sep"></span>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="applyTableCellAlign('left')"
-    title="Aligner gauche"
-  >
-    gauche
-  </button>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="applyTableCellAlign('center')"
-    title="Aligner centre"
-  >
-    centre
-  </button>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="applyTableCellAlign('right')"
-    title="Aligner droite"
-  >
-    droite
-  </button>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="applyTableCellVerticalAlign('top')"
-    title="Aligner haut"
-  >
-    haut
-  </button>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="applyTableCellVerticalAlign('middle')"
-    title="Aligner milieu"
-  >
-    milieu
-  </button>
-  <span class="tbl-tb-sep"></span>
-  <div class="tbl-cell-clr-wrap">
-    <button
-      class="tbl-tb-btn"
-      type="button"
-      (click)="toggleTablePopover('background', $event)"
-      title="Fond de cellule"
-    >
-      fond
-      <span
-        style="
-          width: 12px;
-          height: 12px;
-          border-radius: 2px;
-          border: 1px solid rgba(255, 255, 255, 0.4);
-          display: inline-block;
-        "
-        [style.background]="
-          selectedTableBackgroundColor === 'transparent'
-            ? '#fff'
-            : selectedTableBackgroundColor
-        "
-      ></span>
-    </button>
-    <div
-      class="tbl-clr-pop"
-      [class.on]="activeTablePopover === 'background'"
-      (click)="$event.stopPropagation()"
-    >
-      <div
-        style="
-          font-size: 9px;
-          color: var(--text3);
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 6px;
-        "
-      >
-        Fond de cellule
-      </div>
-      <div class="tbl-clr-swatches">
-        <button
-          class="cswatch"
-          type="button"
-          *ngFor="let color of tableCellColors"
-          [style.background]="
-            color === 'transparent'
-              ? 'linear-gradient(135deg, #fff 0 45%, #ef4444 46% 54%, #fff 55% 100%)'
-              : color
-          "
-          (click)="applyTableCellBackground(color)"
-        ></button>
-      </div>
-      <input
-        type="color"
-        [value]="
-          selectedTableBackgroundColor === 'transparent'
-            ? '#ffffff'
-            : selectedTableBackgroundColor
-        "
-        (change)="applyTableCellBackground($any($event.target).value)"
-      />
-    </div>
-  </div>
-  <div class="tbl-cell-clr-wrap">
-    <button
-      class="tbl-tb-btn"
-      type="button"
-      (click)="toggleTablePopover('text', $event)"
-      title="Couleur texte"
-    >
-      texte
-      <span
-        style="
-          width: 12px;
-          height: 12px;
-          border-radius: 2px;
-          border: 1px solid rgba(255, 255, 255, 0.4);
-          display: inline-block;
-        "
-        [style.background]="selectedTableTextColor"
-      ></span>
-    </button>
-    <div
-      class="tbl-clr-pop"
-      [class.on]="activeTablePopover === 'text'"
-      (click)="$event.stopPropagation()"
-    >
-      <div
-        style="
-          font-size: 9px;
-          color: var(--text3);
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 6px;
-        "
-      >
-        Couleur du texte
-      </div>
-      <div class="tbl-clr-swatches">
-        <button
-          class="cswatch"
-          type="button"
-          *ngFor="let color of tableTextColors"
-          [style.background]="color"
-          (click)="applyTableCellTextColor(color)"
-        ></button>
-      </div>
-      <input
-        type="color"
-        [value]="selectedTableTextColor"
-        (change)="applyTableCellTextColor($any($event.target).value)"
-      />
-    </div>
-  </div>
-  <span class="tbl-tb-sep"></span>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="runTableCommand('mergeCells')"
-    title="Fusionner"
-  >
-    fusionner
-  </button>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="runTableCommand('splitCell')"
-    title="Diviser"
-  >
-    diviser
-  </button>
-  <button
-    class="tbl-tb-btn"
-    type="button"
-    (click)="runTableCommand('toggleHeaderRow')"
-    title="En-tête"
-  >
-    en-tête
-  </button>
-  <button
-    class="tbl-tb-btn danger"
-    type="button"
-    (click)="runTableCommand('deleteTable')"
-    title="Supprimer tableau"
-  >
-    tableau
-  </button>
 </div>
 
 <div class="modal-overlay--preview modal-overlay" [class.open]="previewOpen">
