@@ -1262,7 +1262,7 @@ button {
 }
 
 .document-page-header {
-  padding: 0 0 3mm;
+  padding: var(--page-header-top) var(--page-mr) 3mm var(--page-ml);
   border-bottom: 1px dashed var(--doc-color-border);
 }
 
@@ -1270,10 +1270,11 @@ button {
   min-height: 0;
   position: relative;
   isolation: isolate;
+  padding: var(--page-mt) var(--page-mr) var(--page-mb) var(--page-ml);
 }
 
 .document-page-footer {
-  padding: 3mm 0 0;
+  padding: 3mm var(--page-mr) var(--page-footer-bottom) var(--page-ml);
   border-top: 1px dashed var(--doc-color-border);
 }
 
@@ -1543,7 +1544,7 @@ button {
     table-layout: fixed;
     box-sizing: border-box;
     border-collapse: collapse;
-    margin: 8px 0;
+    margin: 12px 0;
     word-wrap: break-word;
     /* ANTI-VIBRATION : pas d'animation sur les changements de taille */
     transition: none !important;
@@ -1556,7 +1557,7 @@ button {
   td,
   th {
     border: 1px solid var(--doc-color-border);
-    padding: 7px 10px;
+    padding: 8px 12px;
     /*
      * TAILLE MINIMALE : empêche une colonne de devenir invisible
      * lors du redimensionnement.
@@ -1571,10 +1572,13 @@ button {
      * non-cliquables.
      */
     overflow: visible;
-    word-break: break-word;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    white-space: normal;
     box-sizing: border-box;
     /* Curseur texte dans les cellules */
     cursor: text;
+    vertical-align: top;
     /* ANTI-VIBRATION */
     transition: none !important;
   }
@@ -3324,4 +3328,10 @@ body.resize-cursor * {
   background: var(--accent-bg);
   color: var(--accent);
   font-weight: 700;
+}
+
+td p,
+th p {
+  min-height: 0; // évite des marges internes inutiles
+  margin: 0;
 }
