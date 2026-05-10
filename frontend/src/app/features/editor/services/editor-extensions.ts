@@ -249,8 +249,14 @@ export interface PaginationConfig {
   marginBottom: number; // mm
   marginLeft: number;   // mm
   marginRight: number;  // mm
+  headerTop?: number;   // mm
+  footerBottom?: number; // mm
+  contentMarginTop?: number; // mm
+  contentMarginBottom?: number; // mm
   headerHtml?: string;
   footerHtml?: string;
+  customHeader?: Record<number, { headerLeft: string; headerRight: string }>;
+  customFooter?: Record<number, { footerLeft: string; footerRight: string }>;
 }
 
 function buildPaginationPlusConfig(config?: PaginationConfig) {
@@ -266,17 +272,19 @@ function buildPaginationPlusConfig(config?: PaginationConfig) {
     pageGap: 40,
     pageGapBorderSize: 1,
     pageGapBorderColor: "#e5e7eb",
-    pageBreakBackground: "#f9fafb",
-    marginTop:    config ? mmToPx(config.marginTop)    : mmToPx(20),
-    marginBottom: config ? mmToPx(config.marginBottom) : mmToPx(20),
+    pageBreakBackground: "#c8cdd8",
+    marginTop:    config ? mmToPx(config.headerTop ?? config.marginTop)    : mmToPx(20),
+    marginBottom: config ? mmToPx(config.footerBottom ?? config.marginBottom) : mmToPx(20),
     marginLeft:   config ? mmToPx(config.marginLeft)   : mmToPx(25),
     marginRight:  config ? mmToPx(config.marginRight)  : mmToPx(25),
-    contentMarginTop:    0,
-    contentMarginBottom: 0,
+    contentMarginTop:    config ? mmToPx(config.contentMarginTop ?? 0) : 0,
+    contentMarginBottom: config ? mmToPx(config.contentMarginBottom ?? 0) : 0,
     headerLeft:  config?.headerHtml ?? "",
     headerRight: "",
     footerLeft:  config?.footerHtml ?? "",
     footerRight: "",
+    customHeader: config?.customHeader ?? {},
+    customFooter: config?.customFooter ?? {},
   });
 }
 

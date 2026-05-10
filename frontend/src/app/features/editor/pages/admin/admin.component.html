@@ -1050,6 +1050,15 @@
                   [style.--page-orientation]="pageSettingsForm.orientation"
                   [ngStyle]="liveDocumentThemeStyles"
                 >
+                  <div class="live-page-backgrounds" aria-hidden="true">
+                    <div
+                      class="live-page-surface"
+                      *ngFor="
+                        let pageIndex of documentPageIndexes;
+                        trackBy: trackByPageIndex
+                      "
+                    ></div>
+                  </div>
                   <div #editorHost class="editor-host"></div>
                 </div>
               </div>

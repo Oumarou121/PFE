@@ -1070,7 +1070,35 @@ button {
   position: relative;
 }
 
+.live-page-backgrounds {
+  position: absolute;
+  inset: 0 auto auto 50%;
+  z-index: 0;
+  display: flex;
+  width: var(--page-w);
+  transform: translateX(-50%);
+  flex-direction: column;
+  gap: 40px;
+  pointer-events: none;
+}
+
+.live-page-surface {
+  width: var(--page-w);
+  height: var(--page-h);
+  flex: 0 0 var(--page-h);
+  background-color: #fff;
+  background-image: var(--doc-page-bg-image, none);
+  background-size: var(--doc-page-bg-size, cover);
+  background-position: var(--doc-page-bg-position, center center);
+  background-repeat: var(--doc-page-bg-repeat, no-repeat);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
 .editor-host {
+  position: relative;
+  z-index: 1;
   width: 100%;
 }
 
@@ -1146,16 +1174,36 @@ button {
 }
 
 .editor-host .rm-with-pagination {
-  background-color: #fff;
-  background-image: var(--doc-page-bg-image, none);
-  background-size: var(--doc-page-bg-size, cover);
-  background-position: var(--doc-page-bg-position, center center);
-  background-repeat: var(--doc-page-bg-repeat, no-repeat);
-  box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(0, 0, 0, 0.08);
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none;
   box-sizing: border-box;
   overflow: visible;
+}
+
+.editor-host .rm-with-pagination .document-page-header,
+.editor-host .rm-with-pagination .document-page-footer {
+  display: none;
+}
+
+.editor-host .rm-page-header,
+.editor-host .rm-page-footer {
+  color: var(--doc-color-text);
+  font-family: var(--doc-font-body);
+  font-size: 12pt;
+  line-height: 1.6;
+  background: transparent;
+}
+
+.editor-host .rm-page-header-content,
+.editor-host .rm-page-footer-content {
+  position: relative;
+  z-index: 3;
+}
+
+.editor-host .rm-page-header-left,
+.editor-host .rm-page-footer-left {
+  width: calc(100% - var(--rm-margin-left) - var(--rm-margin-right));
 }
 
 .editor-host .rm-pagination-gap {

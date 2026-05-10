@@ -47,6 +47,7 @@ import { FilterRuntimeService } from "../../services/filter-runtime.service";
 import { DocumentDataService } from "../../services/document-data.service";
 import {
   getFamilyFilterCatalog,
+  normalizeTemplateSectionDisplay,
   normalizeTemplateFilterProfile,
   normalizeTemplateFilterProfileEntry,
   normalizeTemplateRecord,
@@ -583,6 +584,14 @@ export class AdminComponent
   get documentPageCount(): number {
     const pages = this.editor?.view.dom.querySelectorAll(".rm-page-break");
     return Math.max(1, pages?.length || 1);
+  }
+
+  get documentPageIndexes(): number[] {
+    return Array.from({ length: this.documentPageCount }, (_, index) => index);
+  }
+
+  trackByPageIndex(_index: number, pageIndex: number): number {
+    return pageIndex;
   }
 
   public onEditorViewportKeydown(event: KeyboardEvent): void {
@@ -2138,6 +2147,7 @@ export class AdminComponent
     const documentCacheKey = [
       this.hasHeader,
       this.hasFooter,
+      this.selectedGraphicCharterId,
       this.pageSettingsForm.orientation,
       this.pageSettingsForm.mt,
       this.pageSettingsForm.mb,
@@ -2145,6 +2155,10 @@ export class AdminComponent
       this.pageSettingsForm.mr,
       this.pageSettingsForm.headerTop,
       this.pageSettingsForm.footerBottom,
+      this.getLiveHeaderDisplayMode(),
+      this.getLiveFooterDisplayMode(),
+      this.editorContent.header,
+      this.editorContent.footer,
     ].join("|");
 
     // ─── FIX: Pour la section body, inclure headerHtml/footerHtml dans la clé
@@ -2168,11 +2182,7 @@ export class AdminComponent
       const paginationConfig = this.buildPaginationConfig();
       this.editor = new Editor({
         element,
-        extensions: buildStructuredDocumentExtensions({
-          ...paginationConfig,
-          headerHtml: "",
-          footerHtml: "",
-        }),
+        extensions: buildStructuredDocumentExtensions(paginationConfig),
         content: this.buildStructuredDocumentHtml(),
         onUpdate: ({ editor }) => {
           const html = editor.getHTML();
@@ -2721,6 +2731,16 @@ export class AdminComponent
     return firstValueFrom(ref.afterClosed());
   }
   private buildPaginationConfig(): PaginationConfig {
+    const headerHtml = this.hasHeader ? this.editorContent.header || "" : "";
+    const footerHtml = this.hasFooter ? this.editorContent.footer || "" : "";
+    const header = this.buildLivePaginationHeader(
+      headerHtml,
+      this.getLiveHeaderDisplayMode(),
+    );
+    const footer = this.buildLivePaginationFooter(
+      footerHtml,
+      this.getLiveFooterDisplayMode(),
+    );
     // ─── FIX: transmettre headerHtml et footerHtml à PaginationPlus ──────────
     // Sans ces valeurs, PaginationPlus affiche des pages vides sans en-tête ni
     // pied de page dans la section body. On utilise editorContent (persisté)
@@ -2732,8 +2752,78 @@ export class AdminComponent
       marginBottom: this.pageSettingsForm.mb,
       marginLeft: this.pageSettingsForm.ml,
       marginRight: this.pageSettingsForm.mr,
-      headerHtml: this.hasHeader ? this.editorContent.header || "" : "",
-      footerHtml: this.hasFooter ? this.editorContent.footer || "" : "",
+      headerTop: headerHtml ? this.pageSettingsForm.headerTop : undefined,
+      footerBottom: footerHtml ? this.pageSettingsForm.footerBottom : undefined,
+      contentMarginTop: headerHtml ? this.pageSettingsForm.mt + 3 : 0,
+      contentMarginBottom: footerHtml ? this.pageSettingsForm.mb + 3 : 0,
+      headerHtml: header.common,
+      footerHtml: footer.common,
+      customHeader: header.custom,
+      customFooter: footer.custom,
     };
+  }
+
+  private getLiveHeaderDisplayMode(): "all" | "first" | "even" | "odd" {
+    return normalizeTemplateSectionDisplay(
+      this.selectedGraphicCharterConfig.header.displayMode,
+    );
+  }
+
+  private getLiveFooterDisplayMode(): "all" | "first" | "even" | "odd" {
+    return normalizeTemplateSectionDisplay(
+      this.selectedGraphicCharterConfig.footer.displayMode,
+    );
+  }
+
+  private buildLivePaginationHeader(
+    html: string,
+    mode: "all" | "first" | "even" | "odd",
+  ): {
+    common: string;
+    custom: Record<number, { headerLeft: string; headerRight: string }>;
+  } {
+    if (!html) return { common: "", custom: {} };
+    if (mode === "all") return { common: html, custom: {} };
+    const maxPage = Math.max(this.documentPageCount + 6, 80);
+    const custom: Record<number, { headerLeft: string; headerRight: string }> =
+      {};
+    for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
+      custom[pageNumber] = {
+        headerLeft: this.shouldShowLiveSection(mode, pageNumber) ? html : "",
+        headerRight: "",
+      };
+    }
+    return { common: "", custom };
+  }
+
+  private buildLivePaginationFooter(
+    html: string,
+    mode: "all" | "first" | "even" | "odd",
+  ): {
+    common: string;
+    custom: Record<number, { footerLeft: string; footerRight: string }>;
+  } {
+    if (!html) return { common: "", custom: {} };
+    if (mode === "all") return { common: html, custom: {} };
+    const maxPage = Math.max(this.documentPageCount + 6, 80);
+    const custom: Record<number, { footerLeft: string; footerRight: string }> =
+      {};
+    for (let pageNumber = 1; pageNumber <= maxPage; pageNumber += 1) {
+      custom[pageNumber] = {
+        footerLeft: this.shouldShowLiveSection(mode, pageNumber) ? html : "",
+        footerRight: "",
+      };
+    }
+    return { common: "", custom };
+  }
+
+  private shouldShowLiveSection(
+    mode: "all" | "first" | "even" | "odd",
+    pageNumber: number,
+  ): boolean {
+    if (mode === "first") return pageNumber === 1;
+    if (mode === "even") return pageNumber % 2 === 0;
+    if (mode === "odd") return pageNumber % 2 === 1;
+    return true;
   }
 }
