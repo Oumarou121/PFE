@@ -1016,7 +1016,12 @@
             class="editor-section-panel on"
             *ngIf="editorPanel === 'document'"
           >
-            <div class="pcanvas">
+            <div
+              class="pcanvas"
+              tabindex="0"
+              role="region"
+              aria-label="Zone des pages"
+            >
               <div class="page-live-badge">
                 Page 1 / {{ documentPageCount }}
               </div>

@@ -192,6 +192,7 @@ button {
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   opacity: 0;
   transition: opacity 0.25s;
 }
@@ -291,6 +292,7 @@ button {
 .main-area {
   display: flex;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -958,13 +960,15 @@ button {
   flex: 1 1 0;
   width: 100%;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: #c8cdd8;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 24px 20px 0 !important;
   position: relative;
+  outline: none;
 
   /* PaginationPlus injecte ses propres pages — on les laisse centrer naturellement */
   & > .body-editor-wrap {
