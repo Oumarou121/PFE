@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using DocApi.Domain.ValueObjects;
 
 namespace DocApi.Domain.Entities
 {
@@ -13,9 +13,9 @@ namespace DocApi.Domain.Entities
         public bool HasHeader { get; set; }
         public bool HasFooter { get; set; }
         public string Orientation { get; set; } = "portrait";
-        public JsonArray FilterProfile { get; set; } = new();
-        public JsonObject SectionDirections { get; set; } = new();
-        public JsonObject PageMargins { get; set; } = new();
+        public List<TemplateFilterProfileEntry> FilterProfile { get; set; } = [];
+        public SectionDirections SectionDirections { get; set; } = new();
+        public PageMargins PageMargins { get; set; } = new();
         public string Header { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;
         public string Footer { get; set; } = string.Empty;

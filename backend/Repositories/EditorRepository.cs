@@ -1,8 +1,10 @@
 using System.Data;
 using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Dapper;
+using DocApi.Domain.ValueObjects;
+using DocApi.DTOs;
 using DocApi.Infrastructure;
 using DocApi.Repositories.Interfaces;
 using Microsoft.Extensions.Options;
@@ -18,7 +20,7 @@ namespace DocApi.Repositories
     public class EditorRepository : IEditorRepository
     {
         private readonly ILogger<EditorRepository> _logger;
-        private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+        private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
         private readonly IEditorDbConnectionFactory _connectionFactory;
         private readonly IWebHostEnvironment _environment;
         private readonly EditorDatabaseOptions _options;
@@ -40,7 +42,7 @@ namespace DocApi.Repositories
             await connection.ExecuteAsync(await File.ReadAllTextAsync(schemaPath));
         }
 
-        public async Task<IEnumerable<object>> LoadFamiliesAsync()
+        public async Task<IEnumerable<FamilyResponse>> LoadFamiliesAsync()
         {
             if (!await TableExistsAsync("family")) return [];
             var hasBeneficiaryMode = await TableHasColumnAsync("family", "beneficiary_mode");
@@ -70,39 +72,40 @@ namespace DocApi.Repositories
             return rows.Select(row =>
             {
                 var item = Row(row);
-                return new
+                var mode = Str(item, "beneficiary_mode") == "organization" ? BeneficiaryMode.Organization : BeneficiaryMode.Table;
+                return new FamilyResponse
                 {
-                    id = Str(item, "id"),
-                    nom = Str(item, "nom"),
-                    description = Str(item, "description"),
-                    beneficiaryMode = Str(item, "beneficiary_mode") == "organization" ? "organization" : "table",
-                    beneficiaryTable = Str(item, "beneficiary_mode") == "organization" ? null : Str(item, "beneficiary_table"),
-                    beneficiaryTableLabel = Str(item, "beneficiary_table_label"),
-                    beneficiaryLinkColumn = Str(item, "beneficiary_link_column"),
-                    beneficiaryDisplayColumn1 = Str(item, "beneficiary_display_column_1"),
-                    beneficiaryDisplayColumn2 = Str(item, "beneficiary_display_column_2"),
-                    beneficiarySql = Str(item, "beneficiary_sql_text"),
-                    filterCatalog = JsonValue(item, "filter_catalog_json", new JsonArray()),
-                    sql = Str(item, "sql_text"),
-                    createdAt = Obj(item, "created_at"),
-                    classes = JsonValue(item, "classes_json", new JsonArray())
+                    Id = Str(item, "id") ?? string.Empty,
+                    Nom = Str(item, "nom") ?? string.Empty,
+                    Description = Str(item, "description"),
+                    BeneficiaryMode = mode,
+                    BeneficiaryTable = mode == BeneficiaryMode.Organization ? null : Str(item, "beneficiary_table"),
+                    BeneficiaryTableLabel = Str(item, "beneficiary_table_label") ?? string.Empty,
+                    BeneficiaryLinkColumn = Str(item, "beneficiary_link_column"),
+                    BeneficiaryDisplayColumn1 = Str(item, "beneficiary_display_column_1"),
+                    BeneficiaryDisplayColumn2 = Str(item, "beneficiary_display_column_2"),
+                    BeneficiarySql = Str(item, "beneficiary_sql_text"),
+                    FilterCatalog = JsonValue(item, "filter_catalog_json", new List<FilterDefinition>()),
+                    Sql = Str(item, "sql_text"),
+                    CreatedAt = Str(item, "created_at"),
+                    Classes = JsonValue(item, "classes_json", new List<FamilyClass>())
                 };
             });
         }
 
-        public async Task<object?> GetFamilyByIdAsync(string id)
+        public async Task<FamilyResponse?> GetFamilyByIdAsync(string id)
         {
-            return (await LoadFamiliesAsync()).FirstOrDefault(item => GetAnonymousProperty(item, "id") == id);
+            return (await LoadFamiliesAsync()).FirstOrDefault(item => item.Id == id);
         }
 
-        public async Task<object> UpsertFamilyAsync(JsonObject family)
+        public async Task<FamilyResponse> UpsertFamilyAsync(FamilyRequest request)
         {
-            if (string.IsNullOrWhiteSpace(JString(family, "id"))) family["id"] = $"fam_{Guid.NewGuid():N}";
+            var family = NormalizeFamily(request);
             using var connection = _connectionFactory.CreateConnection();
             await connection.ExecuteAsync("""
                 MERGE family AS target
                 USING (SELECT @id AS id) AS src ON target.id = src.id
-                                WHEN MATCHED THEN UPDATE SET nom = @nom, description = @description,
+                WHEN MATCHED THEN UPDATE SET nom = @nom, description = @description,
                   beneficiary_mode = @beneficiary_mode, beneficiary_table = @beneficiary_table,
                   beneficiary_table_label = @beneficiary_table_label,
                   beneficiary_link_column = @beneficiary_link_column,
@@ -110,14 +113,14 @@ namespace DocApi.Repositories
                   beneficiary_display_column_2 = @beneficiary_display_column_2,
                   beneficiary_sql_text = @beneficiary_sql_text, filter_catalog_json = @filter_catalog_json,
                   sql_text = @sql_text, classes_json = @classes_json
-                                WHEN NOT MATCHED THEN INSERT (id, nom, description, beneficiary_mode, beneficiary_table,
+                WHEN NOT MATCHED THEN INSERT (id, nom, description, beneficiary_mode, beneficiary_table,
                   beneficiary_table_label, beneficiary_link_column, beneficiary_display_column_1, beneficiary_display_column_2,
                   beneficiary_sql_text, filter_catalog_json, sql_text, created_at, classes_json)
-                                    VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table,
+                  VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table,
                   @beneficiary_table_label, @beneficiary_link_column, @beneficiary_display_column_1, @beneficiary_display_column_2,
                   @beneficiary_sql_text, @filter_catalog_json, @sql_text, @created_at, @classes_json);
                 """, FamilyParams(family));
-            return (await GetFamilyByIdAsync(JString(family, "id")!))!;
+            return (await GetFamilyByIdAsync(family.Id))!;
         }
 
         public async Task DeleteFamilyAsync(string id)
@@ -126,7 +129,7 @@ namespace DocApi.Repositories
             await connection.ExecuteAsync("DELETE FROM template WHERE family_id = @id; DELETE FROM family WHERE id = @id", new { id });
         }
 
-        public async Task<IEnumerable<object>> LoadOrganizationsAsync()
+        public async Task<IEnumerable<OrganizationResponse>> LoadOrganizationsAsync()
         {
             try
             {
@@ -135,43 +138,43 @@ namespace DocApi.Repositories
                 return rows.Select(row =>
                 {
                     var item = Row(row);
-                    return new
+                    return new OrganizationResponse
                     {
-                        id = FirstString(item, "Id", "ID", "id", "OrganizationId", "IdOrganization"),
-                        nom = FirstString(item, "NameFr", "Name", "Nom", "Libelle", "Label", "Title", "Acronym") ?? "Organisation",
-                        nameFr = FirstString(item, "NameFr"),
-                        nameAr = FirstString(item, "NameAr"),
-                        acronym = FirstString(item, "Acronym"),
-                        organizationLogo = FirstString(item, "OrganisationLogo", "OrganizationLogo"),
-                        affiliation = FirstString(item, "Affiliation"),
-                        affiliationLogo = FirstString(item, "AffiliationLogo"),
-                        fieldOfActivity = FirstString(item, "FieldOfActivity"),
-                        ville = FirstString(item, "City", "Ville", "Town"),
-                        adresse = FirstString(item, "Adress", "Address", "Adresse", "Address1"),
-                        postalCode = FirstString(item, "PostalCode", "ZipCode", "Postal_Code"),
-                        country = FirstString(item, "Country", "Pays"),
-                        tel = FirstString(item, "Phone", "Telephone", "Tel", "Mobile"),
-                        email = FirstString(item, "Email", "Mail"),
-                        personToContact = FirstString(item, "PersonToContact", "ContactPerson"),
-                        contactMail = FirstString(item, "ContactMail"),
-                        contactPhone = FirstString(item, "ContactPhone"),
-                        contactPosition = FirstString(item, "ContactPosition"),
-                        accountType = FirstString(item, "AccountType"),
-                        accountStatus = FirstString(item, "AccountStatus"),
-                        parDiffusionEmail = FirstString(item, "ParDiffusionEmail"),
-                        parDiffusionEmailPw = FirstString(item, "ParDiffusionEmailPW"),
-                        parOutgoingMailChar = FirstString(item, "ParOutgoingMailChar"),
-                        parIngoingMailChar = FirstString(item, "ParIngoingMailChar"),
-                        organizationSystemPrefix = FirstString(item, "OrganizationSystemPrefix"),
-                        mailSignature = FirstString(item, "MailSignature"),
-                        nameUniversityFr = FirstString(item, "NameUniversityFr"),
-                        nameUniversityAr = FirstString(item, "NameUniversityAr"),
-                        nameMinisterFr = FirstString(item, "NameMinisterFr"),
-                        nameMinisterAr = FirstString(item, "NameMinisterAr"),
-                        raw = item,
-                        graphicCharters = Array.Empty<object>(),
-                        createdAt = FirstObject(item, "CreatedAt", "CreatedDate"),
-                        updatedAt = FirstObject(item, "UpdatedAt", "ModifiedDate")
+                        Id = FirstString(item, "Id", "ID", "id", "OrganizationId", "IdOrganization") ?? string.Empty,
+                        Nom = FirstString(item, "NameFr", "Name", "Nom", "Libelle", "Label", "Title", "Acronym") ?? "Organisation",
+                        NameFr = FirstString(item, "NameFr"),
+                        NameAr = FirstString(item, "NameAr"),
+                        Acronym = FirstString(item, "Acronym"),
+                        OrganizationLogo = FirstString(item, "OrganisationLogo", "OrganizationLogo"),
+                        Affiliation = FirstString(item, "Affiliation"),
+                        AffiliationLogo = FirstString(item, "AffiliationLogo"),
+                        FieldOfActivity = FirstString(item, "FieldOfActivity"),
+                        Ville = FirstString(item, "City", "Ville", "Town"),
+                        Adresse = FirstString(item, "Adress", "Address", "Adresse", "Address1"),
+                        PostalCode = FirstString(item, "PostalCode", "ZipCode", "Postal_Code"),
+                        Country = FirstString(item, "Country", "Pays"),
+                        Tel = FirstString(item, "Phone", "Telephone", "Tel", "Mobile"),
+                        Email = FirstString(item, "Email", "Mail"),
+                        PersonToContact = FirstString(item, "PersonToContact", "ContactPerson"),
+                        ContactMail = FirstString(item, "ContactMail"),
+                        ContactPhone = FirstString(item, "ContactPhone"),
+                        ContactPosition = FirstString(item, "ContactPosition"),
+                        AccountType = FirstString(item, "AccountType"),
+                        AccountStatus = FirstString(item, "AccountStatus"),
+                        ParDiffusionEmail = FirstString(item, "ParDiffusionEmail"),
+                        ParDiffusionEmailPw = FirstString(item, "ParDiffusionEmailPW"),
+                        ParOutgoingMailChar = FirstString(item, "ParOutgoingMailChar"),
+                        ParIngoingMailChar = FirstString(item, "ParIngoingMailChar"),
+                        OrganizationSystemPrefix = FirstString(item, "OrganizationSystemPrefix"),
+                        MailSignature = FirstString(item, "MailSignature"),
+                        NameUniversityFr = FirstString(item, "NameUniversityFr"),
+                        NameUniversityAr = FirstString(item, "NameUniversityAr"),
+                        NameMinisterFr = FirstString(item, "NameMinisterFr"),
+                        NameMinisterAr = FirstString(item, "NameMinisterAr"),
+                        Raw = CleanRow(row),
+                        GraphicCharters = [],
+                        CreatedAt = FormatValue(FirstObject(item, "CreatedAt", "CreatedDate")),
+                        UpdatedAt = FormatValue(FirstObject(item, "UpdatedAt", "ModifiedDate"))
                     };
                 });
             }
@@ -181,7 +184,7 @@ namespace DocApi.Repositories
             }
         }
 
-        public async Task<IEnumerable<object>> LoadAdminsAsync()
+        public async Task<IEnumerable<AdminResponse>> LoadAdminsAsync()
         {
             try
             {
@@ -196,19 +199,19 @@ namespace DocApi.Repositories
                 return rows.Select(row =>
                 {
                     var item = Row(row);
-                    return new
+                    return new AdminResponse
                     {
-                        id = FirstString(item, "Id", "ID", "id"),
-                        organizationId = FirstString(item, "IdOrganization", "OrganizationId", "organizationId"),
-                        nom = FirstString(item, "Name", "Nom", "Username") ?? "",
-                        email = FirstString(item, "Email", "Mail") ?? "",
-                        role = FirstString(item, "Role", "role") ?? "admin",
-                        profile = FirstString(item, "Profil", "Profile"),
-                        profileDetail = FirstString(item, "ProfilDetail", "ProfileDetail"),
-                        accessAllYears = FirstObject(item, "AccessAllYears"),
-                        accessYearList = FirstString(item, "AccessYearList"),
-                        createdAt = FirstObject(item, "AccountCreationDate", "CreatedAt"),
-                        raw = item
+                        Id = FirstString(item, "Id", "ID", "id") ?? string.Empty,
+                        OrganizationId = FirstString(item, "IdOrganization", "OrganizationId", "organizationId"),
+                        Nom = FirstString(item, "Name", "Nom", "Username") ?? string.Empty,
+                        Email = FirstString(item, "Email", "Mail") ?? string.Empty,
+                        Role = FirstString(item, "Role", "role") ?? "admin",
+                        Profile = FirstString(item, "Profil", "Profile"),
+                        ProfileDetail = FirstString(item, "ProfilDetail", "ProfileDetail"),
+                        AccessAllYears = FirstBool(item, "AccessAllYears"),
+                        AccessYearList = FirstString(item, "AccessYearList"),
+                        CreatedAt = FormatValue(FirstObject(item, "AccountCreationDate", "CreatedAt")),
+                        Raw = CleanRow(row)
                     };
                 });
             }
@@ -218,7 +221,7 @@ namespace DocApi.Repositories
             }
         }
 
-        public async Task<IEnumerable<object>> LoadGraphicChartersAsync()
+        public async Task<IEnumerable<GraphicCharterResponse>> LoadGraphicChartersAsync()
         {
             if (!await TableExistsAsync("graphic_charter")) return [];
             using var connection = _connectionFactory.CreateConnection();
@@ -230,28 +233,28 @@ namespace DocApi.Repositories
             return rows.Select(row =>
             {
                 var item = Row(row);
-                return new
+                return new GraphicCharterResponse
                 {
-                    id = Str(item, "id"),
-                    organizationId = StrOrNull(item, "etablissement_id"),
-                    name = Str(item, "nom") ?? "",
-                    description = Str(item, "description") ?? "",
-                    isDefault = Bool(item, "is_default"),
-                    config = JsonValue(item, "config_json", new JsonObject()),
-                    createdAt = Obj(item, "created_at"),
-                    updatedAt = Obj(item, "updated_at")
+                    Id = Str(item, "id") ?? string.Empty,
+                    OrganizationId = StrOrNull(item, "etablissement_id"),
+                    Name = Str(item, "nom") ?? string.Empty,
+                    Description = Str(item, "description") ?? string.Empty,
+                    IsDefault = Bool(item, "is_default"),
+                    Config = JsonValue(item, "config_json", new GraphicCharterConfig()),
+                    CreatedAt = Str(item, "created_at"),
+                    UpdatedAt = Str(item, "updated_at")
                 };
             });
         }
 
-        public async Task<object?> GetGraphicCharterByIdAsync(string id)
+        public async Task<GraphicCharterResponse?> GetGraphicCharterByIdAsync(string id)
         {
-            return (await LoadGraphicChartersAsync()).FirstOrDefault(item => GetAnonymousProperty(item, "id") == id);
+            return (await LoadGraphicChartersAsync()).FirstOrDefault(item => item.Id == id);
         }
 
-        public async Task<object> UpsertGraphicCharterAsync(JsonObject graphicCharter)
+        public async Task<GraphicCharterResponse> UpsertGraphicCharterAsync(GraphicCharterRequest request)
         {
-            if (string.IsNullOrWhiteSpace(JString(graphicCharter, "id"))) graphicCharter["id"] = $"gch_{Guid.NewGuid():N}";
+            var graphicCharter = NormalizeGraphicCharter(request);
             using var connection = _connectionFactory.CreateConnection();
             await connection.ExecuteAsync("""
                 MERGE graphic_charter AS target
@@ -262,7 +265,7 @@ namespace DocApi.Repositories
                 WHEN NOT MATCHED THEN INSERT (id, etablissement_id, nom, description, is_default, config_json, created_at, updated_at)
                   VALUES (@id, @etablissement_id, @nom, @description, @is_default, @config_json, @created_at, @updated_at);
                 """, GraphicCharterParams(graphicCharter));
-            return (await GetGraphicCharterByIdAsync(JString(graphicCharter, "id")!))!;
+            return (await GetGraphicCharterByIdAsync(graphicCharter.Id))!;
         }
 
         public async Task DeleteGraphicCharterAsync(string id)
@@ -271,7 +274,7 @@ namespace DocApi.Repositories
             await connection.ExecuteAsync("UPDATE template SET graphic_charter_id = NULL WHERE graphic_charter_id = @id; DELETE FROM graphic_charter WHERE id = @id", new { id });
         }
 
-        public async Task<IEnumerable<object>> LoadTemplatesAsync()
+        public async Task<IEnumerable<TemplateResponse>> LoadTemplatesAsync()
         {
             if (!await TableExistsAsync("template")) return [];
             var hasGraphicCharterId = await TableHasColumnAsync("template", "graphic_charter_id");
@@ -294,35 +297,35 @@ namespace DocApi.Repositories
             return rows.Select(row =>
             {
                 var item = Row(row);
-                return new
+                return new TemplateResponse
                 {
-                    id = Str(item, "id"),
-                    familyId = Str(item, "family_id"),
-                    organizationId = StrOrNull(item, "etablissement_id"),
-                    nom = Str(item, "nom"),
-                    updatedAt = Obj(item, "updated_at"),
-                    hasHeader = Bool(item, "has_header"),
-                    hasFooter = Bool(item, "has_footer"),
-                    graphicCharterId = StrOrNull(item, "graphic_charter_id"),
-                    filterProfile = JsonValue(item, "filter_profile_json", new JsonArray()),
-                    sectionDirections = JsonValue(item, "section_directions_json", new JsonObject()),
-                    orientation = Str(item, "orientation") ?? "portrait",
-                    pageMargins = JsonValue(item, "page_margins_json", new JsonObject()),
-                    header = Str(item, "header_html"),
-                    body = Str(item, "body_html"),
-                    footer = Str(item, "footer_html")
+                    Id = Str(item, "id") ?? string.Empty,
+                    FamilyId = Str(item, "family_id") ?? string.Empty,
+                    OrganizationId = StrOrNull(item, "etablissement_id"),
+                    Nom = Str(item, "nom") ?? string.Empty,
+                    UpdatedAt = Str(item, "updated_at"),
+                    HasHeader = Bool(item, "has_header"),
+                    HasFooter = Bool(item, "has_footer"),
+                    GraphicCharterId = StrOrNull(item, "graphic_charter_id"),
+                    FilterProfile = JsonValue(item, "filter_profile_json", new List<TemplateFilterProfileEntry>()),
+                    SectionDirections = JsonValue(item, "section_directions_json", new SectionDirections()),
+                    Orientation = ParseOrientation(Str(item, "orientation")),
+                    PageMargins = JsonValue(item, "page_margins_json", new PageMargins()),
+                    Header = Str(item, "header_html") ?? string.Empty,
+                    Body = Str(item, "body_html") ?? string.Empty,
+                    Footer = Str(item, "footer_html") ?? string.Empty
                 };
             });
         }
 
-        public async Task<object?> GetTemplateByIdAsync(string id)
+        public async Task<TemplateResponse?> GetTemplateByIdAsync(string id)
         {
-            return (await LoadTemplatesAsync()).FirstOrDefault(item => GetAnonymousProperty(item, "id") == id);
+            return (await LoadTemplatesAsync()).FirstOrDefault(item => item.Id == id);
         }
 
-        public async Task<object> UpsertTemplateAsync(JsonObject template)
+        public async Task<TemplateResponse> UpsertTemplateAsync(TemplateRequest request)
         {
-            if (string.IsNullOrWhiteSpace(JString(template, "id"))) template["id"] = $"tpl_{Guid.NewGuid():N}";
+            var template = NormalizeTemplate(request);
             using var connection = _connectionFactory.CreateConnection();
             await connection.ExecuteAsync("""
                 MERGE template AS target
@@ -339,8 +342,8 @@ namespace DocApi.Repositories
                   VALUES (@id, @family_id, @etablissement_id, @graphic_charter_id, @nom, @updated_at,
                   @has_header, @has_footer, @orientation, @filter_profile_json, @section_directions_json,
                   @page_margins_json, @header_html, @body_html, @footer_html);
-                """, TemplateParams(template, JString(template, "organizationId")));
-            return (await GetTemplateByIdAsync(JString(template, "id")!))!;
+                """, TemplateParams(template, template.OrganizationId));
+            return (await GetTemplateByIdAsync(template.Id))!;
         }
 
         public async Task DeleteTemplateAsync(string id)
@@ -349,7 +352,7 @@ namespace DocApi.Repositories
             await connection.ExecuteAsync("DELETE FROM template WHERE id = @id", new { id });
         }
 
-        public async Task<IEnumerable<object>> LoadTableViewsAsync()
+        public async Task<IEnumerable<TableViewConfigResponse>> LoadTableViewsAsync()
         {
             if (!await TableExistsAsync("table_view_config")) return [];
             var hasFieldSettings = await TableHasColumnAsync("table_view_config", "field_settings_json");
@@ -368,53 +371,53 @@ namespace DocApi.Repositories
             return rows.Select(row =>
             {
                 var item = Row(row);
-                return new
+                return new TableViewConfigResponse
                 {
-                    id = Str(item, "id"),
-                    tableName = Str(item, "table_name"),
-                    label = Str(item, "label"),
-                    visibleFields = JsonValue(item, "visible_fields_json", new JsonArray()),
-                    editableFields = JsonValue(item, "editable_fields_json", new JsonArray()),
-                    previewFields = JsonValue(item, "preview_fields_json", new JsonArray()),
-                    fieldLabels = JsonValue(item, "field_labels_json", new JsonObject()),
-                    fieldSettings = JsonValue(item, "field_settings_json", new JsonObject()),
-                    createdAt = Obj(item, "created_at"),
-                    updatedAt = Obj(item, "updated_at")
+                    Id = Str(item, "id") ?? string.Empty,
+                    TableName = Str(item, "table_name") ?? string.Empty,
+                    Label = Str(item, "label") ?? string.Empty,
+                    VisibleFields = JsonValue(item, "visible_fields_json", new List<string>()),
+                    EditableFields = JsonValue(item, "editable_fields_json", new List<string>()),
+                    PreviewFields = JsonValue(item, "preview_fields_json", new List<string>()),
+                    FieldLabels = JsonValue(item, "field_labels_json", new Dictionary<string, string>()),
+                    FieldSettings = JsonValue(item, "field_settings_json", new Dictionary<string, TableViewFieldSetting>()),
+                    CreatedAt = Str(item, "created_at"),
+                    UpdatedAt = Str(item, "updated_at")
                 };
             });
         }
 
-        public async Task<object?> GetTableViewConfigByIdAsync(string id)
+        public async Task<TableViewConfigResponse?> GetTableViewConfigByIdAsync(string id)
         {
-            return (await LoadTableViewsAsync()).FirstOrDefault(item => GetAnonymousProperty(item, "id") == id);
+            return (await LoadTableViewsAsync()).FirstOrDefault(item => item.Id == id);
         }
 
-        public async Task<IDictionary<string, object?>> LoadSettingsAsync()
+        public async Task<Dictionary<string, object?>> LoadSettingsAsync()
         {
-            if (!await TableExistsAsync("app_setting")) return new Dictionary<string, object?>();
+            if (!await TableExistsAsync("app_setting")) return [];
             using var connection = _connectionFactory.CreateConnection();
             var rows = await connection.QueryAsync("SELECT [key], value_json FROM app_setting");
             var settings = new Dictionary<string, object?>();
             foreach (var row in rows)
             {
                 var item = Row(row);
-                settings[Str(item, "key") ?? ""] = ParseJsonNode(Str(item, "value_json"), null);
+                settings[Str(item, "key") ?? string.Empty] = ParseJsonValue(Str(item, "value_json"));
             }
 
             return settings;
         }
 
-        public async Task<object> LoadSchemaAsync()
+        public async Task<DatabaseSchemaResponse> LoadSchemaAsync()
         {
             using var connection = _connectionFactory.CreateConnection();
-            var tables = (await connection.QueryAsync("""
+            var tables = await connection.QueryAsync<DatabaseTableInfo>("""
                 SELECT t.TABLE_NAME AS name, ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS comment
                 FROM INFORMATION_SCHEMA.TABLES t
                 LEFT JOIN sys.extended_properties ep ON ep.major_id = OBJECT_ID(t.TABLE_NAME) AND ep.minor_id = 0 AND ep.name = 'MS_Description'
                 WHERE t.TABLE_TYPE = 'BASE TABLE'
                 ORDER BY t.TABLE_NAME
-                """)).Select(CleanRow);
-            var columns = (await connection.QueryAsync("""
+                """);
+            var columns = await connection.QueryAsync<DatabaseColumnInfo>("""
                 SELECT c.TABLE_NAME AS [table], c.COLUMN_NAME AS name, c.DATA_TYPE AS type,
                        ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS comment,
                        CASE WHEN c.IS_NULLABLE = 'YES' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS nullable,
@@ -425,8 +428,8 @@ namespace DocApi.Repositories
                  AND ep.minor_id = COLUMNPROPERTY(OBJECT_ID(c.TABLE_NAME), c.COLUMN_NAME, 'ColumnId')
                  AND ep.name = 'MS_Description'
                 ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION
-                """)).Select(CleanRow);
-            var relations = (await connection.QueryAsync("""
+                """);
+            var relations = await connection.QueryAsync<DatabaseRelationInfo>("""
                 SELECT fk_tab.name AS [table], fk_col.name AS [column], pk_tab.name AS referencedTable, pk_col.name AS referencedColumn
                 FROM sys.foreign_key_columns fkc
                 JOIN sys.tables fk_tab ON fkc.parent_object_id = fk_tab.object_id
@@ -434,11 +437,16 @@ namespace DocApi.Repositories
                 JOIN sys.tables pk_tab ON fkc.referenced_object_id = pk_tab.object_id
                 JOIN sys.columns pk_col ON fkc.referenced_object_id = pk_col.object_id AND fkc.referenced_column_id = pk_col.column_id
                 ORDER BY fk_tab.name
-                """)).Select(CleanRow);
-            return new { tables, columns, relations };
+                """);
+            return new DatabaseSchemaResponse
+            {
+                Tables = tables.ToArray(),
+                Columns = columns.ToArray(),
+                Relations = relations.ToArray()
+            };
         }
 
-        public async Task ReplaceStateAsync(JsonObject state, string? scopedOrganizationId, bool isSuperAdmin)
+        public async Task ReplaceStateAsync(EditorStateResponse state, string? scopedOrganizationId, bool isSuperAdmin)
         {
             using var connection = _connectionFactory.CreateConnection();
             connection.Open();
@@ -448,9 +456,9 @@ namespace DocApi.Repositories
                 if (isSuperAdmin)
                 {
                     await connection.ExecuteAsync("DELETE FROM graphic_charter; DELETE FROM template; DELETE FROM family; DELETE FROM table_view_config; DELETE FROM app_setting;", transaction: transaction);
-                    await SaveSettingsAsync(connection, transaction, state["settings"] as JsonObject);
-                    foreach (var family in ArrayOf(state, "families")) await InsertFamilyAsync(connection, transaction, family);
-                    foreach (var tableView in ArrayOf(state, "tableViews")) await InsertTableViewAsync(connection, transaction, tableView);
+                    await SaveSettingsAsync(connection, transaction, state.Settings);
+                    foreach (var family in state.Families) await InsertFamilyAsync(connection, transaction, family);
+                    foreach (var tableView in state.TableViews) await InsertTableViewAsync(connection, transaction, tableView);
                 }
                 else
                 {
@@ -458,17 +466,15 @@ namespace DocApi.Repositories
                     await connection.ExecuteAsync("DELETE FROM graphic_charter WHERE etablissement_id = @OrgId; DELETE FROM template WHERE etablissement_id = @OrgId;", new { OrgId = scopedOrganizationId }, transaction);
                 }
 
-                var organizations = ArrayOf(state, "organizations");
-                foreach (var organization in organizations)
+                foreach (var organization in state.Organizations)
                 {
-                    var organizationId = JString(organization, "id");
-                    if (!isSuperAdmin && organizationId != scopedOrganizationId) continue;
-                    foreach (var charter in ArrayOf(organization, "graphicCharters")) await InsertGraphicCharterAsync(connection, transaction, charter, organizationId);
+                    if (!isSuperAdmin && organization.Id != scopedOrganizationId) continue;
+                    foreach (var charter in organization.GraphicCharters) await InsertGraphicCharterAsync(connection, transaction, charter, organization.Id);
                 }
 
-                foreach (var template in ArrayOf(state, "templates"))
+                foreach (var template in state.Templates)
                 {
-                    var organizationId = JString(template, "organizationId") ?? scopedOrganizationId;
+                    var organizationId = template.OrganizationId ?? scopedOrganizationId;
                     if (!isSuperAdmin && organizationId != scopedOrganizationId) continue;
                     await InsertTemplateAsync(connection, transaction, template, organizationId);
                 }
@@ -482,14 +488,14 @@ namespace DocApi.Repositories
             }
         }
 
-        public async Task<IEnumerable<object>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters)
+        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters)
         {
             var cleaned = NormalizeSelectQueryForSqlServer((sql ?? string.Empty).Trim().TrimEnd(';'));
             if (!IsSelectQuery(cleaned))
             {
                 try
                 {
-                    _logger?.LogWarning("Rejected non-SELECT query: {Sql}", sql);
+                    _logger.LogWarning("Rejected non-SELECT query: {Sql}", sql);
                 }
                 catch { }
                 throw new InvalidOperationException("Seules les requetes SELECT sont autorisees.");
@@ -498,34 +504,34 @@ namespace DocApi.Repositories
             if (!parameters.ContainsKey("organizationId")) parameters["organizationId"] = null;
             cleaned = CompileNamedParameters(cleaned, parameters, dynamicParameters);
             using var connection = _connectionFactory.CreateConnection();
-            return (await connection.QueryAsync(cleaned, dynamicParameters)).Select(CleanRow);
+            return (await connection.QueryAsync(cleaned, dynamicParameters)).Select(row => (IDictionary<string, object?>)CleanRow(row)).ToArray();
         }
 
         private static bool IsSelectQuery(string sql)
         {
             if (string.IsNullOrWhiteSpace(sql)) return false;
-            // Work on a trimmed copy
             var s = sql.Trim();
-            // Strip leading block comments (/* ... */)
             s = Regex.Replace(s, @"^\s*/\*.*?\*/\s*", "", RegexOptions.Singleline);
-            // Strip leading line comments (-- ... end-of-line)
             s = Regex.Replace(s, @"^\s*(?:--.*?$\s*)+", "", RegexOptions.Multiline);
-            // Strip leading parentheses that sometimes wrap a select
-            while (s.StartsWith("(")) s = s.Substring(1).TrimStart();
-            // Allow queries starting with SELECT or WITH (CTE)
+            while (s.StartsWith("(")) s = s[1..].TrimStart();
             return Regex.IsMatch(s, "^(select|with)\\b", RegexOptions.IgnoreCase);
         }
 
-        public async Task<IEnumerable<object>> GetTableViewRowsAsync(string? configId, int? limit, string? search, JsonObject? config)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config)
         {
             var tableView = await ResolveTableViewAsync(configId, config) ?? throw new InvalidOperationException("Configuration introuvable.");
-            var tableName = JString(tableView, "tableName")!;
-            if (string.IsNullOrWhiteSpace(tableName) || !await TableExistsAsync(tableName)) return [];
-            var columns = await GetColumnsAsync(tableName);
-            var pk = await GetRowKeyAsync(tableName, columns);
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return [];
+            var columns = await GetColumnsAsync(tableView.TableName);
+            var pk = await GetRowKeyAsync(tableView.TableName, columns);
             var allowed = columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var previewFields = JsonArrayStrings(tableView, "previewFields").Where(allowed.Contains).ToArray();
-            var selectFields = new[] { pk }.Concat(JsonArrayStrings(tableView, "visibleFields")).Concat(JsonArrayStrings(tableView, "editableFields")).Concat(previewFields).Where(allowed.Contains).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var previewFields = tableView.PreviewFields.Where(allowed.Contains).ToArray();
+            var selectFields = new[] { pk }
+                .Concat(tableView.VisibleFields)
+                .Concat(tableView.EditableFields)
+                .Concat(previewFields)
+                .Where(allowed.Contains)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
             if (selectFields.Length == 0) return [];
             var parameters = new DynamicParameters();
             parameters.Add("limit", Math.Max(1, Math.Min(limit ?? 200, 500)));
@@ -536,33 +542,35 @@ namespace DocApi.Repositories
                 where = "WHERE " + string.Join(" OR ", previewFields.Select(field => $"CONVERT(NVARCHAR(MAX), {Quote(field)}) LIKE @search"));
             }
             using var connection = _connectionFactory.CreateConnection();
-            var rows = await connection.QueryAsync($"SELECT TOP (@limit) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableName)} {where} ORDER BY {Quote(pk)} DESC", parameters);
-            return rows.Select(CleanRow);
+            var rows = await connection.QueryAsync($"SELECT TOP (@limit) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} {where} ORDER BY {Quote(pk)} DESC", parameters);
+            return rows.Select(row => (IDictionary<string, object?>)CleanRow(row)).ToArray();
         }
 
-        public async Task<object?> GetTableViewRecordAsync(string? configId, object? rowId)
+        public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId)
         {
             var tableView = await ResolveTableViewAsync(configId, null) ?? throw new InvalidOperationException("Configuration introuvable.");
-            var tableName = JString(tableView, "tableName")!;
-            if (string.IsNullOrWhiteSpace(tableName) || !await TableExistsAsync(tableName)) return null;
-            var columns = await GetColumnsAsync(tableName);
-            var pk = await GetRowKeyAsync(tableName, columns);
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return null;
+            var columns = await GetColumnsAsync(tableView.TableName);
+            var pk = await GetRowKeyAsync(tableView.TableName, columns);
             var allowed = columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var selectFields = new[] { pk }.Concat(JsonArrayStrings(tableView, "visibleFields")).Concat(JsonArrayStrings(tableView, "editableFields")).Where(allowed.Contains).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var selectFields = new[] { pk }
+                .Concat(tableView.VisibleFields)
+                .Concat(tableView.EditableFields)
+                .Where(allowed.Contains)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
             if (selectFields.Length == 0) return null;
             using var connection = _connectionFactory.CreateConnection();
-            var normalizedRowId = NormalizeParameterValue(rowId);
-            var row = await connection.QueryFirstOrDefaultAsync($"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableName)} WHERE {Quote(pk)} = @rowId", new { rowId = normalizedRowId });
+            var row = await connection.QueryFirstOrDefaultAsync($"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId", new { rowId = NormalizeParameterValue(rowId) });
             return row is null ? null : CleanRow(row);
         }
 
-        public async Task<object?> UpdateTableViewRecordAsync(string? configId, object? rowId, Dictionary<string, object?> values)
+        public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values)
         {
             var tableView = await ResolveTableViewAsync(configId, null) ?? throw new InvalidOperationException("Configuration introuvable.");
-            var tableName = JString(tableView, "tableName")!;
-            if (string.IsNullOrWhiteSpace(tableName) || !await TableExistsAsync(tableName)) return null;
-            var editable = JsonArrayStrings(tableView, "editableFields").ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var tableColumns = await GetColumnsAsync(tableName);
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return null;
+            var editable = tableView.EditableFields.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var tableColumns = await GetColumnsAsync(tableView.TableName);
             var columns = tableColumns.Where(column => editable.Contains(column.Name) && values.ContainsKey(column.Name)).ToArray();
             var normalizedRowId = NormalizeParameterValue(rowId);
             if (columns.Length > 0)
@@ -575,21 +583,20 @@ namespace DocApi.Repositories
                     parameters.Add(column.Name, NormalizeParameterValue(raw));
                 }
                 using var connection = _connectionFactory.CreateConnection();
-                var pk = await GetRowKeyAsync(tableName, tableColumns);
-                await connection.ExecuteAsync($"UPDATE {Quote(tableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {Quote(pk)} = @rowId", parameters);
+                var pk = await GetRowKeyAsync(tableView.TableName, tableColumns);
+                await connection.ExecuteAsync($"UPDATE {Quote(tableView.TableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {Quote(pk)} = @rowId", parameters);
             }
-            return await GetTableViewRecordAsync(configId, normalizedRowId);
+            return await GetTableViewRecordAsync(configId, normalizedRowId?.ToString());
         }
 
-        public async Task<object?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, JsonObject? config)
+        public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config)
         {
             var tableView = await ResolveTableViewAsync(configId, config) ?? throw new InvalidOperationException("Configuration introuvable.");
-            var tableName = JString(tableView, "tableName")!;
-            if (string.IsNullOrWhiteSpace(tableName) || !await TableExistsAsync(tableName)) return null;
-            var editable = JsonArrayStrings(tableView, "editableFields").ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var tableColumns = await GetColumnsAsync(tableName);
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return null;
+            var editable = tableView.EditableFields.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var tableColumns = await GetColumnsAsync(tableView.TableName);
             var columns = tableColumns.Where(column => editable.Contains(column.Name) && !column.IsIdentity && values.ContainsKey(column.Name)).ToArray();
-            var pk = await GetRowKeyAsync(tableName, tableColumns);
+            var pk = await GetRowKeyAsync(tableView.TableName, tableColumns);
             var parameters = new DynamicParameters();
             var normalizedValues = new Dictionary<string, object?>();
             foreach (var column in columns)
@@ -600,39 +607,35 @@ namespace DocApi.Repositories
                 parameters.Add(column.Name, norm);
             }
             var insertSql = columns.Length == 0
-                ? $"INSERT INTO {Quote(tableName)} OUTPUT INSERTED.{Quote(pk)} AS inserted_id DEFAULT VALUES"
-                : $"INSERT INTO {Quote(tableName)} ({string.Join(", ", columns.Select(c => Quote(c.Name)))}) OUTPUT INSERTED.{Quote(pk)} AS inserted_id VALUES ({string.Join(", ", columns.Select(c => "@" + c.Name))})";
+                ? $"INSERT INTO {Quote(tableView.TableName)} OUTPUT INSERTED.{Quote(pk)} AS inserted_id DEFAULT VALUES"
+                : $"INSERT INTO {Quote(tableView.TableName)} ({string.Join(", ", columns.Select(c => Quote(c.Name)))}) OUTPUT INSERTED.{Quote(pk)} AS inserted_id VALUES ({string.Join(", ", columns.Select(c => "@" + c.Name))})";
             try
             {
-                _logger?.LogDebug("CreateTableViewRecord SQL: {Sql} Params: {Params}", insertSql, JsonSerializer.Serialize(normalizedValues));
+                _logger.LogDebug("CreateTableViewRecord SQL: {Sql} Params: {Params}", insertSql, JsonSerializer.Serialize(normalizedValues, JsonOptions));
             }
             catch { }
             using var connection = _connectionFactory.CreateConnection();
             var insertedId = await connection.ExecuteScalarAsync<object>(insertSql, parameters);
-            return await GetTableViewRecordAsync(JString(tableView, "id"), insertedId);
+            return await GetTableViewRecordAsync(tableView.Id, insertedId?.ToString());
         }
 
-        public async Task DeleteTableViewRecordAsync(string? configId, object? rowId)
+        public async Task DeleteTableViewRecordAsync(string? configId, string? rowId)
         {
             var tableView = await ResolveTableViewAsync(configId, null) ?? throw new InvalidOperationException("Configuration introuvable.");
-            var tableName = JString(tableView, "tableName")!;
-            if (string.IsNullOrWhiteSpace(tableName) || !await TableExistsAsync(tableName)) return;
-            var pk = await GetRowKeyAsync(tableName, await GetColumnsAsync(tableName));
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return;
+            var pk = await GetRowKeyAsync(tableView.TableName, await GetColumnsAsync(tableView.TableName));
             using var connection = _connectionFactory.CreateConnection();
-            var normalizedRowId = NormalizeParameterValue(rowId);
-            await connection.ExecuteAsync($"DELETE FROM {Quote(tableName)} WHERE {Quote(pk)} = @rowId", new { rowId = normalizedRowId });
+            await connection.ExecuteAsync($"DELETE FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId", new { rowId = NormalizeParameterValue(rowId) });
         }
 
-        public async Task<IEnumerable<object>> GetLookupOptionsAsync(string? configId, string? fieldName, JsonObject? config)
+        public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config)
         {
             var tableView = await ResolveTableViewAsync(configId, config) ?? throw new InvalidOperationException("Configuration introuvable.");
-            var settings = tableView["fieldSettings"] as JsonObject;
-            var field = string.IsNullOrWhiteSpace(fieldName) ? null : settings?[fieldName] as JsonObject;
-            if (field is null || JString(field, "displayMode") != "lookup") return [];
-            var table = JString(field, "lookupTable");
-            var valueColumn = JString(field, "lookupValueColumn");
-            var labelColumn = JString(field, "lookupLabelColumn");
-            var labelColumn2 = JString(field, "lookupLabelColumn2");
+            if (string.IsNullOrWhiteSpace(fieldName) || !tableView.FieldSettings.TryGetValue(fieldName, out var field) || field.DisplayMode != TableViewDisplayMode.Lookup) return [];
+            var table = field.LookupTable;
+            var valueColumn = field.LookupValueColumn;
+            var labelColumn = field.LookupLabelColumn;
+            var labelColumn2 = field.LookupLabelColumn2;
             if (string.IsNullOrWhiteSpace(table) || string.IsNullOrWhiteSpace(valueColumn) || string.IsNullOrWhiteSpace(labelColumn)) return [];
             if (!await TableExistsAsync(table)) return [];
             var lookupColumns = (await GetColumnsAsync(table)).Select(column => column.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -643,12 +646,20 @@ namespace DocApi.Repositories
                 ? $"CONVERT(NVARCHAR(4000), {Quote(labelColumn)})"
                 : $"LTRIM(RTRIM(CONCAT(CONVERT(NVARCHAR(4000), {Quote(labelColumn)}), ' ', CONVERT(NVARCHAR(4000), {Quote(labelColumn2)}))))";
             var rows = await connection.QueryAsync($"SELECT CONVERT(NVARCHAR(4000), {Quote(valueColumn)}) AS value, {labelExpr} AS label FROM {Quote(table)} WHERE {Quote(valueColumn)} IS NOT NULL ORDER BY {labelExpr} ASC");
-            return rows.Select(CleanRow);
+            return rows.Select(row =>
+            {
+                var item = Row(row);
+                return new LookupOptionResponse
+                {
+                    Value = Str(item, "value") ?? string.Empty,
+                    Label = Str(item, "label") ?? string.Empty
+                };
+            });
         }
 
-        public async Task<object> UpsertTableViewConfigAsync(JsonObject tableView)
+        public async Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request)
         {
-            var normalized = NormalizeTableView(tableView);
+            var normalized = NormalizeTableView(request);
             using var connection = _connectionFactory.CreateConnection();
             await connection.ExecuteAsync("""
                 MERGE table_view_config AS target
@@ -668,28 +679,29 @@ namespace DocApi.Repositories
             await connection.ExecuteAsync("DELETE FROM table_view_config WHERE id = @id", new { id });
         }
 
-        private async Task<JsonObject?> ResolveTableViewAsync(string? configId, JsonObject? provided)
+        private async Task<TableViewConfigResponse?> ResolveTableViewAsync(string? configId, TableViewConfigRequest? provided)
         {
-            if (provided is not null && !string.IsNullOrWhiteSpace(JString(provided, "tableName")))
+            if (provided is not null && !string.IsNullOrWhiteSpace(provided.TableName))
             {
-                if (string.IsNullOrWhiteSpace(JString(provided, "id")) && !string.IsNullOrWhiteSpace(configId)) provided["id"] = configId;
+                if (string.IsNullOrWhiteSpace(provided.Id) && !string.IsNullOrWhiteSpace(configId)) provided.Id = configId;
                 return NormalizeTableView(provided);
             }
             using var connection = _connectionFactory.CreateConnection();
             var row = await connection.QueryFirstOrDefaultAsync("SELECT TOP (1) * FROM table_view_config WHERE id = @configId", new { configId });
             if (row is null) return null;
             var item = Row(row);
-            return NormalizeTableView(new JsonObject
+            return NormalizeTableView(new TableViewConfigRequest
             {
-                ["id"] = Str(item, "id"),
-                ["tableName"] = Str(item, "table_name"),
-                ["label"] = Str(item, "label"),
-                ["visibleFields"] = JsonValue(item, "visible_fields_json", new JsonArray()),
-                ["editableFields"] = JsonValue(item, "editable_fields_json", new JsonArray()),
-                ["previewFields"] = JsonValue(item, "preview_fields_json", new JsonArray()),
-                ["fieldSettings"] = JsonValue(item, "field_settings_json", new JsonObject()),
-                ["createdAt"] = Str(item, "created_at"),
-                ["updatedAt"] = Str(item, "updated_at")
+                Id = Str(item, "id"),
+                TableName = Str(item, "table_name") ?? string.Empty,
+                Label = Str(item, "label") ?? string.Empty,
+                VisibleFields = JsonValue(item, "visible_fields_json", new List<string>()),
+                EditableFields = JsonValue(item, "editable_fields_json", new List<string>()),
+                PreviewFields = JsonValue(item, "preview_fields_json", new List<string>()),
+                FieldLabels = JsonValue(item, "field_labels_json", new Dictionary<string, string>()),
+                FieldSettings = JsonValue(item, "field_settings_json", new Dictionary<string, TableViewFieldSetting>()),
+                CreatedAt = Str(item, "created_at"),
+                UpdatedAt = Str(item, "updated_at")
             });
         }
 
@@ -813,44 +825,27 @@ namespace DocApi.Repositories
             return Regex.Replace(sql, @",\s+FROM\s+", " FROM ", RegexOptions.IgnoreCase);
         }
 
-        private static async Task SaveSettingsAsync(IDbConnection connection, IDbTransaction transaction, JsonObject? settings)
+        private static async Task SaveSettingsAsync(IDbConnection connection, IDbTransaction transaction, Dictionary<string, object?> settings)
         {
-            if (settings is null) return;
             foreach (var (key, value) in settings)
             {
-                await connection.ExecuteAsync("INSERT INTO app_setting ([key], value_json) VALUES (@key, @value)", new { key, value = value?.ToJsonString(JsonOptions) ?? "null" }, transaction);
+                await connection.ExecuteAsync("INSERT INTO app_setting ([key], value_json) VALUES (@key, @value)", new { key, value = JsonSerializer.Serialize(value, JsonOptions) }, transaction);
             }
         }
 
-        private static Task InsertFamilyAsync(IDbConnection connection, IDbTransaction transaction, JsonObject family)
+        private static Task InsertFamilyAsync(IDbConnection connection, IDbTransaction transaction, FamilyRequest family)
         {
             return connection.ExecuteAsync("""
-                                INSERT INTO family (id, nom, description, beneficiary_mode, beneficiary_table, beneficiary_table_label, beneficiary_link_column,
+                INSERT INTO family (id, nom, description, beneficiary_mode, beneficiary_table, beneficiary_table_label, beneficiary_link_column,
                   beneficiary_display_column_1, beneficiary_display_column_2, beneficiary_sql_text, filter_catalog_json,
                   sql_text, created_at, classes_json)
-                                VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table, @beneficiary_table_label, @beneficiary_link_column,
+                VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table, @beneficiary_table_label, @beneficiary_link_column,
                   @beneficiary_display_column_1, @beneficiary_display_column_2, @beneficiary_sql_text, @filter_catalog_json,
                   @sql_text, @created_at, @classes_json)
-                """, new
-            {
-                id = JString(family, "id"),
-                nom = JString(family, "nom") ?? "",
-                description = JString(family, "description") ?? "",
-                beneficiary_mode = JString(family, "beneficiaryMode") == "organization" ? "organization" : "table",
-                beneficiary_table = JString(family, "beneficiaryMode") == "organization" ? null : JString(family, "beneficiaryTable"),
-                beneficiary_table_label = JString(family, "beneficiaryTableLabel"),
-                beneficiary_link_column = JString(family, "beneficiaryLinkColumn"),
-                beneficiary_display_column_1 = JString(family, "beneficiaryDisplayColumn1"),
-                beneficiary_display_column_2 = JString(family, "beneficiaryDisplayColumn2"),
-                beneficiary_sql_text = JString(family, "beneficiarySql") ?? "",
-                filter_catalog_json = JsonString(family, "filterCatalog", "[]"),
-                sql_text = JString(family, "sql") ?? "",
-                created_at = JString(family, "createdAt"),
-                classes_json = JsonString(family, "classes", "[]")
-            }, transaction);
+                """, FamilyParams(family), transaction);
         }
 
-        private static Task InsertTableViewAsync(IDbConnection connection, IDbTransaction transaction, JsonObject tableView)
+        private static Task InsertTableViewAsync(IDbConnection connection, IDbTransaction transaction, TableViewConfigRequest tableView)
         {
             return connection.ExecuteAsync("""
                 INSERT INTO table_view_config (id, table_name, label, visible_fields_json, editable_fields_json,
@@ -860,37 +855,37 @@ namespace DocApi.Repositories
                 """, TableViewParams(NormalizeTableView(tableView)), transaction);
         }
 
-        private static Task InsertGraphicCharterAsync(IDbConnection connection, IDbTransaction transaction, JsonObject charter, string? organizationId)
+        private static Task InsertGraphicCharterAsync(IDbConnection connection, IDbTransaction transaction, GraphicCharterRequest charter, string? organizationId)
         {
             return connection.ExecuteAsync("""
                 INSERT INTO graphic_charter (id, etablissement_id, nom, description, is_default, config_json, created_at, updated_at)
                 VALUES (@id, @etablissement_id, @nom, @description, @is_default, @config_json, @created_at, @updated_at)
                 """, new
             {
-                id = JString(charter, "id"),
+                id = charter.Id,
                 etablissement_id = organizationId,
-                nom = JString(charter, "name") ?? "",
-                description = JString(charter, "description") ?? "",
-                is_default = JBool(charter, "isDefault"),
-                config_json = JsonString(charter, "config", "{}"),
-                created_at = JString(charter, "createdAt"),
-                updated_at = JString(charter, "updatedAt") ?? JString(charter, "createdAt")
+                nom = charter.Name,
+                description = charter.Description ?? string.Empty,
+                is_default = charter.IsDefault,
+                config_json = JsonString(charter.Config, "{}"),
+                created_at = charter.CreatedAt,
+                updated_at = charter.UpdatedAt ?? charter.CreatedAt
             }, transaction);
         }
 
-        private static object GraphicCharterParams(JsonObject charter) => new
+        private static object GraphicCharterParams(GraphicCharterRequest charter) => new
         {
-            id = JString(charter, "id"),
-            etablissement_id = JString(charter, "organizationId"),
-            nom = JString(charter, "name") ?? JString(charter, "nom") ?? "",
-            description = JString(charter, "description") ?? "",
-            is_default = JBool(charter, "isDefault"),
-            config_json = JsonString(charter, "config", "{}"),
-            created_at = JString(charter, "createdAt") ?? DateTimeOffset.UtcNow.ToString("O"),
+            id = charter.Id,
+            etablissement_id = charter.OrganizationId,
+            nom = charter.Name,
+            description = charter.Description ?? string.Empty,
+            is_default = charter.IsDefault,
+            config_json = JsonString(charter.Config, "{}"),
+            created_at = charter.CreatedAt ?? DateTimeOffset.UtcNow.ToString("O"),
             updated_at = DateTimeOffset.UtcNow.ToString("O")
         };
 
-        private static Task InsertTemplateAsync(IDbConnection connection, IDbTransaction transaction, JsonObject template, string? organizationId)
+        private static Task InsertTemplateAsync(IDbConnection connection, IDbTransaction transaction, TemplateRequest template, string? organizationId)
         {
             return connection.ExecuteAsync("""
                 INSERT INTO template (id, family_id, etablissement_id, graphic_charter_id, nom, updated_at, has_header,
@@ -901,135 +896,260 @@ namespace DocApi.Repositories
                   @header_html, @body_html, @footer_html)
                 """, new
             {
-                id = JString(template, "id"),
-                family_id = JString(template, "familyId"),
+                id = template.Id,
+                family_id = template.FamilyId,
                 etablissement_id = organizationId,
-                graphic_charter_id = JString(template, "graphicCharterId"),
-                nom = JString(template, "nom") ?? "",
-                updated_at = JString(template, "updatedAt"),
-                has_header = JBool(template, "hasHeader"),
-                has_footer = JBool(template, "hasFooter"),
-                orientation = JString(template, "orientation") ?? "portrait",
-                filter_profile_json = JsonString(template, "filterProfile", "[]"),
-                section_directions_json = JsonString(template, "sectionDirections", "{}"),
-                page_margins_json = JsonString(template, "pageMargins", "{}"),
-                header_html = JString(template, "header") ?? "",
-                body_html = JString(template, "body") ?? "",
-                footer_html = JString(template, "footer") ?? ""
+                graphic_charter_id = template.GraphicCharterId,
+                nom = template.Nom,
+                updated_at = template.UpdatedAt,
+                has_header = template.HasHeader,
+                has_footer = template.HasFooter,
+                orientation = ToDatabaseString(template.Orientation),
+                filter_profile_json = JsonString(template.FilterProfile, "[]"),
+                section_directions_json = JsonString(template.SectionDirections, "{}"),
+                page_margins_json = JsonString(template.PageMargins, "{}"),
+                header_html = template.Header,
+                body_html = template.Body,
+                footer_html = template.Footer
             }, transaction);
         }
 
-        private static object TableViewParams(JsonObject tableView) => new
+        private static object TableViewParams(TableViewConfigRequest tableView) => new
         {
-            id = JString(tableView, "id"),
-            table_name = JString(tableView, "tableName"),
-            label = JString(tableView, "label") ?? JString(tableView, "tableName"),
-            visible_fields_json = JsonString(tableView, "visibleFields", "[]"),
-            editable_fields_json = JsonString(tableView, "editableFields", "[]"),
-            preview_fields_json = JsonString(tableView, "previewFields", "[]"),
-            field_labels_json = JsonString(tableView, "fieldLabels", "{}"),
-            field_settings_json = JsonString(tableView, "fieldSettings", "{}"),
-            created_at = JString(tableView, "createdAt") ?? DateTimeOffset.UtcNow.ToString("O"),
+            id = tableView.Id,
+            table_name = tableView.TableName,
+            label = string.IsNullOrWhiteSpace(tableView.Label) ? tableView.TableName : tableView.Label,
+            visible_fields_json = JsonString(tableView.VisibleFields, "[]"),
+            editable_fields_json = JsonString(tableView.EditableFields, "[]"),
+            preview_fields_json = JsonString(tableView.PreviewFields, "[]"),
+            field_labels_json = JsonString(tableView.FieldLabels, "{}"),
+            field_settings_json = JsonString(tableView.FieldSettings, "{}"),
+            created_at = tableView.CreatedAt ?? DateTimeOffset.UtcNow.ToString("O"),
             updated_at = DateTimeOffset.UtcNow.ToString("O")
         };
 
-        private static object FamilyParams(JsonObject family) => new
+        private static object FamilyParams(FamilyRequest family) => new
         {
-            id = JString(family, "id"),
-            nom = JString(family, "nom") ?? "",
-            description = JString(family, "description") ?? "",
-            beneficiary_mode = JString(family, "beneficiaryMode") == "organization" ? "organization" : "table",
-            beneficiary_table = JString(family, "beneficiaryMode") == "organization" ? null : JString(family, "beneficiaryTable"),
-            beneficiary_table_label = JString(family, "beneficiaryTableLabel"),
-            beneficiary_link_column = JString(family, "beneficiaryLinkColumn"),
-            beneficiary_display_column_1 = JString(family, "beneficiaryDisplayColumn1"),
-            beneficiary_display_column_2 = JString(family, "beneficiaryDisplayColumn2"),
-            beneficiary_sql_text = JString(family, "beneficiarySql") ?? "",
-            filter_catalog_json = JsonString(family, "filterCatalog", "[]"),
-            sql_text = JString(family, "sql") ?? "",
-            created_at = JString(family, "createdAt") ?? DateTimeOffset.UtcNow.ToString("O"),
-            classes_json = JsonString(family, "classes", "[]")
+            id = family.Id,
+            nom = family.Nom,
+            description = family.Description ?? string.Empty,
+            beneficiary_mode = family.BeneficiaryMode == BeneficiaryMode.Organization ? "organization" : "table",
+            beneficiary_table = family.BeneficiaryMode == BeneficiaryMode.Organization ? null : family.BeneficiaryTable,
+            beneficiary_table_label = family.BeneficiaryTableLabel,
+            beneficiary_link_column = family.BeneficiaryLinkColumn,
+            beneficiary_display_column_1 = family.BeneficiaryDisplayColumn1,
+            beneficiary_display_column_2 = family.BeneficiaryDisplayColumn2,
+            beneficiary_sql_text = family.BeneficiarySql ?? string.Empty,
+            filter_catalog_json = JsonString(family.FilterCatalog, "[]"),
+            sql_text = family.Sql ?? string.Empty,
+            created_at = family.CreatedAt ?? DateTimeOffset.UtcNow.ToString("O"),
+            classes_json = JsonString(family.Classes, "[]")
         };
 
-        private static object TemplateParams(JsonObject template, string? organizationId) => new
+        private static object TemplateParams(TemplateRequest template, string? organizationId) => new
         {
-            id = JString(template, "id"),
-            family_id = JString(template, "familyId"),
+            id = template.Id,
+            family_id = template.FamilyId,
             etablissement_id = organizationId,
-            graphic_charter_id = JString(template, "graphicCharterId"),
-            nom = JString(template, "nom") ?? "",
+            graphic_charter_id = template.GraphicCharterId,
+            nom = template.Nom,
             updated_at = DateTimeOffset.UtcNow.ToString("O"),
-            has_header = JBool(template, "hasHeader"),
-            has_footer = JBool(template, "hasFooter"),
-            orientation = JString(template, "orientation") ?? "portrait",
-            filter_profile_json = JsonString(template, "filterProfile", "[]"),
-            section_directions_json = JsonString(template, "sectionDirections", "{}"),
-            page_margins_json = JsonString(template, "pageMargins", "{}"),
-            header_html = JString(template, "header") ?? "",
-            body_html = JString(template, "body") ?? "",
-            footer_html = JString(template, "footer") ?? ""
+            has_header = template.HasHeader,
+            has_footer = template.HasFooter,
+            orientation = ToDatabaseString(template.Orientation),
+            filter_profile_json = JsonString(template.FilterProfile, "[]"),
+            section_directions_json = JsonString(template.SectionDirections, "{}"),
+            page_margins_json = JsonString(template.PageMargins, "{}"),
+            header_html = template.Header,
+            body_html = template.Body,
+            footer_html = template.Footer
         };
 
-        private static JsonObject NormalizeTableView(JsonObject source)
+        private static FamilyResponse NormalizeFamily(FamilyRequest source)
         {
-            return new JsonObject
+            return new FamilyResponse
             {
-                ["id"] = JString(source, "id") ?? $"tvw_{Guid.NewGuid():N}",
-                ["tableName"] = JString(source, "tableName") ?? "",
-                ["label"] = JString(source, "label") ?? "",
-                ["visibleFields"] = source["visibleFields"]?.DeepClone() ?? new JsonArray(),
-                ["editableFields"] = source["editableFields"]?.DeepClone() ?? new JsonArray(),
-                ["previewFields"] = source["previewFields"]?.DeepClone() ?? new JsonArray(),
-                ["fieldLabels"] = source["fieldLabels"]?.DeepClone() ?? new JsonObject(),
-                ["fieldSettings"] = source["fieldSettings"]?.DeepClone() ?? new JsonObject(),
-                ["createdAt"] = JString(source, "createdAt"),
-                ["updatedAt"] = JString(source, "updatedAt")
+                Id = string.IsNullOrWhiteSpace(source.Id) ? $"fam_{Guid.NewGuid():N}" : source.Id,
+                Nom = source.Nom,
+                Description = source.Description,
+                BeneficiaryMode = source.BeneficiaryMode,
+                BeneficiaryTable = source.BeneficiaryMode == BeneficiaryMode.Organization ? null : source.BeneficiaryTable,
+                BeneficiaryTableLabel = source.BeneficiaryTableLabel,
+                BeneficiaryLinkColumn = source.BeneficiaryLinkColumn,
+                BeneficiaryDisplayColumn1 = source.BeneficiaryDisplayColumn1,
+                BeneficiaryDisplayColumn2 = source.BeneficiaryDisplayColumn2,
+                BeneficiarySql = source.BeneficiarySql,
+                FilterCatalog = source.FilterCatalog ?? [],
+                Sql = source.Sql,
+                CreatedAt = source.CreatedAt,
+                Classes = source.Classes ?? []
             };
         }
 
-        private static IEnumerable<JsonObject> ArrayOf(JsonObject source, string name) => source[name] is JsonArray array ? array.OfType<JsonObject>() : [];
-        private static IEnumerable<string> JsonArrayStrings(JsonObject source, string name) => source[name] is JsonArray array ? array.Select(value => value?.GetValue<string>() ?? "").Where(value => !string.IsNullOrWhiteSpace(value)) : [];
-        private static string? JString(JsonObject source, string name) => source[name]?.GetValue<object>()?.ToString();
-        private static bool JBool(JsonObject source, string name) => source[name]?.GetValue<bool>() ?? false;
-        private static string JsonString(JsonObject source, string name, string fallback) => source[name]?.ToJsonString(JsonOptions) ?? fallback;
-        private static string Quote(string name) => $"[{name.Replace("]", "]]")}]";
-        private static IDictionary<string, object?> Row(object row)
+        private static TemplateResponse NormalizeTemplate(TemplateRequest source)
         {
-            if (row is IDictionary<string, object?> nullableDictionary) return nullableDictionary;
-            return ((IDictionary<string, object>)row).ToDictionary(pair => pair.Key, pair => (object?)pair.Value);
+            return new TemplateResponse
+            {
+                Id = string.IsNullOrWhiteSpace(source.Id) ? $"tpl_{Guid.NewGuid():N}" : source.Id,
+                FamilyId = source.FamilyId,
+                OrganizationId = source.OrganizationId,
+                GraphicCharterId = source.GraphicCharterId,
+                Nom = source.Nom,
+                UpdatedAt = source.UpdatedAt,
+                HasHeader = source.HasHeader,
+                HasFooter = source.HasFooter,
+                Orientation = source.Orientation,
+                FilterProfile = source.FilterProfile ?? [],
+                SectionDirections = source.SectionDirections ?? new SectionDirections(),
+                PageMargins = source.PageMargins ?? new PageMargins(),
+                HeaderFooterDistances = source.HeaderFooterDistances ?? new HeaderFooterDistances(),
+                HeaderDisplay = source.HeaderDisplay,
+                FooterDisplay = source.FooterDisplay,
+                Header = source.Header,
+                Body = source.Body,
+                Footer = source.Footer
+            };
         }
-        private static object CleanRow(object row) => Row(row).ToDictionary(pair => pair.Key, pair => pair.Value is DateTime dt ? dt.ToString("O") : pair.Value);
-        private static string? Str(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && value is not null && value is not DBNull ? value.ToString() : null;
-        private static string? StrOrNull(IDictionary<string, object?> row, string key) => string.IsNullOrWhiteSpace(Str(row, key)) ? null : Str(row, key);
-        private static object? Obj(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && value is not DBNull ? value : null;
-        private static bool Bool(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && Convert.ToBoolean(value);
-        private static JsonNode? JsonValue(IDictionary<string, object?> row, string key, JsonNode fallback)
+
+        private static GraphicCharterResponse NormalizeGraphicCharter(GraphicCharterRequest source)
+        {
+            return new GraphicCharterResponse
+            {
+                Id = string.IsNullOrWhiteSpace(source.Id) ? $"gch_{Guid.NewGuid():N}" : source.Id,
+                OrganizationId = source.OrganizationId,
+                Name = source.Name,
+                Description = source.Description,
+                IsDefault = source.IsDefault,
+                Config = source.Config ?? new GraphicCharterConfig(),
+                CreatedAt = source.CreatedAt,
+                UpdatedAt = source.UpdatedAt
+            };
+        }
+
+        private static TableViewConfigResponse NormalizeTableView(TableViewConfigRequest source)
+        {
+            return new TableViewConfigResponse
+            {
+                Id = string.IsNullOrWhiteSpace(source.Id) ? $"tvw_{Guid.NewGuid():N}" : source.Id,
+                TableName = source.TableName,
+                Label = source.Label,
+                VisibleFields = NormalizeFieldList(source.VisibleFields),
+                EditableFields = NormalizeFieldList(source.EditableFields),
+                PreviewFields = NormalizeFieldList(source.PreviewFields).Take(3).ToList(),
+                FieldLabels = source.FieldLabels ?? [],
+                FieldSettings = source.FieldSettings ?? [],
+                CreatedAt = source.CreatedAt,
+                UpdatedAt = source.UpdatedAt
+            };
+        }
+
+        private static List<string> NormalizeFieldList(IEnumerable<string>? fields)
+        {
+            return (fields ?? [])
+                .Select(field => field?.Trim() ?? string.Empty)
+                .Where(field => !string.IsNullOrWhiteSpace(field))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static JsonSerializerOptions CreateJsonOptions()
+        {
+            var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+            options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            return options;
+        }
+
+        private static T JsonValue<T>(IDictionary<string, object?> row, string key, T fallback)
         {
             try
             {
                 var raw = Str(row, key);
-                return string.IsNullOrWhiteSpace(raw) ? fallback.DeepClone() : JsonNode.Parse(raw) ?? fallback.DeepClone();
+                return string.IsNullOrWhiteSpace(raw)
+                    ? CloneValue(fallback)
+                    : JsonSerializer.Deserialize<T>(raw, JsonOptions) ?? CloneValue(fallback);
             }
             catch
             {
-                return fallback.DeepClone();
+                return CloneValue(fallback);
             }
         }
 
-        private static JsonNode? ParseJsonNode(string? raw, JsonNode? fallback)
+        private static T CloneValue<T>(T value)
+        {
+            if (value is null) return value;
+            return JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, JsonOptions), JsonOptions) ?? value;
+        }
+
+        private static object? ParseJsonValue(string? raw)
         {
             try
             {
-                return string.IsNullOrWhiteSpace(raw) ? fallback : JsonNode.Parse(raw);
+                return string.IsNullOrWhiteSpace(raw) ? null : JsonSerializer.Deserialize<object?>(raw, JsonOptions);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string JsonString<T>(T value, string fallback)
+        {
+            try
+            {
+                return JsonSerializer.Serialize(value, JsonOptions);
             }
             catch
             {
                 return fallback;
             }
         }
+
+        private static PageOrientation ParseOrientation(string? value)
+        {
+            return string.Equals(value, "landscape", StringComparison.OrdinalIgnoreCase)
+                ? PageOrientation.Landscape
+                : PageOrientation.Portrait;
+        }
+
+        private static string ToDatabaseString(PageOrientation orientation)
+        {
+            return orientation == PageOrientation.Landscape ? "landscape" : "portrait";
+        }
+
+        private static string Quote(string name) => $"[{name.Replace("]", "]]")}]";
+
+        private static IDictionary<string, object?> Row(object row)
+        {
+            if (row is IDictionary<string, object?> nullableDictionary) return nullableDictionary;
+            return ((IDictionary<string, object>)row).ToDictionary(pair => pair.Key, pair => (object?)pair.Value);
+        }
+
+        private static Dictionary<string, object?> CleanRow(object row)
+        {
+            return Row(row).ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value switch
+                {
+                    DateTime dateTime => dateTime.ToString("O"),
+                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
+                    _ => pair.Value
+                });
+        }
+
+        private static string? Str(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && value is not null && value is not DBNull ? value.ToString() : null;
+        private static string? StrOrNull(IDictionary<string, object?> row, string key) => string.IsNullOrWhiteSpace(Str(row, key)) ? null : Str(row, key);
+        private static object? Obj(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && value is not DBNull ? value : null;
+        private static bool Bool(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && value is not null && value is not DBNull && Convert.ToBoolean(value);
         private static string? FirstString(IDictionary<string, object?> row, params string[] keys) => keys.Select(key => Str(row, key)).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
         private static object? FirstObject(IDictionary<string, object?> row, params string[] keys) => keys.Select(key => Obj(row, key)).FirstOrDefault(value => value is not null);
-        private static string? GetAnonymousProperty(object item, string propertyName) => item.GetType().GetProperty(propertyName)?.GetValue(item)?.ToString();
+        private static bool FirstBool(IDictionary<string, object?> row, params string[] keys) => keys.Select(key => Obj(row, key)).FirstOrDefault(value => value is not null) is { } value && Convert.ToBoolean(value);
+        private static string? FormatValue(object? value) => value switch
+        {
+            null => null,
+            DateTime dateTime => dateTime.ToString("O"),
+            DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
+            _ => value.ToString()
+        };
         private string AuthTable(string tableName) => $"[{EscapeIdentifier(_options.AuthDatabaseName)}].[dbo].[{EscapeIdentifier(tableName)}]";
         private static string EscapeIdentifier(string value) => value.Replace("]", "]]");
 

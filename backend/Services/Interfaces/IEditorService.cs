@@ -1,37 +1,36 @@
 using DocApi.DTOs;
-using System.Text.Json.Nodes;
 
 namespace DocApi.Services.Interfaces
 {
     public interface IEditorService
     {
-        Task<IEnumerable<object>> GetFamiliesAsync();
-        Task<object?> GetFamilyByIdAsync(string id);
-        Task<object> UpsertFamilyAsync(JsonObject family);
+        Task<IEnumerable<FamilyResponse>> GetFamiliesAsync();
+        Task<FamilyResponse?> GetFamilyByIdAsync(string id);
+        Task<FamilyResponse> UpsertFamilyAsync(FamilyRequest request);
         Task DeleteFamilyAsync(string id);
-        Task<IEnumerable<object>> GetOrganizationsAsync();
-        Task<IEnumerable<object>> GetAdminsAsync();
-        Task<IEnumerable<object>> GetTemplatesAsync(object? currentUser = null);
-        Task<object?> GetTemplateByIdAsync(string id);
-        Task<object> UpsertTemplateAsync(JsonObject template);
+        Task<IEnumerable<OrganizationResponse>> GetOrganizationsAsync();
+        Task<IEnumerable<AdminResponse>> GetAdminsAsync();
+        Task<IEnumerable<TemplateResponse>> GetTemplatesAsync(AuthUserResponse? currentUser = null);
+        Task<TemplateResponse?> GetTemplateByIdAsync(string id);
+        Task<TemplateResponse> UpsertTemplateAsync(TemplateRequest request);
         Task DeleteTemplateAsync(string id);
-        Task<IEnumerable<object>> GetGraphicChartersAsync();
-        Task<object?> GetGraphicCharterByIdAsync(string id);
-        Task<object> UpsertGraphicCharterAsync(JsonObject graphicCharter);
+        Task<IEnumerable<GraphicCharterResponse>> GetGraphicChartersAsync();
+        Task<GraphicCharterResponse?> GetGraphicCharterByIdAsync(string id);
+        Task<GraphicCharterResponse> UpsertGraphicCharterAsync(GraphicCharterRequest request);
         Task DeleteGraphicCharterAsync(string id);
-        Task<IEnumerable<object>> GetTableViewConfigsAsync();
-        Task<object?> GetTableViewConfigByIdAsync(string id);
-        Task<object> UpsertTableViewConfigAsync(JsonObject tableView);
+        Task<IEnumerable<TableViewConfigResponse>> GetTableViewConfigsAsync();
+        Task<TableViewConfigResponse?> GetTableViewConfigByIdAsync(string id);
+        Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request);
         Task DeleteTableViewConfigAsync(string? id);
-        Task<object> LoadStateAsync(object? currentUser);
-        Task<object> LoadSchemaAsync();
-        Task ReplaceStateAsync(JsonObject state, object? currentUser);
-        Task<IEnumerable<object>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters);
-        Task<IEnumerable<object>> GetTableViewRowsAsync(TableViewRowsRequest request);
-        Task<object?> GetTableViewRecordAsync(TableViewRecordRequest request);
-        Task<object?> UpdateTableViewRecordAsync(TableViewRecordRequest request);
-        Task<object?> CreateTableViewRecordAsync(TableViewRecordRequest request);
+        Task<EditorStateResponse> LoadStateAsync(AuthUserResponse? currentUser);
+        Task<DatabaseSchemaResponse> LoadSchemaAsync();
+        Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser);
+        Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters);
+        Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request);
+        Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request);
+        Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(TableViewRecordRequest request);
+        Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(TableViewRecordRequest request);
         Task DeleteTableViewRecordAsync(TableViewRecordRequest request);
-        Task<IEnumerable<object>> GetLookupOptionsAsync(TableViewLookupRequest request);
+        Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(TableViewLookupRequest request);
     }
 }

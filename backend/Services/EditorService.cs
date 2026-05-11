@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using DocApi.DTOs;
 using DocApi.Repositories.Interfaces;
 using DocApi.Services.Interfaces;
@@ -8,7 +6,6 @@ namespace DocApi.Services
 {
     public class EditorService : IEditorService
     {
-        private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
         private readonly IEditorRepository _repository;
 
         public EditorService(IEditorRepository repository)
@@ -16,22 +13,22 @@ namespace DocApi.Services
             _repository = repository;
         }
 
-        public async Task<IEnumerable<object>> GetFamiliesAsync()
+        public async Task<IEnumerable<FamilyResponse>> GetFamiliesAsync()
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.LoadFamiliesAsync();
         }
 
-        public async Task<object?> GetFamilyByIdAsync(string id)
+        public async Task<FamilyResponse?> GetFamilyByIdAsync(string id)
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.GetFamilyByIdAsync(id);
         }
 
-        public async Task<object> UpsertFamilyAsync(JsonObject family)
+        public async Task<FamilyResponse> UpsertFamilyAsync(FamilyRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.UpsertFamilyAsync(family);
+            return await _repository.UpsertFamilyAsync(request);
         }
 
         public async Task DeleteFamilyAsync(string id)
@@ -40,54 +37,46 @@ namespace DocApi.Services
             await _repository.DeleteFamilyAsync(id);
         }
 
-        public async Task<IEnumerable<object>> GetOrganizationsAsync()
+        public async Task<IEnumerable<OrganizationResponse>> GetOrganizationsAsync()
         {
             await _repository.EnsureSchemaAsync();
             var graphicCharters = (await _repository.LoadGraphicChartersAsync()).ToArray();
             return (await _repository.LoadOrganizationsAsync())
-                .Select(organization => new
+                .Select(organization =>
                 {
-                    id = GetProperty(organization, "id"),
-                    nom = GetProperty(organization, "nom"),
-                    ville = GetProperty(organization, "ville"),
-                    adresse = GetProperty(organization, "adresse"),
-                    tel = GetProperty(organization, "tel"),
-                    email = GetProperty(organization, "email"),
-                    raw = GetObjectProperty(organization, "raw"),
-                    graphicCharters = graphicCharters.Where(item => GetProperty(item, "organizationId") == GetProperty(organization, "id")).ToArray(),
-                    createdAt = GetObjectProperty(organization, "createdAt"),
-                    updatedAt = GetObjectProperty(organization, "updatedAt")
+                    organization.GraphicCharters = graphicCharters
+                        .Where(item => item.OrganizationId == organization.Id)
+                        .ToList();
+                    return organization;
                 })
                 .ToArray();
         }
 
-        public async Task<IEnumerable<object>> GetAdminsAsync()
+        public async Task<IEnumerable<AdminResponse>> GetAdminsAsync()
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.LoadAdminsAsync();
         }
 
-        public async Task<IEnumerable<object>> GetTemplatesAsync(object? currentUser = null)
+        public async Task<IEnumerable<TemplateResponse>> GetTemplatesAsync(AuthUserResponse? currentUser = null)
         {
             await _repository.EnsureSchemaAsync();
             var templates = (await _repository.LoadTemplatesAsync()).ToArray();
-            var role = GetUserString(currentUser, "role");
-            if (string.IsNullOrWhiteSpace(role) || role == "supAdmin") return templates;
+            if (string.IsNullOrWhiteSpace(currentUser?.Role) || currentUser.Role == "supAdmin") return templates;
 
-            var organizationId = GetUserString(currentUser, "organizationId");
-            return templates.Where(item => GetProperty(item, "organizationId") == organizationId).ToArray();
+            return templates.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray();
         }
 
-        public async Task<object?> GetTemplateByIdAsync(string id)
+        public async Task<TemplateResponse?> GetTemplateByIdAsync(string id)
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.GetTemplateByIdAsync(id);
         }
 
-        public async Task<object> UpsertTemplateAsync(JsonObject template)
+        public async Task<TemplateResponse> UpsertTemplateAsync(TemplateRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.UpsertTemplateAsync(template);
+            return await _repository.UpsertTemplateAsync(request);
         }
 
         public async Task DeleteTemplateAsync(string id)
@@ -96,22 +85,22 @@ namespace DocApi.Services
             await _repository.DeleteTemplateAsync(id);
         }
 
-        public async Task<IEnumerable<object>> GetGraphicChartersAsync()
+        public async Task<IEnumerable<GraphicCharterResponse>> GetGraphicChartersAsync()
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.LoadGraphicChartersAsync();
         }
 
-        public async Task<object?> GetGraphicCharterByIdAsync(string id)
+        public async Task<GraphicCharterResponse?> GetGraphicCharterByIdAsync(string id)
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.GetGraphicCharterByIdAsync(id);
         }
 
-        public async Task<object> UpsertGraphicCharterAsync(JsonObject graphicCharter)
+        public async Task<GraphicCharterResponse> UpsertGraphicCharterAsync(GraphicCharterRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.UpsertGraphicCharterAsync(graphicCharter);
+            return await _repository.UpsertGraphicCharterAsync(request);
         }
 
         public async Task DeleteGraphicCharterAsync(string id)
@@ -120,90 +109,88 @@ namespace DocApi.Services
             await _repository.DeleteGraphicCharterAsync(id);
         }
 
-        public async Task<IEnumerable<object>> GetTableViewConfigsAsync()
+        public async Task<IEnumerable<TableViewConfigResponse>> GetTableViewConfigsAsync()
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.LoadTableViewsAsync();
         }
 
-        public async Task<object?> GetTableViewConfigByIdAsync(string id)
+        public async Task<TableViewConfigResponse?> GetTableViewConfigByIdAsync(string id)
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.GetTableViewConfigByIdAsync(id);
         }
 
-        public async Task<object> LoadStateAsync(object? currentUser)
+        public async Task<EditorStateResponse> LoadStateAsync(AuthUserResponse? currentUser)
         {
             await _repository.EnsureSchemaAsync();
             var graphicCharters = (await _repository.LoadGraphicChartersAsync()).ToArray();
             var organizations = (await GetOrganizationsAsync()).ToArray();
-            var state = new
+            var state = new EditorStateResponse
             {
-                organizations,
-                admins = await _repository.LoadAdminsAsync(),
-                families = await _repository.LoadFamiliesAsync(),
-                templates = await _repository.LoadTemplatesAsync(),
-                graphicCharters,
-                tableViews = await _repository.LoadTableViewsAsync(),
-                settings = await _repository.LoadSettingsAsync()
+                Organizations = organizations,
+                Admins = await _repository.LoadAdminsAsync(),
+                Families = await _repository.LoadFamiliesAsync(),
+                Templates = await _repository.LoadTemplatesAsync(),
+                GraphicCharters = graphicCharters,
+                TableViews = await _repository.LoadTableViewsAsync(),
+                Settings = await _repository.LoadSettingsAsync()
             };
 
-            var role = GetUserString(currentUser, "role");
-            if (string.IsNullOrWhiteSpace(role) || role == "supAdmin") return state;
+            if (string.IsNullOrWhiteSpace(currentUser?.Role) || currentUser.Role == "supAdmin") return state;
 
-            var organizationId = GetUserString(currentUser, "organizationId");
-            return new
+            return new EditorStateResponse
             {
-                organizations = state.organizations.Where(item => GetProperty(item, "id") == organizationId),
-                admins = state.admins.Where(item => GetProperty(item, "organizationId") == organizationId),
-                state.families,
-                templates = state.templates.Where(item => GetProperty(item, "organizationId") == organizationId),
-                state.tableViews,
-                state.settings
+                Organizations = state.Organizations.Where(item => item.Id == currentUser.OrganizationId).ToArray(),
+                Admins = state.Admins.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray(),
+                Families = state.Families,
+                Templates = state.Templates.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray(),
+                GraphicCharters = state.GraphicCharters.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray(),
+                TableViews = state.TableViews,
+                Settings = state.Settings
             };
         }
 
-        public async Task<object> LoadSchemaAsync()
+        public async Task<DatabaseSchemaResponse> LoadSchemaAsync()
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.LoadSchemaAsync();
         }
 
-        public async Task ReplaceStateAsync(JsonObject state, object? currentUser)
+        public async Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser)
         {
             await _repository.EnsureSchemaAsync();
-            var role = GetUserString(currentUser, "role");
-            await _repository.ReplaceStateAsync(state, GetUserString(currentUser, "organizationId"), role == "supAdmin");
+            await _repository.ReplaceStateAsync(state, currentUser?.OrganizationId, currentUser?.Role == "supAdmin");
         }
 
-        public async Task<IEnumerable<object>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters)
+        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.RunSelectQueryAsync(sql ?? "", parameters ?? []);
+            return await _repository.RunSelectQueryAsync(sql ?? string.Empty, parameters ?? []);
         }
 
-        public async Task<IEnumerable<object>> GetTableViewRowsAsync(TableViewRowsRequest request)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request)
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Limit, request.Search, request.Config);
         }
 
-        public async Task<object?> GetTableViewRecordAsync(TableViewRecordRequest request)
+        public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request)
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.GetTableViewRecordAsync(request.ConfigId, request.RowId);
         }
 
-        public async Task<object?> UpdateTableViewRecordAsync(TableViewRecordRequest request)
+        public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(TableViewRecordRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.UpdateTableViewRecordAsync(request.ConfigId, request.RowId, request.Values ?? []);
+            return await _repository.UpdateTableViewRecordAsync(request.ConfigId, request.RowId, request.Values);
         }
 
-        public async Task<object?> CreateTableViewRecordAsync(TableViewRecordRequest request)
+        public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(TableViewRecordRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.CreateTableViewRecordAsync(request.ConfigId, request.Values ?? [], request.Config);
+            return await _repository.CreateTableViewRecordAsync(request.ConfigId, request.Values, request.Config);
         }
 
         public async Task DeleteTableViewRecordAsync(TableViewRecordRequest request)
@@ -212,16 +199,16 @@ namespace DocApi.Services
             await _repository.DeleteTableViewRecordAsync(request.ConfigId, request.RowId);
         }
 
-        public async Task<IEnumerable<object>> GetLookupOptionsAsync(TableViewLookupRequest request)
+        public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(TableViewLookupRequest request)
         {
             await _repository.EnsureSchemaAsync();
             return await _repository.GetLookupOptionsAsync(request.ConfigId, request.FieldName, request.Config);
         }
 
-        public async Task<object> UpsertTableViewConfigAsync(JsonObject tableView)
+        public async Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.UpsertTableViewConfigAsync(tableView);
+            return await _repository.UpsertTableViewConfigAsync(request);
         }
 
         public async Task DeleteTableViewConfigAsync(string? id)
@@ -229,24 +216,5 @@ namespace DocApi.Services
             await _repository.EnsureSchemaAsync();
             await _repository.DeleteTableViewConfigAsync(id);
         }
-
-        private static string? GetProperty(object item, string propertyName)
-        {
-            var property = item.GetType().GetProperty(propertyName);
-            return property?.GetValue(item)?.ToString();
-        }
-
-        private static object? GetObjectProperty(object item, string propertyName)
-        {
-            return item.GetType().GetProperty(propertyName)?.GetValue(item);
-        }
-
-        private static string? GetUserString(object? user, string key)
-        {
-            if (user is Dictionary<string, object?> dictionary && dictionary.TryGetValue(key, out var value)) return value?.ToString();
-            if (user is IDictionary<string, object?> genericDictionary && genericDictionary.TryGetValue(key, out var genericValue)) return genericValue?.ToString();
-            return user?.GetType().GetProperty(key)?.GetValue(user)?.ToString();
-        }
-
     }
 }

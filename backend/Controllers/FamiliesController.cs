@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using DocApi.DTOs;
 using DocApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,29 +16,29 @@ namespace DocApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetAll()
+        public async Task<ActionResult<IEnumerable<FamilyResponse>>> GetAll()
         {
             return Ok(await _service.GetFamiliesAsync());
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<object>> GetById(string id)
+        public async Task<ActionResult<FamilyResponse>> GetById(string id)
         {
             var family = await _service.GetFamilyByIdAsync(id);
             return family is null ? NotFound() : Ok(family);
         }
 
         [HttpPost]
-        public async Task<ActionResult<object>> Create([FromBody] JsonObject family)
+        public async Task<ActionResult<FamilyResponse>> Create([FromBody] FamilyRequest family)
         {
             var saved = await _service.UpsertFamilyAsync(family);
             return Ok(saved);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<object>> Update(string id, [FromBody] JsonObject family)
+        public async Task<ActionResult<FamilyResponse>> Update(string id, [FromBody] FamilyRequest family)
         {
-            family["id"] = id;
+            family.Id = id;
             return Ok(await _service.UpsertFamilyAsync(family));
         }
 

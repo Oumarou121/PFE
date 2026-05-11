@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using DocApi.Domain.ValueObjects;
 
 namespace DocApi.Domain.Entities
 {
@@ -13,9 +13,9 @@ namespace DocApi.Domain.Entities
         public string? BeneficiaryDisplayColumn1 { get; set; }
         public string? BeneficiaryDisplayColumn2 { get; set; }
         public string? BeneficiarySql { get; set; }
-        public JsonArray FilterCatalog { get; set; } = new();
+        public List<FilterDefinition> FilterCatalog { get; set; } = [];
         public string? Sql { get; set; }
         public string? CreatedAt { get; set; }
-        public JsonArray Classes { get; set; } = new();
+        public List<FamilyClass> Classes { get; set; } = [];
     }
 }

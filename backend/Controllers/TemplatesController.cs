@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using DocApi.DTOs;
 using DocApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +19,14 @@ namespace DocApi.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<object>>> GetAll()
+        public async Task<ActionResult<IEnumerable<TemplateResponse>>> GetAll()
         {
             return Ok(await _service.GetTemplatesAsync(CurrentUser()));
         }
 
         [HttpGet("{id}")]
         [Authorize]
-        public async Task<ActionResult<object>> GetById(string id)
+        public async Task<ActionResult<TemplateResponse>> GetById(string id)
         {
             var template = await _service.GetTemplateByIdAsync(id);
             return template is null ? NotFound() : Ok(template);
@@ -34,16 +34,16 @@ namespace DocApi.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<object>> Create([FromBody] JsonObject template)
+        public async Task<ActionResult<TemplateResponse>> Create([FromBody] TemplateRequest template)
         {
             return Ok(await _service.UpsertTemplateAsync(template));
         }
 
         [HttpPut("{id}")]
         [Authorize]
-        public async Task<ActionResult<object>> Update(string id, [FromBody] JsonObject template)
+        public async Task<ActionResult<TemplateResponse>> Update(string id, [FromBody] TemplateRequest template)
         {
-            template["id"] = id;
+            template.Id = id;
             return Ok(await _service.UpsertTemplateAsync(template));
         }
 
@@ -55,17 +55,20 @@ namespace DocApi.Controllers
             return NoContent();
         }
 
-        private object? CurrentUser()
+        private AuthUserResponse? CurrentUser()
         {
             if (User.Identity?.IsAuthenticated != true) return null;
-            return new Dictionary<string, object?>
+            return new AuthUserResponse
             {
-                ["id"] = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                ["name"] = User.FindFirstValue(ClaimTypes.Name),
-                ["email"] = User.FindFirstValue(ClaimTypes.Email),
-                ["role"] = User.FindFirstValue(ClaimTypes.Role),
-                ["organizationId"] = User.FindFirstValue("organizationId"),
-                ["profile"] = ""
+                Id = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
+                Name = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty,
+                Email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty,
+                Role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty,
+                OrganizationId = User.FindFirstValue("organizationId"),
+                Profile = string.Empty,
+                ProfileDetail = null,
+                AccessAllYears = false,
+                AccessYearList = null
             };
         }
     }

@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using DocApi.DTOs;
 using DocApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,28 +16,28 @@ namespace DocApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetAll()
+        public async Task<ActionResult<IEnumerable<GraphicCharterResponse>>> GetAll()
         {
             return Ok(await _service.GetGraphicChartersAsync());
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<object>> GetById(string id)
+        public async Task<ActionResult<GraphicCharterResponse>> GetById(string id)
         {
             var charter = await _service.GetGraphicCharterByIdAsync(id);
             return charter is null ? NotFound() : Ok(charter);
         }
 
         [HttpPost]
-        public async Task<ActionResult<object>> Create([FromBody] JsonObject charter)
+        public async Task<ActionResult<GraphicCharterResponse>> Create([FromBody] GraphicCharterRequest charter)
         {
             return Ok(await _service.UpsertGraphicCharterAsync(charter));
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<object>> Update(string id, [FromBody] JsonObject charter)
+        public async Task<ActionResult<GraphicCharterResponse>> Update(string id, [FromBody] GraphicCharterRequest charter)
         {
-            charter["id"] = id;
+            charter.Id = id;
             return Ok(await _service.UpsertGraphicCharterAsync(charter));
         }
 

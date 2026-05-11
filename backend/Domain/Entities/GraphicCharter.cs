@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using DocApi.Domain.ValueObjects;
 
 namespace DocApi.Domain.Entities
 {
@@ -9,7 +9,7 @@ namespace DocApi.Domain.Entities
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public bool IsDefault { get; set; }
-        public JsonObject Config { get; set; } = new();
+        public GraphicCharterConfig Config { get; set; } = new();
         public string? CreatedAt { get; set; }
         public string? UpdatedAt { get; set; }
     }

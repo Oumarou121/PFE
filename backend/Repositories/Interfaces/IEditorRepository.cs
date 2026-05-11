@@ -1,37 +1,37 @@
-using System.Text.Json.Nodes;
+using DocApi.DTOs;
 
 namespace DocApi.Repositories.Interfaces
 {
     public interface IEditorRepository
     {
         Task EnsureSchemaAsync();
-        Task<IEnumerable<object>> LoadFamiliesAsync();
-        Task<object?> GetFamilyByIdAsync(string id);
-        Task<object> UpsertFamilyAsync(JsonObject family);
+        Task<IEnumerable<FamilyResponse>> LoadFamiliesAsync();
+        Task<FamilyResponse?> GetFamilyByIdAsync(string id);
+        Task<FamilyResponse> UpsertFamilyAsync(FamilyRequest request);
         Task DeleteFamilyAsync(string id);
-        Task<IEnumerable<object>> LoadOrganizationsAsync();
-        Task<IEnumerable<object>> LoadAdminsAsync();
-        Task<IEnumerable<object>> LoadGraphicChartersAsync();
-        Task<object?> GetGraphicCharterByIdAsync(string id);
-        Task<object> UpsertGraphicCharterAsync(JsonObject graphicCharter);
+        Task<IEnumerable<OrganizationResponse>> LoadOrganizationsAsync();
+        Task<IEnumerable<AdminResponse>> LoadAdminsAsync();
+        Task<IEnumerable<GraphicCharterResponse>> LoadGraphicChartersAsync();
+        Task<GraphicCharterResponse?> GetGraphicCharterByIdAsync(string id);
+        Task<GraphicCharterResponse> UpsertGraphicCharterAsync(GraphicCharterRequest request);
         Task DeleteGraphicCharterAsync(string id);
-        Task<IEnumerable<object>> LoadTemplatesAsync();
-        Task<object?> GetTemplateByIdAsync(string id);
-        Task<object> UpsertTemplateAsync(JsonObject template);
+        Task<IEnumerable<TemplateResponse>> LoadTemplatesAsync();
+        Task<TemplateResponse?> GetTemplateByIdAsync(string id);
+        Task<TemplateResponse> UpsertTemplateAsync(TemplateRequest request);
         Task DeleteTemplateAsync(string id);
-        Task<IEnumerable<object>> LoadTableViewsAsync();
-        Task<object?> GetTableViewConfigByIdAsync(string id);
-        Task<IDictionary<string, object?>> LoadSettingsAsync();
-        Task<object> LoadSchemaAsync();
-        Task ReplaceStateAsync(JsonObject state, string? scopedOrganizationId, bool isSuperAdmin);
-        Task<IEnumerable<object>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters);
-        Task<IEnumerable<object>> GetTableViewRowsAsync(string? configId, int? limit, string? search, JsonObject? config);
-        Task<object?> GetTableViewRecordAsync(string? configId, object? rowId);
-        Task<object?> UpdateTableViewRecordAsync(string? configId, object? rowId, Dictionary<string, object?> values);
-        Task<object?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, JsonObject? config);
-        Task DeleteTableViewRecordAsync(string? configId, object? rowId);
-        Task<IEnumerable<object>> GetLookupOptionsAsync(string? configId, string? fieldName, JsonObject? config);
-        Task<object> UpsertTableViewConfigAsync(JsonObject tableView);
+        Task<IEnumerable<TableViewConfigResponse>> LoadTableViewsAsync();
+        Task<TableViewConfigResponse?> GetTableViewConfigByIdAsync(string id);
+        Task<Dictionary<string, object?>> LoadSettingsAsync();
+        Task<DatabaseSchemaResponse> LoadSchemaAsync();
+        Task ReplaceStateAsync(EditorStateResponse state, string? scopedOrganizationId, bool isSuperAdmin);
+        Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters);
+        Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config);
+        Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId);
+        Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values);
+        Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config);
+        Task DeleteTableViewRecordAsync(string? configId, string? rowId);
+        Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config);
+        Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request);
         Task DeleteTableViewConfigAsync(string? id);
     }
 }
