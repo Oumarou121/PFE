@@ -1280,7 +1280,7 @@ button {
   /* On remonte le nœud réel dans la marge marginTop */
   margin-top: calc(var(--page-header-top) - var(--page-mt)) !important;
   padding-bottom: 3mm !important;
-  border-bottom: 1px dashed var(--doc-color-border) !important;
+  border-bottom: 0 !important;
 }
 
 .editor-host .rm-page-header {
@@ -1310,7 +1310,7 @@ button {
   /* On descend le nœud réel dans la marge marginBottom */
   margin-bottom: calc(var(--page-footer-bottom) - var(--page-mb)) !important;
   padding-top: 3mm !important;
-  border-top: 1px dashed var(--doc-color-border) !important;
+  border-top: 0 !important;
 }
 
 .editor-host .rm-page-footer {
@@ -1390,6 +1390,12 @@ button {
    de ne pas afficher ses clones sur les pages où les originaux sont présents. */
 .editor-host .rm-with-pagination .document-page-header,
 .editor-host .rm-with-pagination .document-page-footer {
+  display: none !important;
+}
+
+.document-page-header::before,
+.document-page-footer::before {
+  content: "" !important;
   display: none !important;
 }
 
@@ -2680,7 +2686,7 @@ body.resize-cursor * {
   .doc-page-header {
     padding: var(--page-header-top, 5mm) var(--page-mr, 25mm) 3mm
       var(--page-ml, 25mm);
-    border-bottom: 1px solid var(--doc-color-border, #c8cdd8);
+    border-bottom: 0;
     flex-shrink: 0;
     font-family: var(--doc-font-body, "Times New Roman", Times, serif);
     font-size: 10pt;
@@ -2711,7 +2717,7 @@ body.resize-cursor * {
       var(--page-ml, 25mm);
     flex-shrink: 0;
     margin-top: auto;
-    border-top: 1px solid var(--doc-color-border, #c8cdd8);
+    border-top: 0;
     font-family: var(--doc-font-body, "Times New Roman", Times, serif);
     font-size: 10pt;
     line-height: 1.5;
