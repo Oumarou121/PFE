@@ -1,0 +1,230 @@
+%=================================================
+% CHAPITRE 4
+%=================================================
+
+\chapter{Sprint 2 : Gestion des rôles et gouvernance d'accès}
+
+\section{Introduction}
+
+Après la mise en place de l'authentification, le deuxième sprint a été consacré à la gouvernance d'accès. Dans une plateforme documentaire, tous les utilisateurs ne doivent pas disposer du même périmètre fonctionnel. Un super administrateur peut gérer la structure globale de l'application, un administrateur peut intervenir sur les modèles et les données de son périmètre, tandis qu'un utilisateur final doit accéder principalement aux documents et aux données qui lui sont autorisés.
+
+Ce sprint introduit donc le contrôle d'accès basé sur les rôles, également appelé RBAC pour \textit{Role-Based Access Control}. Le principe consiste à associer chaque utilisateur à un rôle, puis à autoriser ou refuser les fonctionnalités selon ce rôle. Cette logique doit être appliquée à deux niveaux : côté frontend, pour orienter l'utilisateur vers les bonnes interfaces, et côté backend, pour empêcher les accès directs aux endpoints protégés.
+
+La difficulté de ce sprint réside dans la cohérence entre l'expérience utilisateur et la sécurité réelle. Masquer un menu dans Angular améliore l'ergonomie, mais ne suffit pas à sécuriser l'application. Les contrôles doivent donc être dupliqués de manière complémentaire : les guards protègent la navigation côté client, tandis que les attributs d'autorisation et la validation du JWT protègent les ressources côté serveur.
+
+\section{Objectifs du sprint}
+
+Les objectifs du sprint visent à transformer l'authentification en véritable mécanisme d'autorisation. Le système ne doit plus seulement savoir qui est connecté, mais aussi ce que cet utilisateur a le droit de faire.
+
+Les objectifs fonctionnels et techniques sont les suivants :
+
+\begin{itemize}
+    \item définir les rôles \texttt{supAdmin}, \texttt{admin} et \texttt{user} ;
+    \item intégrer le rôle dans l'entité utilisateur, dans le token JWT et dans l'objet utilisateur retourné au frontend ;
+    \item mettre en place une redirection automatique vers l'espace correspondant au rôle ;
+    \item protéger les routes Angular à l'aide d'un \texttt{roleGuard} ;
+    \item sécuriser les endpoints backend avec \texttt{[Authorize]} et les claims de rôle ;
+    \item préparer les interfaces distinctes : espace super administrateur, espace administrateur et espace utilisateur ;
+    \item valider les comportements en cas d'accès non autorisé.
+\end{itemize}
+
+Ces objectifs assurent une gouvernance minimale mais robuste, indispensable avant d'exposer les fonctionnalités de gestion documentaire.
+
+\section{Backlog du sprint}
+
+\begin{longtable}{p{0.17\textwidth} p{0.38\textwidth} p{0.35\textwidth}}
+\caption{Backlog du sprint 2}\\
+\toprule
+\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
+\midrule
+\endhead
+US2.1 & En tant que super administrateur, je peux accéder à l'espace global d'administration. & Définir le rôle \texttt{supAdmin}, créer la route Angular dédiée, autoriser uniquement ce rôle.\\
+\midrule
+US2.2 & En tant qu'administrateur, je peux accéder à l'espace de gestion métier. & Définir le rôle \texttt{admin}, créer la route \texttt{/admin}, contrôler les accès aux modèles et documents.\\
+\midrule
+US2.3 & En tant qu'utilisateur final, je peux accéder uniquement à mon espace documentaire. & Définir le rôle \texttt{user}, créer la route \texttt{/user}, limiter les fonctionnalités visibles.\\
+\midrule
+US2.4 & En tant qu'utilisateur connecté, je suis automatiquement redirigé vers mon espace. & Implémenter la redirection dans \texttt{loginGuard} et dans la réponse d'authentification.\\
+\midrule
+US2.5 & En tant que système, je dois refuser les accès non autorisés. & Tester les accès directs aux routes, vérifier les réponses \texttt{401} et \texttt{403}, protéger les endpoints sensibles.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Définition des rôles}
+
+Trois rôles ont été retenus. Le rôle \texttt{supAdmin} représente le niveau d'administration le plus élevé. Il permet de gérer les configurations globales, les familles, les vues de tables et les paramètres structurants. Le rôle \texttt{admin} correspond à un administrateur métier chargé de gérer les modèles, les chartes graphiques et les documents associés à son périmètre. Le rôle \texttt{user} correspond à l'utilisateur final, qui consulte les données autorisées, sélectionne un modèle et génère ou prévisualise un document.
+
+Cette répartition répond au besoin de séparation des responsabilités. Elle évite de donner à un utilisateur final des droits de modification sur les modèles et limite les erreurs de manipulation sur les données structurantes.
+
+\subsection{Protection des routes et des endpoints}
+
+La protection des routes Angular est assurée par \texttt{roleGuard}. Ce guard vérifie d'abord que l'utilisateur est authentifié, puis compare son rôle avec la liste des rôles autorisés dans la configuration de la route. En cas d'incompatibilité, l'utilisateur est redirigé vers son propre espace.
+
+Côté backend, la protection repose sur le middleware JWT et les attributs \texttt{[Authorize]}. Les endpoints qui manipulent des ressources sensibles ne doivent pas accepter les appels anonymes. Cette protection serveur reste indispensable car un utilisateur peut appeler directement l'API sans passer par l'interface Angular.
+
+\subsection{Gestion des utilisateurs et profils}
+
+La gestion des profils s'appuie sur les champs \texttt{Role}, \texttt{OrganizationId}, \texttt{Profile}, \texttt{ProfileDetail}, \texttt{AccessAllYears} et \texttt{AccessYearList}. Ces informations permettent d'aller au-delà du simple rôle technique. Elles préparent les restrictions métier par organisation, par profil fonctionnel ou par période.
+
+\section{Analyse et conception}
+
+\subsection{Diagramme de cas d'utilisation}
+
+\diagramplaceholder{sprint2_cas_utilisation}{Diagramme de cas d'utilisation du sprint 2}{Cas d'utilisation de la gouvernance d'accès}
+
+Le diagramme de cas d'utilisation du sprint 2 distingue trois acteurs : super administrateur, administrateur et utilisateur final. Chaque acteur hérite du comportement commun de l'utilisateur authentifié, mais dispose d'un périmètre différent.
+
+Le super administrateur peut accéder à l'espace de configuration globale, consulter l'état de l'application et préparer les données de référence. L'administrateur peut gérer les contenus documentaires et les ressources liées à son organisation. L'utilisateur final peut consulter les modèles disponibles et interagir avec les documents générés. Le cas \og Accéder à une route protégée \fg{} inclut systématiquement la vérification du token et du rôle.
+
+\subsection{Diagramme de classes}
+
+\diagramplaceholder{sprint2_classes}{Diagramme de classes du sprint 2}{Classes et services impliqués dans le RBAC}
+
+Le diagramme de classes met en évidence les éléments techniques du contrôle d'accès : \texttt{User}, \texttt{AuthUserResponse}, \texttt{AuthService}, \texttt{roleGuard}, \texttt{loginGuard}, \texttt{AuthInterceptor} et les composants de pages. Le rôle est présent dans l'entité persistée, dans le token JWT et dans l'objet utilisateur stocké côté Angular.
+
+Cette continuité est importante. Si le rôle était seulement stocké côté frontend, il pourrait être altéré. S'il était seulement en base, chaque navigation Angular nécessiterait une requête supplémentaire. Le compromis retenu consiste à placer le rôle dans le JWT signé et à le conserver dans l'objet utilisateur du frontend pour l'ergonomie.
+
+\subsection{Diagrammes de séquence}
+
+\diagramplaceholder{sprint2_sequences}{Diagramme de séquence du sprint 2}{Séquence d'accès à une route protégée}
+
+Le diagramme de séquence illustre le scénario d'accès à une route protégée. Lorsqu'un utilisateur tente d'ouvrir \texttt{/super-admin}, \texttt{/admin} ou \texttt{/user}, Angular appelle \texttt{roleGuard}. Celui-ci vérifie l'existence d'une session valide via \texttt{AuthService}. Si l'utilisateur n'est pas authentifié, il est redirigé vers \texttt{/login}. S'il est authentifié, son rôle est comparé au tableau \texttt{roles} défini dans la route.
+
+Lorsque la route est autorisée, le composant correspondant est chargé de manière paresseuse. Lorsqu'elle ne l'est pas, l'utilisateur est redirigé vers l'espace adapté à son rôle. Cette logique améliore l'expérience utilisateur en évitant l'affichage d'une erreur brute.
+
+\subsubsection*{Description des interactions système}
+
+La gouvernance d'accès combine plusieurs interactions. Le backend émet un token contenant le rôle. Le frontend stocke ce rôle dans l'objet utilisateur courant. Les routes Angular définissent les rôles autorisés. Le guard applique la décision d'accès avant le chargement du composant. Enfin, l'interceptor ajoute le token aux appels API pour que le backend puisse appliquer sa propre validation.
+
+\subsubsection*{Analyse technique}
+
+Le \texttt{roleGuard} est implémenté sous forme de guard fonctionnel Angular. Cette approche correspond au style moderne d'Angular et évite de créer une classe de guard plus lourde. Le routage utilise le chargement dynamique des composants, ce qui réduit le poids initial de l'application.
+
+\begin{lstlisting}[caption={Configuration des routes protégées par rôle}]
+{
+  path: "admin",
+  loadComponent: () =>
+    import("./features/editor/pages/admin/admin.component")
+      .then((m) => m.AdminComponent),
+  canActivate: [roleGuard],
+  data: { page: "admin", roles: ["admin"] },
+}
+\end{lstlisting}
+
+\subsubsection*{Architecture des composants concernés}
+
+L'architecture RBAC s'articule autour de trois couches. La couche routeur décide si une page peut être activée. La couche service conserve l'état d'authentification et expose l'utilisateur courant. La couche API valide les tokens et protège les endpoints. Ce découpage permet une sécurité progressive : l'interface guide l'utilisateur, tandis que l'API garantit la protection effective des données.
+
+\section{Réalisation}
+
+\subsection{Implémentation du système RBAC}
+
+Le RBAC a été implémenté en capitalisant sur le token JWT généré au sprint précédent. Le claim \texttt{ClaimTypes.Role} est ajouté au token lors de la connexion. Le frontend reçoit également le rôle dans l'objet \texttt{AuthUserResponse}. Cette information permet de rediriger l'utilisateur immédiatement après l'authentification.
+
+\begin{lstlisting}[caption={Redirection selon le rôle après authentification}]
+private static string GetRoleHome(string? role) => role switch
+{
+    "supAdmin" => "/superAdmin.html",
+    "admin" => "/admin.html",
+    _ => "/user.html"
+};
+\end{lstlisting}
+
+Même si cette redirection est utile, la sécurité réelle reste portée par le contrôle d'accès. Le rôle dans la réponse ne doit jamais être considéré comme une preuve autonome. La preuve d'identité reste le token signé.
+
+\subsection{Mise en place des autorisations backend}
+
+Les endpoints sensibles utilisent l'attribut \texttt{[Authorize]}. Cet attribut déclenche la validation du token avant l'exécution de l'action du contrôleur. Par exemple, la récupération des templates exige une session valide.
+
+\begin{lstlisting}[caption={Protection d'un endpoint de templates}]
+[HttpGet]
+[Authorize]
+public async Task<ActionResult<IEnumerable<object>>> GetAll()
+{
+    return Ok(await _service.GetTemplatesAsync(CurrentUser()));
+}
+\end{lstlisting}
+
+Le contrôleur peut ensuite récupérer les informations de l'utilisateur courant à partir des claims. Cette méthode permet notamment de filtrer les ressources selon l'organisation ou le rôle.
+
+\subsection{Gestion des guards côté frontend}
+
+Le guard de rôle vérifie la session et compare le rôle de l'utilisateur avec les rôles autorisés. En cas de refus, il redirige vers l'espace approprié.
+
+\begin{lstlisting}[caption={Vérification du rôle dans le guard Angular}]
+const allowedRoles: string[] = route.data["roles"] ?? [];
+if (!allowedRoles.length) return true;
+
+const user = authService.getCurrentUser();
+if (user && allowedRoles.includes(user.role)) {
+  return true;
+}
+
+const role = user?.role;
+if (role === "supAdmin") router.navigate(["/super-admin"]);
+else if (role === "admin") router.navigate(["/admin"]);
+else router.navigate(["/user"]);
+\end{lstlisting}
+
+Cette logique évite qu'un utilisateur soit bloqué sans indication. Elle renforce également l'ergonomie, car l'utilisateur retrouve automatiquement son espace naturel.
+
+\screenshotplaceholder{sprint2_routes.png}{Routes protégées selon les rôles}{Navigation protégée par rôle dans l'application Angular}
+\screenshotplaceholder{sprint2_admin.png}{Interface administrateur}{Espace administrateur accessible après contrôle RBAC}
+
+\subsection{Sécurisation des accès par profil}
+
+Au-delà du rôle, le profil utilisateur peut contenir des informations complémentaires. Les champs d'organisation et de profil sont transmis dans le JWT et l'objet utilisateur. Cette conception prépare les filtrages métier, par exemple l'affichage de modèles liés à une organisation ou la limitation des données par année.
+
+Les contrôleurs peuvent construire un objet utilisateur courant à partir des claims :
+
+\begin{lstlisting}[caption={Construction de l'utilisateur courant à partir des claims}]
+return new Dictionary<string, object?>
+{
+    ["id"] = User.FindFirstValue(ClaimTypes.NameIdentifier),
+    ["name"] = User.FindFirstValue(ClaimTypes.Name),
+    ["email"] = User.FindFirstValue(ClaimTypes.Email),
+    ["role"] = User.FindFirstValue(ClaimTypes.Role),
+    ["organizationId"] = User.FindFirstValue("organizationId"),
+    ["profile"] = ""
+};
+\end{lstlisting}
+
+Cette méthode sert de pont entre la couche sécurité et la couche métier. Elle permet au service documentaire de charger un état adapté au contexte de l'utilisateur.
+
+\section{Tests et validation}
+
+Les tests du sprint 2 ont vérifié la cohérence entre les routes Angular, les rôles utilisateurs et les endpoints backend.
+
+\begin{longtable}{p{0.25\textwidth} p{0.43\textwidth} p{0.22\textwidth}}
+\caption{Scénarios de test du sprint 2}\\
+\toprule
+\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
+\midrule
+\endhead
+Accès super administrateur & Connexion avec un compte \texttt{supAdmin} puis accès à \texttt{/super-admin}. & Accès autorisé.\\
+\midrule
+Accès admin interdit au super espace & Connexion avec un compte \texttt{admin} puis tentative d'accès à \texttt{/super-admin}. & Redirection vers \texttt{/admin}.\\
+\midrule
+Accès utilisateur final & Connexion avec un compte \texttt{user} puis accès à \texttt{/user}. & Accès autorisé.\\
+\midrule
+Route protégée sans session & Accès direct à \texttt{/admin} sans token. & Redirection vers \texttt{/login}.\\
+\midrule
+Endpoint protégé sans token & Appel direct à \texttt{/api/templates}. & Réponse \texttt{401 Unauthorized}.\\
+\bottomrule
+\end{longtable}
+
+Les validations techniques ont confirmé que les composants protégés n'étaient pas chargés lorsque le rôle ne correspondait pas. Les tests de sécurité ont montré qu'un accès direct à un endpoint protégé sans token était rejeté par le backend, indépendamment des contrôles effectués côté client.
+
+\section{Conclusion}
+
+Le deuxième sprint a transformé le socle d'authentification en un système de gouvernance d'accès cohérent. Les rôles sont désormais intégrés au token, aux objets utilisateur, aux routes Angular et aux contrôles backend. La plateforme distingue clairement les espaces \texttt{supAdmin}, \texttt{admin} et \texttt{user}.
+
+Cette étape prépare le développement du coeur métier. Le sprint suivant pourra se concentrer sur l'édition documentaire avec Tiptap, en s'appuyant sur une navigation sécurisée et sur une identité utilisateur déjà maîtrisée.

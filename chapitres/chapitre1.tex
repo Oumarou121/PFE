@@ -1,0 +1,127 @@
+%=================================================
+% CHAPITRE 1
+%=================================================
+
+\chapter{Cadre général du projet}
+
+\section{Introduction}
+
+Tout projet informatique naît d'un besoin observé dans un contexte précis. Dans le cas de ce projet de fin d'études, le besoin concerne la gestion documentaire au sein d'un environnement où les documents ne sont pas de simples fichiers isolés, mais des supports administratifs construits à partir de modèles, de données métier, de règles de mise en forme et de profils utilisateurs. La production de ce type de document demande souvent un travail répétitif : reprendre une structure existante, remplacer des informations, appliquer une charte graphique, vérifier les données du bénéficiaire, puis générer une version exploitable.
+
+Ce premier chapitre présente le cadre général du projet. Il introduit l'organisme d'accueil, le contexte métier, l'étude critique de l'existant, la problématique rencontrée, la solution proposée ainsi que la méthodologie de travail adoptée. Il expose également l'environnement technique retenu pour la réalisation de la plateforme. L'objectif de ce chapitre n'est pas seulement de décrire le projet, mais de montrer pourquoi les choix fonctionnels et techniques effectués répondent à un besoin réel de structuration, d'automatisation et de sécurisation.
+
+\section{Présentation de l'organisme d'accueil}
+
+Le projet a été réalisé dans un contexte professionnel où la production documentaire occupe une place importante dans les activités quotidiennes. L'organisme d'accueil manipule plusieurs catégories de documents destinés à des bénéficiaires différents. Ces documents peuvent concerner des situations administratives, des données de personnel, des décisions internes, des attestations, des listes ou encore des documents personnalisés à partir d'informations extraites d'une base de données.
+
+Dans ce type d'environnement, la qualité du document produit est aussi importante que la rapidité de génération. Un document doit respecter une structure précise, reprendre les bonnes informations, appliquer une identité visuelle cohérente et être généré par une personne autorisée. La moindre erreur dans une donnée, une mise en page ou une affectation peut provoquer une perte de temps, une correction manuelle ou une confusion dans le circuit administratif.
+
+L'organisme d'accueil dispose déjà de processus métier et de données structurées. Cependant, ces ressources ne sont pas toujours reliées à un outil documentaire unifié. Les utilisateurs doivent souvent naviguer entre plusieurs supports, récupérer manuellement des informations, modifier des modèles existants et vérifier le résultat final. Cette situation justifie la mise en place d'une plateforme capable de centraliser les modèles, les chartes graphiques, les familles de documents et les données des bénéficiaires.
+
+\section{Présentation du projet}
+
+\subsection{Contexte du projet}
+
+La transformation numérique des processus administratifs impose de repenser la manière dont les documents sont créés et exploités. Dans de nombreuses organisations, les documents sont encore préparés à partir de fichiers bureautiques copiés, modifiés et adaptés manuellement. Cette approche peut paraître suffisante lorsque le volume est faible. Elle devient toutefois fragile dès que le nombre de documents augmente, que plusieurs profils interviennent ou que les données proviennent de sources différentes.
+
+Le projet consiste à concevoir et réaliser une plateforme web de gestion documentaire dynamique. Cette plateforme permet de gérer des familles de documents, de créer des modèles éditables, d'appliquer des chartes graphiques, de configurer des vues de tables métier, de sélectionner des bénéficiaires et de générer des documents personnalisés. Elle repose sur un backend ASP.NET Core Web API, un frontend Angular, une base de données SQL Server, un système d'authentification JWT et un contrôle d'accès basé sur les rôles.
+
+La notion de document dynamique est centrale dans le projet. Un document n'est pas seulement un contenu statique. Il résulte de l'association entre un modèle, une famille de documents, une charte graphique, des données métier et un utilisateur autorisé. Cette vision permet de réduire les manipulations répétitives et d'améliorer la fiabilité du résultat final.
+
+\subsection{Problématique}
+
+La problématique principale peut être formulée ainsi : comment concevoir une plateforme web sécurisée, maintenable et extensible permettant de créer, administrer et générer dynamiquement des documents à partir de modèles et de données métier ?
+
+Cette problématique se décline en plusieurs questions concrètes. Comment permettre à un administrateur de créer un modèle de document sans intervenir directement dans le code ? Comment garantir qu'un utilisateur n'accède qu'aux fonctionnalités correspondant à son rôle ? Comment associer un modèle à une famille de documents et à une charte graphique ? Comment récupérer les données d'un bénéficiaire depuis une base SQL Server et les injecter dans un document ? Comment rendre l'application suffisamment configurable pour éviter de développer une page spécifique pour chaque table métier ?
+
+Ces questions montrent que le projet ne se limite pas à un éditeur de texte enrichi. Il s'agit d'un système documentaire complet où la sécurité, la structuration des données, l'administration métier et la génération dynamique doivent fonctionner ensemble.
+
+\subsection{Étude critique de l'existant}
+
+L'étude de l'existant met en évidence plusieurs limites dans les méthodes traditionnelles de production documentaire. La première limite concerne la dépendance aux fichiers bureautiques. Lorsqu'un document est créé à partir d'un ancien fichier, l'utilisateur doit remplacer manuellement les informations variables. Cette opération expose le document à des erreurs de copier-coller, à des oublis ou à la conservation involontaire d'anciennes données.
+
+La deuxième limite concerne l'absence de centralisation. Les modèles peuvent être stockés dans différents dossiers, sous différentes versions, parfois avec des noms peu explicites. Il devient alors difficile de savoir quel modèle est à jour, quelle charte graphique doit être appliquée ou quelle version correspond à un besoin précis.
+
+La troisième limite concerne le contrôle d'accès. Dans une gestion manuelle, la protection repose souvent sur les droits du système de fichiers ou sur des habitudes internes. Cette approche ne permet pas toujours de distinguer clairement les rôles : super administrateur, administrateur et utilisateur final. Or, une plateforme documentaire doit empêcher qu'un utilisateur final modifie un modèle officiel ou qu'un administrateur intervienne sur des données hors de son périmètre.
+
+Enfin, les solutions génériques de traitement de texte ne sont pas conçues pour interagir directement avec les données métier. Elles offrent une grande liberté de mise en forme, mais ne fournissent pas naturellement une couche d'administration permettant de configurer les bénéficiaires, les vues de tables, les filtres et les variables documentaires. Le projet proposé vient répondre à ces limites en introduisant une plateforme spécialisée, intégrée et sécurisée.
+
+\subsection{Solution proposée}
+
+La solution proposée est une application web composée d'un backend ASP.NET Core Web API, d'un frontend Angular et d'une base SQL Server. Elle permet de gérer l'ensemble du cycle documentaire : authentification, contrôle des rôles, administration des familles, gestion des modèles, configuration des chartes graphiques, paramétrage des vues de tables, sélection des bénéficiaires et prévisualisation des documents générés.
+
+Le backend centralise les règles métier et expose des endpoints REST. Il assure l'authentification JWT, la validation des accès, la persistance des entités et l'exécution contrôlée des requêtes nécessaires aux données métier. Le frontend Angular fournit les interfaces de connexion, d'administration, d'édition et d'utilisation documentaire. L'éditeur Tiptap est utilisé pour offrir une expérience d'édition riche adaptée à la création de modèles.
+
+La plateforme distingue plusieurs notions métier. Une famille de documents représente une catégorie documentaire et définit les données de bénéficiaires associées. Un modèle, ou template, décrit la structure du document avec son en-tête, son corps et son pied de page. Une charte graphique regroupe les paramètres visuels appliqués au document. Une configuration de vue de table permet d'exposer une table métier avec des champs visibles, modifiables et utilisés pour la prévisualisation. Enfin, une instance de document correspond au résultat généré à partir d'un modèle et des données d'un bénéficiaire.
+
+Cette solution apporte trois bénéfices principaux. Elle réduit les erreurs manuelles en automatisant l'injection des données, elle améliore la cohérence visuelle grâce aux chartes graphiques centralisées, et elle renforce la sécurité grâce à l'authentification et au contrôle d'accès par rôles.
+
+\section{Méthodologie de travail}
+
+\subsection{Méthodologie Agile Scrum}
+
+Pour mener le projet, la méthodologie Agile Scrum a été retenue. Ce choix est adapté à un projet PFE, car il permet d'organiser le travail en incréments fonctionnels, de valider progressivement les résultats et d'ajuster les priorités en fonction des difficultés rencontrées. Même si le développement a été réalisé par un seul développeur, l'esprit Scrum reste pertinent : découper le travail, définir un objectif par sprint, produire un livrable à la fin de chaque itération et effectuer une revue régulière de l'avancement.
+
+Dans ce projet, chaque sprint correspond à une étape logique de construction de la plateforme. Le premier sprint pose les fondations techniques. Le deuxième introduit la gouvernance d'accès. Le troisième développe le coeur d'édition documentaire. Le quatrième ajoute les modules métier d'administration. Le cinquième consolide l'intégration, la qualité et la livraison.
+
+Cette progression évite de commencer par les écrans les plus complexes sans base technique solide. Elle permet aussi de valider rapidement les choix structurants : authentification, architecture backend, communication Angular/API, persistance SQL Server et organisation des services.
+
+\subsection{Planification globale du projet}
+
+La planification du projet a été organisée sur cinq sprints. Ce découpage respecte une logique de dépendance entre les fonctionnalités. Il aurait été difficile de développer la génération documentaire avant de définir les modèles et les familles, ou de sécuriser les modules métier sans système d'authentification. La planification retenue suit donc l'ordre naturel de construction d'une application professionnelle.
+
+\begin{longtable}{p{0.16\textwidth} p{0.24\textwidth} p{0.48\textwidth}}
+\caption{Planification globale des sprints}\\
+\toprule
+\textbf{Sprint} & \textbf{Orientation} & \textbf{Résultat attendu}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Sprint} & \textbf{Orientation} & \textbf{Résultat attendu}\\
+\midrule
+\endhead
+Sprint 1 & Authentification et socle applicatif & Backend opérationnel, connexion SQL Server, JWT, Swagger et premiers services Angular.\\
+\midrule
+Sprint 2 & Rôles et gouvernance d'accès & Routes protégées, redirection selon le rôle, séparation des espaces super administrateur, administrateur et utilisateur.\\
+\midrule
+Sprint 3 & Édition documentaire & Intégration de Tiptap, gestion du contenu des modèles, prévisualisation documentaire.\\
+\midrule
+Sprint 4 & Administration métier & CRUD des familles, modèles, chartes graphiques, configurations de vues de tables et bénéficiaires.\\
+\midrule
+Sprint 5 & Intégration et livraison & Tests, validation des parcours, documentation, optimisation et préparation de la démonstration.\\
+\bottomrule
+\end{longtable}
+
+Cette planification donne une vision claire du cheminement du projet. Elle montre également que chaque sprint produit un résultat exploitable qui sert de base au sprint suivant.
+
+\section{Environnement technique}
+
+\subsection{Technologies backend}
+
+Le backend a été développé avec ASP.NET Core Web API. Ce choix se justifie par la robustesse de l'écosystème .NET, la qualité de son intégration avec SQL Server, la prise en charge native de l'injection de dépendances et la simplicité de création d'API REST sécurisées. ASP.NET Core permet également de configurer efficacement l'authentification JWT, Swagger, CORS et les middlewares.
+
+L'architecture backend repose sur plusieurs couches. Les contrôleurs reçoivent les requêtes HTTP et exposent les endpoints. Les services contiennent la logique applicative. Les repositories assurent l'accès aux données. Les DTOs définissent les contrats d'entrée et de sortie. Cette séparation améliore la lisibilité du code, limite le couplage et facilite les tests.
+
+\subsection{Technologies frontend}
+
+Le frontend repose sur Angular. Ce framework a été choisi pour sa structure modulaire, son système de routage, ses services injectables, ses guards et ses interceptors HTTP. Ces éléments sont particulièrement adaptés à une application d'administration où plusieurs pages partagent des services communs et où les accès doivent être contrôlés selon le rôle.
+
+L'éditeur Tiptap a été intégré pour la création des modèles documentaires. Il permet de construire un éditeur riche extensible, basé sur des extensions, capable de produire un contenu HTML exploitable par le moteur de prévisualisation. Ce choix offre plus de flexibilité qu'un simple champ texte et répond mieux aux besoins de mise en forme documentaire.
+
+\subsection{Base de données et accès aux données}
+
+SQL Server a été retenu comme système de gestion de base de données. Il est adapté au stockage de données structurées, aux relations métier et aux requêtes nécessaires à la recherche de bénéficiaires. La base conserve les utilisateurs, les modèles, les familles, les chartes graphiques, les configurations de vues de tables et les données métier exploitées par les documents.
+
+L'accès aux données est organisé à travers des repositories. Cette approche évite d'écrire les requêtes directement dans les contrôleurs et centralise la persistance dans une couche dédiée. Elle facilite également l'évolution future vers des optimisations SQL, des transactions ou des mécanismes de journalisation.
+
+\subsection{Outils de développement et de test}
+
+Plusieurs outils ont été utilisés pour accompagner le développement. Swagger permet de tester rapidement les endpoints et de documenter l'API. Visual Studio Code facilite le développement frontend et backend. Git assure le suivi des versions. Les tests manuels sont effectués à partir de Swagger, de l'interface Angular et de scénarios fonctionnels construits autour des rôles utilisateurs.
+
+L'environnement technique retenu vise un équilibre entre productivité, maintenabilité et réalisme professionnel. Les technologies choisies sont largement utilisées dans les projets web d'entreprise et permettent de produire une solution évolutive.
+
+\section{Conclusion}
+
+Ce chapitre a présenté le cadre général du projet, depuis le contexte métier jusqu'aux choix techniques. L'étude de l'existant a montré les limites d'une production documentaire manuelle et dispersée. La solution proposée répond à ces limites par une plateforme web sécurisée, centralisée et configurable.
+
+La méthodologie Agile Scrum permet de structurer la réalisation en cinq sprints cohérents. Les technologies retenues, notamment ASP.NET Core, Angular, SQL Server, JWT et Tiptap, offrent une base solide pour construire une application documentaire dynamique. Le chapitre suivant approfondit l'analyse des besoins, identifie les acteurs, formalise le backlog produit et présente la modélisation globale du système.

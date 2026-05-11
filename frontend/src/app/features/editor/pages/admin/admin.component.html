@@ -294,13 +294,6 @@
           <button
             class="btn ghost sm"
             type="button"
-            (click)="loadActiveSectionFromGraphicCharter()"
-          >
-            Charger section active
-          </button>
-          <button
-            class="btn ghost sm"
-            type="button"
             (click)="saveActiveSectionToGraphicCharter()"
           >
             Enregistrer dans la charte
@@ -328,6 +321,14 @@
           </button>
           <button
             class="sec-tab"
+            [class.on]="editorPanel === 'headerFooter'"
+            type="button"
+            (click)="switchSection('headerFooter')"
+          >
+            • En-tête / pied de page
+          </button>
+          <button
+            class="sec-tab"
             [class.on]="editorPanel === 'filters'"
             type="button"
             (click)="switchSection('filters')"
@@ -340,7 +341,10 @@
             [class.disabled]="!isEditorActive('table')"
             type="button"
             (click)="switchSection('table')"
-            *ngIf="isEditorActive('table') || editorPanel === 'table'"
+            *ngIf="
+              editorPanel !== 'headerFooter' &&
+              (isEditorActive('table') || editorPanel === 'table')
+            "
           >
             <svg
               viewBox="0 0 24 24"
@@ -378,7 +382,7 @@
           </div>
         </div>
 
-        <div class="ed-toolbar" *ngIf="editorPanel === 'document'">
+        <div class="ed-toolbar" *ngIf="isFormattingToolbarVisible">
           <div class="tb-grp">
             <select
               class="tb-sel"
@@ -1087,6 +1091,144 @@
                 </div>
               </div>
               <div class="page-scroll-spacer" aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <div
+            class="editor-section-panel header-footer-section-panel on"
+            *ngIf="editorPanel === 'headerFooter'"
+          >
+            <div class="hf-panel-toolbar">
+              <button
+                class="btn primary sm"
+                type="button"
+                (click)="saveEnabledHeaderFooterToGraphicCharter()"
+              >
+                Sauvegarder dans la charte graphique
+              </button>
+            </div>
+            <div class="tbl-bar hf-table-toolbar" *ngIf="isEditorActive('table')">
+              <div class="tbl-bar-row">
+                <span class="tbl-grp-label">
+                  Tableau {{ activeHeaderFooterSection === "header" ? "en-tête" : "pied" }}
+                </span>
+                <button class="tbl-btn" type="button" (click)="runTableCommand('addRowBefore')">
+                  Ligne avant
+                </button>
+                <button class="tbl-btn" type="button" (click)="runTableCommand('addRowAfter')">
+                  Ligne après
+                </button>
+                <button class="tbl-btn danger" type="button" (click)="runTableCommand('deleteRow')">
+                  Suppr. ligne
+                </button>
+                <div class="tbl-sep"></div>
+                <button class="tbl-btn" type="button" (click)="runTableCommand('addColumnBefore')">
+                  Col. avant
+                </button>
+                <button class="tbl-btn" type="button" (click)="runTableCommand('addColumnAfter')">
+                  Col. après
+                </button>
+                <button class="tbl-btn danger" type="button" (click)="runTableCommand('deleteColumn')">
+                  Suppr. col.
+                </button>
+                <div class="tbl-sep"></div>
+                <button class="tbl-btn" type="button" (click)="runTableCommand('mergeCells')">
+                  Fusionner
+                </button>
+                <button class="tbl-btn" type="button" (click)="runTableCommand('splitCell')">
+                  Diviser
+                </button>
+                <button
+                  class="tbl-btn"
+                  type="button"
+                  [class.on]="isEditorActive('tableHeader')"
+                  (click)="runTableCommand('toggleHeaderRow')"
+                >
+                  En-tête
+                </button>
+                <div class="tbl-sep"></div>
+                <button class="tbl-btn" type="button" (click)="applyTableCellAlign('left')">
+                  Gauche
+                </button>
+                <button class="tbl-btn" type="button" (click)="applyTableCellAlign('center')">
+                  Centre
+                </button>
+                <button class="tbl-btn" type="button" (click)="applyTableCellAlign('right')">
+                  Droite
+                </button>
+                <button class="tbl-btn danger" type="button" (click)="runTableCommand('deleteTable')">
+                  Supprimer tableau
+                </button>
+              </div>
+            </div>
+            <div class="hf-panel-shell">
+              <section class="hf-panel-card">
+                <div class="hf-panel-head">
+                  <div>
+                    <h3>En-tête</h3>
+                    <p>Contenu appliqué au document selon la charte active.</p>
+                  </div>
+                  <div class="hf-panel-actions">
+                    <button
+                      class="btn xs ghost"
+                      type="button"
+                      (click)="useGraphicCharterSection('header')"
+                    >
+                      Utiliser la charte
+                    </button>
+                    <button
+                      class="toggle-btn"
+                      [class.on]="hasHeader"
+                      type="button"
+                      (click)="toggleTemplateSection('header')"
+                    >
+                      {{ hasHeader ? "Activé" : "Désactivé" }}
+                    </button>
+                  </div>
+                </div>
+                <div
+                  class="hf-section-editor"
+                  [class.disabled]="!hasHeader"
+                  [ngStyle]="liveDocumentThemeStyles"
+                  (focusin)="setActiveHeaderFooterSection('header')"
+                >
+                  <div #templateHeaderHost class="tiptap-wrapper"></div>
+                </div>
+              </section>
+
+              <section class="hf-panel-card">
+                <div class="hf-panel-head">
+                  <div>
+                    <h3>Pied de page</h3>
+                    <p>Contenu appliqué au document selon la charte active.</p>
+                  </div>
+                  <div class="hf-panel-actions">
+                    <button
+                      class="btn xs ghost"
+                      type="button"
+                      (click)="useGraphicCharterSection('footer')"
+                    >
+                      Utiliser la charte
+                    </button>
+                    <button
+                      class="toggle-btn"
+                      [class.on]="hasFooter"
+                      type="button"
+                      (click)="toggleTemplateSection('footer')"
+                    >
+                      {{ hasFooter ? "Activé" : "Désactivé" }}
+                    </button>
+                  </div>
+                </div>
+                <div
+                  class="hf-section-editor"
+                  [class.disabled]="!hasFooter"
+                  [ngStyle]="liveDocumentThemeStyles"
+                  (focusin)="setActiveHeaderFooterSection('footer')"
+                >
+                  <div #templateFooterHost class="tiptap-wrapper"></div>
+                </div>
+              </section>
             </div>
           </div>
 

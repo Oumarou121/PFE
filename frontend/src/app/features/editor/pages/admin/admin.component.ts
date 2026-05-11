@@ -55,7 +55,7 @@ import {
   GraphicCharterRecord,
 } from "../../models/graphic-charter.model";
 
-type AdminPanel = "document" | "filters" | "table";
+type AdminPanel = "document" | "headerFooter" | "filters" | "table";
 type PageOrientation = "portrait" | "landscape";
 type GraphicCharterEditorSection = "header" | "footer";
 
@@ -103,6 +103,10 @@ export class AdminComponent
   implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy
 {
   @ViewChild("editorHost") private editorHost?: ElementRef<HTMLElement>;
+  @ViewChild("templateHeaderHost")
+  private templateHeaderHost?: ElementRef<HTMLElement>;
+  @ViewChild("templateFooterHost")
+  private templateFooterHost?: ElementRef<HTMLElement>;
   @ViewChild("graphicCharterHeaderHost")
   private graphicCharterHeaderHost?: ElementRef<HTMLElement>;
   @ViewChild("graphicCharterFooterHost")
@@ -112,6 +116,7 @@ export class AdminComponent
   sidebarOpen = true;
   varsPanelVisible = false;
   editorPanel: AdminPanel = "document";
+  activeHeaderFooterSection: "header" | "footer" = "header";
   selectedFamilyId = "";
   selectedTemplateId = "";
   templateNameDraft = "";
@@ -312,6 +317,8 @@ export class AdminComponent
   };
 
   private editor: Editor | null = null;
+  private templateHeaderEditor: Editor | null = null;
+  private templateFooterEditor: Editor | null = null;
   private editorBoundElement: HTMLElement | null = null;
   private editorSection: "header" | "body" | "footer" | null = null;
   // ─── FIX: clé de cache incluant headerHtml/footerHtml pour forcer
@@ -387,10 +394,14 @@ export class AdminComponent
     if (this.graphicCharterModalOpen) {
       this.scheduleGcEditorsEnsure();
     }
+    if (this.editorPanel === "headerFooter") {
+      this.ensureTemplateHeaderFooterEditors();
+    }
   }
 
   ngOnDestroy(): void {
     this.destroyEditor();
+    this.destroyTemplateHeaderFooterEditors();
     this.destroyGraphicCharterEditors();
     if (this.rebindTimer !== null) clearTimeout(this.rebindTimer);
     if (this.gcEnsureTimer !== null) clearTimeout(this.gcEnsureTimer);
@@ -584,6 +595,10 @@ export class AdminComponent
     return this.getSelectedDocumentSection();
   }
 
+  get isFormattingToolbarVisible(): boolean {
+    return this.editorPanel === "document" || this.editorPanel === "headerFooter";
+  }
+
   get activeDocumentDirection(): "ltr" | "rtl" {
     return this.sectionDirections[this.activeEditorSection] || "ltr";
   }
@@ -752,7 +767,11 @@ export class AdminComponent
   }
 
   async saveTemplate(): Promise<void> {
-    this.persistEditorContent();
+    if (this.editorPanel === "headerFooter") {
+      this.persistTemplateHeaderFooterEditors();
+    } else {
+      this.persistEditorContent();
+    }
     const current = this.selectedTemplate;
     if (!current) {
       this.notifications.showWarning("Aucun template ouvert");
@@ -1092,24 +1111,41 @@ export class AdminComponent
     this.cdr.markForCheck();
   }
 
-  switchSection(section: "body" | "filters" | "table"): void {
-    this.persistEditorContent();
+  switchSection(section: "body" | "headerFooter" | "filters" | "table"): void {
+    if (this.editorPanel === "headerFooter") {
+      this.persistTemplateHeaderFooterEditors();
+    } else {
+      this.persistEditorContent();
+    }
     if (section === "filters") {
       this.editorPanel = "filters";
+      this.destroyTemplateHeaderFooterEditors();
       void this.refreshTemplateFilters();
+    } else if (section === "headerFooter") {
+      this.editorPanel = "headerFooter";
+      this.destroyEditor();
+      this.cdr.detectChanges();
+      this.ensureTemplateHeaderFooterEditors();
     } else if (section === "table") {
       this.editorPanel = "table";
+      this.destroyTemplateHeaderFooterEditors();
     } else {
       this.editorPanel = "document";
+      this.destroyTemplateHeaderFooterEditors();
     }
     this.rebindEditorSoon();
     this.cdr.markForCheck();
   }
 
   toggleTemplateSection(section: "header" | "footer"): void {
-    this.persistEditorContent();
+    if (this.editorPanel === "headerFooter") {
+      this.persistTemplateHeaderFooterEditors();
+    } else {
+      this.persistEditorContent();
+    }
     if (section === "header") {
       this.hasHeader = !this.hasHeader;
+      this.templateHeaderEditor?.setEditable(this.hasHeader);
       if (this.hasHeader && this.isBlankEditorHtml(this.editorContent.header)) {
         this.editorContent = {
           ...this.editorContent,
@@ -1118,6 +1154,7 @@ export class AdminComponent
       }
     } else {
       this.hasFooter = !this.hasFooter;
+      this.templateFooterEditor?.setEditable(this.hasFooter);
       if (this.hasFooter && this.isBlankEditorHtml(this.editorContent.footer)) {
         this.editorContent = {
           ...this.editorContent,
@@ -1307,8 +1344,9 @@ export class AdminComponent
 
   insertVariable(tech: string): void {
     if (this.editorPanel === "filters") return;
-    if (this.editor) {
-      this.editor.chain().focus().insertContent(`{{${tech}}}`).run();
+    const editor = this.getActiveTiptapEditor();
+    if (editor) {
+      editor.chain().focus().insertContent(`{{${tech}}}`).run();
     } else {
       this.editorContent[this.activeEditorSection] += `{{${tech}}}`;
     }
@@ -1319,7 +1357,7 @@ export class AdminComponent
   isEditorActive(name: string, attrs?: Record<string, unknown>): boolean {
     void this._toolbarStateVersion;
     try {
-      return !!this.editor?.isActive(name, attrs);
+      return !!this.getActiveTiptapEditor()?.isActive(name, attrs);
     } catch {
       return false;
     }
@@ -1328,7 +1366,7 @@ export class AdminComponent
   isEditorAlignActive(align: "left" | "center" | "right" | "justify"): boolean {
     void this._toolbarStateVersion;
     try {
-      return !!this.editor?.isActive({ textAlign: align });
+      return !!this.getActiveTiptapEditor()?.isActive({ textAlign: align });
     } catch {
       return false;
     }
@@ -1416,8 +1454,9 @@ export class AdminComponent
   }
 
   runEditorCommand(command: string): void {
-    if (!this.editor) return;
-    const chain = this.editor.chain().focus();
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    const chain = editor.chain().focus();
     if (command === "undo") chain.undo().run();
     if (command === "redo") chain.redo().run();
     if (command === "bold") chain.toggleBold().run();
@@ -1450,14 +1489,15 @@ export class AdminComponent
   }
 
   applyAlign(align: "left" | "center" | "right" | "justify"): void {
-    this.editor?.chain().focus().setTextAlign(align).run();
+    this.getActiveTiptapEditor()?.chain().focus().setTextAlign(align).run();
     this.saveStatus = "Modifié";
     this.cdr.markForCheck();
   }
 
   applyHeading(value: string): void {
-    if (!this.editor) return;
-    const chain = this.editor.chain().focus();
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    const chain = editor.chain().focus();
     if (value === "h1") chain.toggleHeading({ level: 1 }).run();
     else if (value === "h2") chain.toggleHeading({ level: 2 }).run();
     else if (value === "h3") chain.toggleHeading({ level: 3 }).run();
@@ -1466,15 +1506,17 @@ export class AdminComponent
   }
 
   applyFontFamily(value: string): void {
-    if (!this.editor) return;
-    const chain = this.editor.chain().focus();
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    const chain = editor.chain().focus();
     if (value) chain.setFontFamily(value).run();
     else chain.unsetFontFamily().run();
   }
 
   applyFontSize(value: string): void {
-    if (!this.editor) return;
-    const chain = this.editor.chain().focus() as any;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    const chain = editor.chain().focus() as any;
     if (value) chain.setMark("textStyle", { fontSize: value }).run();
     else chain.setMark("textStyle", { fontSize: null }).run();
   }
@@ -1498,35 +1540,39 @@ export class AdminComponent
   }
 
   applyTextColor(color: string): void {
-    if (!this.editor) return;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
     if (color) {
       this.selectedTextColor = color;
-      this.editor.chain().focus().setColor(color).run();
+      editor.chain().focus().setColor(color).run();
       this.saveStatus = "Modifié";
     }
   }
 
   applyHighlightColor(color: string): void {
-    if (!this.editor) return;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
     if (color) {
       this.selectedHighlightColor = color;
-      this.editor.chain().focus().setHighlight({ color }).run();
+      editor.chain().focus().setHighlight({ color }).run();
     } else {
       this.selectedHighlightColor = "transparent";
-      this.editor.chain().focus().unsetHighlight().run();
+      editor.chain().focus().unsetHighlight().run();
     }
     this.saveStatus = "Modifié";
   }
 
   insertHorizontalRule(): void {
-    if (!this.editor) return;
-    this.editor.chain().focus().setHorizontalRule().run();
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    editor.chain().focus().setHorizontalRule().run();
     this.saveStatus = "Modifié";
   }
 
   insertSignatureBlock(): void {
-    if (!this.editor) return;
-    this.editor
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    editor
       .chain()
       .focus()
       .insertContent(
@@ -1584,11 +1630,12 @@ export class AdminComponent
   }
 
   replaceOne(): void {
-    if (!this.editor || !this.searchFind) return;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor || !this.searchFind) return;
     if (!this.searchMatches.length) this.doSearch();
     const match = this.searchMatches[this.searchMatchIndex - 1];
     if (!match) return;
-    this.editor
+    editor
       .chain()
       .focus()
       .insertContentAt({ from: match.from, to: match.to }, this.searchReplace)
@@ -1600,23 +1647,25 @@ export class AdminComponent
   }
 
   replaceAll(): void {
-    if (!this.editor || !this.searchFind) return;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor || !this.searchFind) return;
     const flags = this.searchCaseSensitive ? "g" : "gi";
     const re = new RegExp(this.escapeRegex(this.searchFind), flags);
-    const html = this.editor.getHTML();
+    const html = editor.getHTML();
     const count = (html.match(re) || []).length;
-    this.editor.commands.setContent(
-      html.replace(re, this.searchReplace),
-      false,
-    );
-    this.persistEditorContent();
+    editor.commands.setContent(html.replace(re, this.searchReplace), false);
+    if (this.editorPanel === "headerFooter") {
+      this.persistTemplateHeaderFooterEditors();
+    } else {
+      this.persistEditorContent();
+    }
     this.saveStatus = "Modifié";
     this.doSearch();
     this.notifications.showSuccess(`${count} occurrence(s) remplacée(s)`);
   }
 
   openDateVariableModal(): void {
-    if (!this.editor) return;
+    if (!this.getActiveTiptapEditor()) return;
     this.closeAllModals();
     this.selectedDateVariable = "{{date_du_jour}}";
     this.dateVariableModalOpen = true;
@@ -1634,8 +1683,9 @@ export class AdminComponent
   }
 
   insertSelectedDateVariable(): void {
-    if (!this.editor) return;
-    this.editor.chain().focus().insertContent(this.selectedDateVariable).run();
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    editor.chain().focus().insertContent(this.selectedDateVariable).run();
     this.dateVariableModalOpen = false;
     this.saveStatus = "Modifié";
     this.cdr.markForCheck();
@@ -1650,8 +1700,9 @@ export class AdminComponent
 
   insertLink(): void {
     const url = this.linkUrl.trim();
-    if (!this.editor || !url) return;
-    this.editor.chain().focus().setLink({ href: url }).run();
+    const editor = this.getActiveTiptapEditor();
+    if (!editor || !url) return;
+    editor.chain().focus().setLink({ href: url }).run();
     this.linkModalOpen = false;
     this.linkUrl = "";
     this.saveStatus = "Modifié";
@@ -1694,7 +1745,8 @@ export class AdminComponent
 
   insertImage(): void {
     const src = this.imageUrl.trim();
-    if (!this.editor || !src) return;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor || !src) return;
 
     // BUG FIX: utiliser la commande native setImage de ImagePlus au lieu
     // d'insérer du HTML brut. Le HTML brut court-circuite la NodeView
@@ -1717,7 +1769,7 @@ export class AdminComponent
     const rawWidth = this.imageWidth.trim();
     const width = rawWidth || "";
 
-    const chain = this.editor.chain().focus() as any;
+    const chain = editor.chain().focus() as any;
     chain
       .setImage({
         src,
@@ -1730,7 +1782,7 @@ export class AdminComponent
     // Si une légende est définie, on l'insère comme paragraphe juste après
     // l'image (ImagePlus ne gère pas nativement les captions).
     if (this.imageCaption.trim()) {
-      this.editor
+      editor
         .chain()
         .focus()
         .insertContent(
@@ -1760,8 +1812,9 @@ export class AdminComponent
   }
 
   insertTable(): void {
-    if (!this.editor) return;
-    this.editor
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    editor
       .chain()
       .focus()
       .insertTable({
@@ -1804,11 +1857,12 @@ export class AdminComponent
    * Doit être appelée à chaque sélection / mise à jour de l'éditeur.
    */
   computeTableToolbarStyle(): Record<string, string> {
-    if (!this.editor || !this.isEditorActive("table")) {
+    const editor = this.getActiveTiptapEditor();
+    if (!editor || !this.isEditorActive("table")) {
       return {};
     }
     try {
-      const { state, view } = this.editor;
+      const { state, view } = editor;
       // Remonter jusqu'au nœud table à partir de la sélection courante
       let tablePos: number | null = null;
       state.doc.nodesBetween(
@@ -1852,8 +1906,9 @@ export class AdminComponent
   }
 
   runTableCommand(command: string): void {
-    if (!this.editor) return;
-    const chain = this.editor.chain().focus() as any;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    const chain = editor.chain().focus() as any;
     const commands: Record<string, () => void> = {
       addRowBefore: () => chain.addRowBefore().run(),
       addRowAfter: () => chain.addRowAfter().run(),
@@ -1909,25 +1964,26 @@ export class AdminComponent
     attribute: "backgroundColor" | "textColor" | "textAlign" | "verticalAlign",
     value: string,
   ): void {
-    if (!this.editor) return;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
     const attrs = { [attribute]: value === "transparent" ? null : value };
-    const chain = this.editor.chain().focus();
+    const chain = editor.chain().focus();
     // BUG FIX: on vérifie d'abord tableHeader, puis tableCell.
     // updateAttributes utilise le nom exact du node tel qu'enregistré par
     // l'extension (hérité de @tiptap/extension-table-header → "tableHeader",
     // et @tiptap/extension-table-cell → "tableCell").
     // On tente les deux pour couvrir le cas d'une sélection mixte.
-    if (this.editor.isActive("tableHeader")) {
+    if (editor.isActive("tableHeader")) {
       chain.updateAttributes("tableHeader", attrs).run();
-    } else if (this.editor.isActive("tableCell")) {
+    } else if (editor.isActive("tableCell")) {
       chain.updateAttributes("tableCell", attrs).run();
     } else {
       // Fallback : curseur peut être dans un paragraphe imbriqué dans la cellule.
       // On tente les deux commandes ; Tiptap ignorera celle qui ne s'applique pas.
-      (this.editor.chain().focus() as any)
+      (editor.chain().focus() as any)
         .updateAttributes("tableHeader", attrs)
         .run();
-      (this.editor.chain().focus() as any)
+      (editor.chain().focus() as any)
         .updateAttributes("tableCell", attrs)
         .run();
     }
@@ -2248,6 +2304,7 @@ export class AdminComponent
   }
 
   private clearEditor(): void {
+    this.destroyTemplateHeaderFooterEditors();
     this.destroyEditor();
     this.selectedTemplateId = "";
     this.templateNameDraft = "";
@@ -2266,7 +2323,10 @@ export class AdminComponent
     if (this.editorPanel === "filters") return;
     const section = this.activeEditorSection;
     this.editorContent[section] = html;
-    if (this.editor) {
+    const editor = this.getActiveTiptapEditor();
+    if (this.editorPanel === "headerFooter" && editor) {
+      editor.commands.setContent(this.normalizeEditorHtml(html), false);
+    } else if (this.editor) {
       this.editor.commands.setContent(
         this.buildStructuredDocumentHtml(),
         false,
@@ -2274,10 +2334,97 @@ export class AdminComponent
     }
   }
 
+  setActiveHeaderFooterSection(section: "header" | "footer"): void {
+    this.activeHeaderFooterSection = section;
+    this._toolbarStateVersion += 1;
+    this.cdr.markForCheck();
+  }
+
+  private getActiveTiptapEditor(): Editor | null {
+    if (this.editorPanel === "headerFooter") {
+      return this.activeHeaderFooterSection === "footer"
+        ? this.templateFooterEditor
+        : this.templateHeaderEditor;
+    }
+    return this.editor;
+  }
+
+  useGraphicCharterSection(section: "header" | "footer"): void {
+    const config = this.selectedGraphicCharterConfig;
+    const html =
+      section === "header" ? config.header.html || "" : config.footer.html || "";
+    this.editorContent = {
+      ...this.editorContent,
+      [section]: html || "<p></p>",
+    };
+    if (section === "header") {
+      this.hasHeader = true;
+      this.templateHeaderEditor?.setEditable(true);
+      this.templateHeaderEditor?.commands.setContent(this.editorContent.header, false);
+    } else {
+      this.hasFooter = true;
+      this.templateFooterEditor?.setEditable(true);
+      this.templateFooterEditor?.commands.setContent(this.editorContent.footer, false);
+    }
+    this.saveStatus = "ModifiÃ©";
+    this._editorPaginationCacheKey = "";
+    this.cdr.markForCheck();
+  }
+
+  async saveEnabledHeaderFooterToGraphicCharter(): Promise<void> {
+    const orgId = this.currentUserOrganizationId;
+    const charter = this.selectedGraphicCharter;
+    if (!orgId || !charter) {
+      this.notifications.showWarning("Choisissez une charte graphique");
+      return;
+    }
+    if (!this.hasHeader && !this.hasFooter) {
+      this.notifications.showWarning(
+        "Activez l'en-tête ou le pied de page avant la sauvegarde.",
+      );
+      return;
+    }
+
+    this.persistTemplateHeaderFooterEditors();
+    const config = this.graphicCharters.normalizeGraphicCharterConfig(
+      charter.config,
+    );
+
+    if (this.hasHeader) {
+      config.header.enabledByDefault = true;
+      config.header.html = this.normalizeEditorHtml(this.editorContent.header);
+    }
+    if (this.hasFooter) {
+      config.footer.enabledByDefault = true;
+      config.footer.html = this.normalizeEditorHtml(this.editorContent.footer);
+    }
+
+    try {
+      const saved = await this.graphicCharters.saveOrganizationGraphicCharter(
+        orgId,
+        { ...charter, config },
+      );
+      this.refreshCollections();
+      this.selectedGraphicCharterId = saved?.id || charter.id;
+      this._editorPaginationCacheKey = "";
+      this.notifications.showSuccess(
+        "En-tête et pied de page enregistrés dans la charte",
+      );
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error("[Admin] save header/footer to graphic charter failed", error);
+      this.notifications.showError("Impossible d'enregistrer dans la charte");
+    }
+  }
+
   // ─── CHANGED: entire method runs outside Angular zone.
   //             Only state-changing callbacks re-enter the zone. ──────────────
   private ensureEditorInstance(): void {
-    if (this.editorPanel === "filters" || !this.selectedTemplate) {
+    if (
+      this.editorPanel === "filters" ||
+      this.editorPanel === "headerFooter" ||
+      !this.selectedTemplate
+    ) {
       this.destroyEditor();
       return;
     }
@@ -2357,13 +2504,14 @@ export class AdminComponent
   }
 
   private updateTablePanelState(): void {
-    if (!this.editor || !this.editor.isActive("table")) {
+    const editor = this.getActiveTiptapEditor();
+    if (!editor || !editor.isActive("table")) {
       this.tableCellPosition = "—";
       this.tableInfo = "—";
       return;
     }
     // Position de la cellule
-    const { state } = this.editor;
+    const { state } = editor;
     const { $from } = state.selection;
     let row = 0,
       col = 0,
@@ -2396,8 +2544,9 @@ export class AdminComponent
   }
 
   distributeColumns(): void {
-    if (!this.editor) return;
-    const { state } = this.editor;
+    const editor = this.getActiveTiptapEditor();
+    if (!editor) return;
+    const { state } = editor;
     const { $from } = state.selection;
     let table: any = null;
     for (let d = $from.depth; d > 0; d--) {
@@ -2417,11 +2566,12 @@ export class AdminComponent
     const clamped = Math.max(5, Math.min(100, value || 33));
     this.currentColumnWidth = clamped;
     // Appliquer la largeur via l'attribut de colonne Tiptap si supporté
-    if (this.editor) {
-      (this.editor.chain().focus() as any)
+    const editor = this.getActiveTiptapEditor();
+    if (editor) {
+      (editor.chain().focus() as any)
         .updateAttributes("tableCell", { colwidth: [clamped * 7] }) // px approximatif
         .run();
-      (this.editor.chain().focus() as any)
+      (editor.chain().focus() as any)
         .updateAttributes("tableHeader", { colwidth: [clamped * 7] })
         .run();
     }
@@ -2500,6 +2650,9 @@ export class AdminComponent
   }
 
   private getSelectedDocumentSection(): "header" | "body" | "footer" {
+    if (this.editorPanel === "headerFooter") {
+      return this.activeHeaderFooterSection;
+    }
     if (!this.editor || this.editorPanel === "filters") return "body";
     const { $from } = this.editor.state.selection;
     for (let depth = $from.depth; depth >= 0; depth -= 1) {
@@ -2524,6 +2677,89 @@ export class AdminComponent
   }
 
   // ─── CHANGED: graphic charter editors also run outside zone ──────────────────
+  private ensureTemplateHeaderFooterEditors(): void {
+    if (this.editorPanel !== "headerFooter") {
+      this.destroyTemplateHeaderFooterEditors();
+      return;
+    }
+    if (!this.templateHeaderEditor && this.templateHeaderHost) {
+      this.templateHeaderEditor = this.createTemplateSectionEditor(
+        this.templateHeaderHost.nativeElement,
+        this.editorContent.header,
+        "header",
+      );
+    }
+    if (!this.templateFooterEditor && this.templateFooterHost) {
+      this.templateFooterEditor = this.createTemplateSectionEditor(
+        this.templateFooterHost.nativeElement,
+        this.editorContent.footer,
+        "footer",
+      );
+    }
+  }
+
+  private createTemplateSectionEditor(
+    element: HTMLElement,
+    content: string,
+    section: "header" | "footer",
+  ): Editor {
+    let editorInstance!: Editor;
+    this.ngZone.runOutsideAngular(() => {
+      editorInstance = new Editor({
+        element,
+        extensions: buildEditorExtensions(section),
+        content: this.normalizeEditorHtml(content),
+        editable: section === "header" ? this.hasHeader : this.hasFooter,
+        onUpdate: ({ editor }) => {
+          this.editorContent = {
+            ...this.editorContent,
+            [section]: this.normalizeEditorHtml(editor.getHTML()),
+          };
+          this.ngZone.run(() => {
+            this.saveStatus = "ModifiÃ©";
+            this._editorPaginationCacheKey = "";
+            this.cdr.markForCheck();
+          });
+        },
+        onSelectionUpdate: () => {
+          this.ngZone.run(() => {
+            this.activeHeaderFooterSection = section;
+            this._toolbarStateVersion += 1;
+            this.updateTablePanelState();
+            this.cdr.markForCheck();
+          });
+        },
+      });
+    });
+    return editorInstance;
+  }
+
+  private persistTemplateHeaderFooterEditors(): void {
+    if (this.templateHeaderEditor) {
+      this.editorContent = {
+        ...this.editorContent,
+        header: this.normalizeEditorHtml(this.templateHeaderEditor.getHTML()),
+      };
+    }
+    if (this.templateFooterEditor) {
+      this.editorContent = {
+        ...this.editorContent,
+        footer: this.normalizeEditorHtml(this.templateFooterEditor.getHTML()),
+      };
+    }
+  }
+
+  private destroyTemplateHeaderFooterEditors(): void {
+    if (this.templateHeaderEditor) {
+      this.templateHeaderEditor.destroy();
+      this.templateHeaderEditor = null;
+    }
+    if (this.templateFooterEditor) {
+      this.templateFooterEditor.destroy();
+      this.templateFooterEditor = null;
+    }
+  }
+
   private startPaginationObserver(): void {
     this.stopPaginationObserver();
     const target = this.editor?.view.dom;
@@ -2913,7 +3149,9 @@ export class AdminComponent
   }
 
   private applyDirectionToCurrentEditor(): void {
-    const element = this.editor?.view?.dom as HTMLElement | undefined;
+    const element = this.getActiveTiptapEditor()?.view?.dom as
+      | HTMLElement
+      | undefined;
     if (!element) return;
     const direction = this.activeDocumentDirection;
     element.style.direction = direction;

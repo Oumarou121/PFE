@@ -1294,6 +1294,7 @@ button {
 .document-page-body {
   display: block !important;
   flex: none !important;
+  width: 100% !important;
   min-height: 0 !important;
   position: relative;
   isolation: isolate;
@@ -1373,6 +1374,7 @@ button {
   flex: 1 1 0% !important; /* Prend tout l'espace restant entre header/footer clones */
   display: flex !important;
   flex-direction: column !important;
+  width: 100% !important;
   height: 100% !important;
   min-height: 0 !important;
   overflow: visible !important;
@@ -1629,6 +1631,7 @@ button {
   table,
   table.table-plus {
     width: 100%;
+    min-width: 100%;
     max-width: 100%;
     table-layout: fixed;
     box-sizing: border-box;
@@ -1813,6 +1816,88 @@ body.resize-cursor * {
       transparent 24%
     ),
     linear-gradient(180deg, #f8fbff 0%, #f3f6fa 100%);
+}
+
+.header-footer-section-panel {
+  flex-direction: column;
+  overflow: auto;
+  padding: 22px;
+  background: #f0f2f5;
+}
+
+.hf-panel-shell {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.hf-panel-toolbar {
+  width: min(980px, 100%);
+  margin: 0 auto 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hf-table-toolbar {
+  width: min(980px, 100%);
+  margin: 0 auto 12px;
+  flex: 0 0 auto;
+}
+
+.hf-panel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rlg);
+  box-shadow: var(--sh);
+  overflow: hidden;
+}
+
+.hf-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.hf-panel-head h3 {
+  margin: 0 0 3px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.hf-panel-head p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.hf-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hf-section-editor {
+  min-height: 120px;
+  padding: 14px 18px;
+  background: #fff;
+  font-family: var(--doc-font-body);
+  color: var(--doc-color-text);
+}
+
+.hf-section-editor.disabled {
+  opacity: 0.55;
+  background: #f8fafc;
+}
+
+.hf-section-editor .ProseMirror {
+  min-height: 86px;
+  outline: none;
 }
 
 .filter-panel-shell {

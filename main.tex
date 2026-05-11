@@ -1,0 +1,230 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{hyperref}
+
+\geometry{
+    top=2.5cm,
+    bottom=2.5cm,
+    left=2.5cm,
+    right=2.5cm
+}
+
+\setstretch{1.15}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    citecolor=black
+}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{210,210,210}
+\definecolor{codekeyword}{RGB}{0,75,135}
+\definecolor{codestring}{RGB}{130,70,20}
+\definecolor{codecomment}{RGB}{80,120,80}
+
+\lstdefinestyle{pfeCode}{
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{codekeyword}\bfseries,
+    stringstyle=\color{codestring},
+    commentstyle=\color{codecomment}\itshape,
+    breaklines=true,
+    tabsize=2,
+    showstringspaces=false,
+    captionpos=b
+}
+\lstset{style=pfeCode}
+
+% Figure utilisée pour les captures d'écran.
+% Si le fichier image existe dans images/, il sera affiché.
+% Sinon, un emplacement explicite reste visible dans le PDF.
+\newcommand{\screenshotplaceholder}[3]{
+\begin{figure}[H]
+    \centering
+    \IfFileExists{images/#1}{
+        \includegraphics[width=0.92\textwidth]{images/#1}
+    }{
+        \fbox{
+            \begin{minipage}[c][5cm][c]{0.86\textwidth}
+                \centering
+                \textbf{[Insérer ici la capture d'écran : #2]}\\[0.25cm]
+                Fichier attendu : \texttt{images/\detokenize{#1}}
+            \end{minipage}
+        }
+    }
+    \caption{#3}
+\end{figure}
+}
+
+% Figure utilisée pour les diagrammes Draw.io.
+% Exporter le fichier .drawio en PNG dans diagrammes/ pour l'affichage final.
+\newcommand{\diagramplaceholder}[3]{
+\begin{figure}[H]
+    \centering
+    \IfFileExists{diagrammes/#1.png}{
+        \includegraphics[width=0.95\textwidth]{diagrammes/#1.png}
+    }{
+        \fbox{
+            \begin{minipage}[c][5.2cm][c]{0.88\textwidth}
+                \centering
+                \textbf{[Insérer ici le diagramme : #2]}\\[0.25cm]
+                Source Draw.io : \texttt{diagrammes/\detokenize{#1}.drawio}\\
+                Export PNG attendu : \texttt{diagrammes/\detokenize{#1}.png}
+            \end{minipage}
+        }
+    }
+    \caption{#3}
+\end{figure}
+}
+
+\begin{document}
+
+%==================================
+% PAGE DE GARDE
+%==================================
+
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    {\Large Ministère de l'Enseignement Supérieur et de la Recherche Scientifique}\\[0.3cm]
+    {\Large Faculté des Sciences de Monastir}\\[1.5cm]
+    {\Huge \textbf{Rapport de Projet de Fin d'Études}}\\[1.2cm]
+    {\LARGE \textbf{Conception et réalisation d'une plateforme de gestion documentaire dynamique}}\\[1.5cm]
+    \begin{flushleft}
+        \large
+        \textbf{Réalisé par :} \hspace{0.3cm} Oumar \\
+        \textbf{Encadrant académique :} \hspace{0.3cm} À compléter \\
+        \textbf{Encadrant professionnel :} \hspace{0.3cm} À compléter \\
+        \textbf{Organisme d'accueil :} \hspace{0.3cm} À compléter
+    \end{flushleft}
+    \vfill
+    {\large Année universitaire 2025--2026}
+\end{titlepage}
+
+\pagenumbering{roman}
+
+\chapter*{Dédicaces}
+\addcontentsline{toc}{chapter}{Dédicaces}
+À compléter.
+
+\chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
+À compléter.
+
+%==================================
+% TITRE PERSONNALISÉ
+%==================================
+
+\vspace*{0.5cm}
+
+\noindent
+\begin{tikzpicture}
+
+% Rectangle noir
+\fill[black] (0,0) rectangle (0.9,1.8);
+
+% Ligne horizontale
+\draw[line width=0.5pt] (1.2,0.9) -- (14.8,0.9);
+
+% Titre
+\node[
+anchor=west,
+font=\fontsize{24}{28}\bfseries
+] at (1.2,0.25)
+{TABLE DES MATIÈRES};
+
+\end{tikzpicture}
+
+\vspace{1.2cm}
+
+\tableofcontents
+\clearpage
+
+\listoffigures
+\addcontentsline{toc}{chapter}{Liste des figures}
+\clearpage
+
+\listoftables
+\addcontentsline{toc}{chapter}{Liste des tableaux}
+\clearpage
+
+\pagenumbering{arabic}
+
+%=================================================
+% INTRODUCTION GENERALE
+%=================================================
+
+\input{chapitres/introduction_generale}
+
+%=================================================
+% CHAPITRES EXISTANTS
+%=================================================
+
+\input{chapitres/chapitre1}
+\input{chapitres/chapitre2}
+
+%=================================================
+% CHAPITRES REDIGES A PARTIR DU SPRINT 1
+%=================================================
+
+\input{chapitres/chapitre3_sprint1}
+\input{chapitres/chapitre4_sprint2}
+\input{chapitres/chapitre5_sprint3}
+\input{chapitres/chapitre6_sprint4}
+\input{chapitres/chapitre7_sprint5}
+
+%=================================================
+% CONCLUSION
+%=================================================
+
+\input{chapitres/conclusion_generale}
+
+%=================================================
+% BIBLIOGRAPHIE ET WEBOGRAPHIE
+%=================================================
+
+\begin{thebibliography}{9}
+\addcontentsline{toc}{chapter}{Bibliographie}
+\bibitem{pressman}
+R. S. Pressman et B. R. Maxim, \textit{Software Engineering: A Practitioner's Approach}, McGraw-Hill, 2020.
+\bibitem{uml}
+Object Management Group, \textit{Unified Modeling Language Specification}, OMG.
+\bibitem{scrum}
+K. Schwaber et J. Sutherland, \textit{The Scrum Guide}, 2020.
+\end{thebibliography}
+
+\chapter*{Webographie}
+\addcontentsline{toc}{chapter}{Webographie}
+\begin{itemize}
+    \item Documentation Microsoft ASP.NET Core : \url{https://learn.microsoft.com/aspnet/core}
+    \item Documentation Angular : \url{https://angular.dev}
+    \item Documentation SQL Server : \url{https://learn.microsoft.com/sql/sql-server}
+    \item Documentation Tiptap : \url{https://tiptap.dev}
+    \item Documentation Draw.io : \url{https://www.drawio.com}
+\end{itemize}
+
+%=================================================
+% ANNEXES
+%=================================================
+
+\input{annexes/annexes}
+
+\end{document}

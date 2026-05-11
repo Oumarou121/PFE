@@ -1,0 +1,30 @@
+<mxfile host="app.diagrams.net" modified="2026-05-11T17:05:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="global-sequence" name="Sequence globale">
+    <mxGraphModel dx="1500" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Diagramme global de séquence - Flux documentaire complet" style="text;html=1;strokeColor=none;fillColor=none;fontSize=18;fontStyle=1" vertex="1" parent="1"><mxGeometry x="300" y="20" width="620" height="40" as="geometry"/></mxCell>
+        <mxCell id="actor" value="Utilisateur" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;recursiveResize=0;" vertex="1" parent="1"><mxGeometry x="40" y="90" width="110" height="660" as="geometry"/></mxCell>
+        <mxCell id="angular" value="Angular UI" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;recursiveResize=0;" vertex="1" parent="1"><mxGeometry x="210" y="90" width="130" height="660" as="geometry"/></mxCell>
+        <mxCell id="guard" value="Guards / Interceptors" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;recursiveResize=0;" vertex="1" parent="1"><mxGeometry x="390" y="90" width="160" height="660" as="geometry"/></mxCell>
+        <mxCell id="api" value="API ASP.NET Core" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;recursiveResize=0;" vertex="1" parent="1"><mxGeometry x="610" y="90" width="160" height="660" as="geometry"/></mxCell>
+        <mxCell id="service" value="Services métier" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;recursiveResize=0;" vertex="1" parent="1"><mxGeometry x="830" y="90" width="150" height="660" as="geometry"/></mxCell>
+        <mxCell id="repo" value="Repository" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;recursiveResize=0;" vertex="1" parent="1"><mxGeometry x="1030" y="90" width="130" height="660" as="geometry"/></mxCell>
+        <mxCell id="m1" value="Connexion" style="endArrow=block;html=1;" edge="1" parent="1" source="actor" target="angular"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m2" value="POST /auth/login" style="endArrow=block;html=1;" edge="1" parent="1" source="angular" target="api"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m3" value="vérifier utilisateur" style="endArrow=block;html=1;" edge="1" parent="1" source="api" target="service"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m4" value="requête SQL" style="endArrow=block;html=1;" edge="1" parent="1" source="service" target="repo"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m5" value="JWT + profil" style="endArrow=open;dashed=1;html=1;" edge="1" parent="1" source="api" target="angular"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m6" value="accès route protégée" style="endArrow=block;html=1;" edge="1" parent="1" source="actor" target="angular"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m7" value="vérifier rôle" style="endArrow=block;html=1;" edge="1" parent="1" source="angular" target="guard"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m8" value="charger état /api/state" style="endArrow=block;html=1;" edge="1" parent="1" source="guard" target="api"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m9" value="familles, templates, chartes" style="endArrow=open;dashed=1;html=1;" edge="1" parent="1" source="repo" target="angular"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m10" value="sélection modèle + bénéficiaire" style="endArrow=block;html=1;" edge="1" parent="1" source="actor" target="angular"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m11" value="search-beneficiaries / preview" style="endArrow=block;html=1;" edge="1" parent="1" source="angular" target="api"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m12" value="résoudre données + rendu" style="endArrow=block;html=1;" edge="1" parent="1" source="api" target="service"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m13" value="document HTML généré" style="endArrow=open;dashed=1;html=1;" edge="1" parent="1" source="service" target="angular"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

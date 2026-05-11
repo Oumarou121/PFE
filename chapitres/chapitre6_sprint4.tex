@@ -1,0 +1,267 @@
+%=================================================
+% CHAPITRE 6
+%=================================================
+
+\chapter{Sprint 4 : Administration des modules métier}
+
+\section{Introduction}
+
+Le quatrième sprint a pour objectif de compléter le coeur documentaire par les modules métier nécessaires à son exploitation. Un éditeur de modèles ne suffit pas à lui seul à produire des documents fiables. Il faut également définir les familles de documents, les chartes graphiques, les configurations de vues de tables, les bénéficiaires et les filtres permettant de sélectionner les données métier utilisées dans la génération.
+
+Ce sprint représente donc une étape structurante. Il transforme l'application en une véritable plateforme d'administration documentaire. Les familles permettent de classer les modèles et de décrire les sources de données associées. Les modèles définissent la structure documentaire. Les chartes graphiques assurent l'identité visuelle. Les configurations de vues de tables, représentées par l'entité \texttt{TableViewConfig}, permettent d'exposer des données métier sous forme de vues administrables. Enfin, les bénéficiaires et les filtres permettent de sélectionner les données injectées dans les documents.
+
+La complexité de ce sprint vient de l'interdépendance entre ces modules. Un modèle appartient à une famille, peut être lié à une organisation et peut utiliser une charte graphique. Une famille peut référencer une table de bénéficiaires ou une requête SQL. Une configuration de vue de table décrit les champs visibles, modifiables et utilisés pour la prévisualisation. L'enjeu est donc de proposer une administration cohérente, tout en conservant une architecture maintenable.
+
+\section{Objectifs du sprint}
+
+Les objectifs du sprint sont les suivants :
+
+\begin{itemize}
+    \item implémenter le CRUD des familles de documents ;
+    \item implémenter le CRUD des modèles de documents ;
+    \item implémenter le CRUD des chartes graphiques ;
+    \item implémenter le CRUD des configurations de vues de tables \texttt{TableViewConfig} ;
+    \item permettre la consultation, la création, la modification et la suppression des enregistrements métier à travers les vues de tables ;
+    \item associer les modèles aux familles et aux chartes graphiques ;
+    \item configurer les filtres et les bénéficiaires utilisés pour la génération documentaire ;
+    \item valider les données envoyées aux endpoints et normaliser les structures JSON échangées.
+\end{itemize}
+
+\section{Backlog du sprint}
+
+\begin{longtable}{p{0.17\textwidth} p{0.38\textwidth} p{0.35\textwidth}}
+\caption{Backlog du sprint 4}\\
+\toprule
+\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
+\midrule
+\endhead
+US4.1 & En tant que super administrateur, je peux gérer les familles de documents. & Créer les endpoints \texttt{/api/families}, définir \texttt{Family}, gérer les bénéficiaires et filtres.\\
+\midrule
+US4.2 & En tant qu'administrateur, je peux gérer les modèles d'une famille. & Utiliser \texttt{/api/templates}, associer chaque modèle à une famille et une charte.\\
+\midrule
+US4.3 & En tant qu'administrateur, je peux définir des chartes graphiques. & Créer \texttt{GraphicCharter}, gérer les couleurs, polices, watermark et identité visuelle.\\
+\midrule
+US4.4 & En tant que super administrateur, je peux configurer les vues de tables métier. & Implémenter \texttt{TableViewConfig}, champs visibles, champs éditables, champs de prévisualisation et paramètres de lookup.\\
+\midrule
+US4.5 & En tant qu'utilisateur, je peux sélectionner un bénéficiaire à partir des données métier. & Implémenter \texttt{/api/search-beneficiaries}, appliquer les filtres et retourner les lignes disponibles.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Gestion des familles de documents}
+
+Une famille de documents définit un regroupement fonctionnel. Elle précise le nom, la description, le mode de bénéficiaire, la table source, les colonnes d'affichage, la colonne de liaison, les filtres disponibles et les classes de variables. Elle sert donc de point d'entrée entre la logique documentaire et les données métier.
+
+\subsection{Gestion des modèles de documents}
+
+Le modèle est la structure éditable utilisée pour produire un document. Il est associé à une famille à travers \texttt{familyId}. Cette relation garantit que les variables et les bénéficiaires disponibles correspondent au type de document traité.
+
+\subsection{Gestion des chartes graphiques}
+
+La charte graphique permet de centraliser les paramètres visuels : couleurs, typographies, identité, watermark et règles d'affichage. Elle évite de dupliquer les styles dans chaque modèle et permet de faire évoluer l'identité visuelle d'une organisation de manière contrôlée.
+
+\subsection{Gestion des configurations de vues de tables}
+
+La configuration de vue de table est représentée par l'entité \texttt{TableViewConfig}. Elle décrit comment une table métier doit être présentée et éditée depuis l'application. Elle contient notamment le nom de la table, le libellé, les champs visibles, les champs éditables, les champs de prévisualisation et les paramètres de lookup.
+
+Ce module est important, car il permet d'administrer des données métier sans développer une page spécifique pour chaque table. Il apporte donc une dimension configurable à la plateforme.
+
+\subsection{Gestion des bénéficiaires et filtres métier}
+
+Les bénéficiaires représentent les enregistrements métier utilisés pour personnaliser un document. Selon la famille, ils peuvent provenir d'une table SQL, d'une organisation ou d'une requête spécifique. Les filtres permettent de réduire la liste des bénéficiaires selon des critères configurés, par exemple une année, une direction, un service ou un statut.
+
+\section{Analyse et conception}
+
+\subsection{Diagramme de cas d'utilisation}
+
+\diagramplaceholder{sprint4_cas_utilisation}{Diagramme de cas d'utilisation du sprint 4}{Cas d'utilisation d'administration des modules métier}
+
+Le diagramme de cas d'utilisation du sprint 4 distingue principalement le super administrateur et l'administrateur. Le super administrateur gère les structures globales : familles, vues de tables et sources de données. L'administrateur gère les modèles et chartes graphiques dans son périmètre. L'utilisateur final intervient indirectement à travers la sélection des bénéficiaires et l'utilisation des données configurées.
+
+Le cas d'utilisation \og Configurer une vue de table \fg{} inclut la sélection de la table, la définition des champs visibles, la définition des champs éditables et la configuration des champs de lookup. Le cas \og Gérer les bénéficiaires \fg{} dépend de la configuration des familles et des vues de tables.
+
+\subsection{Diagramme de classes}
+
+\diagramplaceholder{sprint4_classes}{Diagramme de classes du sprint 4}{Classes métier administrées dans le sprint 4}
+
+Le diagramme de classes met en évidence les entités principales : \texttt{Family}, \texttt{Template}, \texttt{GraphicCharter} et \texttt{TableViewConfig}. Une famille possède plusieurs modèles. Un modèle peut référencer une charte graphique. Une configuration de vue de table référence une table métier et décrit les champs exploitables par l'interface.
+
+Les services \texttt{FamilyService}, \texttt{TemplateService}, \texttt{TableViewService} et \texttt{GraphicCharterService} côté Angular communiquent avec \texttt{ApiService}. Côté backend, les contrôleurs dédiés délèguent les opérations à \texttt{IEditorService}, qui s'appuie sur \texttt{IEditorRepository}.
+
+\subsection{Diagrammes de séquence}
+
+\diagramplaceholder{sprint4_sequences}{Diagramme de séquence du sprint 4}{Séquence CRUD d'une configuration métier}
+
+Le diagramme de séquence illustre le CRUD d'une configuration de vue de table. Le super administrateur crée une nouvelle configuration dans l'interface. Le composant Angular appelle \texttt{TableViewService.saveTableView}. Le service normalise les données, met à jour l'état local, puis envoie la requête au backend. Le contrôleur reçoit le JSON, appelle \texttt{EditorService}, puis le repository exécute l'insertion ou la mise à jour en base.
+
+Un deuxième flux concerne la consultation des lignes métier. L'utilisateur choisit une vue de table. L'application appelle \texttt{/api/table-view/rows}. Le backend résout la configuration, vérifie les champs autorisés et construit une requête SQL limitée aux champs déclarés dans la configuration.
+
+\subsubsection*{Description des interactions système}
+
+Les interactions du sprint 4 sont principalement des interactions CRUD. Elles doivent toutefois rester cohérentes avec l'état global de l'application. Lorsqu'une famille est supprimée, les modèles associés doivent être pris en compte. Lorsqu'une charte graphique est modifiée, les modèles qui y font référence doivent afficher le nouveau rendu. Lorsqu'une vue de table est modifiée, les écrans de données métier doivent refléter les nouveaux champs visibles et éditables.
+
+\subsubsection*{Analyse technique}
+
+Le backend utilise des structures JSON pour gérer certaines entités configurables. Cette approche apporte de la souplesse, car les champs comme \texttt{filterCatalog}, \texttt{classes}, \texttt{fieldSettings} ou \texttt{pageMargins} peuvent évoluer sans modifier immédiatement toutes les classes métier. En contrepartie, elle impose une normalisation rigoureuse côté service et frontend.
+
+Pour les vues de tables, la sécurité est particulièrement importante. Le backend ne doit pas exécuter librement des champs ou tables fournis par le client. La configuration doit être résolue, les champs doivent être comparés au schéma autorisé, et les requêtes doivent limiter les colonnes aux champs déclarés.
+
+\subsubsection*{Architecture des composants concernés}
+
+L'architecture du sprint suit une logique verticale par module. Chaque ressource dispose d'un modèle, d'un service Angular, d'un endpoint REST, d'un service backend et d'une méthode repository. Cette organisation facilite la compréhension et permet d'ajouter de nouvelles ressources métier selon le même modèle.
+
+\section{Réalisation}
+
+\subsection{CRUD des familles de documents}
+
+Le CRUD des familles est exposé par \texttt{FamiliesController}. Les endpoints couvrent la liste, la consultation par identifiant, la création, la modification et la suppression.
+
+\begin{lstlisting}[caption={Contrôleur REST pour les familles de documents}]
+[ApiController]
+[Route("api/families")]
+public class FamiliesController : ControllerBase
+{
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<object>>> GetAll()
+    {
+        return Ok(await _service.GetFamiliesAsync());
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<object>> Update(string id, [FromBody] JsonObject family)
+    {
+        family["id"] = id;
+        return Ok(await _service.UpsertFamilyAsync(family));
+    }
+}
+\end{lstlisting}
+
+\screenshotplaceholder{sprint4_families.png}{Gestion des familles de documents}{Interface de gestion des familles de documents}
+
+\subsection{CRUD des modèles de documents}
+
+Les modèles sont gérés à travers \texttt{TemplatesController}. Contrairement à certaines ressources publiques, les endpoints de templates sont protégés par \texttt{[Authorize]}. Cette protection est logique, car les modèles contiennent des contenus documentaires et des paramètres métier.
+
+\begin{lstlisting}[caption={Endpoint de mise à jour d'un modèle}]
+[HttpPut("{id}")]
+[Authorize]
+public async Task<ActionResult<object>> Update(string id, [FromBody] JsonObject template)
+{
+    template["id"] = id;
+    return Ok(await _service.UpsertTemplateAsync(template));
+}
+\end{lstlisting}
+
+\screenshotplaceholder{sprint4_templates.png}{Gestion des modèles de documents}{Interface de gestion des modèles associés aux familles}
+
+\subsection{CRUD des chartes graphiques}
+
+Les chartes graphiques sont gérées par \texttt{GraphicChartersController}. L'entité \texttt{GraphicCharter} contient un identifiant, une organisation éventuelle, un nom, une description, un indicateur de charte par défaut et un objet \texttt{Config}. Ce dernier regroupe les paramètres visuels.
+
+\begin{lstlisting}[caption={Structure de l'entité GraphicCharter}]
+public class GraphicCharter
+{
+    public string Id { get; set; } = string.Empty;
+    public string? OrganizationId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsDefault { get; set; }
+    public JsonObject Config { get; set; } = new();
+}
+\end{lstlisting}
+
+\screenshotplaceholder{sprint4_charters.png}{Gestion des chartes graphiques}{Interface de paramétrage d'une charte graphique}
+
+\subsection{CRUD des configurations de vues de tables}
+
+Le module \texttt{TableViewConfig} permet de configurer dynamiquement l'affichage et l'édition de tables métier. Il est exposé par deux familles d'endpoints : les endpoints REST classiques \texttt{/api/table-view-configs} et les endpoints opérationnels \texttt{/api/table-view-config}, \texttt{/api/table-view/rows}, \texttt{/api/table-view/record} et \texttt{/api/table-view/lookup-options}.
+
+\begin{lstlisting}[caption={Entité TableViewConfig}]
+public class TableViewConfig
+{
+    public string Id { get; set; } = string.Empty;
+    public string TableName { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public JsonArray VisibleFields { get; set; } = new();
+    public JsonArray EditableFields { get; set; } = new();
+    public JsonArray PreviewFields { get; set; } = new();
+    public JsonObject FieldSettings { get; set; } = new();
+}
+\end{lstlisting}
+
+Côté Angular, \texttt{TableViewService} encapsule la sauvegarde, la suppression, la consultation des lignes, la création d'un enregistrement, la modification d'un enregistrement et la récupération des options de lookup.
+
+\begin{lstlisting}[caption={Sauvegarde d'une configuration de vue de table}]
+async saveTableView(view: TableViewConfig): Promise<TableViewConfig> {
+  const normalized = normalizeTableViewRecord(view);
+  const state = this.state.getState();
+  const index = state.tableViews.findIndex(item => item.id === normalized.id);
+  index >= 0
+    ? state.tableViews.splice(index, 1, normalized)
+    : state.tableViews.push(normalized);
+  this.state.replaceState(state);
+  await firstValueFrom(this.api.post('table-view-config',
+    { tableView: normalized }));
+  return normalized;
+}
+\end{lstlisting}
+
+\screenshotplaceholder{sprint4_tableviews.png}{Gestion des configurations de vues de tables}{Interface de configuration et d'exploitation des vues de tables}
+
+\subsection{Association famille, modèle et charte graphique}
+
+L'association entre famille, modèle et charte graphique est assurée par les champs \texttt{familyId} et \texttt{graphicCharterId} du modèle. Cette association permet de déterminer les variables disponibles, les bénéficiaires pertinents et le style visuel à appliquer lors de la prévisualisation.
+
+Dans l'interface, l'administrateur sélectionne une famille, puis crée ou modifie les modèles qui lui appartiennent. Il peut ensuite choisir la charte graphique à associer au modèle. Cette organisation évite les incohérences, par exemple l'utilisation d'un modèle avec des variables incompatibles avec la famille sélectionnée.
+
+\subsection{Configuration des données métier et des filtres}
+
+La recherche des bénéficiaires est assurée par l'endpoint \texttt{/api/search-beneficiaries}. Celui-ci reçoit l'identifiant de la famille, l'organisation, les filtres, une chaîne de recherche et une limite. Le backend charge la famille, lit la configuration du bénéficiaire, construit les paramètres et exécute la requête adaptée.
+
+\begin{lstlisting}[caption={Validation minimale de la recherche de bénéficiaires}]
+if (!request.TryGetProperty("familyId", out var famIdElem) ||
+    famIdElem.ValueKind != JsonValueKind.String)
+{
+    return BadRequest(new EditorApiResponse(false,
+        Error: "familyId is required"));
+}
+\end{lstlisting}
+
+Cette fonctionnalité relie directement l'administration métier à la génération documentaire. Les bénéficiaires sélectionnés deviennent les sources de données utilisées pour remplacer les variables dans les modèles.
+
+\section{Tests et validation}
+
+\begin{longtable}{p{0.25\textwidth} p{0.43\textwidth} p{0.22\textwidth}}
+\caption{Scénarios de test du sprint 4}\\
+\toprule
+\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
+\midrule
+\endhead
+Création famille & Créer une famille avec table bénéficiaire et colonnes d'affichage. & Famille enregistrée et visible dans la liste.\\
+\midrule
+Association modèle & Créer un modèle associé à une famille. & Le modèle apparaît dans la famille correspondante.\\
+\midrule
+Charte graphique & Modifier les couleurs et la typographie d'une charte. & Le rendu du document applique les paramètres.\\
+\midrule
+Configuration vue table & Définir champs visibles, éditables et preview. & La vue affiche uniquement les champs configurés.\\
+\midrule
+CRUD enregistrement métier & Créer, modifier et supprimer une ligne via \texttt{TableViewService}. & Les opérations sont répercutées en base.\\
+\midrule
+Recherche bénéficiaire & Rechercher un bénéficiaire avec filtre. & La liste retournée respecte la famille et les filtres.\\
+\bottomrule
+\end{longtable}
+
+Les tests fonctionnels ont validé les opérations CRUD principales. Les tests d'intégration ont vérifié la cohérence entre les services Angular, les endpoints REST et la base SQL Server. Les tests de sécurité ont porté sur la limitation des champs manipulés par les vues de tables et sur le refus des requêtes incomplètes, notamment l'absence de \texttt{familyId} dans la recherche des bénéficiaires.
+
+\section{Conclusion}
+
+Le sprint 4 a transformé la plateforme en un système documentaire administrable. Les familles, modèles, chartes graphiques, configurations de vues de tables et bénéficiaires sont désormais structurés et exploitables. L'ajout explicite de \texttt{TableViewConfig} constitue un apport important, car il permet d'administrer les données métier de manière configurable sans développer une interface spécifique pour chaque table.
+
+À l'issue de ce sprint, les principales fonctionnalités métier sont présentes. Le sprint suivant peut donc se concentrer sur l'intégration finale, les tests, l'optimisation, la documentation et la préparation de la livraison.
