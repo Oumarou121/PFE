@@ -1285,70 +1285,56 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return this.families.find((f: any) => f.id === id) || null;
   }
 
-  isFamilyOrganizationSelected(famId: string, orgId: number): boolean {
+  isFamilyOrganizationSelected(famId: string, orgId: any): boolean {
     const fam = this.getFamily(famId);
-    return (fam?.organizationIds || []).includes(orgId);
+    return (fam?.organizationIds || []).includes(Number(orgId));
   }
 
-  toggleFamilyOrganization(famId: string, orgId: number): void {
+  toggleFamilyOrganization(famId: string, orgId: any): void {
     const fam = this.getFamily(famId);
     if (!fam) return;
     const current = fam.organizationIds || [];
-    if (current.includes(orgId)) {
-      fam.organizationIds = current.filter((id: number) => id !== orgId);
+    const id = Number(orgId);
+    if (current.includes(id)) {
+      fam.organizationIds = current.filter((i: number) => i !== id);
     } else {
-      fam.organizationIds = [...current, orgId];
+      fam.organizationIds = [...current, id];
     }
     this.saveFamilyLocal(fam);
   }
 
-  isTableViewOrganizationSelected(viewId: string, orgId: number): boolean {
+  isTableViewOrganizationSelected(viewId: string, orgId: any): boolean {
     const view = this.tableViews.find((v) => v.id === viewId);
-    return (view?.organizationIds || []).includes(orgId);
+    return (view?.organizationIds || []).includes(Number(orgId));
   }
 
-  toggleTableViewOrganization(viewId: string, orgId: number): void {
+  toggleTableViewOrganization(viewId: string, orgId: any): void {
     const view = this.tableViews.find((v) => v.id === viewId);
     if (!view) return;
     const current = view.organizationIds || [];
-    if (current.includes(orgId)) {
-      view.organizationIds = current.filter((id: number) => id !== orgId);
+    const id = Number(orgId);
+    if (current.includes(id)) {
+      view.organizationIds = current.filter((i: number) => i !== id);
     } else {
-      view.organizationIds = [...current, orgId];
+      view.organizationIds = [...current, id];
     }
     this.saveTableViewLocal(view);
   }
 
-  private saveFamilyLocal(fam: any): void {
-    const normalized = normalizeFamilyRecord(fam as any);
-    const state = this.editorState.getState();
-    const index = state.families.findIndex((item) => item.id === normalized.id);
-    index >= 0
-      ? state.families.splice(index, 1, normalized)
-      : state.families.push(normalized);
-    this.replaceState(state);
-    this.api
-      .put(`families/${encodeURIComponent(normalized.id)}`, normalized)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        error: () =>
-          this.toast("Impossible de synchroniser la famille.", "error"),
-      });
+  private async saveFamilyLocal(fam: any): Promise<void> {
+    try {
+      await this.familyService.saveFamily(fam as Family);
+    } catch (err) {
+      this.toast("Impossible de synchroniser la famille.", "error");
+    }
   }
 
-  private deleteFamilyLocal(id: string): void {
-    const state = this.editorState.getState();
-    state.families = state.families.filter((family) => family.id !== id);
-    state.templates = state.templates.filter(
-      (template) => template.familyId !== id,
-    );
-    this.replaceState(state);
-    this.api
-      .delete(`families/${encodeURIComponent(id)}`)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        error: () => this.toast("Impossible de supprimer la famille.", "error"),
-      });
+  private async deleteFamilyLocal(id: string): Promise<void> {
+    try {
+      await this.familyService.deleteFamily(id);
+    } catch (err) {
+      this.toast("Impossible de supprimer la famille.", "error");
+    }
   }
 
   updateFamilyDraftField(famId: string, field: string, value: string): void {
@@ -1396,7 +1382,12 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       return;
     }
     // Read nom/description from Angular draft state (replaces document.getElementById fNom/fDesc)
-    fam.nom = this.familyDraftNom.trim() || fam.nom;
+    const nomValue = this.familyDraftNom.trim();
+    if (!nomValue) {
+      this.toast("Le nom de la famille est requis", "error");
+      return;
+    }
+    fam.nom = nomValue;
     fam.description = this.familyDraftDescription.trim();
     fam.beneficiaryMode =
       beneficiaryModeValue === "organization" ? "organization" : "table";

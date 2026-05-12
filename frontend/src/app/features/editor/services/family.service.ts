@@ -42,11 +42,13 @@ export class FamilyService {
 
   async saveFamily(family: FamilyRecord): Promise<FamilyRecord> {
     const normalized = normalizeFamilyRecord(family);
+    await firstValueFrom(this.api.put(`families/${encodeURIComponent(normalized.id)}`, normalized));
+    
     const state = this.state.getState();
     const index = state.families.findIndex(item => item.id === normalized.id);
     index >= 0 ? state.families.splice(index, 1, normalized) : state.families.push(normalized);
     this.state.replaceState(state);
-    await firstValueFrom(this.api.put(`families/${encodeURIComponent(normalized.id)}`, normalized));
+    
     return normalized;
   }
 
@@ -55,11 +57,12 @@ export class FamilyService {
   }
 
   async deleteFamily(id: string): Promise<void> {
+    await firstValueFrom(this.api.delete(`families/${encodeURIComponent(id)}`));
+    
     const state = this.state.getState();
     state.families = state.families.filter(family => family.id !== id);
     state.templates = state.templates.filter(template => template.familyId !== id);
     this.state.replaceState(state);
-    await firstValueFrom(this.api.delete(`families/${encodeURIComponent(id)}`));
   }
 
   delete(id: string): Observable<void> {

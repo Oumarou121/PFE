@@ -1239,7 +1239,3 @@ namespace DocApi.Repositories
         }
     }
 }
- { get; set; }
-        }
-    }
-}

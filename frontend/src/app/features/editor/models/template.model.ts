@@ -14,6 +14,7 @@ export interface HeaderFooterDistances {
 
 export interface TemplateRecord extends UnknownRecord {
   id: string;
+  nom?: string;
   familyId?: string;
   organizationId?: string | null;
   graphicCharterId?: string | null;

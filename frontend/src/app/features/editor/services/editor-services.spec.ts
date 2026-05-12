@@ -52,7 +52,7 @@ describe('editor services', () => {
     const rowsPromise = service.getTableViewRows('tv_1', { search: 'ali', limit: 10 });
     const rowsReq = http.expectOne(`${environment.apiUrl}/table-view/rows`);
     expect(rowsReq.request.method).toBe('POST');
-    expect(rowsReq.request.body).toEqual({ configId: 'tv_1', config: null, search: 'ali', limit: 10 });
+    expect(rowsReq.request.body).toEqual({ configId: 'tv_1', config: null, search: 'ali', limit: 10, databaseName: undefined });
     rowsReq.flush({ rows: [{ id: 1, nom: 'Ali' }] });
     expect(await rowsPromise).toEqual([{ id: 1, nom: 'Ali' }]);
 

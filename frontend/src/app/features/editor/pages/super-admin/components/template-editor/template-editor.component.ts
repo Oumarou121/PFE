@@ -42,9 +42,9 @@ export class TemplateEditorComponent implements OnInit, OnChanges {
   private resetEditor(): void {
     if (this.template) {
       this.editorContent = {
-        header: this.template.headerHtml ?? '',
-        body: this.template.bodyHtml ?? '',
-        footer: this.template.footerHtml ?? '',
+        header: this.template.header ?? '',
+        body: this.template.body ?? '',
+        footer: this.template.footer ?? '',
       };
       this.formMeta = {
         nom: this.template.nom,
@@ -78,9 +78,9 @@ export class TemplateEditorComponent implements OnInit, OnChanges {
     const updated: Template = {
       ...this.template,
       ...this.formMeta,
-      headerHtml: this.editorContent['header'],
-      bodyHtml: this.editorContent['body'],
-      footerHtml: this.editorContent['footer'],
+      header: this.editorContent['header'],
+      body: this.editorContent['body'],
+      footer: this.editorContent['footer'],
     };
     this.save.emit(updated);
   }

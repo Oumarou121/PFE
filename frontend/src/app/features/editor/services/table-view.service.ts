@@ -21,11 +21,13 @@ export class TableViewService {
 
   async saveTableView(view: TableViewConfig): Promise<TableViewConfig> {
     const normalized = normalizeTableViewRecord(view);
+    await firstValueFrom(this.api.post('table-view-config', { tableView: normalized }));
+
     const state = this.state.getState();
     const index = state.tableViews.findIndex(item => item.id === normalized.id);
     index >= 0 ? state.tableViews.splice(index, 1, normalized) : state.tableViews.push(normalized);
     this.state.replaceState(state);
-    await firstValueFrom(this.api.post('table-view-config', { tableView: normalized }));
+    
     return normalized;
   }
 
@@ -34,10 +36,11 @@ export class TableViewService {
   }
 
   async deleteTableView(id: string): Promise<void> {
+    await firstValueFrom(this.api.deleteWithBody('table-view-config', { id }));
+
     const state = this.state.getState();
     state.tableViews = state.tableViews.filter(view => view.id !== id);
     this.state.replaceState(state);
-    await firstValueFrom(this.api.deleteWithBody('table-view-config', { id }));
   }
 
   deleteConfig(id: string): Observable<void> {

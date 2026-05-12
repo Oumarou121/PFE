@@ -22,18 +22,22 @@ export class TemplateService {
 
   async saveTemplate(template: TemplateRecord): Promise<TemplateRecord> {
     const normalized = normalizeTemplateRecord(template);
+    // On effectue d'abord l'appel API. Si il echoue, on ne met pas a jour l'etat local.
+    await firstValueFrom(this.api.put(`templates/${encodeURIComponent(normalized.id)}`, normalized));
+    
     const state = this.state.getState();
     const index = state.templates.findIndex(item => item.id === normalized.id);
     index >= 0 ? state.templates.splice(index, 1, normalized) : state.templates.push(normalized);
     this.state.replaceState(state);
-    await firstValueFrom(this.api.put(`templates/${encodeURIComponent(normalized.id)}`, normalized));
+    
     return normalized;
   }
 
   async deleteTemplate(id: string): Promise<void> {
+    await firstValueFrom(this.api.delete(`templates/${encodeURIComponent(id)}`));
+    
     const state = this.state.getState();
     state.templates = state.templates.filter(template => template.id !== id);
     this.state.replaceState(state);
-    await firstValueFrom(this.api.delete(`templates/${encodeURIComponent(id)}`));
   }
 }

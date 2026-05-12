@@ -50,9 +50,18 @@ export class EditorStateService {
     return this.getState();
   }
 
-  async persistState(state: Partial<EditorState> = this.state): Promise<EditorState> {
-    this.replaceState(state);
-    await firstValueFrom(this.api.put('state', { state: this.getState() }));
+  async persistState(statePatch: Partial<EditorState> = {}): Promise<EditorState> {
+    // On calcule le prochain etat potentiel
+    const nextState = normalizeState({ ...this.state, ...statePatch });
+    
+    // On tente la persistance cote serveur
+    await firstValueFrom(this.api.put('state', { state: nextState }));
+    
+    // Si ca reussit, on met a jour l'etat local
+    const loaded = this.state._loaded || {};
+    this.state = nextState;
+    this.state._loaded = { ...loaded };
+    
     return this.getState();
   }
 

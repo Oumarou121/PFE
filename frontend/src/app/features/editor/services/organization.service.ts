@@ -20,10 +20,11 @@ export class OrganizationService {
   async saveOrganization(organization: OrganizationRecord): Promise<OrganizationRecord> {
     const normalized = normalizeOrganizationRecord(organization);
     const state = this.state.getState();
-    const index = state.organizations.findIndex(item => item.id === normalized.id);
-    index >= 0 ? state.organizations.splice(index, 1, normalized) : state.organizations.push(normalized);
-    this.state.replaceState(state);
-    await this.state.persistState();
+    const organizations = [...state.organizations];
+    const index = organizations.findIndex(item => item.id === normalized.id);
+    index >= 0 ? organizations.splice(index, 1, normalized) : organizations.push(normalized);
+    
+    await this.state.persistState({ organizations });
     return normalized;
   }
 
@@ -33,10 +34,10 @@ export class OrganizationService {
 
   async deleteOrganization(id: string): Promise<void> {
     const state = this.state.getState();
-    state.organizations = state.organizations.filter(organization => organization.id !== id);
-    state.admins = state.admins.filter(admin => getScopedOrganizationId(admin) !== id);
-    this.state.replaceState(state);
-    await this.state.persistState();
+    const organizations = state.organizations.filter(organization => organization.id !== id);
+    const admins = state.admins.filter(admin => getScopedOrganizationId(admin) !== id);
+    
+    await this.state.persistState({ organizations, admins });
   }
 
   delete(id: string): Observable<void> {
@@ -49,9 +50,9 @@ export class OrganizationService {
 
   async saveSettings(settings: UnknownRecord): Promise<UnknownRecord> {
     const state = this.state.getState();
-    state.settings = { ...(state.settings || {}), ...(settings || {}) };
-    this.state.replaceState(state);
-    await this.state.persistState();
-    return state.settings;
+    const nextSettings = { ...(state.settings || {}), ...(settings || {}) };
+    
+    const nextState = await this.state.persistState({ settings: nextSettings });
+    return nextState.settings || {};
   }
 }

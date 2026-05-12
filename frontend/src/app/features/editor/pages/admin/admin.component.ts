@@ -767,6 +767,10 @@ export class AdminComponent
   }
 
   async saveTemplate(): Promise<void> {
+    if (!this.templateNameDraft.trim()) {
+      this.notifications.showWarning("Le nom du template est requis");
+      return;
+    }
     if (this.editorPanel === "headerFooter") {
       this.persistTemplateHeaderFooterEditors();
     } else {
@@ -779,8 +783,8 @@ export class AdminComponent
     }
     const next = normalizeTemplateRecord({
       ...current,
-      nom: this.templateNameDraft || current["nom"] || current["name"],
-      name: this.templateNameDraft || current["name"] || current["nom"],
+      nom: this.templateNameDraft.trim(),
+      name: this.templateNameDraft.trim(),
       graphicCharterId: this.selectedGraphicCharterId || null,
       header: this.editorContent.header,
       body: this.editorContent.body,
@@ -805,11 +809,16 @@ export class AdminComponent
     });
     this.saveStatus = "Enregistrement...";
     this.cdr.markForCheck();
-    await this.templatesService.saveTemplate(next);
-    this.refreshCollections();
-    this.selectedTemplateId = next.id;
-    this.saveStatus = "Enregistré";
-    this.notifications.showSuccess("Template enregistré");
+    try {
+      await this.templatesService.saveTemplate(next);
+      this.refreshCollections();
+      this.selectedTemplateId = next.id;
+      this.saveStatus = "Enregistré";
+      this.notifications.showSuccess("Template enregistré");
+    } catch (err) {
+      this.saveStatus = "Erreur";
+      this.notifications.showError("Impossible d'enregistrer le template");
+    }
     this.cdr.markForCheck();
   }
 
@@ -823,10 +832,14 @@ export class AdminComponent
       actionType: "delete",
     });
     if (!confirmed) return;
-    await this.templatesService.deleteTemplate(templateId);
-    this.refreshCollections();
-    if (this.selectedTemplateId === templateId) this.clearEditor();
-    this.notifications.showSuccess("Template supprimé");
+    try {
+      await this.templatesService.deleteTemplate(templateId);
+      this.refreshCollections();
+      if (this.selectedTemplateId === templateId) this.clearEditor();
+      this.notifications.showSuccess("Template supprimé");
+    } catch (err) {
+      this.notifications.showError("Impossible de supprimer le template");
+    }
     this.cdr.markForCheck();
   }
 
@@ -969,6 +982,11 @@ export class AdminComponent
 
   async saveGraphicCharterModal(): Promise<void> {
     this.persistGraphicCharterEditors();
+    const name = this.graphicCharterForm.name.trim();
+    if (!name) {
+      this.notifications.showWarning("Le nom de la charte est requis");
+      return;
+    }
     const orgId = this.currentUserOrganizationId;
     if (!orgId) {
       this.notifications.showWarning("Aucune organization active");
@@ -1059,7 +1077,7 @@ export class AdminComponent
       {
         ...existing,
         id: existing?.id || this.genId("charter"),
-        name: this.graphicCharterForm.name.trim() || "Nouvelle charte",
+        name,
         description: this.graphicCharterForm.description.trim(),
         isDefault: this.graphicCharterForm.isDefault,
         config,

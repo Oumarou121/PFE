@@ -19,10 +19,11 @@ export class AdminAccountService {
   async saveAdmin(admin: AdminAccountRecord): Promise<AdminAccountRecord> {
     const normalized = { ...admin, organizationId: getScopedOrganizationId(admin) };
     const state = this.state.getState();
-    const index = state.admins.findIndex(item => item.id === normalized.id);
-    index >= 0 ? state.admins.splice(index, 1, normalized) : state.admins.push(normalized);
-    this.state.replaceState(state);
-    await this.state.persistState();
+    const admins = [...state.admins];
+    const index = admins.findIndex(item => item.id === normalized.id);
+    index >= 0 ? admins.splice(index, 1, normalized) : admins.push(normalized);
+    
+    await this.state.persistState({ admins });
     return normalized;
   }
 
@@ -36,9 +37,8 @@ export class AdminAccountService {
 
   async deleteAdmin(id: string): Promise<void> {
     const state = this.state.getState();
-    state.admins = state.admins.filter(admin => admin.id !== id);
-    this.state.replaceState(state);
-    await this.state.persistState();
+    const admins = state.admins.filter(admin => admin.id !== id);
+    await this.state.persistState({ admins });
   }
 
   delete(id: string): Observable<void> {
