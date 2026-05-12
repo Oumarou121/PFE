@@ -22,15 +22,15 @@ namespace DocApi.Repositories.Interfaces
         Task<IEnumerable<TableViewConfigResponse>> LoadTableViewsAsync();
         Task<TableViewConfigResponse?> GetTableViewConfigByIdAsync(string id);
         Task<Dictionary<string, object?>> LoadSettingsAsync();
-        Task<DatabaseSchemaResponse> LoadSchemaAsync();
+        Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null);
         Task ReplaceStateAsync(EditorStateResponse state, int? scopedOrganizationId, bool isSuperAdmin);
-        Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters);
-        Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config);
-        Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId);
-        Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values);
-        Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config);
-        Task DeleteTableViewRecordAsync(string? configId, string? rowId);
-        Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config);
+        Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters, string? databaseName = null);
+        Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config, string? databaseName = null);
+        Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null);
+        Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values, string? databaseName = null);
+        Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config, string? databaseName = null);
+        Task DeleteTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null);
+        Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config, string? databaseName = null);
         Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request);
         Task DeleteTableViewConfigAsync(string? id);
     }

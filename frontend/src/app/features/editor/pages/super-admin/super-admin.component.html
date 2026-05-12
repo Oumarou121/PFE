@@ -134,6 +134,16 @@
       </svg>
       <span id="addBtnLabel">{{ addButtonLabel }}</span>
     </button>
+    <div class="panel-context" *ngIf="currentSection === 'families' || currentSection === 'tableviews'" style="padding: 12px; border-bottom: 1px solid var(--border); background: var(--bg-light);">
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Contexte de données</div>
+      <select 
+        style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: white; font-size: 13px;"
+        [ngModel]="selectedSchemaOrganizationId" 
+        (change)="onSchemaOrganizationChange($event)">
+        <option [ngValue]="null">-- Sélectionner une organisation --</option>
+        <option *ngFor="let org of organizations" [value]="org.id">{{ org.nom || org.name }} ({{ org.databaseName }})</option>
+      </select>
+    </div>
     <div class="panel-scroll" id="panelList" [ngSwitch]="currentSection">
       <ng-container *ngSwitchCase="'families'">
         <div
@@ -343,9 +353,16 @@
             <div
               *ngIf="!schemaBuilderData"
               class="text-muted"
-              style="padding: 8px 0"
+              style="padding: 16px; border: 1px dashed var(--border); border-radius: 12px; background: var(--bg-light); text-align: center;"
             >
-              Chargement du schéma SQL Server...
+              <div *ngIf="!selectedSchemaDatabaseName">
+                <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+                <strong>Contexte de données requis</strong><br>
+                Sélectionnez une organisation dans le panneau de gauche pour charger le schéma.
+              </div>
+              <div *ngIf="selectedSchemaDatabaseName">
+                Chargement du schéma SQL Server...
+              </div>
             </div>
 
             <ng-container *ngIf="schemaBuilderData as sb">
@@ -3082,7 +3099,15 @@
         id="panel-tableviews"
       >
         <div class="section-heading">Explorateur de donnees</div>
-        <div class="card" *ngIf="selectedTableView as view">
+
+        <div class="card" *ngIf="!selectedSchemaDatabaseName" style="padding: 24px; text-align: center; border: 1px dashed var(--border);">
+          <div style="font-size: 32px; margin-bottom: 12px;">⚠️</div>
+          <h3 style="margin-bottom: 8px;">Contexte de données requis</h3>
+          <p class="text-muted">Veuillez sélectionner une organisation dans le panneau de gauche pour charger le schéma de la base de données et explorer les tables.</p>
+        </div>
+
+        <ng-container *ngIf="selectedSchemaDatabaseName">
+          <div class="card" *ngIf="selectedTableView as view">
           <div class="card-header">
             <div>
               <div class="card-title">{{ view.label || view.tableName }}</div>
@@ -3667,9 +3692,10 @@
             </div>
           </div>
         </div>
-      </div>
+      </ng-container>
     </div>
   </div>
+</div>
 </div>
 
 <div

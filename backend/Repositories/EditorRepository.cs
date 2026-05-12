@@ -57,10 +57,13 @@ namespace DocApi.Repositories
         private IDbConnection ConfigConnection() => _configFactory.CreateConnection();
 
         /// <summary>
-        /// Connexion vers la DB métier du tenant courant.
-        /// Lance InvalidOperationException si aucun tenant n'est résolu.
+        /// Connexion vers la DB métier du tenant courant ou une DB spécifique.
+        /// Lance InvalidOperationException si aucun tenant n'est résolu et databaseName est nul.
         /// </summary>
-        private IDbConnection TenantConnection() => _tenantFactory.CreateConnection();
+        private IDbConnection TenantConnection(string? databaseName = null)
+            => string.IsNullOrEmpty(databaseName)
+                ? _tenantFactory.CreateConnection()
+                : _tenantFactory.CreateConnection(databaseName);
 
         // ─── Schema bootstrap (ConfigDB) ─────────────────────────────────────────
 
@@ -472,9 +475,9 @@ namespace DocApi.Repositories
 
         // ─── LoadSchema (TenantDB) ────────────────────────────────────────────────
 
-        public async Task<DatabaseSchemaResponse> LoadSchemaAsync()
+        public async Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null)
         {
-            using var connection = TenantConnection();
+            using var connection = TenantConnection(databaseName);
             var tables = await connection.QueryAsync<DatabaseTableInfo>("""
                 SELECT t.TABLE_NAME AS name, ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS comment
                 FROM INFORMATION_SCHEMA.TABLES t
@@ -563,7 +566,7 @@ namespace DocApi.Repositories
 
         // ─── RunSelectQuery (TenantDB — données métier) ──────────────────────────
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters)
+        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters, string? databaseName = null)
         {
             var cleaned = NormalizeSelectQueryForSqlServer((sql ?? string.Empty).Trim().TrimEnd(';'));
             if (!IsSelectQuery(cleaned))
@@ -575,7 +578,7 @@ namespace DocApi.Repositories
             if (!parameters.ContainsKey("organizationId")) parameters["organizationId"] = null;
             cleaned = CompileNamedParameters(cleaned, parameters, dynamicParameters);
 
-            using var connection = TenantConnection();
+            using var connection = TenantConnection(databaseName);
             return (await connection.QueryAsync(cleaned, dynamicParameters))
                 .Select(row => (IDictionary<string, object?>)CleanRow(row))
                 .ToArray();
@@ -583,14 +586,14 @@ namespace DocApi.Repositories
 
         // ─── GetTableViewRows (TenantDB — données métier) ────────────────────────
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config, string? databaseName = null)
         {
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return [];
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName, databaseName)) return [];
 
-            var columns = await GetTenantColumnsAsync(tableView.TableName);
-            var pk = await GetRowKeyAsync(tableView.TableName, columns, useTenant: true);
+            var columns = await GetTenantColumnsAsync(tableView.TableName, databaseName);
+            var pk = await GetRowKeyAsync(tableView.TableName, columns, useTenant: true, databaseName: databaseName);
             var allowed = columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var previewFields = tableView.PreviewFields.Where(allowed.Contains).ToArray();
             var selectFields = new[] { pk }
@@ -611,21 +614,21 @@ namespace DocApi.Repositories
                 where = "WHERE " + string.Join(" OR ", previewFields.Select(field => $"CONVERT(NVARCHAR(MAX), {Quote(field)}) LIKE @search"));
             }
 
-            using var connection = TenantConnection();
+            using var connection = TenantConnection(databaseName);
             var rows = await connection.QueryAsync(
                 $"SELECT TOP (@limit) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} {where} ORDER BY {Quote(pk)} DESC",
                 parameters);
             return rows.Select(row => (IDictionary<string, object?>)CleanRow(row)).ToArray();
         }
 
-        public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId)
+        public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null)
         {
             var tableView = await ResolveTableViewAsync(configId, null)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return null;
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName, databaseName)) return null;
 
-            var columns = await GetTenantColumnsAsync(tableView.TableName);
-            var pk = await GetRowKeyAsync(tableView.TableName, columns, useTenant: true);
+            var columns = await GetTenantColumnsAsync(tableView.TableName, databaseName);
+            var pk = await GetRowKeyAsync(tableView.TableName, columns, useTenant: true, databaseName: databaseName);
             var allowed = columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var selectFields = new[] { pk }
                 .Concat(tableView.VisibleFields)
@@ -635,21 +638,21 @@ namespace DocApi.Repositories
                 .ToArray();
             if (selectFields.Length == 0) return null;
 
-            using var connection = TenantConnection();
+            using var connection = TenantConnection(databaseName);
             var row = await connection.QueryFirstOrDefaultAsync(
                 $"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId",
                 new { rowId = NormalizeParameterValue(rowId) });
             return row is null ? null : CleanRow(row);
         }
 
-        public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values)
+        public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values, string? databaseName = null)
         {
             var tableView = await ResolveTableViewAsync(configId, null)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return null;
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName, databaseName)) return null;
 
             var editable = tableView.EditableFields.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var tableColumns = await GetTenantColumnsAsync(tableView.TableName);
+            var tableColumns = await GetTenantColumnsAsync(tableView.TableName, databaseName);
             var columns = tableColumns.Where(column => editable.Contains(column.Name) && values.ContainsKey(column.Name)).ToArray();
             var normalizedRowId = NormalizeParameterValue(rowId);
             if (columns.Length > 0)
@@ -661,25 +664,25 @@ namespace DocApi.Repositories
                     var raw = values.TryGetValue(column.Name, out var v) ? v : null;
                     parameters.Add(column.Name, NormalizeParameterValue(raw));
                 }
-                using var connection = TenantConnection();
-                var pk = await GetRowKeyAsync(tableView.TableName, tableColumns, useTenant: true);
+                using var connection = TenantConnection(databaseName);
+                var pk = await GetRowKeyAsync(tableView.TableName, tableColumns, useTenant: true, databaseName: databaseName);
                 await connection.ExecuteAsync(
                     $"UPDATE {Quote(tableView.TableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {Quote(pk)} = @rowId",
                     parameters);
             }
-            return await GetTableViewRecordAsync(configId, normalizedRowId?.ToString());
+            return await GetTableViewRecordAsync(configId, normalizedRowId?.ToString(), databaseName);
         }
 
-        public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config)
+        public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config, string? databaseName = null)
         {
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return null;
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName, databaseName)) return null;
 
             var editable = tableView.EditableFields.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var tableColumns = await GetTenantColumnsAsync(tableView.TableName);
+            var tableColumns = await GetTenantColumnsAsync(tableView.TableName, databaseName);
             var columns = tableColumns.Where(column => editable.Contains(column.Name) && !column.IsIdentity && values.ContainsKey(column.Name)).ToArray();
-            var pk = await GetRowKeyAsync(tableView.TableName, tableColumns, useTenant: true);
+            var pk = await GetRowKeyAsync(tableView.TableName, tableColumns, useTenant: true, databaseName: databaseName);
             var parameters = new DynamicParameters();
             var normalizedValues = new Dictionary<string, object?>();
             foreach (var column in columns)
@@ -695,25 +698,25 @@ namespace DocApi.Repositories
 
             try { _logger.LogDebug("CreateTableViewRecord SQL: {Sql}", insertSql); } catch { }
 
-            using var connection = TenantConnection();
+            using var connection = TenantConnection(databaseName);
             var insertedId = await connection.ExecuteScalarAsync<object>(insertSql, parameters);
-            return await GetTableViewRecordAsync(tableView.Id, insertedId?.ToString());
+            return await GetTableViewRecordAsync(tableView.Id, insertedId?.ToString(), databaseName);
         }
 
-        public async Task DeleteTableViewRecordAsync(string? configId, string? rowId)
+        public async Task DeleteTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null)
         {
             var tableView = await ResolveTableViewAsync(configId, null)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return;
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName, databaseName)) return;
 
-            var pk = await GetRowKeyAsync(tableView.TableName, await GetTenantColumnsAsync(tableView.TableName), useTenant: true);
-            using var connection = TenantConnection();
+            var pk = await GetRowKeyAsync(tableView.TableName, await GetTenantColumnsAsync(tableView.TableName, databaseName), useTenant: true, databaseName: databaseName);
+            using var connection = TenantConnection(databaseName);
             await connection.ExecuteAsync(
                 $"DELETE FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId",
                 new { rowId = NormalizeParameterValue(rowId) });
         }
 
-        public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config)
+        public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config, string? databaseName = null)
         {
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -726,13 +729,13 @@ namespace DocApi.Repositories
             var labelColumn = field.LookupLabelColumn;
             var labelColumn2 = field.LookupLabelColumn2;
             if (string.IsNullOrWhiteSpace(table) || string.IsNullOrWhiteSpace(valueColumn) || string.IsNullOrWhiteSpace(labelColumn)) return [];
-            if (!await TenantTableExistsAsync(table)) return [];
+            if (!await TenantTableExistsAsync(table, databaseName)) return [];
 
-            var lookupColumns = (await GetTenantColumnsAsync(table)).Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var lookupColumns = (await GetTenantColumnsAsync(table, databaseName)).Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             if (!lookupColumns.Contains(valueColumn) || !lookupColumns.Contains(labelColumn)) return [];
             if (!string.IsNullOrWhiteSpace(labelColumn2) && !lookupColumns.Contains(labelColumn2)) return [];
 
-            using var connection = TenantConnection();
+            using var connection = TenantConnection(databaseName);
             var labelExpr = string.IsNullOrWhiteSpace(labelColumn2)
                 ? $"CONVERT(NVARCHAR(4000), {Quote(labelColumn)})"
                 : $"LTRIM(RTRIM(CONCAT(CONVERT(NVARCHAR(4000), {Quote(labelColumn)}), ' ', CONVERT(NVARCHAR(4000), {Quote(labelColumn2)}))))";
@@ -767,18 +770,18 @@ namespace DocApi.Repositories
 
         // ─── Private helpers : TenantDB introspection ────────────────────────────
 
-        private async Task<bool> TenantTableExistsAsync(string tableName)
+        private async Task<bool> TenantTableExistsAsync(string tableName, string? databaseName = null)
         {
-            using var connection = TenantConnection();
+            using var connection = TenantConnection(databaseName);
             var count = await connection.ExecuteScalarAsync<int>(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = @tableName AND TABLE_TYPE = 'BASE TABLE'",
                 new { tableName });
             return count > 0;
         }
 
-        private async Task<ColumnInfo[]> GetTenantColumnsAsync(string tableName)
+        private async Task<ColumnInfo[]> GetTenantColumnsAsync(string tableName, string? databaseName = null)
         {
-            using var connection = TenantConnection();
+            using var connection = TenantConnection(databaseName);
             var rows = await connection.QueryAsync<ColumnInfo>("""
                 SELECT c.COLUMN_NAME AS Name, c.DATA_TYPE AS Type,
                        CASE WHEN c.IS_NULLABLE = 'YES' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS Nullable,
@@ -790,9 +793,9 @@ namespace DocApi.Repositories
             return rows.ToArray();
         }
 
-        private async Task<string> GetPrimaryKeyAsync(string tableName, bool useTenant)
+        private async Task<string> GetPrimaryKeyAsync(string tableName, bool useTenant, string? databaseName = null)
         {
-            IDbConnection Conn() => useTenant ? TenantConnection() : ConfigConnection();
+            IDbConnection Conn() => useTenant ? TenantConnection(databaseName) : ConfigConnection();
             using var connection = Conn();
             return await connection.ExecuteScalarAsync<string?>("""
                 SELECT TOP (1) kcu.COLUMN_NAME
@@ -803,9 +806,9 @@ namespace DocApi.Repositories
                 """, new { tableName }) ?? "id";
         }
 
-        private async Task<string> GetRowKeyAsync(string tableName, IReadOnlyCollection<ColumnInfo> columns, bool useTenant = false)
+        private async Task<string> GetRowKeyAsync(string tableName, IReadOnlyCollection<ColumnInfo> columns, bool useTenant = false, string? databaseName = null)
         {
-            var primaryKey = await GetPrimaryKeyAsync(tableName, useTenant);
+            var primaryKey = await GetPrimaryKeyAsync(tableName, useTenant, databaseName);
             if (!string.IsNullOrWhiteSpace(primaryKey) && columns.Any(c => string.Equals(c.Name, primaryKey, StringComparison.OrdinalIgnoreCase)))
                 return primaryKey;
             return columns.FirstOrDefault(c => string.Equals(c.Name, "id", StringComparison.OrdinalIgnoreCase))?.Name

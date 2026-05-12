@@ -131,6 +131,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   private tableViewLookupOptionsCache: Record<string, any[]> = {};
   private tableViewDebugLogKeys = new Set<string>();
   private schemaMetaCache: any = null;
+  selectedSchemaOrganizationId: string | null = null;
+  selectedSchemaDatabaseName: string | null = null;
   private schemaBuilderState: Record<string, any> = {};
   // ── Angular state — schema preview box ──
   schemaPreviewText =
@@ -1412,9 +1414,25 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.toast("Famille supprimée", "success");
   }
 
+  onSchemaOrganizationChange(event: any): void {
+    const orgId = event?.target?.value;
+    const org = this.organizations.find((o) => String(o.id) === String(orgId));
+    this.selectedSchemaOrganizationId = orgId || null;
+    this.selectedSchemaDatabaseName = org?.databaseName || null;
+    this.schemaMetaCache = null; // Force reload
+    this.tableViewSchemaCache = null;
+    this.cdr.markForCheck();
+  }
+
   private async ensureSchemaMeta(): Promise<any> {
     if (this.schemaMetaCache) return this.schemaMetaCache;
-    const payload = await firstValueFrom(this.api.get<any>("schema"));
+    if (!this.selectedSchemaDatabaseName) {
+      return null;
+    }
+    const url = `schema?databaseName=${encodeURIComponent(
+      this.selectedSchemaDatabaseName,
+    )}`;
+    const payload = await firstValueFrom(this.api.get<any>(url));
     this.schemaMetaCache = payload?.schema || payload;
     return this.schemaMetaCache;
   }
@@ -2544,14 +2562,12 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     ).filter((column: any) => !selected.has(column.name));
   }
 
-  private async runSelect(
-    sql: string,
-    params: Record<string, any>,
-  ): Promise<any[]> {
+  private async runSelect(sql: string, params: Record<string, any>): Promise<any[]> {
     const payload = await firstValueFrom(
       this.api.post<any>("query", {
         sql,
         params,
+        databaseName: this.selectedSchemaDatabaseName,
       }),
     );
     return payload?.rows || [];
@@ -5138,6 +5154,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         configId: item.id,
         fieldName,
         config: item,
+        databaseName: this.selectedSchemaDatabaseName,
       }),
     );
     this.tableViewLookupOptionsCache[key] = options || [];
@@ -5365,6 +5382,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
           config: item,
           search: String(this.tableViewSearch || "").trim(),
           limit: 200,
+          databaseName: this.selectedSchemaDatabaseName,
         }),
       );
       this.tableViewRowsCache = response?.rows || [];
@@ -5455,6 +5473,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
             configId: item.id,
             values,
             config: item,
+            databaseName: this.selectedSchemaDatabaseName,
           }),
         );
         this.selectedTableViewRecord = created as any;
@@ -5472,6 +5491,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
             configId: item.id,
             rowId: updateRowId,
             values,
+            databaseName: this.selectedSchemaDatabaseName,
           }),
         );
         this.selectedTableViewRecord = updated as any;
@@ -5544,6 +5564,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         this.tableViewService.deleteRecord({
           configId: item.id,
           rowId: this.selectedTableViewRowId as string,
+          databaseName: this.selectedSchemaDatabaseName,
         }),
       );
       this.selectedTableViewRowId = null;

@@ -25,6 +25,16 @@ namespace DocApi.Infrastructure.ConnectionFactories
                 throw new InvalidOperationException("Tenant DatabaseName was not determined. Cannot establish a tenant-specific connection.");
             }
 
+            return CreateConnection(databaseName);
+        }
+
+        public IDbConnection CreateConnection(string databaseName)
+        {
+            if (string.IsNullOrEmpty(databaseName))
+            {
+                throw new ArgumentException("Database name cannot be null or empty.", nameof(databaseName));
+            }
+
             var connectionStringBuilder = new SqlConnectionStringBuilder(_baseConnectionString)
             {
                 InitialCatalog = databaseName

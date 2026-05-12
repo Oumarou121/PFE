@@ -15,5 +15,6 @@ namespace DocApi.Infrastructure
     public interface ITenantConnectionFactory
     {
         IDbConnection CreateConnection();
+        IDbConnection CreateConnection(string databaseName);
     }
 }

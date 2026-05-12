@@ -69,9 +69,9 @@ namespace DocApi.Controllers
         }
 
         [HttpGet("schema")]
-        public async Task<ActionResult> Schema()
+        public async Task<ActionResult> Schema([FromQuery] string? databaseName = null)      
         {
-            return Ok(new EditorApiResponse(true, Schema: await _service.LoadSchemaAsync()));
+            return Ok(new EditorApiResponse(true, Schema: await _service.LoadSchemaAsync(SanitizeDatabaseName(databaseName))));
         }
 
         [HttpGet("organizations")]
@@ -111,10 +111,10 @@ namespace DocApi.Controllers
 
             if (string.IsNullOrWhiteSpace(request.Sql))
             {
-                return BadRequest(new EditorApiResponse(false, Error: "sql is required"));
+                return BadRequest(new EditorApiResponse(false, Error: "sql is required"));   
             }
 
-            var rows = await _service.RunSelectQueryAsync(request.Sql, request.Params);
+            var rows = await _service.RunSelectQueryAsync(request.Sql, request.Params, SanitizeDatabaseName(request.DatabaseName));
             return Ok(new EditorApiResponse(true, Rows: rows));
         }
 
@@ -174,7 +174,7 @@ namespace DocApi.Controllers
                         beneficiarySql = $"SELECT TOP ({request.Limit}) {linkColumn} AS id, {labelExpr} AS libelle FROM {tableName}";
                     }
 
-                    rows = (await _service.RunSelectQueryAsync(beneficiarySql ?? string.Empty, parameters)).ToArray();
+                    rows = (await _service.RunSelectQueryAsync(beneficiarySql ?? string.Empty, parameters, SanitizeDatabaseName(request.DatabaseName))).ToArray();
                 }
 
                 return Ok(new EditorApiResponse(true, Rows: rows));
@@ -202,7 +202,7 @@ namespace DocApi.Controllers
                     if (Regex.IsMatch(request.BeneficiaryTable, "^[A-Za-z0-9_]+$"))
                     {
                         var sql = $"SELECT TOP (1) * FROM {request.BeneficiaryTable} WHERE id = @id";
-                        var rows = (await _service.RunSelectQueryAsync(sql, new Dictionary<string, object?> { ["id"] = request.BeneficiaryId })).ToArray();
+                        var rows = (await _service.RunSelectQueryAsync(sql, new Dictionary<string, object?> { ["id"] = request.BeneficiaryId }, SanitizeDatabaseName(request.DatabaseName))).ToArray();
                         if (rows.Length > 0)
                         {
                             foreach (var (key, value) in rows[0])
@@ -238,30 +238,35 @@ namespace DocApi.Controllers
         [HttpPost("table-view/rows")]
         public async Task<ActionResult> TableViewRows([FromBody] TableViewRowsRequest request)
         {
+            request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
             return Ok(new EditorApiResponse(true, Rows: await _service.GetTableViewRowsAsync(request)));
         }
 
         [HttpPost("table-view/record")]
         public async Task<ActionResult> TableViewRecord([FromBody] TableViewRecordRequest request)
         {
+            request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
             return Ok(new EditorApiResponse(true, Record: await _service.GetTableViewRecordAsync(request)));
         }
 
         [HttpPut("table-view/record")]
         public async Task<ActionResult> UpdateTableViewRecord([FromBody] TableViewRecordRequest request)
         {
+            request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
             return Ok(new EditorApiResponse(true, Record: await _service.UpdateTableViewRecordAsync(request)));
         }
 
         [HttpPost("table-view/record/create")]
         public async Task<ActionResult> CreateTableViewRecord([FromBody] TableViewRecordRequest request)
         {
+            request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
             return Ok(new EditorApiResponse(true, Record: await _service.CreateTableViewRecordAsync(request)));
         }
 
         [HttpDelete("table-view/record")]
         public async Task<ActionResult> DeleteTableViewRecord([FromBody] TableViewRecordRequest request)
         {
+            request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
             await _service.DeleteTableViewRecordAsync(request);
             return Ok(new EditorApiResponse(true));
         }
@@ -269,6 +274,7 @@ namespace DocApi.Controllers
         [HttpPost("table-view/lookup-options")]
         public async Task<ActionResult> LookupOptions([FromBody] TableViewLookupRequest request)
         {
+            request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
             return Ok(new EditorApiResponse(true, Options: await _service.GetLookupOptionsAsync(request)));
         }
 
@@ -286,8 +292,14 @@ namespace DocApi.Controllers
             return Ok(new EditorApiResponse(true));
         }
 
-        private AuthUserResponse? CurrentUser()
+        private string? SanitizeDatabaseName(string? databaseName)
         {
+            if (string.IsNullOrEmpty(databaseName)) return null;
+            var user = CurrentUser();
+            return user?.Role == "supAdmin" ? databaseName : null;
+        }
+
+        private AuthUserResponse? CurrentUser()        {
             if (User.Identity?.IsAuthenticated != true) return null;
             return new AuthUserResponse
             {

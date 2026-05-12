@@ -44,62 +44,63 @@ export class TableViewService {
     return from(this.deleteTableView(id));
   }
 
-  async getTableViewRows(configId: string, options: TableViewRowsOptions = {}): Promise<UnknownRecord[]> {
+  async getTableViewRows(configId: string, options: TableViewRowsOptions = {}, databaseName?: string | null): Promise<UnknownRecord[]> {
     const payload = await firstValueFrom(
       this.api.post<TableViewRowsResponse>('table-view/rows', {
         configId,
         config: options.config || null,
         search: String(options.search || '').trim(),
-        limit: Number(options.limit) || 200
+        limit: Number(options.limit) || 200,
+        databaseName
       })
     );
     return payload.rows || [];
   }
 
-  getRows(options: TableViewRowsOptions & { configId: string }): Observable<TableViewRowsResponse> {
+  getRows(options: TableViewRowsOptions & { configId: string; databaseName?: string | null }): Observable<TableViewRowsResponse> {
     return from(
-      this.getTableViewRows(options.configId, options).then(rows => ({ rows }))
+      this.getTableViewRows(options.configId, options, options.databaseName).then(rows => ({ rows }))
     );
   }
 
-  async getTableViewRecord(configId: string, rowId: string): Promise<UnknownRecord | null> {
-    const payload = await firstValueFrom(this.api.post<TableViewRecordResponse>('table-view/record', { configId, rowId }));
+  async getTableViewRecord(configId: string, rowId: string, databaseName?: string | null): Promise<UnknownRecord | null> {
+    const payload = await firstValueFrom(this.api.post<TableViewRecordResponse>('table-view/record', { configId, rowId, databaseName }));
     return payload.record || null;
   }
 
-  async saveTableViewRecord(configId: string, rowId: string, values: UnknownRecord = {}): Promise<UnknownRecord | null> {
-    const payload = await firstValueFrom(this.api.put<TableViewRecordResponse>('table-view/record', { configId, rowId, values }));
+  async saveTableViewRecord(configId: string, rowId: string, values: UnknownRecord = {}, databaseName?: string | null): Promise<UnknownRecord | null> {
+    const payload = await firstValueFrom(this.api.put<TableViewRecordResponse>('table-view/record', { configId, rowId, values, databaseName }));
     return payload.record || null;
   }
 
-  updateRecord(options: { configId: string; rowId: string; values?: UnknownRecord }): Observable<UnknownRecord | null> {
-    return from(this.saveTableViewRecord(options.configId, options.rowId, options.values || {}));
+  updateRecord(options: { configId: string; rowId: string; values?: UnknownRecord; databaseName?: string | null }): Observable<UnknownRecord | null> {
+    return from(this.saveTableViewRecord(options.configId, options.rowId, options.values || {}, options.databaseName));
   }
 
-  async createTableViewRecord(configId: string, values: UnknownRecord = {}, config: TableViewConfig | null = null): Promise<UnknownRecord | null> {
-    const payload = await firstValueFrom(this.api.post<TableViewRecordResponse>('table-view/record/create', { configId, values, config }));
+  async createTableViewRecord(configId: string, values: UnknownRecord = {}, config: TableViewConfig | null = null, databaseName?: string | null): Promise<UnknownRecord | null> {
+    const payload = await firstValueFrom(this.api.post<TableViewRecordResponse>('table-view/record/create', { configId, values, config, databaseName }));
     return payload.record || null;
   }
 
-  createRecord(options: { configId: string; values?: UnknownRecord; config?: TableViewConfig | null }): Observable<UnknownRecord | null> {
-    return from(this.createTableViewRecord(options.configId, options.values || {}, options.config || null));
+  createRecord(options: { configId: string; values?: UnknownRecord; config?: TableViewConfig | null; databaseName?: string | null }): Observable<UnknownRecord | null> {
+    return from(this.createTableViewRecord(options.configId, options.values || {}, options.config || null, options.databaseName));
   }
 
-  async deleteTableViewRecord(configId: string, rowId: string): Promise<boolean> {
-    const payload = await firstValueFrom(this.api.deleteWithBody<TableViewRecordResponse>('table-view/record', { configId, rowId }));
+  async deleteTableViewRecord(configId: string, rowId: string, databaseName?: string | null): Promise<boolean> {
+    const payload = await firstValueFrom(this.api.deleteWithBody<TableViewRecordResponse>('table-view/record', { configId, rowId, databaseName }));
     return payload.ok === true;
   }
 
-  deleteRecord(options: { configId: string; rowId: string }): Observable<boolean> {
-    return from(this.deleteTableViewRecord(options.configId, options.rowId));
+  deleteRecord(options: { configId: string; rowId: string; databaseName?: string | null }): Observable<boolean> {
+    return from(this.deleteTableViewRecord(options.configId, options.rowId, options.databaseName));
   }
 
-  async getTableViewLookupOptions(configId: string, fieldName: string, config: TableViewConfig | null = null): Promise<Array<{ value: string; label: string }>> {
-    const payload = await firstValueFrom(this.api.post<TableViewLookupResponse>('table-view/lookup-options', { configId, fieldName, config }));
+  async getTableViewLookupOptions(configId: string, fieldName: string, config: TableViewConfig | null = null, databaseName?: string | null): Promise<Array<{ value: string; label: string }>> {
+    const payload = await firstValueFrom(this.api.post<TableViewLookupResponse>('table-view/lookup-options', { configId, fieldName, config, databaseName }));
     return payload.options || [];
   }
 
-  getLookupOptions(options: { configId: string; fieldName: string; config?: TableViewConfig | null }): Observable<Array<{ value: string; label: string }>> {
-    return from(this.getTableViewLookupOptions(options.configId, options.fieldName, options.config || null));
+  getLookupOptions(options: { configId: string; fieldName: string; config?: TableViewConfig | null; databaseName?: string | null }): Observable<Array<{ value: string; label: string }>> {
+    return from(this.getTableViewLookupOptions(options.configId, options.fieldName, options.config || null, options.databaseName));
   }
 }

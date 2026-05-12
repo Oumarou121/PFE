@@ -151,10 +151,10 @@ namespace DocApi.Services
             };
         }
 
-        public async Task<DatabaseSchemaResponse> LoadSchemaAsync()
+        public async Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.LoadSchemaAsync();
+            return await _repository.LoadSchemaAsync(databaseName);
         }
 
         public async Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser)
@@ -163,46 +163,46 @@ namespace DocApi.Services
             await _repository.ReplaceStateAsync(state, currentUser?.OrganizationId, currentUser?.Role == "supAdmin");
         }
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters)
+        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters, string? databaseName = null)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.RunSelectQueryAsync(sql ?? string.Empty, parameters ?? []);
+            return await _repository.RunSelectQueryAsync(sql ?? string.Empty, parameters ?? [], databaseName);
         }
 
         public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Limit, request.Search, request.Config);
+            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Limit, request.Search, request.Config, request.DatabaseName);
         }
 
         public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.GetTableViewRecordAsync(request.ConfigId, request.RowId);
+            return await _repository.GetTableViewRecordAsync(request.ConfigId, request.RowId, request.DatabaseName);
         }
 
         public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(TableViewRecordRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.UpdateTableViewRecordAsync(request.ConfigId, request.RowId, request.Values);
+            return await _repository.UpdateTableViewRecordAsync(request.ConfigId, request.RowId, request.Values, request.DatabaseName);
         }
 
         public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(TableViewRecordRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.CreateTableViewRecordAsync(request.ConfigId, request.Values, request.Config);
+            return await _repository.CreateTableViewRecordAsync(request.ConfigId, request.Values, request.Config, request.DatabaseName);
         }
 
         public async Task DeleteTableViewRecordAsync(TableViewRecordRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            await _repository.DeleteTableViewRecordAsync(request.ConfigId, request.RowId);
+            await _repository.DeleteTableViewRecordAsync(request.ConfigId, request.RowId, request.DatabaseName);
         }
 
         public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(TableViewLookupRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.GetLookupOptionsAsync(request.ConfigId, request.FieldName, request.Config);
+            return await _repository.GetLookupOptionsAsync(request.ConfigId, request.FieldName, request.Config, request.DatabaseName);
         }
 
         public async Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request)

@@ -37,6 +37,8 @@ namespace DocApi.DTOs
         public string Sql { get; set; } = string.Empty;
 
         public Dictionary<string, object?> Params { get; set; } = [];
+
+        public string? DatabaseName { get; set; }
     }
 
     public class SearchBeneficiariesRequest
@@ -54,6 +56,8 @@ namespace DocApi.DTOs
 
         [Range(1, 500)]
         public int Limit { get; set; } = 200;
+
+        public string? DatabaseName { get; set; }
     }
 
     public class TableViewRowsRequest
@@ -68,6 +72,8 @@ namespace DocApi.DTOs
         public string? Search { get; set; }
 
         public TableViewConfigRequest? Config { get; set; }
+
+        public string? DatabaseName { get; set; }
     }
 
     public class TableViewRecordRequest
@@ -80,6 +86,8 @@ namespace DocApi.DTOs
         public Dictionary<string, object?> Values { get; set; } = [];
 
         public TableViewConfigRequest? Config { get; set; }
+
+        public string? DatabaseName { get; set; }
     }
 
     public class TableViewLookupRequest
@@ -91,6 +99,8 @@ namespace DocApi.DTOs
         public string? FieldName { get; set; }
 
         public TableViewConfigRequest? Config { get; set; }
+
+        public string? DatabaseName { get; set; }
     }
 
     public class TableViewConfigEnvelopeRequest
@@ -114,6 +124,8 @@ namespace DocApi.DTOs
         public int? OrganizationId { get; set; }
 
         public Dictionary<string, object?> Filters { get; set; } = [];
+
+        public string? DatabaseName { get; set; }
     }
 
     public class FamilyRequest

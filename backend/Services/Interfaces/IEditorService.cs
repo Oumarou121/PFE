@@ -23,9 +23,9 @@ namespace DocApi.Services.Interfaces
         Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request);
         Task DeleteTableViewConfigAsync(string? id);
         Task<EditorStateResponse> LoadStateAsync(AuthUserResponse? currentUser);
-        Task<DatabaseSchemaResponse> LoadSchemaAsync();
+        Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null);
         Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser);
-        Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters);
+        Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters, string? databaseName = null);
         Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request);
         Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request);
         Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(TableViewRecordRequest request);
