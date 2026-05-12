@@ -106,9 +106,13 @@ BEGIN
     field_labels_json   NVARCHAR(MAX) NOT NULL DEFAULT '{}',
     field_settings_json NVARCHAR(MAX) NOT NULL DEFAULT '{}',
     created_at          NVARCHAR(64)  NULL,
-    updated_at          NVARCHAR(64)  NULL
+    updated_at          NVARCHAR(64)  NULL,
+    organization_ids_json NVARCHAR(MAX) NULL DEFAULT '[]'
   );
 END;
+
+IF COL_LENGTH('table_view_config', 'organization_ids_json') IS NULL
+  ALTER TABLE [table_view_config] ADD organization_ids_json NVARCHAR(MAX) NULL DEFAULT '[]';
 
 IF COL_LENGTH('table_view_config', 'field_settings_json') IS NULL
   ALTER TABLE [table_view_config] ADD field_settings_json NVARCHAR(MAX) NOT NULL DEFAULT '{}';

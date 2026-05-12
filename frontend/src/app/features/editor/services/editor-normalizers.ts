@@ -437,6 +437,9 @@ export function normalizeFamilyRecord(record: unknown = {}): FamilyRecord {
   next["beneficiarySql"] = String(
     next["beneficiarySql"] || next["beneficiarySqlText"] || "",
   ).trim();
+  next["organizationIds"] = Array.isArray(next["organizationIds"])
+    ? next["organizationIds"].map((id: any) => Number(id))
+    : [];
   next["filterCatalog"] = normalizeFilterCatalog(
     next["filterCatalog"] || next["filterCatalogJson"] || [],
   );

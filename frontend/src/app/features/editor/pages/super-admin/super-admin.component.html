@@ -720,7 +720,23 @@
                   "
                 />
               </div>
-            </div>
+              <div class="form-row" style="margin: 0; grid-column: span 3;">
+                <label class="form-label">Organisations ayant accès</label>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-light); max-height: 150px; overflow-y: auto;">
+                  <div *ngFor="let org of organizations" style="display: flex; align-items: center; gap: 6px; background: white; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
+                    <input 
+                      type="checkbox" 
+                      [id]="'fam-org-' + org.id"
+                      style="cursor: pointer"
+                      [checked]="isFamilyOrganizationSelected(fam.id, org.id)"
+                      (change)="toggleFamilyOrganization(fam.id, org.id)"
+                    >
+                    <label [for]="'fam-org-' + org.id" style="cursor: pointer; margin: 0;">{{ org.nom || org.name }}</label>
+                  </div>
+                </div>
+              </div>
+              </div>
+
             <div class="form-grid c3" style="margin-top: 14px">
               <div class="form-row" style="margin: 0">
                 <label class="form-label">Cible du document</label>
@@ -3163,6 +3179,21 @@
                     {{ table.comment || table.name }} ({{ table.name }})
                   </option>
                 </select>
+              </div>
+              <div class="form-row" style="margin: 0; grid-column: span 2;">
+                <label class="form-label">Organisations ayant accès</label>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-light); max-height: 150px; overflow-y: auto;">
+                  <div *ngFor="let org of organizations" style="display: flex; align-items: center; gap: 6px; background: white; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
+                    <input 
+                      type="checkbox" 
+                      [id]="'tv-org-' + org.id"
+                      style="cursor: pointer"
+                      [checked]="isTableViewOrganizationSelected(view.id, org.id)"
+                      (change)="toggleTableViewOrganization(view.id, org.id)"
+                    >
+                    <label [for]="'tv-org-' + org.id" style="cursor: pointer; margin: 0;">{{ org.nom || org.name }}</label>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="form-grid c3" style="margin-top: 16px">

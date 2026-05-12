@@ -1285,6 +1285,40 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return this.families.find((f: any) => f.id === id) || null;
   }
 
+  isFamilyOrganizationSelected(famId: string, orgId: number): boolean {
+    const fam = this.getFamily(famId);
+    return (fam?.organizationIds || []).includes(orgId);
+  }
+
+  toggleFamilyOrganization(famId: string, orgId: number): void {
+    const fam = this.getFamily(famId);
+    if (!fam) return;
+    const current = fam.organizationIds || [];
+    if (current.includes(orgId)) {
+      fam.organizationIds = current.filter((id: number) => id !== orgId);
+    } else {
+      fam.organizationIds = [...current, orgId];
+    }
+    this.saveFamilyLocal(fam);
+  }
+
+  isTableViewOrganizationSelected(viewId: string, orgId: number): boolean {
+    const view = this.tableViews.find((v) => v.id === viewId);
+    return (view?.organizationIds || []).includes(orgId);
+  }
+
+  toggleTableViewOrganization(viewId: string, orgId: number): void {
+    const view = this.tableViews.find((v) => v.id === viewId);
+    if (!view) return;
+    const current = view.organizationIds || [];
+    if (current.includes(orgId)) {
+      view.organizationIds = current.filter((id: number) => id !== orgId);
+    } else {
+      view.organizationIds = [...current, orgId];
+    }
+    this.saveTableViewLocal(view);
+  }
+
   private saveFamilyLocal(fam: any): void {
     const normalized = normalizeFamilyRecord(fam as any);
     const state = this.editorState.getState();

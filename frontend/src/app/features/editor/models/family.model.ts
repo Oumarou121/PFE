@@ -30,6 +30,7 @@ export interface FamilyRecord extends UnknownRecord {
   id: string;
   nom?: string;
   name?: string;
+  organizationIds?: number[];
   beneficiaryMode: 'organization' | 'table';
   beneficiaryTable: string | null;
   beneficiaryTableLabel: string;

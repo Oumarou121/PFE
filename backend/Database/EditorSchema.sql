@@ -14,8 +14,14 @@ CREATE TABLE [family] (
   filter_catalog_json NVARCHAR(MAX) NULL,
   sql_text NVARCHAR(MAX) NULL,
   created_at NVARCHAR(64) NULL,
-  classes_json NVARCHAR(MAX) NOT NULL
+  classes_json NVARCHAR(MAX) NOT NULL,
+  organization_ids_json NVARCHAR(MAX) NULL
 );
+END;
+
+IF COL_LENGTH('family', 'organization_ids_json') IS NULL
+BEGIN
+  ALTER TABLE [family] ADD organization_ids_json NVARCHAR(MAX) NULL;
 END;
 
 IF COL_LENGTH('family', 'filter_catalog_json') IS NULL

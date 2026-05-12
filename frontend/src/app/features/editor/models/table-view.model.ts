@@ -12,6 +12,7 @@ export interface TableViewConfig extends UnknownRecord {
   id: string;
   tableName: string;
   label: string;
+  organizationIds?: number[];
   visibleFields: string[];
   editableFields: string[];
   previewFields: string[];

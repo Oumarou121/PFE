@@ -89,6 +89,7 @@ namespace DocApi.Repositories
             var hasBeneficiaryDisplayColumn2 = await ConfigTableHasColumnAsync("family", "beneficiary_display_column_2");
             var hasBeneficiarySql = await ConfigTableHasColumnAsync("family", "beneficiary_sql_text");
             var hasFilterCatalog = await ConfigTableHasColumnAsync("family", "filter_catalog_json");
+            var hasOrganizationIds = await ConfigTableHasColumnAsync("family", "organization_ids_json");
             var sql = $"""
                 SELECT id, nom, description,
                        {(hasBeneficiaryMode ? "beneficiary_mode" : "'table'")} AS beneficiary_mode,
@@ -99,6 +100,7 @@ namespace DocApi.Repositories
                        {(hasBeneficiaryDisplayColumn2 ? "beneficiary_display_column_2" : "NULL")} AS beneficiary_display_column_2,
                        {(hasBeneficiarySql ? "beneficiary_sql_text" : "''")} AS beneficiary_sql_text,
                        {(hasFilterCatalog ? "filter_catalog_json" : "'[]'")} AS filter_catalog_json,
+                       {(hasOrganizationIds ? "organization_ids_json" : "'[]'")} AS organization_ids_json,
                        sql_text, created_at, classes_json
                 FROM family
                 ORDER BY nom
@@ -112,6 +114,7 @@ namespace DocApi.Repositories
                 return new FamilyResponse
                 {
                     Id = Str(item, "id") ?? string.Empty,
+                    OrganizationIds = JsonValue(item, "organization_ids_json", new List<int>()),
                     Nom = Str(item, "nom") ?? string.Empty,
                     Description = Str(item, "description"),
                     BeneficiaryMode = mode,
@@ -146,13 +149,14 @@ namespace DocApi.Repositories
                   beneficiary_display_column_1 = @beneficiary_display_column_1,
                   beneficiary_display_column_2 = @beneficiary_display_column_2,
                   beneficiary_sql_text = @beneficiary_sql_text, filter_catalog_json = @filter_catalog_json,
-                  sql_text = @sql_text, classes_json = @classes_json
-                WHEN NOT MATCHED THEN INSERT (id, nom, description, beneficiary_mode, beneficiary_table,
-                  beneficiary_table_label, beneficiary_link_column, beneficiary_display_column_1, beneficiary_display_column_2,
-                  beneficiary_sql_text, filter_catalog_json, sql_text, created_at, classes_json)
+                  sql_text = @sql_text, classes_json = @classes_json, organization_ids_json = @organization_ids_json
+                  WHEN NOT MATCHED THEN INSERT (id, nom, description, beneficiary_mode, beneficiary_table,
+                  beneficiary_table_label, beneficiary_link_column, beneficiary_display_column_1,
+                  beneficiary_display_column_2, beneficiary_sql_text, filter_catalog_json, sql_text, created_at, classes_json, organization_ids_json)
                   VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table,
-                  @beneficiary_table_label, @beneficiary_link_column, @beneficiary_display_column_1, @beneficiary_display_column_2,
-                  @beneficiary_sql_text, @filter_catalog_json, @sql_text, @created_at, @classes_json);
+                  @beneficiary_table_label, @beneficiary_link_column, @beneficiary_display_column_1,
+                  @beneficiary_display_column_2, @beneficiary_sql_text, @filter_catalog_json, @sql_text, @created_at, @classes_json, @organization_ids_json);
+
                 """, FamilyParams(family));
             return (await GetFamilyByIdAsync(family.Id))!;
         }
@@ -402,11 +406,13 @@ namespace DocApi.Repositories
             if (!await ConfigTableExistsAsync("table_view_config")) return [];
             var hasFieldSettings = await ConfigTableHasColumnAsync("table_view_config", "field_settings_json");
             var hasFieldLabels = await ConfigTableHasColumnAsync("table_view_config", "field_labels_json");
+            var hasOrganizationIds = await ConfigTableHasColumnAsync("table_view_config", "organization_ids_json");
             var sql = $"""
                 SELECT id, table_name, label, visible_fields_json, editable_fields_json,
                        preview_fields_json,
                        {(hasFieldLabels ? "field_labels_json" : "'{}'")} AS field_labels_json,
                        {(hasFieldSettings ? "field_settings_json" : "'{}'")} AS field_settings_json,
+                       {(hasOrganizationIds ? "organization_ids_json" : "'[]'")} AS organization_ids_json,
                        created_at, updated_at
                 FROM table_view_config
                 ORDER BY label ASC, table_name ASC
@@ -419,6 +425,7 @@ namespace DocApi.Repositories
                 return new TableViewConfigResponse
                 {
                     Id = Str(item, "id") ?? string.Empty,
+                    OrganizationIds = JsonValue(item, "organization_ids_json", new List<int>()),
                     TableName = Str(item, "table_name") ?? string.Empty,
                     Label = Str(item, "label") ?? string.Empty,
                     VisibleFields = JsonValue(item, "visible_fields_json", new List<string>()),
@@ -863,10 +870,10 @@ namespace DocApi.Repositories
             => connection.ExecuteAsync("""
                 INSERT INTO family (id, nom, description, beneficiary_mode, beneficiary_table, beneficiary_table_label, beneficiary_link_column,
                   beneficiary_display_column_1, beneficiary_display_column_2, beneficiary_sql_text, filter_catalog_json,
-                  sql_text, created_at, classes_json)
+                  sql_text, created_at, classes_json, organization_ids_json)
                 VALUES (@id, @nom, @description, @beneficiary_mode, @beneficiary_table, @beneficiary_table_label, @beneficiary_link_column,
                   @beneficiary_display_column_1, @beneficiary_display_column_2, @beneficiary_sql_text, @filter_catalog_json,
-                  @sql_text, @created_at, @classes_json)
+                  @sql_text, @created_at, @classes_json, @organization_ids_json)
                 """, FamilyParams(family), transaction);
 
         private static Task InsertTableViewAsync(IDbConnection connection, IDbTransaction transaction, TableViewConfigRequest tableView)
@@ -944,6 +951,7 @@ namespace DocApi.Repositories
             preview_fields_json = JsonString(tableView.PreviewFields, "[]"),
             field_labels_json = JsonString(tableView.FieldLabels, "{}"),
             field_settings_json = JsonString(tableView.FieldSettings, "{}"),
+            organization_ids_json = JsonString(tableView.OrganizationIds, "[]"),
             created_at = tableView.CreatedAt ?? DateTimeOffset.UtcNow.ToString("O"),
             updated_at = DateTimeOffset.UtcNow.ToString("O")
         };
@@ -963,7 +971,8 @@ namespace DocApi.Repositories
             filter_catalog_json = JsonString(family.FilterCatalog, "[]"),
             sql_text = family.Sql ?? string.Empty,
             created_at = family.CreatedAt ?? DateTimeOffset.UtcNow.ToString("O"),
-            classes_json = JsonString(family.Classes, "[]")
+            classes_json = JsonString(family.Classes, "[]"),
+            organization_ids_json = JsonString(family.OrganizationIds, "[]")
         };
 
         private static object TemplateParams(TemplateRequest template, int? organizationId) => new
@@ -1227,6 +1236,10 @@ namespace DocApi.Repositories
             public string Type { get; set; } = "";
             public bool Nullable { get; set; }
             public bool IsIdentity { get; set; }
+        }
+    }
+}
+ { get; set; }
         }
     }
 }
