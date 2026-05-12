@@ -295,7 +295,7 @@ namespace DocApi.Controllers
                 Name = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty,
                 Email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty,
                 Role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty,
-                OrganizationId = User.FindFirstValue("organizationId"),
+                OrganizationId = int.TryParse(User.FindFirstValue("organizationId"), out var orgId) ? orgId : null,
                 Profile = string.Empty,
                 ProfileDetail = null,
                 AccessAllYears = false,

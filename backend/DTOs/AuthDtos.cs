@@ -27,7 +27,7 @@ namespace DocApi.DTOs
         public required string Password { get; set; }
 
         public string Role { get; set; } = "user";
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
         public string? Profile { get; set; }
         public string? ProfileDetail { get; set; }
     }
@@ -49,7 +49,7 @@ namespace DocApi.DTOs
         public required string Email { get; set; }
         public required string Name { get; set; }
         public required string Role { get; set; }
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
         public string? Profile { get; set; }
         public string? ProfileDetail { get; set; }
         public bool AccessAllYears { get; set; }
@@ -62,7 +62,7 @@ namespace DocApi.DTOs
         public required string Email { get; set; }
         public required string Name { get; set; }
         public required string Role { get; set; }
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
         public string? Profile { get; set; }
         public string? ProfileDetail { get; set; }
         public bool AccessAllYears { get; set; }

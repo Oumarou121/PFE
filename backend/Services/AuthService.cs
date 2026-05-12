@@ -118,12 +118,12 @@ namespace DocApi.Services
             };
         }
 
-        public string GenerateJwtToken(int userId, string username, string role, string? organizationId = null)
+        public string GenerateJwtToken(int userId, string username, string role, int? organizationId = null)
         {
             return GenerateJwtToken(userId, username, role, organizationId, null);
         }
 
-        private string GenerateJwtToken(int userId, string username, string role, string? organizationId, string? email)
+        private string GenerateJwtToken(int userId, string username, string role, int? organizationId, string? email)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -142,9 +142,9 @@ namespace DocApi.Services
                 claims.Add(new Claim(ClaimTypes.Email, email));
             }
 
-            if (!string.IsNullOrWhiteSpace(organizationId))
+            if (organizationId.HasValue)
             {
-                claims.Add(new Claim("organizationId", organizationId));
+                claims.Add(new Claim("organizationId", organizationId.Value.ToString()));
             }
 
             var token = new JwtSecurityToken(

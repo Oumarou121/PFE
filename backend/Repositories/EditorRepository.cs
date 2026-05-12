@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Dapper;
+using DocApi.Common.Tenant;
 using DocApi.Domain.ValueObjects;
 using DocApi.DTOs;
 using DocApi.Infrastructure;
@@ -17,42 +18,74 @@ namespace DocApi.Repositories
         public string AuthDatabaseName { get; set; } = "DSSGAEIAM";
     }
 
+    /// <summary>
+    /// Repository multi-tenant :
+    /// - ConfigDB  (IConfigDbConnectionFactory)  → family, graphic_charter, template, table_view_config, app_setting
+    /// - TenantDB  (ITenantConnectionFactory)     → RunSelectQuery, GetTableViewRows*, LoadSchema (données métier)
+    /// - AuthDB    (IAuthDbConnectionFactory)     → Organization, User (via cross-db)
+    /// </summary>
     public class EditorRepository : IEditorRepository
     {
         private readonly ILogger<EditorRepository> _logger;
         private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
-        private readonly IEditorDbConnectionFactory _connectionFactory;
+
+        private readonly IConfigDbConnectionFactory _configFactory;
+        private readonly ITenantConnectionFactory _tenantFactory;
+        private readonly ITenantProvider _tenantProvider;
         private readonly IWebHostEnvironment _environment;
         private readonly EditorDatabaseOptions _options;
 
-        public EditorRepository(IEditorDbConnectionFactory connectionFactory, IWebHostEnvironment environment, IOptions<EditorDatabaseOptions> options, ILogger<EditorRepository> logger)
+        public EditorRepository(
+            IConfigDbConnectionFactory configFactory,
+            ITenantConnectionFactory tenantFactory,
+            ITenantProvider tenantProvider,
+            IWebHostEnvironment environment,
+            IOptions<EditorDatabaseOptions> options,
+            ILogger<EditorRepository> logger)
         {
-            _connectionFactory = connectionFactory;
+            _configFactory = configFactory;
+            _tenantFactory = tenantFactory;
+            _tenantProvider = tenantProvider;
             _environment = environment;
             _options = options.Value;
             _logger = logger;
         }
+
+        // ─── Helpers : connexions ────────────────────────────────────────────────
+
+        /// <summary>Connexion vers UnivadConfiDB (config globale).</summary>
+        private IDbConnection ConfigConnection() => _configFactory.CreateConnection();
+
+        /// <summary>
+        /// Connexion vers la DB métier du tenant courant.
+        /// Lance InvalidOperationException si aucun tenant n'est résolu.
+        /// </summary>
+        private IDbConnection TenantConnection() => _tenantFactory.CreateConnection();
+
+        // ─── Schema bootstrap (ConfigDB) ─────────────────────────────────────────
 
         public async Task EnsureSchemaAsync()
         {
             var schemaPath = Path.Combine(_environment.ContentRootPath, "Database", "EditorSchema.sql");
             if (!File.Exists(schemaPath)) return;
 
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             await connection.ExecuteAsync(await File.ReadAllTextAsync(schemaPath));
         }
 
+        // ─── Families (ConfigDB) ─────────────────────────────────────────────────
+
         public async Task<IEnumerable<FamilyResponse>> LoadFamiliesAsync()
         {
-            if (!await TableExistsAsync("family")) return [];
-            var hasBeneficiaryMode = await TableHasColumnAsync("family", "beneficiary_mode");
-            var hasBeneficiaryTable = await TableHasColumnAsync("family", "beneficiary_table");
-            var hasBeneficiaryTableLabel = await TableHasColumnAsync("family", "beneficiary_table_label");
-            var hasBeneficiaryLinkColumn = await TableHasColumnAsync("family", "beneficiary_link_column");
-            var hasBeneficiaryDisplayColumn1 = await TableHasColumnAsync("family", "beneficiary_display_column_1");
-            var hasBeneficiaryDisplayColumn2 = await TableHasColumnAsync("family", "beneficiary_display_column_2");
-            var hasBeneficiarySql = await TableHasColumnAsync("family", "beneficiary_sql_text");
-            var hasFilterCatalog = await TableHasColumnAsync("family", "filter_catalog_json");
+            if (!await ConfigTableExistsAsync("family")) return [];
+            var hasBeneficiaryMode = await ConfigTableHasColumnAsync("family", "beneficiary_mode");
+            var hasBeneficiaryTable = await ConfigTableHasColumnAsync("family", "beneficiary_table");
+            var hasBeneficiaryTableLabel = await ConfigTableHasColumnAsync("family", "beneficiary_table_label");
+            var hasBeneficiaryLinkColumn = await ConfigTableHasColumnAsync("family", "beneficiary_link_column");
+            var hasBeneficiaryDisplayColumn1 = await ConfigTableHasColumnAsync("family", "beneficiary_display_column_1");
+            var hasBeneficiaryDisplayColumn2 = await ConfigTableHasColumnAsync("family", "beneficiary_display_column_2");
+            var hasBeneficiarySql = await ConfigTableHasColumnAsync("family", "beneficiary_sql_text");
+            var hasFilterCatalog = await ConfigTableHasColumnAsync("family", "filter_catalog_json");
             var sql = $"""
                 SELECT id, nom, description,
                        {(hasBeneficiaryMode ? "beneficiary_mode" : "'table'")} AS beneficiary_mode,
@@ -67,7 +100,7 @@ namespace DocApi.Repositories
                 FROM family
                 ORDER BY nom
                 """;
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             var rows = await connection.QueryAsync(sql);
             return rows.Select(row =>
             {
@@ -94,14 +127,12 @@ namespace DocApi.Repositories
         }
 
         public async Task<FamilyResponse?> GetFamilyByIdAsync(string id)
-        {
-            return (await LoadFamiliesAsync()).FirstOrDefault(item => item.Id == id);
-        }
+            => (await LoadFamiliesAsync()).FirstOrDefault(item => item.Id == id);
 
         public async Task<FamilyResponse> UpsertFamilyAsync(FamilyRequest request)
         {
             var family = NormalizeFamily(request);
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             await connection.ExecuteAsync("""
                 MERGE family AS target
                 USING (SELECT @id AS id) AS src ON target.id = src.id
@@ -125,26 +156,31 @@ namespace DocApi.Repositories
 
         public async Task DeleteFamilyAsync(string id)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync("DELETE FROM template WHERE family_id = @id; DELETE FROM family WHERE id = @id", new { id });
+            using var connection = ConfigConnection();
+            await connection.ExecuteAsync(
+                "DELETE FROM template WHERE family_id = @id; DELETE FROM family WHERE id = @id",
+                new { id });
         }
+
+        // ─── Organizations (AuthDB via cross-db) ─────────────────────────────────
 
         public async Task<IEnumerable<OrganizationResponse>> LoadOrganizationsAsync()
         {
             try
             {
-                using var connection = _connectionFactory.CreateConnection();
+                using var connection = ConfigConnection();
                 var rows = await connection.QueryAsync($"SELECT * FROM {AuthTable("Organization")} ORDER BY 1");
                 return rows.Select(row =>
                 {
                     var item = Row(row);
                     return new OrganizationResponse
                     {
-                        Id = FirstString(item, "Id", "ID", "id", "OrganizationId", "IdOrganization") ?? string.Empty,
+                        Id = FirstInt(item, "Id", "ID", "id", "OrganizationId", "IdOrganization") ?? 0,
                         Nom = FirstString(item, "NameFr", "Name", "Nom", "Libelle", "Label", "Title", "Acronym") ?? "Organisation",
                         NameFr = FirstString(item, "NameFr"),
                         NameAr = FirstString(item, "NameAr"),
                         Acronym = FirstString(item, "Acronym"),
+                        DatabaseName = FirstString(item, "DatabaseName"),
                         OrganizationLogo = FirstString(item, "OrganisationLogo", "OrganizationLogo"),
                         Affiliation = FirstString(item, "Affiliation"),
                         AffiliationLogo = FirstString(item, "AffiliationLogo"),
@@ -184,11 +220,13 @@ namespace DocApi.Repositories
             }
         }
 
+        // ─── Admins (AuthDB via cross-db) ────────────────────────────────────────
+
         public async Task<IEnumerable<AdminResponse>> LoadAdminsAsync()
         {
             try
             {
-                using var connection = _connectionFactory.CreateConnection();
+                using var connection = ConfigConnection();
                 var rows = await connection.QueryAsync($"""
                     SELECT *
                     FROM {AuthTable("User")}
@@ -202,7 +240,7 @@ namespace DocApi.Repositories
                     return new AdminResponse
                     {
                         Id = FirstString(item, "Id", "ID", "id") ?? string.Empty,
-                        OrganizationId = FirstString(item, "IdOrganization", "OrganizationId", "organizationId"),
+                        OrganizationId = FirstInt(item, "IdOrganization", "OrganizationId", "organizationId"),
                         Nom = FirstString(item, "Name", "Nom", "Username") ?? string.Empty,
                         Email = FirstString(item, "Email", "Mail") ?? string.Empty,
                         Role = FirstString(item, "Role", "role") ?? "admin",
@@ -221,10 +259,12 @@ namespace DocApi.Repositories
             }
         }
 
+        // ─── GraphicCharters (ConfigDB) ──────────────────────────────────────────
+
         public async Task<IEnumerable<GraphicCharterResponse>> LoadGraphicChartersAsync()
         {
-            if (!await TableExistsAsync("graphic_charter")) return [];
-            using var connection = _connectionFactory.CreateConnection();
+            if (!await ConfigTableExistsAsync("graphic_charter")) return [];
+            using var connection = ConfigConnection();
             var rows = await connection.QueryAsync("""
                 SELECT id, etablissement_id, nom, description, is_default, config_json, created_at, updated_at
                 FROM graphic_charter
@@ -236,7 +276,7 @@ namespace DocApi.Repositories
                 return new GraphicCharterResponse
                 {
                     Id = Str(item, "id") ?? string.Empty,
-                    OrganizationId = StrOrNull(item, "etablissement_id"),
+                    OrganizationId = IntOrNull(item, "etablissement_id"),
                     Name = Str(item, "nom") ?? string.Empty,
                     Description = Str(item, "description") ?? string.Empty,
                     IsDefault = Bool(item, "is_default"),
@@ -248,14 +288,12 @@ namespace DocApi.Repositories
         }
 
         public async Task<GraphicCharterResponse?> GetGraphicCharterByIdAsync(string id)
-        {
-            return (await LoadGraphicChartersAsync()).FirstOrDefault(item => item.Id == id);
-        }
+            => (await LoadGraphicChartersAsync()).FirstOrDefault(item => item.Id == id);
 
         public async Task<GraphicCharterResponse> UpsertGraphicCharterAsync(GraphicCharterRequest request)
         {
             var graphicCharter = NormalizeGraphicCharter(request);
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             await connection.ExecuteAsync("""
                 MERGE graphic_charter AS target
                 USING (SELECT @id AS id) AS src ON target.id = src.id
@@ -270,17 +308,21 @@ namespace DocApi.Repositories
 
         public async Task DeleteGraphicCharterAsync(string id)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync("UPDATE template SET graphic_charter_id = NULL WHERE graphic_charter_id = @id; DELETE FROM graphic_charter WHERE id = @id", new { id });
+            using var connection = ConfigConnection();
+            await connection.ExecuteAsync(
+                "UPDATE template SET graphic_charter_id = NULL WHERE graphic_charter_id = @id; DELETE FROM graphic_charter WHERE id = @id",
+                new { id });
         }
+
+        // ─── Templates (ConfigDB) ────────────────────────────────────────────────
 
         public async Task<IEnumerable<TemplateResponse>> LoadTemplatesAsync()
         {
-            if (!await TableExistsAsync("template")) return [];
-            var hasGraphicCharterId = await TableHasColumnAsync("template", "graphic_charter_id");
-            var hasOrientation = await TableHasColumnAsync("template", "orientation");
-            var hasFilterProfile = await TableHasColumnAsync("template", "filter_profile_json");
-            var hasSectionDirections = await TableHasColumnAsync("template", "section_directions_json");
+            if (!await ConfigTableExistsAsync("template")) return [];
+            var hasGraphicCharterId = await ConfigTableHasColumnAsync("template", "graphic_charter_id");
+            var hasOrientation = await ConfigTableHasColumnAsync("template", "orientation");
+            var hasFilterProfile = await ConfigTableHasColumnAsync("template", "filter_profile_json");
+            var hasSectionDirections = await ConfigTableHasColumnAsync("template", "section_directions_json");
             var sql = $"""
                 SELECT id, family_id, etablissement_id, nom, updated_at, has_header, has_footer,
                        {(hasGraphicCharterId ? "graphic_charter_id" : "NULL")} AS graphic_charter_id,
@@ -292,7 +334,7 @@ namespace DocApi.Repositories
                 FROM template
                 ORDER BY updated_at DESC, nom ASC
                 """;
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             var rows = await connection.QueryAsync(sql);
             return rows.Select(row =>
             {
@@ -301,7 +343,7 @@ namespace DocApi.Repositories
                 {
                     Id = Str(item, "id") ?? string.Empty,
                     FamilyId = Str(item, "family_id") ?? string.Empty,
-                    OrganizationId = StrOrNull(item, "etablissement_id"),
+                    OrganizationId = IntOrNull(item, "etablissement_id"),
                     Nom = Str(item, "nom") ?? string.Empty,
                     UpdatedAt = Str(item, "updated_at"),
                     HasHeader = Bool(item, "has_header"),
@@ -319,14 +361,12 @@ namespace DocApi.Repositories
         }
 
         public async Task<TemplateResponse?> GetTemplateByIdAsync(string id)
-        {
-            return (await LoadTemplatesAsync()).FirstOrDefault(item => item.Id == id);
-        }
+            => (await LoadTemplatesAsync()).FirstOrDefault(item => item.Id == id);
 
         public async Task<TemplateResponse> UpsertTemplateAsync(TemplateRequest request)
         {
             var template = NormalizeTemplate(request);
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             await connection.ExecuteAsync("""
                 MERGE template AS target
                 USING (SELECT @id AS id) AS src ON target.id = src.id
@@ -348,15 +388,17 @@ namespace DocApi.Repositories
 
         public async Task DeleteTemplateAsync(string id)
         {
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             await connection.ExecuteAsync("DELETE FROM template WHERE id = @id", new { id });
         }
 
+        // ─── TableViewConfig (ConfigDB) ──────────────────────────────────────────
+
         public async Task<IEnumerable<TableViewConfigResponse>> LoadTableViewsAsync()
         {
-            if (!await TableExistsAsync("table_view_config")) return [];
-            var hasFieldSettings = await TableHasColumnAsync("table_view_config", "field_settings_json");
-            var hasFieldLabels = await TableHasColumnAsync("table_view_config", "field_labels_json");
+            if (!await ConfigTableExistsAsync("table_view_config")) return [];
+            var hasFieldSettings = await ConfigTableHasColumnAsync("table_view_config", "field_settings_json");
+            var hasFieldLabels = await ConfigTableHasColumnAsync("table_view_config", "field_labels_json");
             var sql = $"""
                 SELECT id, table_name, label, visible_fields_json, editable_fields_json,
                        preview_fields_json,
@@ -366,7 +408,7 @@ namespace DocApi.Repositories
                 FROM table_view_config
                 ORDER BY label ASC, table_name ASC
                 """;
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             var rows = await connection.QueryAsync(sql);
             return rows.Select(row =>
             {
@@ -388,14 +430,36 @@ namespace DocApi.Repositories
         }
 
         public async Task<TableViewConfigResponse?> GetTableViewConfigByIdAsync(string id)
+            => (await LoadTableViewsAsync()).FirstOrDefault(item => item.Id == id);
+
+        public async Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request)
         {
-            return (await LoadTableViewsAsync()).FirstOrDefault(item => item.Id == id);
+            var normalized = NormalizeTableView(request);
+            using var connection = ConfigConnection();
+            await connection.ExecuteAsync("""
+                MERGE table_view_config AS target
+                USING (SELECT @id AS id) AS src ON target.id = src.id
+                WHEN MATCHED THEN UPDATE SET table_name = @table_name, label = @label,
+                  visible_fields_json = @visible_fields_json, editable_fields_json = @editable_fields_json,
+                  preview_fields_json = @preview_fields_json, field_labels_json = @field_labels_json, field_settings_json = @field_settings_json, updated_at = @updated_at
+                WHEN NOT MATCHED THEN INSERT (id, table_name, label, visible_fields_json, editable_fields_json, preview_fields_json, field_labels_json, field_settings_json, created_at, updated_at)
+                  VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json, @preview_fields_json, @field_labels_json, @field_settings_json, @created_at, @updated_at);
+                """, TableViewParams(normalized));
+            return normalized;
         }
+
+        public async Task DeleteTableViewConfigAsync(string? id)
+        {
+            using var connection = ConfigConnection();
+            await connection.ExecuteAsync("DELETE FROM table_view_config WHERE id = @id", new { id });
+        }
+
+        // ─── AppSettings (ConfigDB) ──────────────────────────────────────────────
 
         public async Task<Dictionary<string, object?>> LoadSettingsAsync()
         {
-            if (!await TableExistsAsync("app_setting")) return [];
-            using var connection = _connectionFactory.CreateConnection();
+            if (!await ConfigTableExistsAsync("app_setting")) return [];
+            using var connection = ConfigConnection();
             var rows = await connection.QueryAsync("SELECT [key], value_json FROM app_setting");
             var settings = new Dictionary<string, object?>();
             foreach (var row in rows)
@@ -403,13 +467,14 @@ namespace DocApi.Repositories
                 var item = Row(row);
                 settings[Str(item, "key") ?? string.Empty] = ParseJsonValue(Str(item, "value_json"));
             }
-
             return settings;
         }
 
+        // ─── LoadSchema (TenantDB) ────────────────────────────────────────────────
+
         public async Task<DatabaseSchemaResponse> LoadSchemaAsync()
         {
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = TenantConnection();
             var tables = await connection.QueryAsync<DatabaseTableInfo>("""
                 SELECT t.TABLE_NAME AS name, ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS comment
                 FROM INFORMATION_SCHEMA.TABLES t
@@ -446,30 +511,38 @@ namespace DocApi.Repositories
             };
         }
 
-        public async Task ReplaceStateAsync(EditorStateResponse state, string? scopedOrganizationId, bool isSuperAdmin)
+        // ─── ReplaceState (ConfigDB — données config) ────────────────────────────
+
+        public async Task ReplaceStateAsync(EditorStateResponse state, int? scopedOrganizationId, bool isSuperAdmin)
         {
-            using var connection = _connectionFactory.CreateConnection();
+            using var connection = ConfigConnection();
             connection.Open();
             using var transaction = connection.BeginTransaction();
             try
             {
                 if (isSuperAdmin)
                 {
-                    await connection.ExecuteAsync("DELETE FROM graphic_charter; DELETE FROM template; DELETE FROM family; DELETE FROM table_view_config; DELETE FROM app_setting;", transaction: transaction);
+                    await connection.ExecuteAsync(
+                        "DELETE FROM graphic_charter; DELETE FROM template; DELETE FROM family; DELETE FROM table_view_config; DELETE FROM app_setting;",
+                        transaction: transaction);
                     await SaveSettingsAsync(connection, transaction, state.Settings);
                     foreach (var family in state.Families) await InsertFamilyAsync(connection, transaction, family);
                     foreach (var tableView in state.TableViews) await InsertTableViewAsync(connection, transaction, tableView);
                 }
                 else
                 {
-                    if (string.IsNullOrWhiteSpace(scopedOrganizationId)) throw new InvalidOperationException("Organisation admin introuvable pour la sauvegarde.");
-                    await connection.ExecuteAsync("DELETE FROM graphic_charter WHERE etablissement_id = @OrgId; DELETE FROM template WHERE etablissement_id = @OrgId;", new { OrgId = scopedOrganizationId }, transaction);
+                    if (scopedOrganizationId == null)
+                        throw new InvalidOperationException("Organisation admin introuvable pour la sauvegarde.");
+                    await connection.ExecuteAsync(
+                        "DELETE FROM graphic_charter WHERE etablissement_id = @OrgId; DELETE FROM template WHERE etablissement_id = @OrgId;",
+                        new { OrgId = scopedOrganizationId }, transaction);
                 }
 
                 foreach (var organization in state.Organizations)
                 {
                     if (!isSuperAdmin && organization.Id != scopedOrganizationId) continue;
-                    foreach (var charter in organization.GraphicCharters) await InsertGraphicCharterAsync(connection, transaction, charter, organization.Id);
+                    foreach (var charter in organization.GraphicCharters)
+                        await InsertGraphicCharterAsync(connection, transaction, charter, organization.Id);
                 }
 
                 foreach (var template in state.Templates)
@@ -488,41 +561,36 @@ namespace DocApi.Repositories
             }
         }
 
+        // ─── RunSelectQuery (TenantDB — données métier) ──────────────────────────
+
         public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters)
         {
             var cleaned = NormalizeSelectQueryForSqlServer((sql ?? string.Empty).Trim().TrimEnd(';'));
             if (!IsSelectQuery(cleaned))
             {
-                try
-                {
-                    _logger.LogWarning("Rejected non-SELECT query: {Sql}", sql);
-                }
-                catch { }
+                try { _logger.LogWarning("Rejected non-SELECT query: {Sql}", sql); } catch { }
                 throw new InvalidOperationException("Seules les requetes SELECT sont autorisees.");
             }
             var dynamicParameters = new DynamicParameters();
             if (!parameters.ContainsKey("organizationId")) parameters["organizationId"] = null;
             cleaned = CompileNamedParameters(cleaned, parameters, dynamicParameters);
-            using var connection = _connectionFactory.CreateConnection();
-            return (await connection.QueryAsync(cleaned, dynamicParameters)).Select(row => (IDictionary<string, object?>)CleanRow(row)).ToArray();
+
+            using var connection = TenantConnection();
+            return (await connection.QueryAsync(cleaned, dynamicParameters))
+                .Select(row => (IDictionary<string, object?>)CleanRow(row))
+                .ToArray();
         }
 
-        private static bool IsSelectQuery(string sql)
-        {
-            if (string.IsNullOrWhiteSpace(sql)) return false;
-            var s = sql.Trim();
-            s = Regex.Replace(s, @"^\s*/\*.*?\*/\s*", "", RegexOptions.Singleline);
-            s = Regex.Replace(s, @"^\s*(?:--.*?$\s*)+", "", RegexOptions.Multiline);
-            while (s.StartsWith("(")) s = s[1..].TrimStart();
-            return Regex.IsMatch(s, "^(select|with)\\b", RegexOptions.IgnoreCase);
-        }
+        // ─── GetTableViewRows (TenantDB — données métier) ────────────────────────
 
         public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config)
         {
-            var tableView = await ResolveTableViewAsync(configId, config) ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return [];
-            var columns = await GetColumnsAsync(tableView.TableName);
-            var pk = await GetRowKeyAsync(tableView.TableName, columns);
+            var tableView = await ResolveTableViewAsync(configId, config)
+                ?? throw new InvalidOperationException("Configuration introuvable.");
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return [];
+
+            var columns = await GetTenantColumnsAsync(tableView.TableName);
+            var pk = await GetRowKeyAsync(tableView.TableName, columns, useTenant: true);
             var allowed = columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var previewFields = tableView.PreviewFields.Where(allowed.Contains).ToArray();
             var selectFields = new[] { pk }
@@ -533,6 +601,7 @@ namespace DocApi.Repositories
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             if (selectFields.Length == 0) return [];
+
             var parameters = new DynamicParameters();
             parameters.Add("limit", Math.Max(1, Math.Min(limit ?? 200, 500)));
             var where = "";
@@ -541,17 +610,22 @@ namespace DocApi.Repositories
                 parameters.Add("search", $"%{search}%");
                 where = "WHERE " + string.Join(" OR ", previewFields.Select(field => $"CONVERT(NVARCHAR(MAX), {Quote(field)}) LIKE @search"));
             }
-            using var connection = _connectionFactory.CreateConnection();
-            var rows = await connection.QueryAsync($"SELECT TOP (@limit) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} {where} ORDER BY {Quote(pk)} DESC", parameters);
+
+            using var connection = TenantConnection();
+            var rows = await connection.QueryAsync(
+                $"SELECT TOP (@limit) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} {where} ORDER BY {Quote(pk)} DESC",
+                parameters);
             return rows.Select(row => (IDictionary<string, object?>)CleanRow(row)).ToArray();
         }
 
         public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId)
         {
-            var tableView = await ResolveTableViewAsync(configId, null) ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return null;
-            var columns = await GetColumnsAsync(tableView.TableName);
-            var pk = await GetRowKeyAsync(tableView.TableName, columns);
+            var tableView = await ResolveTableViewAsync(configId, null)
+                ?? throw new InvalidOperationException("Configuration introuvable.");
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return null;
+
+            var columns = await GetTenantColumnsAsync(tableView.TableName);
+            var pk = await GetRowKeyAsync(tableView.TableName, columns, useTenant: true);
             var allowed = columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var selectFields = new[] { pk }
                 .Concat(tableView.VisibleFields)
@@ -560,17 +634,22 @@ namespace DocApi.Repositories
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             if (selectFields.Length == 0) return null;
-            using var connection = _connectionFactory.CreateConnection();
-            var row = await connection.QueryFirstOrDefaultAsync($"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId", new { rowId = NormalizeParameterValue(rowId) });
+
+            using var connection = TenantConnection();
+            var row = await connection.QueryFirstOrDefaultAsync(
+                $"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId",
+                new { rowId = NormalizeParameterValue(rowId) });
             return row is null ? null : CleanRow(row);
         }
 
         public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values)
         {
-            var tableView = await ResolveTableViewAsync(configId, null) ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return null;
+            var tableView = await ResolveTableViewAsync(configId, null)
+                ?? throw new InvalidOperationException("Configuration introuvable.");
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return null;
+
             var editable = tableView.EditableFields.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var tableColumns = await GetColumnsAsync(tableView.TableName);
+            var tableColumns = await GetTenantColumnsAsync(tableView.TableName);
             var columns = tableColumns.Where(column => editable.Contains(column.Name) && values.ContainsKey(column.Name)).ToArray();
             var normalizedRowId = NormalizeParameterValue(rowId);
             if (columns.Length > 0)
@@ -582,21 +661,25 @@ namespace DocApi.Repositories
                     var raw = values.TryGetValue(column.Name, out var v) ? v : null;
                     parameters.Add(column.Name, NormalizeParameterValue(raw));
                 }
-                using var connection = _connectionFactory.CreateConnection();
-                var pk = await GetRowKeyAsync(tableView.TableName, tableColumns);
-                await connection.ExecuteAsync($"UPDATE {Quote(tableView.TableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {Quote(pk)} = @rowId", parameters);
+                using var connection = TenantConnection();
+                var pk = await GetRowKeyAsync(tableView.TableName, tableColumns, useTenant: true);
+                await connection.ExecuteAsync(
+                    $"UPDATE {Quote(tableView.TableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {Quote(pk)} = @rowId",
+                    parameters);
             }
             return await GetTableViewRecordAsync(configId, normalizedRowId?.ToString());
         }
 
         public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config)
         {
-            var tableView = await ResolveTableViewAsync(configId, config) ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return null;
+            var tableView = await ResolveTableViewAsync(configId, config)
+                ?? throw new InvalidOperationException("Configuration introuvable.");
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return null;
+
             var editable = tableView.EditableFields.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var tableColumns = await GetColumnsAsync(tableView.TableName);
+            var tableColumns = await GetTenantColumnsAsync(tableView.TableName);
             var columns = tableColumns.Where(column => editable.Contains(column.Name) && !column.IsIdentity && values.ContainsKey(column.Name)).ToArray();
-            var pk = await GetRowKeyAsync(tableView.TableName, tableColumns);
+            var pk = await GetRowKeyAsync(tableView.TableName, tableColumns, useTenant: true);
             var parameters = new DynamicParameters();
             var normalizedValues = new Dictionary<string, object?>();
             foreach (var column in columns)
@@ -609,85 +692,141 @@ namespace DocApi.Repositories
             var insertSql = columns.Length == 0
                 ? $"INSERT INTO {Quote(tableView.TableName)} OUTPUT INSERTED.{Quote(pk)} AS inserted_id DEFAULT VALUES"
                 : $"INSERT INTO {Quote(tableView.TableName)} ({string.Join(", ", columns.Select(c => Quote(c.Name)))}) OUTPUT INSERTED.{Quote(pk)} AS inserted_id VALUES ({string.Join(", ", columns.Select(c => "@" + c.Name))})";
-            try
-            {
-                _logger.LogDebug("CreateTableViewRecord SQL: {Sql} Params: {Params}", insertSql, JsonSerializer.Serialize(normalizedValues, JsonOptions));
-            }
-            catch { }
-            using var connection = _connectionFactory.CreateConnection();
+
+            try { _logger.LogDebug("CreateTableViewRecord SQL: {Sql}", insertSql); } catch { }
+
+            using var connection = TenantConnection();
             var insertedId = await connection.ExecuteScalarAsync<object>(insertSql, parameters);
             return await GetTableViewRecordAsync(tableView.Id, insertedId?.ToString());
         }
 
         public async Task DeleteTableViewRecordAsync(string? configId, string? rowId)
         {
-            var tableView = await ResolveTableViewAsync(configId, null) ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TableExistsAsync(tableView.TableName)) return;
-            var pk = await GetRowKeyAsync(tableView.TableName, await GetColumnsAsync(tableView.TableName));
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync($"DELETE FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId", new { rowId = NormalizeParameterValue(rowId) });
+            var tableView = await ResolveTableViewAsync(configId, null)
+                ?? throw new InvalidOperationException("Configuration introuvable.");
+            if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName)) return;
+
+            var pk = await GetRowKeyAsync(tableView.TableName, await GetTenantColumnsAsync(tableView.TableName), useTenant: true);
+            using var connection = TenantConnection();
+            await connection.ExecuteAsync(
+                $"DELETE FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId",
+                new { rowId = NormalizeParameterValue(rowId) });
         }
 
         public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config)
         {
-            var tableView = await ResolveTableViewAsync(configId, config) ?? throw new InvalidOperationException("Configuration introuvable.");
-            if (string.IsNullOrWhiteSpace(fieldName) || !tableView.FieldSettings.TryGetValue(fieldName, out var field) || field.DisplayMode != TableViewDisplayMode.Lookup) return [];
+            var tableView = await ResolveTableViewAsync(configId, config)
+                ?? throw new InvalidOperationException("Configuration introuvable.");
+            if (string.IsNullOrWhiteSpace(fieldName)
+                || !tableView.FieldSettings.TryGetValue(fieldName, out var field)
+                || field.DisplayMode != TableViewDisplayMode.Lookup) return [];
+
             var table = field.LookupTable;
             var valueColumn = field.LookupValueColumn;
             var labelColumn = field.LookupLabelColumn;
             var labelColumn2 = field.LookupLabelColumn2;
             if (string.IsNullOrWhiteSpace(table) || string.IsNullOrWhiteSpace(valueColumn) || string.IsNullOrWhiteSpace(labelColumn)) return [];
-            if (!await TableExistsAsync(table)) return [];
-            var lookupColumns = (await GetColumnsAsync(table)).Select(column => column.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (!await TenantTableExistsAsync(table)) return [];
+
+            var lookupColumns = (await GetTenantColumnsAsync(table)).Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             if (!lookupColumns.Contains(valueColumn) || !lookupColumns.Contains(labelColumn)) return [];
             if (!string.IsNullOrWhiteSpace(labelColumn2) && !lookupColumns.Contains(labelColumn2)) return [];
-            using var connection = _connectionFactory.CreateConnection();
+
+            using var connection = TenantConnection();
             var labelExpr = string.IsNullOrWhiteSpace(labelColumn2)
                 ? $"CONVERT(NVARCHAR(4000), {Quote(labelColumn)})"
                 : $"LTRIM(RTRIM(CONCAT(CONVERT(NVARCHAR(4000), {Quote(labelColumn)}), ' ', CONVERT(NVARCHAR(4000), {Quote(labelColumn2)}))))";
-            var rows = await connection.QueryAsync($"SELECT CONVERT(NVARCHAR(4000), {Quote(valueColumn)}) AS value, {labelExpr} AS label FROM {Quote(table)} WHERE {Quote(valueColumn)} IS NOT NULL ORDER BY {labelExpr} ASC");
+            var rows = await connection.QueryAsync(
+                $"SELECT CONVERT(NVARCHAR(4000), {Quote(valueColumn)}) AS value, {labelExpr} AS label FROM {Quote(table)} WHERE {Quote(valueColumn)} IS NOT NULL ORDER BY {labelExpr} ASC");
             return rows.Select(row =>
             {
                 var item = Row(row);
-                return new LookupOptionResponse
-                {
-                    Value = Str(item, "value") ?? string.Empty,
-                    Label = Str(item, "label") ?? string.Empty
-                };
+                return new LookupOptionResponse { Value = Str(item, "value") ?? string.Empty, Label = Str(item, "label") ?? string.Empty };
             });
         }
 
-        public async Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request)
+        // ─── Private helpers : ConfigDB introspection ────────────────────────────
+
+        private async Task<bool> ConfigTableExistsAsync(string tableName)
         {
-            var normalized = NormalizeTableView(request);
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync("""
-                MERGE table_view_config AS target
-                USING (SELECT @id AS id) AS src ON target.id = src.id
-                WHEN MATCHED THEN UPDATE SET table_name = @table_name, label = @label,
-                  visible_fields_json = @visible_fields_json, editable_fields_json = @editable_fields_json,
-                  preview_fields_json = @preview_fields_json, field_labels_json = @field_labels_json, field_settings_json = @field_settings_json, updated_at = @updated_at
-                WHEN NOT MATCHED THEN INSERT (id, table_name, label, visible_fields_json, editable_fields_json, preview_fields_json, field_labels_json, field_settings_json, created_at, updated_at)
-                  VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json, @preview_fields_json, @field_labels_json, @field_settings_json, @created_at, @updated_at);
-                """, TableViewParams(normalized));
-            return normalized;
+            using var connection = ConfigConnection();
+            var count = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = @tableName AND TABLE_TYPE = 'BASE TABLE'",
+                new { tableName });
+            return count > 0;
         }
 
-        public async Task DeleteTableViewConfigAsync(string? id)
+        private async Task<bool> ConfigTableHasColumnAsync(string tableName, string columnName)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync("DELETE FROM table_view_config WHERE id = @id", new { id });
+            using var connection = ConfigConnection();
+            var count = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tableName AND COLUMN_NAME = @columnName",
+                new { tableName, columnName });
+            return count > 0;
         }
+
+        // ─── Private helpers : TenantDB introspection ────────────────────────────
+
+        private async Task<bool> TenantTableExistsAsync(string tableName)
+        {
+            using var connection = TenantConnection();
+            var count = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = @tableName AND TABLE_TYPE = 'BASE TABLE'",
+                new { tableName });
+            return count > 0;
+        }
+
+        private async Task<ColumnInfo[]> GetTenantColumnsAsync(string tableName)
+        {
+            using var connection = TenantConnection();
+            var rows = await connection.QueryAsync<ColumnInfo>("""
+                SELECT c.COLUMN_NAME AS Name, c.DATA_TYPE AS Type,
+                       CASE WHEN c.IS_NULLABLE = 'YES' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS Nullable,
+                       COLUMNPROPERTY(OBJECT_ID(c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS IsIdentity
+                FROM INFORMATION_SCHEMA.COLUMNS c
+                WHERE TABLE_NAME = @tableName
+                ORDER BY ORDINAL_POSITION
+                """, new { tableName });
+            return rows.ToArray();
+        }
+
+        private async Task<string> GetPrimaryKeyAsync(string tableName, bool useTenant)
+        {
+            IDbConnection Conn() => useTenant ? TenantConnection() : ConfigConnection();
+            using var connection = Conn();
+            return await connection.ExecuteScalarAsync<string?>("""
+                SELECT TOP (1) kcu.COLUMN_NAME
+                FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+                JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME AND tc.TABLE_NAME = kcu.TABLE_NAME
+                WHERE tc.TABLE_NAME = @tableName AND tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                ORDER BY kcu.ORDINAL_POSITION
+                """, new { tableName }) ?? "id";
+        }
+
+        private async Task<string> GetRowKeyAsync(string tableName, IReadOnlyCollection<ColumnInfo> columns, bool useTenant = false)
+        {
+            var primaryKey = await GetPrimaryKeyAsync(tableName, useTenant);
+            if (!string.IsNullOrWhiteSpace(primaryKey) && columns.Any(c => string.Equals(c.Name, primaryKey, StringComparison.OrdinalIgnoreCase)))
+                return primaryKey;
+            return columns.FirstOrDefault(c => string.Equals(c.Name, "id", StringComparison.OrdinalIgnoreCase))?.Name
+                ?? columns.FirstOrDefault(c => c.IsIdentity)?.Name
+                ?? columns.FirstOrDefault()?.Name
+                ?? throw new InvalidOperationException("Cle primaire introuvable.");
+        }
+
+        // ─── ResolveTableView (ConfigDB) ──────────────────────────────────────────
 
         private async Task<TableViewConfigResponse?> ResolveTableViewAsync(string? configId, TableViewConfigRequest? provided)
         {
             if (provided is not null && !string.IsNullOrWhiteSpace(provided.TableName))
             {
-                if (string.IsNullOrWhiteSpace(provided.Id) && !string.IsNullOrWhiteSpace(configId)) provided.Id = configId;
+                if (string.IsNullOrWhiteSpace(provided.Id) && !string.IsNullOrWhiteSpace(configId))
+                    provided.Id = configId;
                 return NormalizeTableView(provided);
             }
-            using var connection = _connectionFactory.CreateConnection();
-            var row = await connection.QueryFirstOrDefaultAsync("SELECT TOP (1) * FROM table_view_config WHERE id = @configId", new { configId });
+            using var connection = ConfigConnection();
+            var row = await connection.QueryFirstOrDefaultAsync(
+                "SELECT TOP (1) * FROM table_view_config WHERE id = @configId", new { configId });
             if (row is null) return null;
             var item = Row(row);
             return NormalizeTableView(new TableViewConfigRequest
@@ -705,137 +844,20 @@ namespace DocApi.Repositories
             });
         }
 
-        private async Task<bool> TableExistsAsync(string tableName)
-        {
-            using var connection = _connectionFactory.CreateConnection();
-            var count = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = @tableName AND TABLE_TYPE = 'BASE TABLE'", new { tableName });
-            return count > 0;
-        }
-
-        private async Task<bool> TableHasColumnAsync(string tableName, string columnName)
-        {
-            using var connection = _connectionFactory.CreateConnection();
-            var count = await connection.ExecuteScalarAsync<int>(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tableName AND COLUMN_NAME = @columnName",
-                new { tableName, columnName });
-            return count > 0;
-        }
-
-        private async Task<ColumnInfo[]> GetColumnsAsync(string tableName)
-        {
-            using var connection = _connectionFactory.CreateConnection();
-            var rows = await connection.QueryAsync<ColumnInfo>("""
-                SELECT c.COLUMN_NAME AS Name, c.DATA_TYPE AS Type,
-                       CASE WHEN c.IS_NULLABLE = 'YES' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS Nullable,
-                       COLUMNPROPERTY(OBJECT_ID(c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS IsIdentity
-                FROM INFORMATION_SCHEMA.COLUMNS c
-                WHERE TABLE_NAME = @tableName
-                ORDER BY ORDINAL_POSITION
-                """, new { tableName });
-            return rows.ToArray();
-        }
-
-        private async Task<string> GetPrimaryKeyAsync(string tableName)
-        {
-            using var connection = _connectionFactory.CreateConnection();
-            return await connection.ExecuteScalarAsync<string?>("""
-                SELECT TOP (1) kcu.COLUMN_NAME
-                FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
-                JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME AND tc.TABLE_NAME = kcu.TABLE_NAME
-                WHERE tc.TABLE_NAME = @tableName AND tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
-                ORDER BY kcu.ORDINAL_POSITION
-                """, new { tableName }) ?? "id";
-        }
-
-        private async Task<string> GetRowKeyAsync(string tableName, IReadOnlyCollection<ColumnInfo> columns)
-        {
-            var primaryKey = await GetPrimaryKeyAsync(tableName);
-            if (!string.IsNullOrWhiteSpace(primaryKey) && columns.Any(column => string.Equals(column.Name, primaryKey, StringComparison.OrdinalIgnoreCase)))
-            {
-                return primaryKey;
-            }
-            return columns.FirstOrDefault(column => string.Equals(column.Name, "id", StringComparison.OrdinalIgnoreCase))?.Name
-                ?? columns.FirstOrDefault(column => column.IsIdentity)?.Name
-                ?? columns.FirstOrDefault()?.Name
-                ?? throw new InvalidOperationException("Cle primaire introuvable.");
-        }
-
-        private static string CompileNamedParameters(string querySql, Dictionary<string, object?> values, DynamicParameters output)
-        {
-            return Regex.Replace(querySql, @":([a-zA-Z_]\w*)", match =>
-            {
-                var key = match.Groups[1].Value;
-                output.Add(key, values.TryGetValue(key, out var value) ? NormalizeParameterValue(value) : null);
-                return "@" + key;
-            });
-        }
-
-        private static object? NormalizeParameterValue(object? value)
-        {
-            if (value is JsonElement element)
-            {
-                return element.ValueKind switch
-                {
-                    JsonValueKind.String => element.GetString(),
-                    JsonValueKind.Number when element.TryGetInt64(out var longValue) => longValue,
-                    JsonValueKind.Number when element.TryGetDouble(out var doubleValue) => doubleValue,
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    JsonValueKind.Null => null,
-                    JsonValueKind.Object => element.GetRawText(),
-                    JsonValueKind.Array => element.GetRawText(),
-                    _ => element.GetRawText()
-                };
-            }
-            return value;
-        }
-
-        private static string NormalizeSelectQueryForSqlServer(string querySql)
-        {
-            var raw = (querySql ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(raw)) return raw;
-            raw = ConvertIdentifierQuotes(raw);
-            raw = ConvertLegacyFunctions(raw);
-            raw = ApplyTopLevelLimit(raw);
-            return StripDanglingSelectCommas(raw);
-        }
-
-        private static string ConvertIdentifierQuotes(string sql)
-        {
-            return Regex.Replace(sql, @"`([^`]+)`", match => Quote(match.Groups[1].Value));
-        }
-
-        private static string ConvertLegacyFunctions(string sql)
-        {
-            return Regex.Replace(sql, @"\bIFNULL\s*\(", "ISNULL(", RegexOptions.IgnoreCase);
-        }
-
-        private static string ApplyTopLevelLimit(string sql)
-        {
-            var match = Regex.Match(sql, @"\s+LIMIT\s+(\d+)\s*$", RegexOptions.IgnoreCase);
-            if (!match.Success) return sql;
-            var limit = match.Groups[1].Value;
-            var withoutLimit = sql[..match.Index].TrimEnd();
-            if (Regex.IsMatch(withoutLimit, @"^\s*SELECT\s+TOP\s*\(", RegexOptions.IgnoreCase)) return withoutLimit;
-            return Regex.Replace(withoutLimit, @"^\s*SELECT\s+", $"SELECT TOP ({limit}) ", RegexOptions.IgnoreCase);
-        }
-
-        private static string StripDanglingSelectCommas(string sql)
-        {
-            return Regex.Replace(sql, @",\s+FROM\s+", " FROM ", RegexOptions.IgnoreCase);
-        }
+        // ─── Static insert helpers (ConfigDB, used in ReplaceState) ─────────────
 
         private static async Task SaveSettingsAsync(IDbConnection connection, IDbTransaction transaction, Dictionary<string, object?> settings)
         {
             foreach (var (key, value) in settings)
             {
-                await connection.ExecuteAsync("INSERT INTO app_setting ([key], value_json) VALUES (@key, @value)", new { key, value = JsonSerializer.Serialize(value, JsonOptions) }, transaction);
+                await connection.ExecuteAsync(
+                    "INSERT INTO app_setting ([key], value_json) VALUES (@key, @value)",
+                    new { key, value = JsonSerializer.Serialize(value, JsonOptions) }, transaction);
             }
         }
 
         private static Task InsertFamilyAsync(IDbConnection connection, IDbTransaction transaction, FamilyRequest family)
-        {
-            return connection.ExecuteAsync("""
+            => connection.ExecuteAsync("""
                 INSERT INTO family (id, nom, description, beneficiary_mode, beneficiary_table, beneficiary_table_label, beneficiary_link_column,
                   beneficiary_display_column_1, beneficiary_display_column_2, beneficiary_sql_text, filter_catalog_json,
                   sql_text, created_at, classes_json)
@@ -843,35 +865,59 @@ namespace DocApi.Repositories
                   @beneficiary_display_column_1, @beneficiary_display_column_2, @beneficiary_sql_text, @filter_catalog_json,
                   @sql_text, @created_at, @classes_json)
                 """, FamilyParams(family), transaction);
-        }
 
         private static Task InsertTableViewAsync(IDbConnection connection, IDbTransaction transaction, TableViewConfigRequest tableView)
-        {
-            return connection.ExecuteAsync("""
+            => connection.ExecuteAsync("""
                 INSERT INTO table_view_config (id, table_name, label, visible_fields_json, editable_fields_json,
                   preview_fields_json, field_labels_json, field_settings_json, created_at, updated_at)
                 VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json,
                   @preview_fields_json, @field_labels_json, @field_settings_json, @created_at, @updated_at)
                 """, TableViewParams(NormalizeTableView(tableView)), transaction);
-        }
 
-        private static Task InsertGraphicCharterAsync(IDbConnection connection, IDbTransaction transaction, GraphicCharterRequest charter, string? organizationId)
-        {
-            return connection.ExecuteAsync("""
+        private static Task InsertGraphicCharterAsync(IDbConnection connection, IDbTransaction transaction, GraphicCharterRequest charter, int? organizationId)
+            => connection.ExecuteAsync("""
                 INSERT INTO graphic_charter (id, etablissement_id, nom, description, is_default, config_json, created_at, updated_at)
                 VALUES (@id, @etablissement_id, @nom, @description, @is_default, @config_json, @created_at, @updated_at)
                 """, new
-            {
-                id = charter.Id,
-                etablissement_id = organizationId,
-                nom = charter.Name,
-                description = charter.Description ?? string.Empty,
-                is_default = charter.IsDefault,
-                config_json = JsonString(charter.Config, "{}"),
-                created_at = charter.CreatedAt,
-                updated_at = charter.UpdatedAt ?? charter.CreatedAt
-            }, transaction);
-        }
+                {
+                    id = charter.Id,
+                    etablissement_id = organizationId,
+                    nom = charter.Name,
+                    description = charter.Description ?? string.Empty,
+                    is_default = charter.IsDefault,
+                    config_json = JsonString(charter.Config, "{}"),
+                    created_at = charter.CreatedAt,
+                    updated_at = charter.UpdatedAt ?? charter.CreatedAt
+                }, transaction);
+
+        private static Task InsertTemplateAsync(IDbConnection connection, IDbTransaction transaction, TemplateRequest template, int? organizationId)
+            => connection.ExecuteAsync("""
+                INSERT INTO template (id, family_id, etablissement_id, graphic_charter_id, nom, updated_at, has_header,
+                  has_footer, orientation, filter_profile_json, section_directions_json, page_margins_json,
+                  header_html, body_html, footer_html)
+                VALUES (@id, @family_id, @etablissement_id, @graphic_charter_id, @nom, @updated_at, @has_header,
+                  @has_footer, @orientation, @filter_profile_json, @section_directions_json, @page_margins_json,
+                  @header_html, @body_html, @footer_html)
+                """, new
+                {
+                    id = template.Id,
+                    family_id = template.FamilyId,
+                    etablissement_id = organizationId,
+                    graphic_charter_id = template.GraphicCharterId,
+                    nom = template.Nom,
+                    updated_at = template.UpdatedAt,
+                    has_header = template.HasHeader,
+                    has_footer = template.HasFooter,
+                    orientation = ToDatabaseString(template.Orientation),
+                    filter_profile_json = JsonString(template.FilterProfile, "[]"),
+                    section_directions_json = JsonString(template.SectionDirections, "{}"),
+                    page_margins_json = JsonString(template.PageMargins, "{}"),
+                    header_html = template.Header,
+                    body_html = template.Body,
+                    footer_html = template.Footer
+                }, transaction);
+
+        // ─── Params helpers ───────────────────────────────────────────────────────
 
         private static object GraphicCharterParams(GraphicCharterRequest charter) => new
         {
@@ -884,35 +930,6 @@ namespace DocApi.Repositories
             created_at = charter.CreatedAt ?? DateTimeOffset.UtcNow.ToString("O"),
             updated_at = DateTimeOffset.UtcNow.ToString("O")
         };
-
-        private static Task InsertTemplateAsync(IDbConnection connection, IDbTransaction transaction, TemplateRequest template, string? organizationId)
-        {
-            return connection.ExecuteAsync("""
-                INSERT INTO template (id, family_id, etablissement_id, graphic_charter_id, nom, updated_at, has_header,
-                  has_footer, orientation, filter_profile_json, section_directions_json, page_margins_json,
-                  header_html, body_html, footer_html)
-                VALUES (@id, @family_id, @etablissement_id, @graphic_charter_id, @nom, @updated_at, @has_header,
-                  @has_footer, @orientation, @filter_profile_json, @section_directions_json, @page_margins_json,
-                  @header_html, @body_html, @footer_html)
-                """, new
-            {
-                id = template.Id,
-                family_id = template.FamilyId,
-                etablissement_id = organizationId,
-                graphic_charter_id = template.GraphicCharterId,
-                nom = template.Nom,
-                updated_at = template.UpdatedAt,
-                has_header = template.HasHeader,
-                has_footer = template.HasFooter,
-                orientation = ToDatabaseString(template.Orientation),
-                filter_profile_json = JsonString(template.FilterProfile, "[]"),
-                section_directions_json = JsonString(template.SectionDirections, "{}"),
-                page_margins_json = JsonString(template.PageMargins, "{}"),
-                header_html = template.Header,
-                body_html = template.Body,
-                footer_html = template.Footer
-            }, transaction);
-        }
 
         private static object TableViewParams(TableViewConfigRequest tableView) => new
         {
@@ -946,7 +963,7 @@ namespace DocApi.Repositories
             classes_json = JsonString(family.Classes, "[]")
         };
 
-        private static object TemplateParams(TemplateRequest template, string? organizationId) => new
+        private static object TemplateParams(TemplateRequest template, int? organizationId) => new
         {
             id = template.Id,
             family_id = template.FamilyId,
@@ -965,92 +982,149 @@ namespace DocApi.Repositories
             footer_html = template.Footer
         };
 
-        private static FamilyResponse NormalizeFamily(FamilyRequest source)
-        {
-            return new FamilyResponse
-            {
-                Id = string.IsNullOrWhiteSpace(source.Id) ? $"fam_{Guid.NewGuid():N}" : source.Id,
-                Nom = source.Nom,
-                Description = source.Description,
-                BeneficiaryMode = source.BeneficiaryMode,
-                BeneficiaryTable = source.BeneficiaryMode == BeneficiaryMode.Organization ? null : source.BeneficiaryTable,
-                BeneficiaryTableLabel = source.BeneficiaryTableLabel,
-                BeneficiaryLinkColumn = source.BeneficiaryLinkColumn,
-                BeneficiaryDisplayColumn1 = source.BeneficiaryDisplayColumn1,
-                BeneficiaryDisplayColumn2 = source.BeneficiaryDisplayColumn2,
-                BeneficiarySql = source.BeneficiarySql,
-                FilterCatalog = source.FilterCatalog ?? [],
-                Sql = source.Sql,
-                CreatedAt = source.CreatedAt,
-                Classes = source.Classes ?? []
-            };
-        }
+        // ─── Normalizers ──────────────────────────────────────────────────────────
 
-        private static TemplateResponse NormalizeTemplate(TemplateRequest source)
+        private static FamilyResponse NormalizeFamily(FamilyRequest source) => new()
         {
-            return new TemplateResponse
-            {
-                Id = string.IsNullOrWhiteSpace(source.Id) ? $"tpl_{Guid.NewGuid():N}" : source.Id,
-                FamilyId = source.FamilyId,
-                OrganizationId = source.OrganizationId,
-                GraphicCharterId = source.GraphicCharterId,
-                Nom = source.Nom,
-                UpdatedAt = source.UpdatedAt,
-                HasHeader = source.HasHeader,
-                HasFooter = source.HasFooter,
-                Orientation = source.Orientation,
-                FilterProfile = source.FilterProfile ?? [],
-                SectionDirections = source.SectionDirections ?? new SectionDirections(),
-                PageMargins = source.PageMargins ?? new PageMargins(),
-                HeaderFooterDistances = source.HeaderFooterDistances ?? new HeaderFooterDistances(),
-                HeaderDisplay = source.HeaderDisplay,
-                FooterDisplay = source.FooterDisplay,
-                Header = source.Header,
-                Body = source.Body,
-                Footer = source.Footer
-            };
-        }
+            Id = string.IsNullOrWhiteSpace(source.Id) ? $"fam_{Guid.NewGuid():N}" : source.Id,
+            Nom = source.Nom,
+            Description = source.Description,
+            BeneficiaryMode = source.BeneficiaryMode,
+            BeneficiaryTable = source.BeneficiaryMode == BeneficiaryMode.Organization ? null : source.BeneficiaryTable,
+            BeneficiaryTableLabel = source.BeneficiaryTableLabel,
+            BeneficiaryLinkColumn = source.BeneficiaryLinkColumn,
+            BeneficiaryDisplayColumn1 = source.BeneficiaryDisplayColumn1,
+            BeneficiaryDisplayColumn2 = source.BeneficiaryDisplayColumn2,
+            BeneficiarySql = source.BeneficiarySql,
+            FilterCatalog = source.FilterCatalog ?? [],
+            Sql = source.Sql,
+            CreatedAt = source.CreatedAt,
+            Classes = source.Classes ?? []
+        };
 
-        private static GraphicCharterResponse NormalizeGraphicCharter(GraphicCharterRequest source)
+        private static TemplateResponse NormalizeTemplate(TemplateRequest source) => new()
         {
-            return new GraphicCharterResponse
-            {
-                Id = string.IsNullOrWhiteSpace(source.Id) ? $"gch_{Guid.NewGuid():N}" : source.Id,
-                OrganizationId = source.OrganizationId,
-                Name = source.Name,
-                Description = source.Description,
-                IsDefault = source.IsDefault,
-                Config = source.Config ?? new GraphicCharterConfig(),
-                CreatedAt = source.CreatedAt,
-                UpdatedAt = source.UpdatedAt
-            };
-        }
+            Id = string.IsNullOrWhiteSpace(source.Id) ? $"tpl_{Guid.NewGuid():N}" : source.Id,
+            FamilyId = source.FamilyId,
+            OrganizationId = source.OrganizationId,
+            GraphicCharterId = source.GraphicCharterId,
+            Nom = source.Nom,
+            UpdatedAt = source.UpdatedAt,
+            HasHeader = source.HasHeader,
+            HasFooter = source.HasFooter,
+            Orientation = source.Orientation,
+            FilterProfile = source.FilterProfile ?? [],
+            SectionDirections = source.SectionDirections ?? new SectionDirections(),
+            PageMargins = source.PageMargins ?? new PageMargins(),
+            HeaderFooterDistances = source.HeaderFooterDistances ?? new HeaderFooterDistances(),
+            HeaderDisplay = source.HeaderDisplay,
+            FooterDisplay = source.FooterDisplay,
+            Header = source.Header,
+            Body = source.Body,
+            Footer = source.Footer
+        };
 
-        private static TableViewConfigResponse NormalizeTableView(TableViewConfigRequest source)
+        private static GraphicCharterResponse NormalizeGraphicCharter(GraphicCharterRequest source) => new()
         {
-            return new TableViewConfigResponse
-            {
-                Id = string.IsNullOrWhiteSpace(source.Id) ? $"tvw_{Guid.NewGuid():N}" : source.Id,
-                TableName = source.TableName,
-                Label = source.Label,
-                VisibleFields = NormalizeFieldList(source.VisibleFields),
-                EditableFields = NormalizeFieldList(source.EditableFields),
-                PreviewFields = NormalizeFieldList(source.PreviewFields).Take(3).ToList(),
-                FieldLabels = source.FieldLabels ?? [],
-                FieldSettings = source.FieldSettings ?? [],
-                CreatedAt = source.CreatedAt,
-                UpdatedAt = source.UpdatedAt
-            };
-        }
+            Id = string.IsNullOrWhiteSpace(source.Id) ? $"gch_{Guid.NewGuid():N}" : source.Id,
+            OrganizationId = source.OrganizationId,
+            Name = source.Name,
+            Description = source.Description,
+            IsDefault = source.IsDefault,
+            Config = source.Config ?? new GraphicCharterConfig(),
+            CreatedAt = source.CreatedAt,
+            UpdatedAt = source.UpdatedAt
+        };
+
+        private static TableViewConfigResponse NormalizeTableView(TableViewConfigRequest source) => new()
+        {
+            Id = string.IsNullOrWhiteSpace(source.Id) ? $"tvw_{Guid.NewGuid():N}" : source.Id,
+            TableName = source.TableName,
+            Label = source.Label,
+            VisibleFields = NormalizeFieldList(source.VisibleFields),
+            EditableFields = NormalizeFieldList(source.EditableFields),
+            PreviewFields = NormalizeFieldList(source.PreviewFields).Take(3).ToList(),
+            FieldLabels = source.FieldLabels ?? [],
+            FieldSettings = source.FieldSettings ?? [],
+            CreatedAt = source.CreatedAt,
+            UpdatedAt = source.UpdatedAt
+        };
 
         private static List<string> NormalizeFieldList(IEnumerable<string>? fields)
-        {
-            return (fields ?? [])
-                .Select(field => field?.Trim() ?? string.Empty)
-                .Where(field => !string.IsNullOrWhiteSpace(field))
+            => (fields ?? [])
+                .Select(f => f?.Trim() ?? string.Empty)
+                .Where(f => !string.IsNullOrWhiteSpace(f))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+
+        // ─── Query helpers ────────────────────────────────────────────────────────
+
+        private static string CompileNamedParameters(string querySql, Dictionary<string, object?> values, DynamicParameters output)
+            => Regex.Replace(querySql, @":([a-zA-Z_]\w*)", match =>
+            {
+                var key = match.Groups[1].Value;
+                output.Add(key, values.TryGetValue(key, out var value) ? NormalizeParameterValue(value) : null);
+                return "@" + key;
+            });
+
+        private static bool IsSelectQuery(string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql)) return false;
+            var s = sql.Trim();
+            s = Regex.Replace(s, @"^\s*/\*.*?\*/\s*", "", RegexOptions.Singleline);
+            s = Regex.Replace(s, @"^\s*(?:--.*?$\s*)+", "", RegexOptions.Multiline);
+            while (s.StartsWith("(")) s = s[1..].TrimStart();
+            return Regex.IsMatch(s, "^(select|with)\\b", RegexOptions.IgnoreCase);
         }
+
+        private static string NormalizeSelectQueryForSqlServer(string querySql)
+        {
+            var raw = (querySql ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(raw)) return raw;
+            raw = ConvertIdentifierQuotes(raw);
+            raw = ConvertLegacyFunctions(raw);
+            raw = ApplyTopLevelLimit(raw);
+            return StripDanglingSelectCommas(raw);
+        }
+
+        private static string ConvertIdentifierQuotes(string sql)
+            => Regex.Replace(sql, @"`([^`]+)`", m => Quote(m.Groups[1].Value));
+
+        private static string ConvertLegacyFunctions(string sql)
+            => Regex.Replace(sql, @"\bIFNULL\s*\(", "ISNULL(", RegexOptions.IgnoreCase);
+
+        private static string ApplyTopLevelLimit(string sql)
+        {
+            var match = Regex.Match(sql, @"\s+LIMIT\s+(\d+)\s*$", RegexOptions.IgnoreCase);
+            if (!match.Success) return sql;
+            var limit = match.Groups[1].Value;
+            var withoutLimit = sql[..match.Index].TrimEnd();
+            if (Regex.IsMatch(withoutLimit, @"^\s*SELECT\s+TOP\s*\(", RegexOptions.IgnoreCase)) return withoutLimit;
+            return Regex.Replace(withoutLimit, @"^\s*SELECT\s+", $"SELECT TOP ({limit}) ", RegexOptions.IgnoreCase);
+        }
+
+        private static string StripDanglingSelectCommas(string sql)
+            => Regex.Replace(sql, @",\s+FROM\s+", " FROM ", RegexOptions.IgnoreCase);
+
+        private static object? NormalizeParameterValue(object? value)
+        {
+            if (value is JsonElement element)
+            {
+                return element.ValueKind switch
+                {
+                    JsonValueKind.String => element.GetString(),
+                    JsonValueKind.Number when element.TryGetInt64(out var l) => l,
+                    JsonValueKind.Number when element.TryGetDouble(out var d) => d,
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Null => null,
+                    _ => element.GetRawText()
+                };
+            }
+            return value;
+        }
+
+        // ─── JSON helpers ─────────────────────────────────────────────────────────
 
         private static JsonSerializerOptions CreateJsonOptions()
         {
@@ -1068,10 +1142,7 @@ namespace DocApi.Repositories
                     ? CloneValue(fallback)
                     : JsonSerializer.Deserialize<T>(raw, JsonOptions) ?? CloneValue(fallback);
             }
-            catch
-            {
-                return CloneValue(fallback);
-            }
+            catch { return CloneValue(fallback); }
         }
 
         private static T CloneValue<T>(T value)
@@ -1082,75 +1153,69 @@ namespace DocApi.Repositories
 
         private static object? ParseJsonValue(string? raw)
         {
-            try
-            {
-                return string.IsNullOrWhiteSpace(raw) ? null : JsonSerializer.Deserialize<object?>(raw, JsonOptions);
-            }
-            catch
-            {
-                return null;
-            }
+            try { return string.IsNullOrWhiteSpace(raw) ? null : JsonSerializer.Deserialize<object?>(raw, JsonOptions); }
+            catch { return null; }
         }
 
         private static string JsonString<T>(T value, string fallback)
         {
-            try
-            {
-                return JsonSerializer.Serialize(value, JsonOptions);
-            }
-            catch
-            {
-                return fallback;
-            }
+            try { return JsonSerializer.Serialize(value, JsonOptions); }
+            catch { return fallback; }
         }
+
+        // ─── Row helpers ──────────────────────────────────────────────────────────
 
         private static PageOrientation ParseOrientation(string? value)
-        {
-            return string.Equals(value, "landscape", StringComparison.OrdinalIgnoreCase)
-                ? PageOrientation.Landscape
-                : PageOrientation.Portrait;
-        }
+            => string.Equals(value, "landscape", StringComparison.OrdinalIgnoreCase)
+                ? PageOrientation.Landscape : PageOrientation.Portrait;
 
         private static string ToDatabaseString(PageOrientation orientation)
-        {
-            return orientation == PageOrientation.Landscape ? "landscape" : "portrait";
-        }
+            => orientation == PageOrientation.Landscape ? "landscape" : "portrait";
 
         private static string Quote(string name) => $"[{name.Replace("]", "]]")}]";
 
         private static IDictionary<string, object?> Row(object row)
         {
-            if (row is IDictionary<string, object?> nullableDictionary) return nullableDictionary;
-            return ((IDictionary<string, object>)row).ToDictionary(pair => pair.Key, pair => (object?)pair.Value);
+            if (row is IDictionary<string, object?> d) return d;
+            return ((IDictionary<string, object>)row).ToDictionary(p => p.Key, p => (object?)p.Value);
         }
 
         private static Dictionary<string, object?> CleanRow(object row)
-        {
-            return Row(row).ToDictionary(
-                pair => pair.Key,
-                pair => pair.Value switch
-                {
-                    DateTime dateTime => dateTime.ToString("O"),
-                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
-                    _ => pair.Value
-                });
-        }
+            => Row(row).ToDictionary(p => p.Key, p => p.Value switch
+            {
+                DateTime dt => (object?)dt.ToString("O"),
+                DateTimeOffset dto => dto.ToString("O"),
+                _ => p.Value
+            });
 
-        private static string? Str(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && value is not null && value is not DBNull ? value.ToString() : null;
-        private static string? StrOrNull(IDictionary<string, object?> row, string key) => string.IsNullOrWhiteSpace(Str(row, key)) ? null : Str(row, key);
-        private static object? Obj(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && value is not DBNull ? value : null;
-        private static bool Bool(IDictionary<string, object?> row, string key) => row.TryGetValue(key, out var value) && value is not null && value is not DBNull && Convert.ToBoolean(value);
-        private static string? FirstString(IDictionary<string, object?> row, params string[] keys) => keys.Select(key => Str(row, key)).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
-        private static object? FirstObject(IDictionary<string, object?> row, params string[] keys) => keys.Select(key => Obj(row, key)).FirstOrDefault(value => value is not null);
-        private static bool FirstBool(IDictionary<string, object?> row, params string[] keys) => keys.Select(key => Obj(row, key)).FirstOrDefault(value => value is not null) is { } value && Convert.ToBoolean(value);
+        private static string? Str(IDictionary<string, object?> row, string key)
+            => row.TryGetValue(key, out var v) && v is not null && v is not DBNull ? v.ToString() : null;
+        private static string? StrOrNull(IDictionary<string, object?> row, string key)
+            => string.IsNullOrWhiteSpace(Str(row, key)) ? null : Str(row, key);
+        private static int? IntOrNull(IDictionary<string, object?> row, string key)
+            => int.TryParse(Str(row, key), out var i) ? i : null;
+        private static int? FirstInt(IDictionary<string, object?> row, params string[] keys)
+            => keys.Select(k => IntOrNull(row, k)).FirstOrDefault(v => v.HasValue);
+        private static object? Obj(IDictionary<string, object?> row, string key)
+            => row.TryGetValue(key, out var v) && v is not DBNull ? v : null;
+        private static bool Bool(IDictionary<string, object?> row, string key)
+            => row.TryGetValue(key, out var v) && v is not null && v is not DBNull && Convert.ToBoolean(v);
+        private static string? FirstString(IDictionary<string, object?> row, params string[] keys)
+            => keys.Select(k => Str(row, k)).FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+        private static object? FirstObject(IDictionary<string, object?> row, params string[] keys)
+            => keys.Select(k => Obj(row, k)).FirstOrDefault(v => v is not null);
+        private static bool FirstBool(IDictionary<string, object?> row, params string[] keys)
+            => keys.Select(k => Obj(row, k)).FirstOrDefault(v => v is not null) is { } v && Convert.ToBoolean(v);
         private static string? FormatValue(object? value) => value switch
         {
             null => null,
-            DateTime dateTime => dateTime.ToString("O"),
-            DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
+            DateTime dt => dt.ToString("O"),
+            DateTimeOffset dto => dto.ToString("O"),
             _ => value.ToString()
         };
-        private string AuthTable(string tableName) => $"[{EscapeIdentifier(_options.AuthDatabaseName)}].[dbo].[{EscapeIdentifier(tableName)}]";
+
+        private string AuthTable(string tableName)
+            => $"[{EscapeIdentifier(_options.AuthDatabaseName)}].[dbo].[{EscapeIdentifier(tableName)}]";
         private static string EscapeIdentifier(string value) => value.Replace("]", "]]");
 
         private sealed class ColumnInfo

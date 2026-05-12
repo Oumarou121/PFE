@@ -7,6 +7,6 @@ namespace DocApi.Services.Interfaces
         Task<AuthResponse> LoginAsync(LoginRequest request);
         Task<AuthResponse> RegisterAsync(RegisterRequest request);
         Task<UserResponse> GetUserProfileAsync(int userId);
-        string GenerateJwtToken(int userId, string username, string role, string? organizationId = null);
+        string GenerateJwtToken(int userId, string username, string role, int? organizationId = null);
     }
 }

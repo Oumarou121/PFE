@@ -1,9 +1,10 @@
-import type { UnknownRecord } from './editor-common.model';
-import type { GraphicCharterRecord } from './graphic-charter.model';
+import type { UnknownRecord } from "./editor-common.model";
+import type { GraphicCharterRecord } from "./graphic-charter.model";
 
 export interface OrganizationRecord extends UnknownRecord {
   id: string;
   organizationId?: string | null;
+  databaseName?: string | null;
   nom?: string;
   name?: string;
   ville?: string;

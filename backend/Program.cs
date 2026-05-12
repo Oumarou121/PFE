@@ -2,11 +2,14 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DocApi.Common;
+using DocApi.Common.Tenant;
 using DocApi.Infrastructure;
+using DocApi.Infrastructure.ConnectionFactories;
 using DocApi.Repositories;
 using DocApi.Repositories.Interfaces;
 using DocApi.Services;
 using DocApi.Services.Interfaces;
+using DocApi.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -89,8 +92,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.Configure<EditorDatabaseOptions>(builder.Configuration.GetSection("EditorDatabase"));
-builder.Services.AddScoped<IEditorDbConnectionFactory, EditorDbConnectionFactory>();
+builder.Services.AddScoped<ITenantProvider, TenantProvider>();
+builder.Services.AddScoped<ITenantResolver, TenantResolver>();
+builder.Services.AddScoped<IAuthDbConnectionFactory, AuthDbConnectionFactory>();
+builder.Services.AddScoped<IConfigDbConnectionFactory, ConfigDbConnectionFactory>();
+builder.Services.AddScoped<ITenantConnectionFactory, TenantConnectionFactory>();
 
+builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IEditorRepository, EditorRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
@@ -110,6 +118,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("EditorCors");
 app.UseAuthentication();
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

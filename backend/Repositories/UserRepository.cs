@@ -8,13 +8,11 @@ namespace DocApi.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly IEditorDbConnectionFactory _connectionFactory;
-        private readonly EditorDatabaseOptions _options;
+        private readonly IAuthDbConnectionFactory _connectionFactory;
 
-        public UserRepository(IEditorDbConnectionFactory connectionFactory, IOptions<EditorDatabaseOptions> options)
+        public UserRepository(IAuthDbConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
-            _options = options.Value;
         }
 
         public async Task<User?> GetByIdAsync(int id)
@@ -136,8 +134,6 @@ namespace DocApi.Repositories
             return count > 0;
         }
 
-        private string UserTable => $"[{EscapeIdentifier(_options.AuthDatabaseName)}].[dbo].[User]";
-
-        private static string EscapeIdentifier(string value) => value.Replace("]", "]]");
+        private string UserTable => "[dbo].[User]";
     }
 }

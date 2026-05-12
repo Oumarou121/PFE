@@ -5,6 +5,7 @@ namespace DocApi.Domain.Entities
     public class Family
     {
         public string Id { get; set; } = string.Empty;
+        public List<int> OrganizationIds { get; set; } = new List<int>();
         public string Nom { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string BeneficiaryMode { get; set; } = "table";

@@ -6,7 +6,7 @@ namespace DocApi.Domain.Entities
     {
         public string Id { get; set; } = string.Empty;
         public string FamilyId { get; set; } = string.Empty;
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
         public string? GraphicCharterId { get; set; }
         public string Nom { get; set; } = string.Empty;
         public string? UpdatedAt { get; set; }

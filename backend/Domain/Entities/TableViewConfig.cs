@@ -5,6 +5,7 @@ namespace DocApi.Domain.Entities
     public class TableViewConfig
     {
         public string Id { get; set; } = string.Empty;
+        public List<int> OrganizationIds { get; set; } = new List<int>();
         public string TableName { get; set; } = string.Empty;
         public string Label { get; set; } = string.Empty;
         public List<string> VisibleFields { get; set; } = [];

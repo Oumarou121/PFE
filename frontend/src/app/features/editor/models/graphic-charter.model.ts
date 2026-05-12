@@ -54,6 +54,8 @@ export interface GraphicCharterConfig {
 
 export interface GraphicCharterRecord {
   id: string;
+  /** ID de l'organisation propriétaire (isolement multi-tenant - jamais mutualisé) */
+  organizationId?: number | null;
   name: string;
   description: string;
   isDefault: boolean;

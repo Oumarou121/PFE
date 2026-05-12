@@ -45,8 +45,7 @@ namespace DocApi.DTOs
         [MaxLength(64)]
         public string FamilyId { get; set; } = string.Empty;
 
-        [MaxLength(64)]
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
 
         public Dictionary<string, object?> Filters { get; set; } = [];
 
@@ -112,8 +111,7 @@ namespace DocApi.DTOs
         [MaxLength(128)]
         public string? BeneficiaryTable { get; set; }
 
-        [MaxLength(64)]
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
 
         public Dictionary<string, object?> Filters { get; set; } = [];
     }
@@ -122,6 +120,8 @@ namespace DocApi.DTOs
     {
         [MaxLength(64)]
         public string Id { get; set; } = string.Empty;
+
+        public List<int> OrganizationIds { get; set; } = new List<int>();
 
         [Required]
         [MaxLength(255)]
@@ -165,8 +165,7 @@ namespace DocApi.DTOs
         [MaxLength(64)]
         public string FamilyId { get; set; } = string.Empty;
 
-        [MaxLength(64)]
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
 
         [MaxLength(64)]
         public string? GraphicCharterId { get; set; }
@@ -199,8 +198,7 @@ namespace DocApi.DTOs
         [MaxLength(64)]
         public string Id { get; set; } = string.Empty;
 
-        [MaxLength(64)]
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
 
         [Required]
         [MaxLength(255)]
@@ -221,6 +219,8 @@ namespace DocApi.DTOs
     {
         [MaxLength(64)]
         public string Id { get; set; } = string.Empty;
+
+        public List<int> OrganizationIds { get; set; } = new List<int>();
 
         [Required]
         [MaxLength(128)]
@@ -254,7 +254,8 @@ namespace DocApi.DTOs
 
     public class OrganizationResponse
     {
-        public string Id { get; set; } = string.Empty;
+        public int Id { get; set; }
+        public string DatabaseName { get; set; } = string.Empty;
         public string? Nom { get; set; }
         public string? NameFr { get; set; }
         public string? NameAr { get; set; }
@@ -294,7 +295,7 @@ namespace DocApi.DTOs
     public class AdminResponse
     {
         public string Id { get; set; } = string.Empty;
-        public string? OrganizationId { get; set; }
+        public int? OrganizationId { get; set; }
         public string Nom { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = "admin";

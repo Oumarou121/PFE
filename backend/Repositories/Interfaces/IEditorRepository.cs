@@ -23,7 +23,7 @@ namespace DocApi.Repositories.Interfaces
         Task<TableViewConfigResponse?> GetTableViewConfigByIdAsync(string id);
         Task<Dictionary<string, object?>> LoadSettingsAsync();
         Task<DatabaseSchemaResponse> LoadSchemaAsync();
-        Task ReplaceStateAsync(EditorStateResponse state, string? scopedOrganizationId, bool isSuperAdmin);
+        Task ReplaceStateAsync(EditorStateResponse state, int? scopedOrganizationId, bool isSuperAdmin);
         Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters);
         Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config);
         Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId);
