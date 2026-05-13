@@ -880,10 +880,10 @@ namespace DocApi.Repositories
 
         private static Task InsertTableViewAsync(IDbConnection connection, IDbTransaction transaction, TableViewConfigRequest tableView)
             => connection.ExecuteAsync("""
-                INSERT INTO table_view_config (id, table_name, label, visible_fields_json, editable_fields_json,
-                  preview_fields_json, field_labels_json, field_settings_json, created_at, updated_at)
-                VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json,
-                  @preview_fields_json, @field_labels_json, @field_settings_json, @created_at, @updated_at)
+                                INSERT INTO table_view_config (id, table_name, label, visible_fields_json, editable_fields_json,
+                                    preview_fields_json, field_labels_json, field_settings_json, organization_ids_json, created_at, updated_at)
+                                VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json,
+                                    @preview_fields_json, @field_labels_json, @field_settings_json, @organization_ids_json, @created_at, @updated_at)
                 """, TableViewParams(NormalizeTableView(tableView)), transaction);
 
         private static Task InsertGraphicCharterAsync(IDbConnection connection, IDbTransaction transaction, GraphicCharterRequest charter, int? organizationId)
@@ -1003,6 +1003,7 @@ namespace DocApi.Repositories
             Id = string.IsNullOrWhiteSpace(source.Id) ? $"fam_{Guid.NewGuid():N}" : source.Id,
             Nom = source.Nom,
             Description = source.Description,
+            OrganizationIds = source.OrganizationIds ?? new List<int>(),
             BeneficiaryMode = source.BeneficiaryMode,
             BeneficiaryTable = source.BeneficiaryMode == BeneficiaryMode.Organization ? null : source.BeneficiaryTable,
             BeneficiaryTableLabel = source.BeneficiaryTableLabel,
