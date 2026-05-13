@@ -46,7 +46,13 @@ import { ModuleFormComponent } from "./components/module-form/module-form.compon
 @Component({
   selector: "app-super-admin",
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, ModuleListComponent, ModuleFormComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatDialogModule,
+    ModuleListComponent,
+    ModuleFormComponent,
+  ],
   templateUrl: "./super-admin.component.html",
   styleUrls: ["./super-admin.component.scss"],
   encapsulation: ViewEncapsulation.None,
@@ -1066,8 +1072,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   getAdminOrganizationName(admin: AdminAccount): string {
+    console.log(this.organizations);
     const organization = this.organizations.find(
-      (item) => item.id === admin.organizationId,
+      (item) => item.id == admin.organizationId,
     );
     return organization?.nom || organization?.name || "-";
   }
@@ -2738,7 +2745,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     ).filter((column: any) => !selected.has(column.name));
   }
 
-  private async runSelect(sql: string, params: Record<string, any>): Promise<any[]> {
+  private async runSelect(
+    sql: string,
+    params: Record<string, any>,
+  ): Promise<any[]> {
     const payload = await firstValueFrom(
       this.api.post<any>("query", {
         sql,
