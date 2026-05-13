@@ -1054,6 +1054,7 @@ namespace DocApi.Repositories
         private static TableViewConfigResponse NormalizeTableView(TableViewConfigRequest source) => new()
         {
             Id = string.IsNullOrWhiteSpace(source.Id) ? $"tvw_{Guid.NewGuid():N}" : source.Id,
+            OrganizationIds = source.OrganizationIds ?? new List<int>(),
             TableName = source.TableName,
             Label = source.Label,
             VisibleFields = NormalizeFieldList(source.VisibleFields),
