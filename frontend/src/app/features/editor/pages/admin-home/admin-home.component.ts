@@ -75,12 +75,6 @@ export class AdminHomeComponent implements OnInit {
         icon: "📚",
         action: () => this.router.navigate(["/documents"]),
       },
-      {
-        title: "Gestion des modules",
-        subtitle: "Configurer les espaces métiers",
-        icon: "🧩",
-        action: () => this.router.navigate(["/admin/modules"]),
-      },
     ];
   }
 

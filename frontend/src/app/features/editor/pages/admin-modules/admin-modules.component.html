@@ -11,20 +11,6 @@
     <span class="nav-organization">{{ organizationName }}</span>
     <div class="nav-right">
       <button class="nav-link" type="button" (click)="goBack()">Accueil</button>
-      <button
-        class="nav-link"
-        type="button"
-        (click)="router.navigate(['/admin/editor'])"
-      >
-        Éditeur
-      </button>
-      <button
-        class="nav-link"
-        type="button"
-        (click)="router.navigate(['/documents'])"
-      >
-        Historique
-      </button>
       <button class="nav-link" type="button" (click)="logout()">
         Déconnexion
       </button>

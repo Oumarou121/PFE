@@ -22,19 +22,8 @@
       <h1>Choisissez l'espace à ouvrir</h1>
       <p>
         Les cartes de base mènent à l'éditeur et à l'historique des documents.
-        Les cartes métiers ouvrent ensuite les composants dédiés à chaque
-        module.
+        Les modules métiers apparaissent directement sous forme de cartes.
       </p>
-    </div>
-    <div class="hero-meta">
-      <div class="meta-card">
-        <span class="meta-label">Modules actifs</span>
-        <strong>{{ modules.length }}</strong>
-      </div>
-      <div class="meta-card">
-        <span class="meta-label">Organisation</span>
-        <strong>{{ organizationName || "-" }}</strong>
-      </div>
     </div>
   </section>
 
@@ -52,44 +41,25 @@
       </div>
       <span class="launch-arrow">›</span>
     </button>
+
+    <button
+      class="launch-card launch-card--module"
+      type="button"
+      *ngFor="let module of modules"
+      (click)="openModule(module)"
+    >
+      <div class="launch-icon">{{ module.icon || "🧩" }}</div>
+      <div class="launch-body">
+        <h2>{{ module.name }}</h2>
+        <p>
+          {{ module.description || "Ouvrir le composant dédié à ce module." }}
+        </p>
+      </div>
+      <span class="launch-arrow">›</span>
+    </button>
   </section>
 
-  <section class="module-section">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">Modules métier</p>
-        <h2>Accéder aux composants dédiés</h2>
-      </div>
-      <button
-        class="nav-link"
-        type="button"
-        (click)="router.navigate(['/admin/modules'])"
-      >
-        Voir tous les modules
-      </button>
-    </div>
-
-    <div class="module-grid" *ngIf="modules.length; else noModules">
-      <button
-        class="module-card"
-        type="button"
-        *ngFor="let module of modules"
-        (click)="openModule(module)"
-      >
-        <div class="module-icon">{{ module.icon || "🧩" }}</div>
-        <div class="module-copy">
-          <h3>{{ module.name }}</h3>
-          <p>
-            {{ module.description || "Ouvrir le composant dédié à ce module." }}
-          </p>
-        </div>
-      </button>
-    </div>
-
-    <ng-template #noModules>
-      <div class="empty-state">
-        Aucun module métier n'est disponible pour cette organisation.
-      </div>
-    </ng-template>
-  </section>
+  <div class="empty-state empty-state--inline" *ngIf="!modules.length">
+    Aucun module métier n'est disponible pour cette organisation.
+  </div>
 </div>
