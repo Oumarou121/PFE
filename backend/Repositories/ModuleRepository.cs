@@ -66,7 +66,9 @@ namespace DocApi.Repositories
                     OrganizationIds = JsonValue(row, "organization_ids_json", new List<int>()),
                     CreatedAt = Str(row, "created_at"),
                     UpdatedAt = Str(row, "updated_at"),
-                    TableViews = tableViewsByModule.TryGetValue(id, out List<ModuleTableViewDto>? tvs) ? tvs : new List<ModuleTableViewDto>()
+                    TableViews = tableViewsByModule.TryGetValue(id, out List<ModuleTableViewDto> tvs)
+                        ? tvs
+                        : new List<ModuleTableViewDto>()
                 };
             });
         }
