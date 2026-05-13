@@ -36,6 +36,7 @@
     "@tiptap/extension-underline": "^2.27.2",
     "@tiptap/pm": "^2.27.2",
     "@tiptap/starter-kit": "^2.27.2",
+    "font-awesome": "^4.7.0",
     "rxjs": "~7.8.0",
     "tiptap-image-plus": "^3.0.0",
     "tiptap-pagination-plus": "tiptap-v2",

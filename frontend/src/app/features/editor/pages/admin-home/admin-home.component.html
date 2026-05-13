@@ -1,56 +1,93 @@
+<!-- admin-home.component.html -->
 <div class="admin-home">
+  <!-- Loading -->
   <div class="loading-overlay" *ngIf="loading">
     <div class="spinner"></div>
     <p>Chargement de l'espace administrateur...</p>
   </div>
 
+  <!-- Navigation -->
   <nav class="topnav">
-    <div class="nav-logo">SIRH-<span>Doc</span></div>
-    <div class="nav-sep"></div>
-    <span class="nav-chip">ADMIN</span>
-    <span class="nav-organization">{{ organizationName }}</span>
+    <div class="nav-logo">
+      <svg
+        class="nav-logo__icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+      SIRH-<span class="nav-logo__light">Doc</span>
+    </div>
+    <div class="nav-center">
+      <span class="nav-org-pill">{{ organizationName }}</span>
+    </div>
     <div class="nav-right">
-      <button class="nav-link" type="button" (click)="logout()">
-        Déconnexion
+      <button class="nav-logout-btn" type="button" (click)="logout()">
+        <i class="fa fa-sign-out"></i> Déconnexion
       </button>
     </div>
   </nav>
 
-  <section class="card-grid">
+  <!-- Grille de cartes (actions rapides + modules métier) -->
+  <section class="card-grid" *ngIf="!loading">
+    <!-- Cartes d'actions rapides -->
     <button
-      class="launch-card launch-card--core"
+      class="launch-card"
       type="button"
       *ngFor="let card of quickCards"
       (click)="card.action()"
     >
       <div class="launch-card__top">
-        <div class="launch-card__icon">{{ card.icon }}</div>
-        <div class="launch-card__pointer" aria-hidden="true">☝</div>
+        <div
+          class="launch-card__icon launch-card__icon--emoji"
+          aria-hidden="true"
+        >
+          <i *ngIf="card.icon" class="{{ card.icon }}"></i>
+        </div>
+        <div class="launch-card__pointer" aria-hidden="true">
+          <i class="fa fa-hand-o-up fa-5x fa-pull-right"></i>
+        </div>
       </div>
       <div class="launch-card__footer">
-        <div class="launch-card__label">{{ card.title }}</div>
-        <div class="launch-card__chevron" aria-hidden="true">›</div>
+        <span class="launch-card__label">{{ card.title }}</span>
+        <span class="launch-card__chevron">
+          <i class="fa fa-arrow-circle-right"></i>
+        </span>
       </div>
     </button>
 
+    <!-- Cartes des modules métier -->
     <button
-      class="launch-card launch-card--module"
+      class="module-card"
       type="button"
       *ngFor="let module of modules"
       (click)="openModule(module)"
     >
-      <div class="launch-card__top">
-        <div class="launch-card__icon">{{ module.icon || "🧩" }}</div>
-        <div class="launch-card__pointer" aria-hidden="true">☝</div>
+      <div class="module-card__header">
+        <div class="module-card__left">
+          <i *ngIf="module.icon" class="{{ module.icon }}"></i>
+        </div>
+        <div class="module-card__right">
+          <i class="fa fa-hand-o-up fa-5x fa-pull-right"></i>
+        </div>
       </div>
-      <div class="launch-card__footer">
-        <div class="launch-card__label">{{ module.name }}</div>
-        <div class="launch-card__chevron" aria-hidden="true">›</div>
+      <div class="module-card__footer">
+        <span class="module-card__title">{{ module.name }}</span>
+        <span class="module-card__arrow">
+          <i class="fa fa-arrow-circle-right"></i>
+        </span>
       </div>
     </button>
   </section>
 
-  <div class="empty-state empty-state--inline" *ngIf="!modules.length">
-    Aucun module métier n'est disponible pour cette organisation.
+  <!-- État vide -->
+  <div class="empty-state" *ngIf="!loading && !modules.length">
+    <i class="fa fa-cubes"></i>
+    <p>Aucun module métier n'est disponible pour cette organisation.</p>
   </div>
 </div>

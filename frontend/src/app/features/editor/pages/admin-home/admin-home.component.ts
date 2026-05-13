@@ -66,13 +66,13 @@ export class AdminHomeComponent implements OnInit {
       {
         title: "Gestion des templates",
         subtitle: "Ouvrir l'éditeur de documents",
-        icon: "✏️",
+        icon: "fa fa-file-text", //<i class="fa fa-pencil-square-o" aria-hidden="true"></i>
         action: () => this.router.navigate(["/admin/editor"]),
       },
       {
         title: "Historique des documents",
         subtitle: "Consulter les documents générés",
-        icon: "📚",
+        icon: "fa fa-list-alt", //<i class="fa fa-list-alt" aria-hidden="true"></i>
         action: () => this.router.navigate(["/documents"]),
       },
     ];
