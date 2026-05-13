@@ -451,9 +451,11 @@ namespace DocApi.Repositories
                 USING (SELECT @id AS id) AS src ON target.id = src.id
                 WHEN MATCHED THEN UPDATE SET table_name = @table_name, label = @label,
                   visible_fields_json = @visible_fields_json, editable_fields_json = @editable_fields_json,
-                  preview_fields_json = @preview_fields_json, field_labels_json = @field_labels_json, field_settings_json = @field_settings_json, updated_at = @updated_at
-                WHEN NOT MATCHED THEN INSERT (id, table_name, label, visible_fields_json, editable_fields_json, preview_fields_json, field_labels_json, field_settings_json, created_at, updated_at)
-                  VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json, @preview_fields_json, @field_labels_json, @field_settings_json, @created_at, @updated_at);
+                  preview_fields_json = @preview_fields_json, field_labels_json = @field_labels_json, 
+                  field_settings_json = @field_settings_json, organization_ids_json = @organization_ids_json, 
+                  updated_at = @updated_at
+                WHEN NOT MATCHED THEN INSERT (id, table_name, label, visible_fields_json, editable_fields_json, preview_fields_json, field_labels_json, field_settings_json, organization_ids_json, created_at, updated_at)
+                  VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json, @preview_fields_json, @field_labels_json, @field_settings_json, @organization_ids_json, @created_at, @updated_at);
                 """, TableViewParams(normalized));
             return normalized;
         }

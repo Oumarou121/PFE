@@ -15,7 +15,8 @@ namespace DocApi.Middlewares
         {
             try
             {
-                await tenantResolver.ResolveAsync(context.User, context.RequestAborted);
+                var overrideOrgId = context.Request.Headers["X-Organization-Id"].FirstOrDefault();
+                await tenantResolver.ResolveAsync(context.User, overrideOrgId, context.RequestAborted);
             }
             catch (UnauthorizedAccessException)
             {

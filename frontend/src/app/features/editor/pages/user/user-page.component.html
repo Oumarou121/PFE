@@ -579,7 +579,7 @@
               (click)="selectModule(module.id)"
               style="display: flex; align-items: center; gap: 8px;"
             >
-              <span style="font-size: 16px;">🧩</span>
+              <span style="font-size: 16px;">{{ module.icon || '🧩' }}</span>
               <div class="data-view-name">{{ module.name }}</div>
             </button>
           </ng-container>

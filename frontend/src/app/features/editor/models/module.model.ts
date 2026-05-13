@@ -3,6 +3,7 @@ export interface ModuleRecord {
   organizationIds: number[];
   name: string;
   description?: string;
+  icon?: string;
   mainTableViewId: string;
   isActive: boolean;
   displayOrder: number;

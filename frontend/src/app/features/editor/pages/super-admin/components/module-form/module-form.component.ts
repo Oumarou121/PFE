@@ -27,6 +27,10 @@ import { OrganizationRecord } from '../../../../models/organization.model';
             <input type="text" [(ngModel)]="draft.name" placeholder="Ex: Teachers, Etudiants...">
           </div>
           <div class="form-group">
+            <label>Icône (Emoji ou code)</label>
+            <input type="text" [(ngModel)]="draft.icon" placeholder="Ex: 🧩, 🎓, teachers...">
+          </div>
+          <div class="form-group">
             <label>Description</label>
             <textarea [(ngModel)]="draft.description" rows="2"></textarea>
           </div>

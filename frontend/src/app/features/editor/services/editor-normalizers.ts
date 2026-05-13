@@ -437,8 +437,9 @@ export function normalizeFamilyRecord(record: unknown = {}): FamilyRecord {
   next["beneficiarySql"] = String(
     next["beneficiarySql"] || next["beneficiarySqlText"] || "",
   ).trim();
-  next["organizationIds"] = Array.isArray(next["organizationIds"])
-    ? next["organizationIds"].map((id: any) => Number(id))
+  const rawOrgIds = next["organizationIds"] || next["OrganizationIds"] || [];
+  next["organizationIds"] = Array.isArray(rawOrgIds)
+    ? rawOrgIds.map((id: any) => Number(id))
     : [];
   next["filterCatalog"] = normalizeFilterCatalog(
     next["filterCatalog"] || next["filterCatalogJson"] || [],
@@ -803,6 +804,13 @@ export function normalizeTableViewRecord(
     previewFields: normalizeFieldList(next["previewFields"], 3),
     fieldLabels: normalizeFieldLabels(next["fieldLabels"]),
     fieldSettings: normalizeFieldSettings(next["fieldSettings"]),
+    organizationIds: Array.isArray(
+      next["organizationIds"] || next["OrganizationIds"],
+    )
+      ? (next["organizationIds"] || next["OrganizationIds"]).map((id: any) =>
+          Number(id),
+        )
+      : [],
     createdAt: next["createdAt"] || null,
     updatedAt: next["updatedAt"] || null,
   };

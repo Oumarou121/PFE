@@ -110,6 +110,9 @@ export class UserPageComponent implements OnInit {
         user?.organizationId ||
         this.organizationsService.getOrganizations()[0]?.id ||
         null;
+      
+      this.auth.setActiveOrganizationId(this.organizationId);
+
       const organization = this.organizationId
         ? this.organizationsService.getOrganization(this.organizationId)
         : null;

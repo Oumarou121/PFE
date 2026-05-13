@@ -103,6 +103,11 @@ BEGIN
   ALTER TABLE [table_view_config] ADD field_labels_json NVARCHAR(MAX) NOT NULL DEFAULT '{}';
 END;
 
+IF COL_LENGTH('table_view_config', 'organization_ids_json') IS NULL
+BEGIN
+  ALTER TABLE [table_view_config] ADD organization_ids_json NVARCHAR(MAX) NULL;
+END;
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'template')
 BEGIN
 CREATE TABLE [template] (
@@ -140,6 +145,7 @@ CREATE TABLE [module] (
   id NVARCHAR(64) PRIMARY KEY,
   name NVARCHAR(255) NOT NULL,
   description NVARCHAR(MAX) NULL,
+  icon NVARCHAR(64) NULL,
   main_table_view_id NVARCHAR(64) NOT NULL,
   is_active BIT NOT NULL DEFAULT 1,
   display_order INT NOT NULL DEFAULT 0,
@@ -147,6 +153,13 @@ CREATE TABLE [module] (
   created_at NVARCHAR(64) NULL,
   updated_at NVARCHAR(64) NULL
 );
+END;
+ELSE
+BEGIN
+  IF COL_LENGTH('module', 'icon') IS NULL
+  BEGIN
+    ALTER TABLE [module] ADD icon NVARCHAR(64) NULL;
+  END
 END;
 
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'module_table_view')

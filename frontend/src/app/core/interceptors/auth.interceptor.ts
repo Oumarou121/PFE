@@ -17,9 +17,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     req.url.includes('/auth/register');
 
   if (token && !isPublicAuthEndpoint) {
-    const authReq = req.clone({
-      headers: req.headers.set('Authorization', `Bearer ${token}`)
-    });
+    let headers = req.headers.set('Authorization', `Bearer ${token}`);
+    
+    const activeOrgId = authService.getActiveOrganizationId();
+    if (activeOrgId) {
+      headers = headers.set('X-Organization-Id', activeOrgId);
+    }
+
+    const authReq = req.clone({ headers });
     return next(authReq);
   }
 

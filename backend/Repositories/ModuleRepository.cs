@@ -59,6 +59,7 @@ namespace DocApi.Repositories
                     Id = id,
                     Name = Str(row, "name") ?? string.Empty,
                     Description = Str(row, "description"),
+                    Icon = Str(row, "icon"),
                     MainTableViewId = Str(row, "main_table_view_id") ?? string.Empty,
                     IsActive = Bool(row, "is_active"),
                     DisplayOrder = Int(row, "display_order"),
@@ -91,6 +92,7 @@ namespace DocApi.Repositories
                         UPDATE [module] SET 
                             name = @Name, 
                             description = @Description, 
+                            icon = @Icon,
                             main_table_view_id = @MainTableViewId, 
                             is_active = @IsActive, 
                             display_order = @DisplayOrder,
@@ -100,13 +102,14 @@ namespace DocApi.Repositories
                     END
                     ELSE
                     BEGIN
-                        INSERT INTO [module] (id, name, description, main_table_view_id, is_active, display_order, organization_ids_json, created_at, updated_at)
-                        VALUES (@Id, @Name, @Description, @MainTableViewId, @IsActive, @DisplayOrder, @OrganizationIdsJson, @CreatedAt, @UpdatedAt)
+                        INSERT INTO [module] (id, name, description, icon, main_table_view_id, is_active, display_order, organization_ids_json, created_at, updated_at)
+                        VALUES (@Id, @Name, @Description, @Icon, @MainTableViewId, @IsActive, @DisplayOrder, @OrganizationIdsJson, @CreatedAt, @UpdatedAt)
                     END", 
                     new {
                         request.Id,
                         request.Name,
                         request.Description,
+                        request.Icon,
                         request.MainTableViewId,
                         request.IsActive,
                         request.DisplayOrder,

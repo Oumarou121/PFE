@@ -403,8 +403,13 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         addLabel: "Nouvelle vue",
         topbar: "Configuration des vues de données",
       },
+      modules: {
+        panelTitle: "Modules Métier",
+        addLabel: "Nouveau module",
+        topbar: "Configuration des modules",
+      },
     };
-    return meta[section] ?? meta["families"];
+    return meta[section] || meta["families"];
   }
 
   private async ensureSectionData(section: string): Promise<void> {
@@ -419,6 +424,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       }
       if (section === "tableviews" && !this.tableViews.length) {
         await this.editorState.ensureResources("tableViews");
+        this.syncStateFromStore();
+      }
+      if (section === "modules" && !this.modules.length) {
+        await this.editorState.ensureResources("modules");
         this.syncStateFromStore();
       }
     } catch {
@@ -1460,6 +1469,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       view.organizationIds = [...current, id];
     }
     this.saveTableViewLocal(view);
+    this.saveTableViewConfig(view.id);
   }
 
   private async saveFamilyLocal(fam: any): Promise<void> {

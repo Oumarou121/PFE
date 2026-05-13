@@ -232,6 +232,14 @@ if (!request.TryGetProperty("familyId", out var famIdElem) ||
 
 Cette fonctionnalité relie directement l'administration métier à la génération documentaire. Les bénéficiaires sélectionnés deviennent les sources de données utilisées pour remplacer les variables dans les modèles.
 
+\subsection{Administration des modules métier}
+
+Les modules métier permettent d'organiser les vues de tables (TableViewConfigs) par domaine fonctionnel (ex: Ressources Humaines, Formation, Scolarité). Un module regroupe plusieurs vues et définit une table principale.
+
+L'interface du super administrateur permet de créer ces modules, de leur associer une icône, une description et de sélectionner les organisations autorisées à les voir. Cette structure facilite la navigation pour l'utilisateur final en évitant une liste plate de toutes les tables disponibles.
+
+\screenshotplaceholder{sprint4_modules.png}{Administration des modules métier}{Interface de regroupement des vues de tables par domaine}
+
 \section{Tests et validation}
 
 \begin{longtable}{p{0.25\textwidth} p{0.43\textwidth} p{0.22\textwidth}}
@@ -251,6 +259,8 @@ Association modèle & Créer un modèle associé à une famille. & Le modèle ap
 Charte graphique & Modifier les couleurs et la typographie d'une charte. & Le rendu du document applique les paramètres.\\
 \midrule
 Configuration vue table & Définir champs visibles, éditables et preview. & La vue affiche uniquement les champs configurés.\\
+\midrule
+Regroupement en module & Créer un module et y associer plusieurs vues de tables. & Le module est visible par les organisations sélectionnées.\\
 \midrule
 CRUD enregistrement métier & Créer, modifier et supprimer une ligne via \texttt{TableViewService}. & Les opérations sont répercutées en base.\\
 \midrule

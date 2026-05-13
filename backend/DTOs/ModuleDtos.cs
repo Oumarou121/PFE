@@ -16,6 +16,9 @@ namespace DocApi.DTOs
 
         public string? Description { get; set; }
 
+        [MaxLength(64)]
+        public string? Icon { get; set; }
+
         [Required]
         [MaxLength(64)]
         public string MainTableViewId { get; set; } = string.Empty;

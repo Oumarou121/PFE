@@ -12,6 +12,8 @@ namespace DocApi.Domain.Entities
 
         public string? Description { get; set; }
 
+        public string? Icon { get; set; }
+
         public string MainTableViewId { get; set; } = string.Empty;
 
         public bool IsActive { get; set; } = true;

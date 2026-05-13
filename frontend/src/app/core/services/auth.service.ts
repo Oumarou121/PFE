@@ -15,10 +15,23 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<AuthUser | null>(this.getUserFromStorage());
   public currentUser$ = this.currentUserSubject.asObservable();
 
+  private activeOrgIdSubject = new BehaviorSubject<string | null>(localStorage.getItem('active_org_id'));
+  public activeOrgId$ = this.activeOrgIdSubject.asObservable();
+
   constructor(
     private apiService: ApiService,
     private router: Router
   ) {}
+
+  setActiveOrganizationId(id: string | null): void {
+    if (id) localStorage.setItem('active_org_id', id);
+    else localStorage.removeItem('active_org_id');
+    this.activeOrgIdSubject.next(id);
+  }
+
+  getActiveOrganizationId(): string | null {
+    return this.activeOrgIdSubject.value;
+  }
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.apiService.post<LoginResponse>('auth/login', credentials).pipe(

@@ -10,7 +10,7 @@ import { ModuleRecord as Module } from '../../../../models/module.model';
     <div class="list-item" *ngFor="let module of modules" 
          [class.active]="selectedId === module.id"
          (click)="onSelect(module.id)">
-      <div class="list-item-icon">🧩</div>
+      <div class="list-item-icon">{{ module.icon || '🧩' }}</div>
       <div class="list-item-body">
         <div class="list-item-name">{{ module.name }}</div>
         <div class="list-item-meta">{{ module.tableViews.length }} tables</div>
