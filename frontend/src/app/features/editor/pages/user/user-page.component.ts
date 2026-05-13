@@ -168,17 +168,6 @@ export class UserPageComponent implements OnInit {
     });
   }
 
-  get dataViewsList(): TableViewConfig[] {
-    const search = this.dataViewSearch.trim().toLowerCase();
-    return this.tableViews.getTableViews().filter((view) => {
-      return (
-        !search ||
-        view.label.toLowerCase().includes(search) ||
-        view.tableName.toLowerCase().includes(search)
-      );
-    });
-  }
-
   get selectedDataView(): TableViewConfig | null {
     return this.selectedDataViewId
       ? this.tableViews.getTableView(this.selectedDataViewId)
@@ -189,7 +178,7 @@ export class UserPageComponent implements OnInit {
     this.mode = mode;
     if (mode === "data") {
       this.dataViewsLoading = true;
-      this.dataStatusMessage = "Chargement des vues de donnees...";
+      this.dataStatusMessage = "Chargement des modules...";
       try {
         await this.state.ensureResources(["tableViews", "modules"]);
 

@@ -561,7 +561,7 @@
       <div class="data-sidebar">
         <div class="data-side-hdr">
           <div class="data-side-title">Gestion des donnees</div>
-          <div class="data-side-sub">Choisissez un espace de donnees</div>
+          <div class="data-side-sub">Choisissez un module metier</div>
         </div>
         <div class="data-search">
           <input
@@ -603,45 +603,11 @@
             </button>
           </ng-container>
 
-          <!-- Legacy / Free Views Section -->
-          <ng-container *ngIf="dataViewsList.length > 0">
-            <div
-              class="side-group-label"
-              style="
-                font-size: 10px;
-                font-weight: 700;
-                color: var(--text-muted);
-                padding: 12px 12px 4px;
-                letter-spacing: 0.5px;
-              "
-            >
-              VUES LIBRES
-            </div>
-            <button
-              class="data-view-card"
-              type="button"
-              *ngFor="let view of dataViewsList"
-              [class.active]="
-                selectedDataViewId === view.id && !selectedModuleId
-              "
-              [disabled]="dataViewsLoading || dataRowsLoading || lookupLoading"
-              (click)="selectDataView(view.id); selectedModuleId = null"
-              style="display: flex; align-items: center; gap: 8px"
-            >
-              <span style="font-size: 16px">📊</span>
-              <div class="data-view-name">
-                {{ view.label || view.tableName }}
-              </div>
-            </button>
-          </ng-container>
-
           <div
             class="data-empty"
-            *ngIf="
-              !dataViewsLoading && !modulesList.length && !dataViewsList.length
-            "
+            *ngIf="!dataViewsLoading && !modulesList.length"
           >
-            Aucune vue de donnees disponible.
+            Aucun module disponible.
           </div>
         </div>
       </div>
