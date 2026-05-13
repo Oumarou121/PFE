@@ -86,6 +86,26 @@
       </svg>
       <span>Data</span>
     </button>
+    <button
+      class="icon-nav-btn"
+      [class.active]="currentSection === 'modules'"
+      id="nav-modules"
+      (click)="showSection('modules')"
+      title="Modules Métier"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+      </svg>
+      <span>Modules</span>
+    </button>
     <div class="icon-nav-bottom">
       <div class="icon-nav-sep" style="width: 32px"></div>
       <div class="user-avatar" title="Super Admin">SA</div>
@@ -217,6 +237,13 @@
           </div>
         </div>
       </ng-container>
+      <ng-container *ngSwitchCase="'modules'">
+        <app-module-list
+          [modules]="filteredModules"
+          [selectedId]="selectedModuleId"
+          (select)="selectModuleFromPanel($event)">
+        </app-module-list>
+      </ng-container>
     </div>
   </div>
 
@@ -243,6 +270,63 @@
     </div>
 
     <div class="content">
+      <div
+        class="content-panel"
+        [class.active]="currentSection === 'modules'"
+        id="panel-modules"
+      >
+        <div class="empty" *ngIf="!selectedModule && !isCreatingModule">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+          </svg>
+          <h3>Sélectionnez un module</h3>
+          <p>Choisissez un module métier ou créez-en un nouveau pour regrouper vos tables.</p>
+        </div>
+        
+        <div *ngIf="selectedModule || isCreatingModule" style="height: 100%;">
+          <div class="flex gap-8" style="margin-bottom: 20px" *ngIf="selectedModule && !isCreatingModule">
+            <div>
+              <div style="font-size: 18px; font-weight: 700; color: var(--text)">{{ selectedModule.name }}</div>
+              <div class="text-muted">Module métier · {{ selectedModule.tableViews.length }} tables regroupées</div>
+            </div>
+            <div class="ml-auto flex gap-8">
+               <button class="btn danger" (click)="deleteSelectedModule()">Supprimer</button>
+               <button class="btn primary" (click)="editSelectedModule()">Modifier</button>
+            </div>
+          </div>
+
+          <div class="card" *ngIf="selectedModule && !isEditingModule && !isCreatingModule">
+             <div class="card-header"><div class="card-title">Aperçu du regroupement</div></div>
+             <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+                   <div *ngFor="let mtv of selectedModule.tableViews" 
+                        class="card" style="margin: 0; padding: 16px; border: 1px solid var(--border);"
+                        [style.border-left]="mtv.isPrimary ? '4px solid var(--purple)' : '4px solid #e2e8f0'">
+                      <div style="font-weight: 700;">{{ getTableViewLabelById(mtv.tableViewConfigId) }}</div>
+                      <div class="text-muted" style="font-size: 12px; margin-top: 4px;">{{ mtv.isPrimary ? 'Table principale' : (mtv.isManagementTable ? 'Référentiel' : 'Table secondaire') }}</div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <app-module-form
+            *ngIf="isEditingModule || isCreatingModule"
+            [module]="moduleDraft"
+            [availableTableViews]="tableViews"
+            [organizations]="organizations"
+            (save)="saveModule($event)"
+            (cancel)="cancelModuleEdit()">
+          </app-module-form>
+        </div>
+      </div>
       <div
         class="content-panel"
         [class.active]="currentSection === 'families'"

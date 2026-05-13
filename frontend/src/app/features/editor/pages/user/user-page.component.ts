@@ -64,6 +64,8 @@ export class UserPageComponent implements OnInit {
   beneficiariesLoading = false;
 
   selectedDataViewId: string | null = null;
+  selectedModuleId: string | null = null;
+  activeModuleTableViewId: string | null = null;
   dataViewSearch = "";
   dataRowSearch = "";
   dataRows: Record<string, any>[] = [];
@@ -182,8 +184,14 @@ export class UserPageComponent implements OnInit {
       this.dataViewsLoading = true;
       this.dataStatusMessage = "Chargement des vues de donnees...";
       try {
-        await this.state.ensureResources(["tableViews"]);
-        if (this.selectedDataView) await this.renderDataContent();
+        await this.state.ensureResources(["tableViews", "modules"]);
+
+        // Auto-select first module if available and none selected
+        if (!this.selectedModuleId && this.modulesList.length > 0) {
+          this.selectModule(this.modulesList[0].id);
+        } else if (this.selectedDataView) {
+          await this.renderDataContent();
+        }
       } catch {
         this.notifications.showError("Impossible de charger les donnees.");
       } finally {
@@ -192,6 +200,47 @@ export class UserPageComponent implements OnInit {
       }
     }
   }
+
+  get modulesList(): any[] {
+    const search = this.dataViewSearch.trim().toLowerCase();
+    const modules = this.state.getState().modules || [];
+    const user = this.auth.getCurrentUser();
+    const orgId = user?.organizationId;
+
+    return modules.filter(
+      (m) =>
+        m.isActive &&
+        (!orgId ||
+          !m.organizationIds?.length ||
+          m.organizationIds.includes(Number(orgId))) &&
+        (!search || m.name.toLowerCase().includes(search)),
+    );
+  }
+
+  get selectedModule(): any | null {
+    return this.selectedModuleId
+      ? this.state
+          .getState()
+          .modules.find((m: any) => m.id === this.selectedModuleId)
+      : null;
+  }
+
+  selectModule(moduleId: string): void {
+    this.selectedModuleId = moduleId;
+    const module = this.selectedModule;
+    if (module && module.tableViews.length > 0) {
+      const primary =
+        module.tableViews.find((mtv: any) => mtv.isPrimary) ||
+        module.tableViews[0];
+      this.selectModuleTableView(primary.tableViewConfigId);
+    }
+  }
+
+  selectModuleTableView(tableViewId: string): void {
+    this.activeModuleTableViewId = tableViewId;
+    this.selectDataView(tableViewId);
+  }
+
 
   toggleStep(step: Step): void {
     this.openSteps[step] = !this.openSteps[step];
@@ -619,6 +668,11 @@ export class UserPageComponent implements OnInit {
 
   getDataFieldLabel(view: TableViewConfig, field: string): string {
     return view.fieldLabels[field] || this.humanize(field);
+  }
+
+  getTableViewLabelById(id: string): string {
+    const tv = this.tableViews.getTableView(id);
+    return tv ? tv.label || tv.tableName : id;
   }
 
   getDisplayValue(

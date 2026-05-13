@@ -7,10 +7,12 @@ namespace DocApi.Services
     public class EditorService : IEditorService
     {
         private readonly IEditorRepository _repository;
+        private readonly IModuleRepository _moduleRepository;
 
-        public EditorService(IEditorRepository repository)
+        public EditorService(IEditorRepository repository, IModuleRepository moduleRepository)
         {
             _repository = repository;
+            _moduleRepository = moduleRepository;
         }
 
         public async Task<IEnumerable<FamilyResponse>> GetFamiliesAsync()
@@ -126,6 +128,8 @@ namespace DocApi.Services
             await _repository.EnsureSchemaAsync();
             var graphicCharters = (await _repository.LoadGraphicChartersAsync()).ToArray();
             var organizations = (await GetOrganizationsAsync()).ToArray();
+            var modules = (await _moduleRepository.LoadModulesAsync()).ToArray();
+            
             var state = new EditorStateResponse
             {
                 Organizations = organizations,
@@ -134,6 +138,7 @@ namespace DocApi.Services
                 Templates = await _repository.LoadTemplatesAsync(),
                 GraphicCharters = graphicCharters,
                 TableViews = await _repository.LoadTableViewsAsync(),
+                Modules = modules,
                 Settings = await _repository.LoadSettingsAsync()
             };
 
@@ -147,6 +152,7 @@ namespace DocApi.Services
                 Templates = state.Templates.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray(),
                 GraphicCharters = state.GraphicCharters.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray(),
                 TableViews = state.TableViews,
+                Modules = state.Modules.Where(m => m.OrganizationIds == null || !m.OrganizationIds.Any() || m.OrganizationIds.Contains(currentUser.OrganizationId ?? 0)).ToArray(),
                 Settings = state.Settings
             };
         }

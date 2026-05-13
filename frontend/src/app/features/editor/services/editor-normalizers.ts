@@ -825,6 +825,7 @@ export function normalizeState(state: unknown = {}): EditorState {
     tableViews: Array.isArray(next.tableViews)
       ? next.tableViews.map(normalizeTableViewRecord)
       : [],
+    modules: Array.isArray(next.modules) ? cloneData(next.modules) : [],
     settings:
       next.settings && typeof next.settings === "object"
         ? cloneData(next.settings)

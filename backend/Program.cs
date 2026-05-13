@@ -101,9 +101,11 @@ builder.Services.AddScoped<ITenantConnectionFactory, TenantConnectionFactory>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IEditorRepository, EditorRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
 
 builder.Services.AddScoped<IEditorService, EditorService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IModuleService, ModuleService>();
 
 var app = builder.Build();
 

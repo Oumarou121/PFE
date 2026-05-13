@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { BootstrapResponse, EditorListResponse, EditorResource, EditorState, UnknownRecord } from '../models/editor-common.model';
 import { normalizeFamilyRecord, normalizeOrganizationRecord, normalizeState, normalizeTableViewRecord, normalizeTemplateRecord } from './editor-normalizers';
@@ -7,6 +7,9 @@ import { normalizeFamilyRecord, normalizeOrganizationRecord, normalizeState, nor
 @Injectable({ providedIn: 'root' })
 export class EditorStateService {
   private state: EditorState = normalizeState();
+  private stateSubject = new BehaviorSubject<EditorState>(this.state);
+  public state$ = this.stateSubject.asObservable();
+  
   private readyPromise: Promise<EditorState> | null = null;
   private resourcePromises: Partial<Record<EditorResource, Promise<EditorState> | null>> = {};
 
@@ -23,12 +26,15 @@ export class EditorStateService {
           organizations: true,
           admins: true,
           tableViews: true,
+          modules: true,
           settings: true
         };
+        this.stateSubject.next(this.getState());
         return this.getState();
       })
       .catch(() => {
         this.state = normalizeState();
+        this.stateSubject.next(this.getState());
         return this.getState();
       });
     return this.readyPromise;
@@ -42,11 +48,13 @@ export class EditorStateService {
     const loaded = this.state._loaded || {};
     this.state = normalizeState(state);
     this.state._loaded = { ...loaded };
+    this.stateSubject.next(this.getState());
     return this.getState();
   }
 
   patchState(patch: Partial<EditorState>): EditorState {
     this.state = normalizeState({ ...this.state, ...patch });
+    this.stateSubject.next(this.getState());
     return this.getState();
   }
 
@@ -61,6 +69,7 @@ export class EditorStateService {
     const loaded = this.state._loaded || {};
     this.state = nextState;
     this.state._loaded = { ...loaded };
+    this.stateSubject.next(this.getState());
     
     return this.getState();
   }
@@ -75,9 +84,10 @@ export class EditorStateService {
 
   setResourceLoaded(resource: EditorResource, loaded = true): void {
     this.state._loaded = { ...(this.state._loaded || {}), [resource]: loaded };
+    this.stateSubject.next(this.getState());
   }
 
-  private async loadResource(resource: EditorResource, force = false): Promise<EditorState> {
+  public async loadResource(resource: EditorResource, force = false): Promise<EditorState> {
     if (this.resourcePromises[resource] && !force) return this.resourcePromises[resource]!;
     const endpoint = this.getResourceEndpoint(resource);
     if (!endpoint) return this.getState();
@@ -89,7 +99,9 @@ export class EditorStateService {
         if (resource === 'organizations') this.state.organizations = rows.map(normalizeOrganizationRecord);
         if (resource === 'admins') this.state.admins = rows as any[];
         if (resource === 'tableViews') this.state.tableViews = rows.map(normalizeTableViewRecord);
+        if (resource === 'modules') this.state.modules = rows as any[];
         this.setResourceLoaded(resource, true);
+        this.stateSubject.next(this.getState());
         return this.getState();
       })
       .finally(() => {
@@ -104,7 +116,8 @@ export class EditorStateService {
       templates: 'templates',
       organizations: 'organizations',
       admins: 'admins',
-      tableViews: 'table-view-configs'
+      tableViews: 'table-view-configs',
+      modules: 'modules'
     };
     return endpoints[resource] || null;
   }

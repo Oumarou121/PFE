@@ -12,6 +12,8 @@ namespace DocApi.DTOs
         IDictionary<string, object?>? Record = null,
         IEnumerable<LookupOptionResponse>? Options = null,
         TableViewConfigResponse? TableView = null,
+        IEnumerable<ModuleResponse>? Modules = null,
+        ModuleResponse? Module = null,
         string? Token = null,
         string? Error = null,
         string? RedirectTo = null);
@@ -327,6 +329,7 @@ namespace DocApi.DTOs
         public IEnumerable<TemplateResponse> Templates { get; set; } = [];
         public IEnumerable<GraphicCharterResponse> GraphicCharters { get; set; } = [];
         public IEnumerable<TableViewConfigResponse> TableViews { get; set; } = [];
+        public IEnumerable<ModuleResponse> Modules { get; set; } = [];
         public Dictionary<string, object?> Settings { get; set; } = [];
     }
 

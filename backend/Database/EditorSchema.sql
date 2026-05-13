@@ -134,6 +134,36 @@ BEGIN
   ALTER TABLE [template] ADD section_directions_json NVARCHAR(MAX) NULL;
 END;
 
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'module')
+BEGIN
+CREATE TABLE [module] (
+  id NVARCHAR(64) PRIMARY KEY,
+  name NVARCHAR(255) NOT NULL,
+  description NVARCHAR(MAX) NULL,
+  main_table_view_id NVARCHAR(64) NOT NULL,
+  is_active BIT NOT NULL DEFAULT 1,
+  display_order INT NOT NULL DEFAULT 0,
+  organization_ids_json NVARCHAR(MAX) NULL,
+  created_at NVARCHAR(64) NULL,
+  updated_at NVARCHAR(64) NULL
+);
+END;
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'module_table_view')
+BEGIN
+CREATE TABLE [module_table_view] (
+  id NVARCHAR(64) PRIMARY KEY,
+  module_id NVARCHAR(64) NOT NULL,
+  table_view_config_id NVARCHAR(64) NOT NULL,
+  is_primary BIT NOT NULL DEFAULT 0,
+  is_management_table BIT NOT NULL DEFAULT 0,
+  order_index INT NOT NULL DEFAULT 0
+);
+END;
+
+IF NOT EXISTS (SELECT name FROM sys.indexes WHERE name = 'idx_module_table_view_module')
+CREATE INDEX idx_module_table_view_module ON [module_table_view](module_id);
+
 IF NOT EXISTS (SELECT name FROM sys.indexes WHERE name = 'idx_template_family')
 CREATE INDEX idx_template_family ON [template](family_id);
 

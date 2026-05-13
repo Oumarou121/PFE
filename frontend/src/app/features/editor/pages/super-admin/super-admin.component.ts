@@ -21,12 +21,14 @@ import { FamilyService } from "../../services/family.service";
 import { OrganizationService } from "../../services/organization.service";
 import { AdminAccountService } from "../../services/admin-account.service";
 import { TableViewService } from "../../services/table-view.service";
+import { ModuleService } from "../../services/module.service";
 
 import { EditorState as AppState } from "../../models/editor-common.model";
 import { FamilyRecord as Family } from "../../models/family.model";
 import { OrganizationRecord as Organization } from "../../models/organization.model";
 import { AdminAccountRecord as AdminAccount } from "../../models/admin-account.model";
 import { TableViewConfig } from "../../models/table-view.model";
+import { ModuleRecord as Module } from "../../models/module.model";
 import {
   normalizeFilterDefinition,
   normalizeFilterColumnBinding,
@@ -38,16 +40,26 @@ import {
   parseFilterStaticOptions,
   normalizeFamilyRecord,
 } from "../../services/editor-normalizers";
+import { ModuleListComponent } from "./components/module-list/module-list.component";
+import { ModuleFormComponent } from "./components/module-form/module-form.component";
 
 @Component({
   selector: "app-super-admin",
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatDialogModule, ModuleListComponent, ModuleFormComponent],
   templateUrl: "./super-admin.component.html",
   styleUrls: ["./super-admin.component.scss"],
   encapsulation: ViewEncapsulation.None,
 })
 export class SuperAdminComponent implements OnInit, OnDestroy {
+  // --- MODULES STATE ---
+  modules: Module[] = [];
+  selectedModuleId: string | null = null;
+  selectedModule: Module | null = null;
+  isCreatingModule = false;
+  isEditingModule = false;
+  moduleDraft: Module = this.createEmptyModule();
+
   isLoading = false;
   private destroy$ = new Subject<void>();
   private state: AppState | null = null;
@@ -199,6 +211,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     private organizationService: OrganizationService,
     private adminService: AdminAccountService,
     private tableViewService: TableViewService,
+    private moduleService: ModuleService,
     private notifications: NotificationService,
     private dialog: MatDialog,
     private zone: NgZone,
@@ -209,7 +222,26 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     // Phase 4 Tranche 5: bindLegacyWindow() supprimée — 100% Angular
     this.bindModalHandlers();
     this.isLoading = true;
+
+    this.editorState.state$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((state) => {
+        this.state = state;
+        this.modules = state.modules || [];
+        this.updateSelectedModule();
+        this.cdr.markForCheck();
+      });
+
     void this.initializeState();
+  }
+
+  private updateSelectedModule() {
+    if (this.selectedModuleId) {
+      this.selectedModule =
+        this.modules.find((m) => m.id === this.selectedModuleId) || null;
+    } else {
+      this.selectedModule = null;
+    }
   }
 
   ngOnDestroy(): void {
@@ -235,8 +267,13 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return this.state?.templates ?? [];
   }
 
-  private get tableViews(): TableViewConfig[] {
+  get tableViews(): TableViewConfig[] {
     return this.state?.tableViews ?? [];
+  }
+
+  get filteredModules(): Module[] {
+    const s = (this.panelSearch || "").toLowerCase();
+    return this.modules.filter((m) => m.name.toLowerCase().includes(s));
   }
 
   get panelTitle(): string {
@@ -1162,6 +1199,110 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     if (this.currentSection === "organizations") this.openOrganizationModal();
     if (this.currentSection === "admins") this.openAdminModal();
     if (this.currentSection === "tableviews") this.newTableView();
+    if (this.currentSection === "modules") this.newModule();
+  }
+
+  // --- MODULES METHODS ---
+  private createEmptyModule(): Module {
+    return {
+      id: "",
+      name: "",
+      description: "",
+      mainTableViewId: "",
+      isActive: true,
+      displayOrder: 0,
+      organizationIds: [],
+      tableViews: [],
+    };
+  }
+
+  private newModule(): void {
+    this.selectedModuleId = null;
+    this.selectedModule = null;
+    this.isCreatingModule = true;
+    this.isEditingModule = false;
+    this.moduleDraft = this.createEmptyModule();
+    this.cdr.markForCheck();
+  }
+
+  selectModuleFromPanel(id: string): void {
+    this.selectedModuleId = id;
+    this.updateSelectedModule();
+    this.isCreatingModule = false;
+    this.isEditingModule = false;
+    this.cdr.markForCheck();
+  }
+
+  editSelectedModule(): void {
+    if (!this.selectedModule) return;
+    this.moduleDraft = JSON.parse(JSON.stringify(this.selectedModule));
+    this.isEditingModule = true;
+    this.cdr.markForCheck();
+  }
+
+  async saveModule(module: Module): Promise<void> {
+    try {
+      this.isLoading = true;
+      const saved = await this.moduleService.save(module);
+
+      // Update local state via editorState
+      await this.editorState.loadResource("modules", true);
+
+      this.isCreatingModule = false;
+      this.isEditingModule = false;
+      this.selectedModuleId = saved.id;
+      this.updateSelectedModule();
+
+      this.toast("Module enregistré avec succès", "success");
+    } catch (e: any) {
+      this.toast(e.message || "Erreur lors de l'enregistrement", "error");
+    } finally {
+      this.isLoading = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  cancelModuleEdit(): void {
+    this.isCreatingModule = false;
+    this.isEditingModule = false;
+    this.cdr.markForCheck();
+  }
+
+  async deleteSelectedModule(): Promise<void> {
+    if (!this.selectedModuleId) return;
+
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .open(ConfirmDialogComponent, {
+          data: {
+            title: "Supprimer le module",
+            message:
+              "Êtes-vous sûr de vouloir supprimer ce module ? Les TableViews associés ne seront pas supprimés.",
+          },
+        })
+        .afterClosed(),
+    );
+
+    if (confirmed) {
+      try {
+        this.isLoading = true;
+        await this.moduleService.delete(this.selectedModuleId);
+        await this.editorState.loadResource("modules", true);
+        this.selectedModuleId = null;
+        this.selectedModule = null;
+        this.toast("Module supprimé", "success");
+      } catch (e: any) {
+        this.toast(e.message || "Erreur lors de la suppression", "error");
+      } finally {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
+    }
+  }
+
+  getTableViewLabelById(id: string): string {
+    const tv = this.tableViews.find((t) => t.id === id);
+    return tv ? tv.label || tv.tableName : id;
   }
 
   private newFamily(): void {
