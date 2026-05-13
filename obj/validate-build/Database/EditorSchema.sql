@@ -123,6 +123,9 @@ CREATE TABLE [template] (
   filter_profile_json NVARCHAR(MAX) NULL,
   section_directions_json NVARCHAR(MAX) NULL,
   page_margins_json NVARCHAR(MAX) NULL,
+  header_footer_distances_json NVARCHAR(MAX) NULL,
+  header_display NVARCHAR(16) NULL,
+  footer_display NVARCHAR(16) NULL,
   header_html NVARCHAR(MAX) NULL,
   body_html NVARCHAR(MAX) NULL,
   footer_html NVARCHAR(MAX) NULL
@@ -137,6 +140,21 @@ END;
 IF COL_LENGTH('template', 'section_directions_json') IS NULL
 BEGIN
   ALTER TABLE [template] ADD section_directions_json NVARCHAR(MAX) NULL;
+END;
+
+IF COL_LENGTH('template', 'header_footer_distances_json') IS NULL
+BEGIN
+  ALTER TABLE [template] ADD header_footer_distances_json NVARCHAR(MAX) NULL;
+END;
+
+IF COL_LENGTH('template', 'header_display') IS NULL
+BEGIN
+  ALTER TABLE [template] ADD header_display NVARCHAR(16) NULL;
+END;
+
+IF COL_LENGTH('template', 'footer_display') IS NULL
+BEGIN
+  ALTER TABLE [template] ADD footer_display NVARCHAR(16) NULL;
 END;
 
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'module')

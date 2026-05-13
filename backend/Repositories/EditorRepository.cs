@@ -330,12 +330,18 @@ namespace DocApi.Repositories
             var hasOrientation = await ConfigTableHasColumnAsync("template", "orientation");
             var hasFilterProfile = await ConfigTableHasColumnAsync("template", "filter_profile_json");
             var hasSectionDirections = await ConfigTableHasColumnAsync("template", "section_directions_json");
+            var hasHeaderFooterDistances = await ConfigTableHasColumnAsync("template", "header_footer_distances_json");
+            var hasHeaderDisplay = await ConfigTableHasColumnAsync("template", "header_display");
+            var hasFooterDisplay = await ConfigTableHasColumnAsync("template", "footer_display");
             var sql = $"""
                 SELECT id, family_id, etablissement_id, nom, updated_at, has_header, has_footer,
                        {(hasGraphicCharterId ? "graphic_charter_id" : "NULL")} AS graphic_charter_id,
                        {(hasOrientation ? "orientation" : "'portrait'")} AS orientation,
                        {(hasFilterProfile ? "filter_profile_json" : "'[]'")} AS filter_profile_json,
                        {(hasSectionDirections ? "section_directions_json" : "'{}'")} AS section_directions_json,
+                       {(hasHeaderFooterDistances ? "header_footer_distances_json" : "'{}'")} AS header_footer_distances_json,
+                       {(hasHeaderDisplay ? "header_display" : "'all'")} AS header_display,
+                       {(hasFooterDisplay ? "footer_display" : "'all'")} AS footer_display,
                        page_margins_json,
                        header_html, body_html, footer_html
                 FROM template
@@ -358,7 +364,10 @@ namespace DocApi.Repositories
                     GraphicCharterId = StrOrNull(item, "graphic_charter_id"),
                     FilterProfile = JsonValue(item, "filter_profile_json", new List<TemplateFilterProfileEntry>()),
                     SectionDirections = JsonValue(item, "section_directions_json", new SectionDirections()),
+                    HeaderFooterDistances = JsonValue(item, "header_footer_distances_json", new HeaderFooterDistances()),
                     Orientation = ParseOrientation(Str(item, "orientation")),
+                    HeaderDisplay = ParseSectionDisplayMode(Str(item, "header_display")),
+                    FooterDisplay = ParseSectionDisplayMode(Str(item, "footer_display")),
                     PageMargins = JsonValue(item, "page_margins_json", new PageMargins()),
                     Header = Str(item, "header_html") ?? string.Empty,
                     Body = Str(item, "body_html") ?? string.Empty,
@@ -381,14 +390,17 @@ namespace DocApi.Repositories
                   graphic_charter_id = @graphic_charter_id, nom = @nom, updated_at = @updated_at,
                   has_header = @has_header, has_footer = @has_footer, orientation = @orientation,
                   filter_profile_json = @filter_profile_json, section_directions_json = @section_directions_json,
-                  page_margins_json = @page_margins_json, header_html = @header_html,
-                  body_html = @body_html, footer_html = @footer_html
+                                    page_margins_json = @page_margins_json, header_footer_distances_json = @header_footer_distances_json,
+                                    header_display = @header_display, footer_display = @footer_display,
+                                    header_html = @header_html, body_html = @body_html, footer_html = @footer_html
                 WHEN NOT MATCHED THEN INSERT (id, family_id, etablissement_id, graphic_charter_id, nom, updated_at,
                   has_header, has_footer, orientation, filter_profile_json, section_directions_json,
-                  page_margins_json, header_html, body_html, footer_html)
+                                    page_margins_json, header_footer_distances_json, header_display, footer_display,
+                                    header_html, body_html, footer_html)
                   VALUES (@id, @family_id, @etablissement_id, @graphic_charter_id, @nom, @updated_at,
                   @has_header, @has_footer, @orientation, @filter_profile_json, @section_directions_json,
-                  @page_margins_json, @header_html, @body_html, @footer_html);
+                                    @page_margins_json, @header_footer_distances_json, @header_display, @footer_display,
+                                    @header_html, @body_html, @footer_html);
                 """, TemplateParams(template, template.OrganizationId));
             return (await GetTemplateByIdAsync(template.Id))!;
         }
@@ -905,11 +917,11 @@ namespace DocApi.Repositories
         private static Task InsertTemplateAsync(IDbConnection connection, IDbTransaction transaction, TemplateRequest template, int? organizationId)
             => connection.ExecuteAsync("""
                 INSERT INTO template (id, family_id, etablissement_id, graphic_charter_id, nom, updated_at, has_header,
-                  has_footer, orientation, filter_profile_json, section_directions_json, page_margins_json,
-                  header_html, body_html, footer_html)
+                                    has_footer, orientation, filter_profile_json, section_directions_json, page_margins_json,
+                                    header_footer_distances_json, header_display, footer_display, header_html, body_html, footer_html)
                 VALUES (@id, @family_id, @etablissement_id, @graphic_charter_id, @nom, @updated_at, @has_header,
-                  @has_footer, @orientation, @filter_profile_json, @section_directions_json, @page_margins_json,
-                  @header_html, @body_html, @footer_html)
+                                    @has_footer, @orientation, @filter_profile_json, @section_directions_json, @page_margins_json,
+                                    @header_footer_distances_json, @header_display, @footer_display, @header_html, @body_html, @footer_html)
                 """, new
                 {
                     id = template.Id,
@@ -924,6 +936,9 @@ namespace DocApi.Repositories
                     filter_profile_json = JsonString(template.FilterProfile, "[]"),
                     section_directions_json = JsonString(template.SectionDirections, "{}"),
                     page_margins_json = JsonString(template.PageMargins, "{}"),
+                    header_footer_distances_json = JsonString(template.HeaderFooterDistances, "{}"),
+                    header_display = ToDatabaseString(template.HeaderDisplay),
+                    footer_display = ToDatabaseString(template.FooterDisplay),
                     header_html = template.Header,
                     body_html = template.Body,
                     footer_html = template.Footer
@@ -991,6 +1006,9 @@ namespace DocApi.Repositories
             filter_profile_json = JsonString(template.FilterProfile, "[]"),
             section_directions_json = JsonString(template.SectionDirections, "{}"),
             page_margins_json = JsonString(template.PageMargins, "{}"),
+            header_footer_distances_json = JsonString(template.HeaderFooterDistances, "{}"),
+            header_display = ToDatabaseString(template.HeaderDisplay),
+            footer_display = ToDatabaseString(template.FooterDisplay),
             header_html = template.Header,
             body_html = template.Body,
             footer_html = template.Footer
@@ -1185,8 +1203,14 @@ namespace DocApi.Repositories
             => string.Equals(value, "landscape", StringComparison.OrdinalIgnoreCase)
                 ? PageOrientation.Landscape : PageOrientation.Portrait;
 
+        private static SectionDisplayMode ParseSectionDisplayMode(string? value)
+            => Enum.TryParse<SectionDisplayMode>(value, true, out var mode) ? mode : SectionDisplayMode.All;
+
         private static string ToDatabaseString(PageOrientation orientation)
             => orientation == PageOrientation.Landscape ? "landscape" : "portrait";
+
+        private static string ToDatabaseString(SectionDisplayMode mode)
+            => mode.ToString().ToLowerInvariant();
 
         private static string Quote(string name) => $"[{name.Replace("]", "]]")}]";
 

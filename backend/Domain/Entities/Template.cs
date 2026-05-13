@@ -16,6 +16,9 @@ namespace DocApi.Domain.Entities
         public List<TemplateFilterProfileEntry> FilterProfile { get; set; } = [];
         public SectionDirections SectionDirections { get; set; } = new();
         public PageMargins PageMargins { get; set; } = new();
+        public HeaderFooterDistances HeaderFooterDistances { get; set; } = new();
+        public SectionDisplayMode HeaderDisplay { get; set; } = SectionDisplayMode.All;
+        public SectionDisplayMode FooterDisplay { get; set; } = SectionDisplayMode.All;
         public string Header { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;
         public string Footer { get; set; } = string.Empty;

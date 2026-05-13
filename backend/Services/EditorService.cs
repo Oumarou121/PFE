@@ -148,10 +148,10 @@ namespace DocApi.Services
             {
                 Organizations = state.Organizations.Where(item => item.Id == currentUser.OrganizationId).ToArray(),
                 Admins = state.Admins.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray(),
-                Families = state.Families,
+                Families = state.Families.Where(item => !item.OrganizationIds.Any() || item.OrganizationIds.Contains(currentUser.OrganizationId ?? 0)).ToArray(),
                 Templates = state.Templates.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray(),
                 GraphicCharters = state.GraphicCharters.Where(item => item.OrganizationId == currentUser.OrganizationId).ToArray(),
-                TableViews = state.TableViews,
+                TableViews = state.TableViews.Where(item => !item.OrganizationIds.Any() || item.OrganizationIds.Contains(currentUser.OrganizationId ?? 0)).ToArray(),
                 Modules = state.Modules.Where(m => m.OrganizationIds == null || !m.OrganizationIds.Any() || m.OrganizationIds.Contains(currentUser.OrganizationId ?? 0)).ToArray(),
                 Settings = state.Settings
             };
