@@ -62,8 +62,13 @@ export class AuthService {
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.TOKEN_KEY, authResult.token);
     if (authResult.user) {
-      localStorage.setItem(this.USER_KEY, JSON.stringify(authResult.user));
-      this.currentUserSubject.next(authResult.user);
+      // Normalize organizationId to string to handle int? from backend
+      const user: AuthUser = {
+        ...authResult.user,
+        organizationId: authResult.user.organizationId != null ? String(authResult.user.organizationId) : null
+      };
+      localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+      this.currentUserSubject.next(user);
     }
   }
 
@@ -71,7 +76,11 @@ export class AuthService {
     const userStr = localStorage.getItem(this.USER_KEY);
     if (!userStr) return null;
     try {
-      return JSON.parse(userStr);
+      const user = JSON.parse(userStr) as AuthUser;
+      if (user && user.organizationId != null) {
+        user.organizationId = String(user.organizationId);
+      }
+      return user;
     } catch {
       return null;
     }

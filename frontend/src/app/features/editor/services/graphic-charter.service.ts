@@ -71,7 +71,7 @@ export class GraphicCharterService {
       {
         ...charter,
         id: charter.id,
-        organizationId: parseInt(organizationId, 10),
+        organizationId: organizationId,
         updatedAt: new Date().toISOString(),
         createdAt: charter.createdAt || new Date().toISOString()
       },
@@ -79,11 +79,16 @@ export class GraphicCharterService {
     );
 
     // ── Persistance via API (UnivadConfiDB) ──
+    const payload = {
+      ...normalized,
+      organizationId: normalized.organizationId ? parseInt(normalized.organizationId, 10) : null
+    };
+
     try {
       const saved = await firstValueFrom(
         this.api.put<GraphicCharterRecord>(
           `graphic-charters/${encodeURIComponent(normalized.id)}`,
-          normalized
+          payload
         )
       );
       if (saved) {

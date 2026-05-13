@@ -18,6 +18,7 @@ import {
   GraphicCharterRecord,
 } from "../models/graphic-charter.model";
 import { OrganizationRecord } from "../models/organization.model";
+import { AdminAccountRecord } from "../models/admin-account.model";
 import { DatabaseSchema, SchemaColumn } from "../models/schema.model";
 import {
   TableViewConfig,
@@ -669,6 +670,9 @@ export function normalizeGraphicCharterEntry(
   const configSource = "config" in raw ? raw["config"] : raw;
   return {
     id: String(raw["id"] || genId("charter")),
+    organizationId: normalizeOrganizationId(
+      raw["organizationId"] ?? raw["etablissement_id"],
+    ),
     name:
       String(raw["name"] || raw["nom"] || "").trim() || `Charte ${index + 1}`,
     description: String(raw["description"] || "").trim(),
@@ -816,6 +820,18 @@ export function normalizeTableViewRecord(
   };
 }
 
+export function normalizeAdminRecord(record: unknown = {}): AdminAccountRecord {
+  const next = cloneData((record || {}) as UnknownRecord) || {};
+  next["id"] = String(next["id"] || genId("adm"));
+  next["organizationId"] = normalizeOrganizationId(
+    next["organizationId"] ?? next["IdOrganization"],
+  );
+  next["nom"] = String(next["nom"] || next["name"] || next["username"] || "");
+  next["email"] = String(next["email"] || next["mail"] || "");
+  next["role"] = String(next["role"] || "admin");
+  return next as AdminAccountRecord;
+}
+
 export function normalizeState(state: unknown = {}): EditorState {
   const next =
     state && typeof state === "object" ? (state as Partial<EditorState>) : {};
@@ -823,7 +839,9 @@ export function normalizeState(state: unknown = {}): EditorState {
     organizations: Array.isArray(next.organizations)
       ? next.organizations.map(normalizeOrganizationRecord)
       : [],
-    admins: Array.isArray(next.admins) ? cloneData(next.admins) : [],
+    admins: Array.isArray(next.admins)
+      ? next.admins.map(normalizeAdminRecord)
+      : [],
     families: Array.isArray(next.families)
       ? next.families.map(normalizeFamilyRecord)
       : [],
@@ -835,7 +853,7 @@ export function normalizeState(state: unknown = {}): EditorState {
       : [],
     modules: Array.isArray(next.modules) ? cloneData(next.modules) : [],
     settings:
-      next.settings && typeof next.settings === "object"
+      next.settings && typeof state === "object"
         ? cloneData(next.settings)
         : {},
     _loaded: next._loaded || {},

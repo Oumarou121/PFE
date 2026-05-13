@@ -9,6 +9,7 @@ import {
   UnknownRecord,
 } from "../models/editor-common.model";
 import {
+  normalizeAdminRecord,
   normalizeFamilyRecord,
   normalizeOrganizationRecord,
   normalizeState,
@@ -151,8 +152,9 @@ export class EditorStateService {
           if (resource === "organizations")
             this.state.organizations = rows.map(normalizeOrganizationRecord);
           if (resource === "admins")
-            this.state.admins = Array.isArray(rows) ? (rows as any[]) : [];
-          if (resource === "tableViews")
+            this.state.admins = Array.isArray(rows)
+              ? rows.map((row: any) => normalizeAdminRecord(row))
+              : [];          if (resource === "tableViews")
             this.state.tableViews = Array.isArray(rows)
               ? rows.map(normalizeTableViewRecord)
               : [];

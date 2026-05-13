@@ -21,6 +21,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString;
     });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCors(options =>

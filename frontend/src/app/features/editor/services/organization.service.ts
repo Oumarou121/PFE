@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { from, Observable } from 'rxjs';
 import { OrganizationRecord } from '../models/organization.model';
 import { UnknownRecord } from '../models/editor-common.model';
-import { getScopedOrganizationId, normalizeOrganizationRecord } from './editor-normalizers';
+import { getScopedOrganizationId, normalizeOrganizationId, normalizeOrganizationRecord } from './editor-normalizers';
 import { EditorStateService } from './editor-state.service';
 
 @Injectable({ providedIn: 'root' })
@@ -13,8 +13,9 @@ export class OrganizationService {
     return this.state.getState().organizations;
   }
 
-  getOrganization(id: string | null | undefined): OrganizationRecord | null {
-    return this.getOrganizations().find(organization => organization.id === id) || null;
+  getOrganization(id: unknown): OrganizationRecord | null {
+    const targetId = normalizeOrganizationId(id);
+    return this.getOrganizations().find(organization => organization.id === targetId) || null;
   }
 
   async saveOrganization(organization: OrganizationRecord): Promise<OrganizationRecord> {

@@ -22,8 +22,15 @@ export class TemplateService {
 
   async saveTemplate(template: TemplateRecord): Promise<TemplateRecord> {
     const normalized = normalizeTemplateRecord(template);
+    
+    // Convert organizationId to number for backend compatibility
+    const payload = {
+      ...normalized,
+      organizationId: normalized.organizationId ? parseInt(normalized.organizationId, 10) : null
+    };
+
     // On effectue d'abord l'appel API. Si il echoue, on ne met pas a jour l'etat local.
-    await firstValueFrom(this.api.put(`templates/${encodeURIComponent(normalized.id)}`, normalized));
+    await firstValueFrom(this.api.put(`templates/${encodeURIComponent(normalized.id)}`, payload));
     
     const state = this.state.getState();
     const index = state.templates.findIndex(item => item.id === normalized.id);
