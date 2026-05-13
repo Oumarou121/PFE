@@ -1,0 +1,301 @@
+<div class="modules-page">
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des modules...</p>
+  </div>
+
+  <nav class="topnav">
+    <div class="nav-logo">SIRH-<span>Doc</span></div>
+    <div class="nav-sep"></div>
+    <span class="nav-chip">MODULES</span>
+    <span class="nav-organization">{{ organizationName }}</span>
+    <div class="nav-right">
+      <button class="nav-link" type="button" (click)="goBack()">Accueil</button>
+      <button
+        class="nav-link"
+        type="button"
+        (click)="router.navigate(['/admin/editor'])"
+      >
+        Éditeur
+      </button>
+      <button
+        class="nav-link"
+        type="button"
+        (click)="router.navigate(['/documents'])"
+      >
+        Historique
+      </button>
+      <button class="nav-link" type="button" (click)="logout()">
+        Déconnexion
+      </button>
+    </div>
+  </nav>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="side-head">
+        <p class="eyebrow">Modules actifs</p>
+        <h1>Choisissez un module métier</h1>
+      </div>
+
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Rechercher..."
+          [(ngModel)]="dataViewSearch"
+          (ngModelChange)="dataViewSearch = $event"
+        />
+      </div>
+
+      <div class="module-list">
+        <button
+          class="module-list-item"
+          type="button"
+          *ngFor="let module of modulesList"
+          [class.active]="selectedModuleId === module.id"
+          (click)="selectModule(module.id)"
+        >
+          <span class="module-list-icon">{{ module.icon || "🧩" }}</span>
+          <div class="module-list-copy">
+            <strong>{{ module.name }}</strong>
+            <span>{{ module.tableViews.length }} vue(s)</span>
+          </div>
+        </button>
+
+        <div class="empty-state" *ngIf="!modulesList.length">
+          Aucun module métier disponible.
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="content-head">
+        <div>
+          <p class="eyebrow">Composant dédié</p>
+          <h2>{{ selectedModule?.name || "Module" }}</h2>
+          <p>
+            {{
+              selectedModule?.description ||
+                "Sélectionnez un module pour consulter ses vues et ses données."
+            }}
+          </p>
+        </div>
+        <div class="badge-stack">
+          <div class="badge-card">
+            <span>Vues</span>
+            <strong>{{ selectedModule?.tableViews?.length || 0 }}</strong>
+          </div>
+          <div class="badge-card">
+            <span>Table active</span>
+            <strong>{{
+              selectedDataView?.label || selectedDataView?.tableName || "-"
+            }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <div class="tabs" *ngIf="selectedModule?.tableViews?.length">
+        <button
+          *ngFor="let mtv of selectedModule?.tableViews || []"
+          class="tab-btn"
+          [class.active]="activeModuleTableViewId === mtv.tableViewConfigId"
+          (click)="selectModuleTableView(mtv.tableViewConfigId)"
+          type="button"
+        >
+          {{ getTableViewLabelById(mtv.tableViewConfigId) }}
+          <span *ngIf="mtv.isPrimary" class="primary-tag">Principal</span>
+        </button>
+      </div>
+
+      <div class="panel-actions" *ngIf="selectedDataView">
+        <input
+          type="text"
+          placeholder="Rechercher dans les lignes..."
+          [(ngModel)]="dataRowSearch"
+          [disabled]="lookupLoading || dataSaving || dataDeleting"
+          (ngModelChange)="updateDataSearch()"
+        />
+        <button
+          class="action-btn"
+          type="button"
+          (click)="createDataRow()"
+          [disabled]="
+            dataRowsLoading || lookupLoading || dataSaving || dataDeleting
+          "
+        >
+          Ajouter
+        </button>
+        <button
+          class="action-btn"
+          type="button"
+          (click)="reloadDataRows()"
+          [disabled]="
+            dataRowsLoading || lookupLoading || dataSaving || dataDeleting
+          "
+        >
+          Rafraîchir
+        </button>
+      </div>
+
+      <div class="empty-state large" *ngIf="!selectedDataView">
+        Choisissez un module puis une vue pour consulter les données.
+      </div>
+
+      <div class="grid" *ngIf="selectedDataView as view">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h3>Liste</h3>
+              <p>
+                {{
+                  dataRowsLoading
+                    ? "Chargement..."
+                    : dataRows.length + " ligne(s)"
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <div class="loading-inline" *ngIf="dataRowsLoading">
+              <div class="spinner small"></div>
+              {{ dataStatusMessage || "Chargement des lignes..." }}
+            </div>
+            <div
+              class="empty-state"
+              *ngIf="!dataRowsLoading && !dataRows.length"
+            >
+              Aucune ligne disponible.
+            </div>
+
+            <table class="data-table" *ngIf="dataRows.length">
+              <thead>
+                <tr>
+                  <th *ngFor="let field of view.previewFields">
+                    {{ getDataFieldLabel(view, field) }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let row of dataRows"
+                  [class.active]="getDataRowId(view, row) === selectedDataRowId"
+                  [class.disabled]="
+                    dataRowsLoading || dataSaving || dataDeleting
+                  "
+                  (click)="selectDataRow(getDataRowId(view, row))"
+                >
+                  <td *ngFor="let field of view.previewFields">
+                    {{ getDisplayValue(view, field, row[field]) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h3>{{ creatingDataRow ? "Nouvelle ligne" : "Détail" }}</h3>
+              <p>
+                {{
+                  creatingDataRow
+                    ? "Saisie"
+                    : buildDataPreviewLabel(view, selectedDataRecord) ||
+                      "Sélection"
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div
+              class="loading-inline"
+              *ngIf="lookupLoading || dataSaving || dataDeleting"
+            >
+              <div class="spinner small"></div>
+              {{ dataStatusMessage || "Traitement en cours..." }}
+            </div>
+
+            <div
+              class="empty-state"
+              *ngIf="!lookupLoading && !selectedDataRecord"
+            >
+              Sélectionnez une ligne pour afficher le détail.
+            </div>
+
+            <div class="detail-form" *ngIf="selectedDataRecord">
+              <label class="field" *ngFor="let field of view.visibleFields">
+                <span>{{ getDataFieldLabel(view, field) }}</span>
+                <ng-container
+                  *ngIf="isFieldEditable(field); else readonlyField"
+                >
+                  <select
+                    *ngIf="
+                      view.fieldSettings[field]?.displayMode === 'lookup';
+                      else rawInput
+                    "
+                    [(ngModel)]="selectedDataRecord[field]"
+                    [disabled]="dataSaving || dataDeleting"
+                  >
+                    <option value="">Choisir...</option>
+                    <option
+                      *ngFor="
+                        let option of lookupOptions[view.id + '::' + field] ||
+                          []
+                      "
+                      [value]="option.value"
+                    >
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <ng-template #rawInput>
+                    <input
+                      [(ngModel)]="selectedDataRecord[field]"
+                      [disabled]="dataSaving || dataDeleting"
+                    />
+                  </ng-template>
+                </ng-container>
+                <ng-template #readonlyField>
+                  <div class="readonly">
+                    {{
+                      getDisplayValue(view, field, selectedDataRecord[field])
+                    }}
+                  </div>
+                </ng-template>
+              </label>
+
+              <div class="actions">
+                <button
+                  class="danger-btn"
+                  type="button"
+                  (click)="deleteDataRow()"
+                  [disabled]="dataSaving || dataDeleting"
+                >
+                  {{
+                    creatingDataRow
+                      ? "Annuler"
+                      : dataDeleting
+                        ? "Suppression..."
+                        : "Supprimer"
+                  }}
+                </button>
+                <button
+                  class="action-btn primary"
+                  type="button"
+                  (click)="saveDataRow()"
+                  [disabled]="
+                    !view.editableFields.length || dataSaving || dataDeleting
+                  "
+                >
+                  {{ dataSaving ? "Enregistrement..." : "Enregistrer" }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>

@@ -15,6 +15,18 @@
     <span class="tchip">ADMIN</span>
     <span class="tetab">{{ organizationLabel }}</span>
     <div class="tright">
+      <div class="nlink" role="button" tabindex="0" (click)="goToAdminHome()">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M3 11.5 12 4l9 7.5" />
+          <path d="M5 10.5V20h14v-9.5" />
+        </svg>
+        Accueil
+      </div>
       <div class="nlink" role="button" tabindex="0" (click)="toggleSidebar()">
         <svg
           viewBox="0 0 24 24"

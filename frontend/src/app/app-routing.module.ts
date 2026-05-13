@@ -29,11 +29,38 @@ export const routes: Routes = [
   {
     path: "admin",
     loadComponent: () =>
+      import("./features/editor/pages/admin-home/admin-home.component").then(
+        (m) => m.AdminHomeComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "adminHome", roles: ["admin"] },
+  },
+  {
+    path: "admin/editor",
+    loadComponent: () =>
       import("./features/editor/pages/admin/admin.component").then(
         (m) => m.AdminComponent,
       ),
     canActivate: [roleGuard],
-    data: { page: "admin", roles: ["admin"] },
+    data: { page: "adminEditor", roles: ["admin"] },
+  },
+  {
+    path: "admin/modules",
+    loadComponent: () =>
+      import("./features/editor/pages/admin-modules/admin-modules.component").then(
+        (m) => m.AdminModulesComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "adminModules", roles: ["admin"] },
+  },
+  {
+    path: "admin/modules/:moduleId",
+    loadComponent: () =>
+      import("./features/editor/pages/admin-modules/admin-modules.component").then(
+        (m) => m.AdminModulesComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "adminModules", roles: ["admin"] },
   },
 
   {

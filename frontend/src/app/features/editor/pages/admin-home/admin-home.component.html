@@ -1,0 +1,109 @@
+<div class="admin-home">
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement de l'espace administrateur...</p>
+  </div>
+
+  <nav class="topnav">
+    <div class="nav-logo">SIRH-<span>Doc</span></div>
+    <div class="nav-sep"></div>
+    <span class="nav-chip">ADMIN</span>
+    <span class="nav-organization">{{ organizationName }}</span>
+    <div class="nav-right">
+      <button
+        class="nav-link"
+        type="button"
+        (click)="router.navigate(['/admin/editor'])"
+      >
+        Éditeur
+      </button>
+      <button
+        class="nav-link"
+        type="button"
+        (click)="router.navigate(['/documents'])"
+      >
+        Historique
+      </button>
+      <button class="nav-link" type="button" (click)="logout()">
+        Déconnexion
+      </button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Point d'entrée administrateur</p>
+      <h1>Choisissez l'espace à ouvrir</h1>
+      <p>
+        Les cartes de base mènent à l'éditeur et à l'historique des documents.
+        Les cartes métiers ouvrent ensuite les composants dédiés à chaque
+        module.
+      </p>
+    </div>
+    <div class="hero-meta">
+      <div class="meta-card">
+        <span class="meta-label">Modules actifs</span>
+        <strong>{{ modules.length }}</strong>
+      </div>
+      <div class="meta-card">
+        <span class="meta-label">Organisation</span>
+        <strong>{{ organizationName || "-" }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="card-grid">
+    <button
+      class="launch-card launch-card--core"
+      type="button"
+      *ngFor="let card of quickCards"
+      (click)="card.action()"
+    >
+      <div class="launch-icon">{{ card.icon }}</div>
+      <div class="launch-body">
+        <h2>{{ card.title }}</h2>
+        <p>{{ card.subtitle }}</p>
+      </div>
+      <span class="launch-arrow">›</span>
+    </button>
+  </section>
+
+  <section class="module-section">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Modules métier</p>
+        <h2>Accéder aux composants dédiés</h2>
+      </div>
+      <button
+        class="nav-link"
+        type="button"
+        (click)="router.navigate(['/admin/modules'])"
+      >
+        Voir tous les modules
+      </button>
+    </div>
+
+    <div class="module-grid" *ngIf="modules.length; else noModules">
+      <button
+        class="module-card"
+        type="button"
+        *ngFor="let module of modules"
+        (click)="openModule(module)"
+      >
+        <div class="module-icon">{{ module.icon || "🧩" }}</div>
+        <div class="module-copy">
+          <h3>{{ module.name }}</h3>
+          <p>
+            {{ module.description || "Ouvrir le composant dédié à ce module." }}
+          </p>
+        </div>
+      </button>
+    </div>
+
+    <ng-template #noModules>
+      <div class="empty-state">
+        Aucun module métier n'est disponible pour cette organisation.
+      </div>
+    </ng-template>
+  </section>
+</div>

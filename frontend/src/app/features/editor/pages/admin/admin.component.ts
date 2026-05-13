@@ -686,6 +686,10 @@ export class AdminComponent
     this.router.navigate(["/documents"]);
   }
 
+  goToAdminHome(): void {
+    this.router.navigate(["/admin"]);
+  }
+
   selectFamily(familyId: string): void {
     this.selectedFamilyId = familyId;
     this.selectedTemplateId = "";
