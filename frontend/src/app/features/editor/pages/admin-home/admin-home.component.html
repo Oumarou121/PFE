@@ -16,17 +16,6 @@
     </div>
   </nav>
 
-  <section class="hero">
-    <div class="hero-copy">
-      <p class="eyebrow">Point d'entrée administrateur</p>
-      <h1>Choisissez l'espace à ouvrir</h1>
-      <p>
-        Les cartes de base mènent à l'éditeur et à l'historique des documents.
-        Les modules métiers apparaissent directement sous forme de cartes.
-      </p>
-    </div>
-  </section>
-
   <section class="card-grid">
     <button
       class="launch-card launch-card--core"
@@ -34,12 +23,14 @@
       *ngFor="let card of quickCards"
       (click)="card.action()"
     >
-      <div class="launch-icon">{{ card.icon }}</div>
-      <div class="launch-body">
-        <h2>{{ card.title }}</h2>
-        <p>{{ card.subtitle }}</p>
+      <div class="launch-card__top">
+        <div class="launch-card__icon">{{ card.icon }}</div>
+        <div class="launch-card__pointer" aria-hidden="true">☝</div>
       </div>
-      <span class="launch-arrow">›</span>
+      <div class="launch-card__footer">
+        <div class="launch-card__label">{{ card.title }}</div>
+        <div class="launch-card__chevron" aria-hidden="true">›</div>
+      </div>
     </button>
 
     <button
@@ -48,14 +39,14 @@
       *ngFor="let module of modules"
       (click)="openModule(module)"
     >
-      <div class="launch-icon">{{ module.icon || "🧩" }}</div>
-      <div class="launch-body">
-        <h2>{{ module.name }}</h2>
-        <p>
-          {{ module.description || "Ouvrir le composant dédié à ce module." }}
-        </p>
+      <div class="launch-card__top">
+        <div class="launch-card__icon">{{ module.icon || "🧩" }}</div>
+        <div class="launch-card__pointer" aria-hidden="true">☝</div>
       </div>
-      <span class="launch-arrow">›</span>
+      <div class="launch-card__footer">
+        <div class="launch-card__label">{{ module.name }}</div>
+        <div class="launch-card__chevron" aria-hidden="true">›</div>
+      </div>
     </button>
   </section>
 
