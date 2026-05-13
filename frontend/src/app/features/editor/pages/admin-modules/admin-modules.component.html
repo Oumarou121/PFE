@@ -18,65 +18,13 @@
   </nav>
 
   <div class="shell">
-    <aside class="sidebar">
-      <div class="side-head">
-        <p class="eyebrow">Modules actifs</p>
-        <h1>Choisissez un module métier</h1>
-      </div>
-
-      <div class="search-box">
-        <input
-          type="text"
-          placeholder="Rechercher..."
-          [(ngModel)]="dataViewSearch"
-          (ngModelChange)="dataViewSearch = $event"
-        />
-      </div>
-
-      <div class="module-list">
-        <button
-          class="module-list-item"
-          type="button"
-          *ngFor="let module of modulesList"
-          [class.active]="selectedModuleId === module.id"
-          (click)="selectModule(module.id)"
-        >
-          <span class="module-list-icon">{{ module.icon || "🧩" }}</span>
-          <div class="module-list-copy">
-            <strong>{{ module.name }}</strong>
-            <span>{{ module.tableViews.length }} vue(s)</span>
-          </div>
-        </button>
-
-        <div class="empty-state" *ngIf="!modulesList.length">
-          Aucun module métier disponible.
-        </div>
-      </div>
-    </aside>
-
     <main class="content">
       <section class="content-head">
         <div>
-          <p class="eyebrow">Composant dédié</p>
           <h2>{{ selectedModule?.name || "Module" }}</h2>
           <p>
-            {{
-              selectedModule?.description ||
-                "Sélectionnez un module pour consulter ses vues et ses données."
-            }}
+            {{ selectedModule?.description || "Module en cours de gestion." }}
           </p>
-        </div>
-        <div class="badge-stack">
-          <div class="badge-card">
-            <span>Vues</span>
-            <strong>{{ selectedModule?.tableViews?.length || 0 }}</strong>
-          </div>
-          <div class="badge-card">
-            <span>Table active</span>
-            <strong>{{
-              selectedDataView?.label || selectedDataView?.tableName || "-"
-            }}</strong>
-          </div>
         </div>
       </section>
 
