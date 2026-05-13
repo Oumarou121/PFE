@@ -11,6 +11,7 @@ namespace DocApi.Controllers
 {
     [ApiController]
     [Route("api")]
+    [Authorize]  // Require authentication for all endpoints except login
     public class EditorController : ControllerBase
     {
         private readonly IEditorService _service;
@@ -25,6 +26,7 @@ namespace DocApi.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<ActionResult> Login([FromBody] EditorLoginRequest request)
         {
             try

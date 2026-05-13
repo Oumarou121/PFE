@@ -1,45 +1,83 @@
 <div class="modules-page">
-  <div class="loading-overlay" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Chargement des modules...</p>
-  </div>
+  <nav class="navbar">
+    <div class="topnav">
+      <div class="nav-logo">
+        <svg
+          class="nav-logo__icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+        SIRH-<span class="nav-logo__light">Doc</span>
+      </div>
+      <div class="nav-center">
+        <span class="nav-org-pill">{{ organizationName }}</span>
+      </div>
+      <div class="nav-right">
+        <button class="nav-logout-btn" type="button" (click)="logout()">
+          <i class="fa fa-sign-out"></i> Déconnexion
+        </button>
+      </div>
+    </div>
 
-  <nav class="topnav">
-    <div class="nav-logo">SIRH-<span>Doc</span></div>
-    <div class="nav-sep"></div>
-    <span class="nav-chip">MODULES</span>
-    <span class="nav-organization">{{ organizationName }}</span>
-    <div class="nav-right">
-      <button class="nav-link" type="button" (click)="goBack()">Accueil</button>
-      <button class="nav-link" type="button" (click)="logout()">
-        Déconnexion
+    <div class="bottonnav">
+      <button
+        *ngFor="let mtv of selectedModule?.tableViews || []"
+        class="tab-btn"
+        [class.active]="activeModuleTableViewId === mtv.tableViewConfigId"
+        (click)="selectModuleTableView(mtv.tableViewConfigId)"
+        type="button"
+      >
+        <i class="fa fa-circle" aria-hidden="true"> </i>
+        {{ getTableViewLabelById(mtv.tableViewConfigId) }}
+        <span *ngIf="mtv.isPrimary" class="primary-tag">Principal</span>
       </button>
     </div>
   </nav>
 
-  <div class="shell">
+  <!-- <section class="subnav" *ngIf="selectedModule?.tableViews?.length">
+    <div class="subnav-head">
+      <span class="subnav-label">Vues</span>
+      <span class="subnav-hint">Sélectionnez la table à gérer</span>
+    </div>
+    <div class="tabs">
+      <button
+        *ngFor="let mtv of selectedModule?.tableViews || []"
+        class="tab-btn"
+        [class.active]="activeModuleTableViewId === mtv.tableViewConfigId"
+        (click)="selectModuleTableView(mtv.tableViewConfigId)"
+        type="button"
+      >
+        {{ getTableViewLabelById(mtv.tableViewConfigId) }}
+        <span *ngIf="mtv.isPrimary" class="primary-tag">Principal</span>
+      </button>
+    </div>
+  </section> -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des modules...</p>
+  </div>
+  <div class="shell" *ngIf="!loading">
     <main class="content">
       <section class="content-head">
-        <div>
+        <div class="header">
+          <button class="nav-link" type="button" (click)="goBack()">
+            <i class="fa fa-home" aria-hidden="true"></i>
+            Accueil
+          </button>
+          <i class="fa fa-arrow-right" aria-hidden="true"></i>
           <h2>{{ selectedModule?.name || "Module" }}</h2>
-          <p>
-            {{ selectedModule?.description || "Module en cours de gestion." }}
-          </p>
         </div>
+        <p class="description" *ngIf="selectedModule?.description">
+          {{ selectedModule?.description }}
+        </p>
       </section>
-
-      <div class="tabs" *ngIf="selectedModule?.tableViews?.length">
-        <button
-          *ngFor="let mtv of selectedModule?.tableViews || []"
-          class="tab-btn"
-          [class.active]="activeModuleTableViewId === mtv.tableViewConfigId"
-          (click)="selectModuleTableView(mtv.tableViewConfigId)"
-          type="button"
-        >
-          {{ getTableViewLabelById(mtv.tableViewConfigId) }}
-          <span *ngIf="mtv.isPrimary" class="primary-tag">Principal</span>
-        </button>
-      </div>
 
       <div class="panel-actions" *ngIf="selectedDataView">
         <input
