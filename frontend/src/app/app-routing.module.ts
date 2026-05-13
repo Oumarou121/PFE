@@ -46,6 +46,15 @@ export const routes: Routes = [
     data: { page: "user", roles: ["user"] },
   },
   {
+    path: "documents",
+    loadComponent: () =>
+      import("./features/editor/pages/document-history/document-history-page.component").then(
+        (m) => m.DocumentHistoryPageComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "documents", roles: ["user", "admin", "supAdmin"] },
+  },
+  {
     path: "",
     redirectTo: "login",
     pathMatch: "full",

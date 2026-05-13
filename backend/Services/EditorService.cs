@@ -222,5 +222,72 @@ namespace DocApi.Services
             await _repository.EnsureSchemaAsync();
             await _repository.DeleteTableViewConfigAsync(id);
         }
+
+        public async Task<IEnumerable<DocumentResponse>> GetDocumentsAsync(DocumentListRequest request, AuthUserResponse? currentUser)
+        {
+            await _repository.EnsureSchemaAsync();
+            var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            var organizationId = isSuperAdmin ? request.OrganizationId : currentUser?.OrganizationId;
+            return await _repository.LoadDocumentsAsync(organizationId, request.FamilyId, request.BeneficiaryTable, request.BeneficiaryId);
+        }
+
+        public async Task<DocumentListResponse> GetDocumentsPagedAsync(DocumentListRequest request, AuthUserResponse? currentUser)
+        {
+            await _repository.EnsureSchemaAsync();
+            var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            var organizationId = isSuperAdmin ? request.OrganizationId : currentUser?.OrganizationId;
+            
+            // Apply org-scoping to request
+            var scopedRequest = new DocumentListRequest
+            {
+                OrganizationId = organizationId,
+                FamilyId = request.FamilyId,
+                BeneficiaryTable = request.BeneficiaryTable,
+                BeneficiaryId = request.BeneficiaryId,
+                Page = request.Page > 0 ? request.Page : 1,
+                Limit = request.Limit > 0 ? Math.Min(request.Limit, 100) : 10, // Cap at 100 per page
+                SortBy = request.SortBy,
+                SortOrder = request.SortOrder
+            };
+            
+            return await _repository.LoadDocumentsPagedAsync(scopedRequest);
+        }
+
+        public async Task<DocumentResponse?> GetDocumentByIdAsync(string id, AuthUserResponse? currentUser)
+        {
+            await _repository.EnsureSchemaAsync();
+            var document = await _repository.GetDocumentByIdAsync(id);
+            if (document is null) return null;
+
+            var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            if (!isSuperAdmin && currentUser?.OrganizationId != document.OrganizationId) return null;
+            return document;
+        }
+
+        public async Task<DocumentResponse> CreateDocumentAsync(DocumentCreateRequest request, AuthUserResponse? currentUser)
+        {
+            await _repository.EnsureSchemaAsync();
+            var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            request.OrganizationId = isSuperAdmin ? request.OrganizationId : currentUser?.OrganizationId;
+            request.GeneratedById = string.IsNullOrWhiteSpace(request.GeneratedById) ? currentUser?.Id ?? string.Empty : request.GeneratedById;
+            request.GeneratedByName = string.IsNullOrWhiteSpace(request.GeneratedByName) ? currentUser?.Name ?? string.Empty : request.GeneratedByName;
+            request.GeneratedByEmail = string.IsNullOrWhiteSpace(request.GeneratedByEmail) ? currentUser?.Email : request.GeneratedByEmail;
+            return await _repository.CreateDocumentAsync(request);
+        }
+
+        public async Task DeleteDocumentAsync(string id, AuthUserResponse? currentUser)
+        {
+            await _repository.EnsureSchemaAsync();
+            var document = await _repository.GetDocumentByIdAsync(id);
+            if (document is null) return;
+
+            var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            if (!isSuperAdmin && currentUser?.OrganizationId != document.OrganizationId)
+            {
+                throw new UnauthorizedAccessException("Suppression non autorisee pour ce document.");
+            }
+
+            await _repository.DeleteDocumentAsync(id);
+        }
     }
 }

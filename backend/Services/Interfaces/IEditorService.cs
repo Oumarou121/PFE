@@ -32,5 +32,10 @@ namespace DocApi.Services.Interfaces
         Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(TableViewRecordRequest request);
         Task DeleteTableViewRecordAsync(TableViewRecordRequest request);
         Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(TableViewLookupRequest request);
+        Task<IEnumerable<DocumentResponse>> GetDocumentsAsync(DocumentListRequest request, AuthUserResponse? currentUser);
+        Task<DocumentListResponse> GetDocumentsPagedAsync(DocumentListRequest request, AuthUserResponse? currentUser);
+        Task<DocumentResponse?> GetDocumentByIdAsync(string id, AuthUserResponse? currentUser);
+        Task<DocumentResponse> CreateDocumentAsync(DocumentCreateRequest request, AuthUserResponse? currentUser);
+        Task DeleteDocumentAsync(string id, AuthUserResponse? currentUser);
     }
 }

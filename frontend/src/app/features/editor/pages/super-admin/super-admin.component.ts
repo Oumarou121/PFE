@@ -8,6 +8,7 @@ import {
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { Subject, firstValueFrom } from "rxjs";
 import { takeUntil } from "rxjs/operators";
@@ -211,6 +212,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
   constructor(
     private auth: AuthService,
+    private router: Router,
     private api: ApiService,
     private editorState: EditorStateService,
     private familyService: FamilyService,
@@ -1358,6 +1360,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
   logoutAndRedirect(): void {
     this.zone.run(() => this.auth.logout());
+  }
+
+  goToDocumentHistory(): void {
+    this.router.navigate(["/documents"]);
   }
 
   // Phase 4 Tranche 5: openModal/closeModal simplifiées — fallback DOM supprimé.

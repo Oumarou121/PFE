@@ -154,14 +154,42 @@
       </svg>
       <span id="addBtnLabel">{{ addButtonLabel }}</span>
     </button>
-    <div class="panel-context" *ngIf="currentSection === 'families' || currentSection === 'tableviews'" style="padding: 12px; border-bottom: 1px solid var(--border); background: var(--bg-light);">
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Contexte de données</div>
-      <select 
-        style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: white; font-size: 13px;"
-        [ngModel]="selectedSchemaOrganizationId" 
-        (change)="onSchemaOrganizationChange($event)">
+    <div
+      class="panel-context"
+      *ngIf="currentSection === 'families' || currentSection === 'tableviews'"
+      style="
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-light);
+      "
+    >
+      <div
+        style="
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          margin-bottom: 8px;
+        "
+      >
+        Contexte de données
+      </div>
+      <select
+        style="
+          width: 100%;
+          padding: 8px;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          background: white;
+          font-size: 13px;
+        "
+        [ngModel]="selectedSchemaOrganizationId"
+        (change)="onSchemaOrganizationChange($event)"
+      >
         <option [ngValue]="null">-- Sélectionner une organisation --</option>
-        <option *ngFor="let org of organizations" [value]="org.id">{{ org.nom || org.name }} ({{ org.databaseName }})</option>
+        <option *ngFor="let org of organizations" [value]="org.id">
+          {{ org.nom || org.name }} ({{ org.databaseName }})
+        </option>
       </select>
     </div>
     <div class="panel-scroll" id="panelList" [ngSwitch]="currentSection">
@@ -241,7 +269,8 @@
         <app-module-list
           [modules]="filteredModules"
           [selectedId]="selectedModuleId"
-          (select)="selectModuleFromPanel($event)">
+          (select)="selectModuleFromPanel($event)"
+        >
         </app-module-list>
       </ng-container>
     </div>
@@ -253,6 +282,14 @@
       <div class="topbar-sep">/</div>
       <span class="topbar-title" id="topbarTitle">{{ topbarTitle }}</span>
       <div class="ml-auto flex gap-8">
+        <button
+          class="nav-link"
+          type="button"
+          (click)="goToDocumentHistory()"
+          title="Voir l'historique des documents"
+        >
+          📋 Historique
+        </button>
         <button class="nav-link" type="button" (click)="logoutAndRedirect()">
           <svg
             viewBox="0 0 24 24"
@@ -288,33 +325,86 @@
             <rect x="3" y="14" width="7" height="7" rx="1" />
           </svg>
           <h3>Sélectionnez un module</h3>
-          <p>Choisissez un module métier ou créez-en un nouveau pour regrouper vos tables.</p>
+          <p>
+            Choisissez un module métier ou créez-en un nouveau pour regrouper
+            vos tables.
+          </p>
         </div>
-        
-        <div *ngIf="selectedModule || isCreatingModule" style="height: 100%;">
-          <div class="flex gap-8" style="margin-bottom: 20px" *ngIf="selectedModule && !isCreatingModule">
+
+        <div *ngIf="selectedModule || isCreatingModule" style="height: 100%">
+          <div
+            class="flex gap-8"
+            style="margin-bottom: 20px"
+            *ngIf="selectedModule && !isCreatingModule"
+          >
             <div>
-              <div style="font-size: 18px; font-weight: 700; color: var(--text)">{{ selectedModule.name }}</div>
-              <div class="text-muted">Module métier · {{ selectedModule.tableViews.length }} tables regroupées</div>
+              <div
+                style="font-size: 18px; font-weight: 700; color: var(--text)"
+              >
+                {{ selectedModule.name }}
+              </div>
+              <div class="text-muted">
+                Module métier · {{ selectedModule.tableViews.length }} tables
+                regroupées
+              </div>
             </div>
             <div class="ml-auto flex gap-8">
-               <button class="btn danger" (click)="deleteSelectedModule()">Supprimer</button>
-               <button class="btn primary" (click)="editSelectedModule()">Modifier</button>
+              <button class="btn danger" (click)="deleteSelectedModule()">
+                Supprimer
+              </button>
+              <button class="btn primary" (click)="editSelectedModule()">
+                Modifier
+              </button>
             </div>
           </div>
 
-          <div class="card" *ngIf="selectedModule && !isEditingModule && !isCreatingModule">
-             <div class="card-header"><div class="card-title">Aperçu du regroupement</div></div>
-             <div class="card-body">
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
-                   <div *ngFor="let mtv of selectedModule.tableViews" 
-                        class="card" style="margin: 0; padding: 16px; border: 1px solid var(--border);"
-                        [style.border-left]="mtv.isPrimary ? '4px solid var(--purple)' : '4px solid #e2e8f0'">
-                      <div style="font-weight: 700;">{{ getTableViewLabelById(mtv.tableViewConfigId) }}</div>
-                      <div class="text-muted" style="font-size: 12px; margin-top: 4px;">{{ mtv.isPrimary ? 'Table principale' : (mtv.isManagementTable ? 'Référentiel' : 'Table secondaire') }}</div>
-                   </div>
+          <div
+            class="card"
+            *ngIf="selectedModule && !isEditingModule && !isCreatingModule"
+          >
+            <div class="card-header">
+              <div class="card-title">Aperçu du regroupement</div>
+            </div>
+            <div class="card-body">
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                  gap: 16px;
+                "
+              >
+                <div
+                  *ngFor="let mtv of selectedModule.tableViews"
+                  class="card"
+                  style="
+                    margin: 0;
+                    padding: 16px;
+                    border: 1px solid var(--border);
+                  "
+                  [style.border-left]="
+                    mtv.isPrimary
+                      ? '4px solid var(--purple)'
+                      : '4px solid #e2e8f0'
+                  "
+                >
+                  <div style="font-weight: 700">
+                    {{ getTableViewLabelById(mtv.tableViewConfigId) }}
+                  </div>
+                  <div
+                    class="text-muted"
+                    style="font-size: 12px; margin-top: 4px"
+                  >
+                    {{
+                      mtv.isPrimary
+                        ? "Table principale"
+                        : mtv.isManagementTable
+                          ? "Référentiel"
+                          : "Table secondaire"
+                    }}
+                  </div>
                 </div>
-             </div>
+              </div>
+            </div>
           </div>
 
           <app-module-form
@@ -323,7 +413,8 @@
             [availableTableViews]="tableViews"
             [organizations]="organizations"
             (save)="saveModule($event)"
-            (cancel)="cancelModuleEdit()">
+            (cancel)="cancelModuleEdit()"
+          >
           </app-module-form>
         </div>
       </div>
@@ -437,12 +528,19 @@
             <div
               *ngIf="!schemaBuilderData"
               class="text-muted"
-              style="padding: 16px; border: 1px dashed var(--border); border-radius: 12px; background: var(--bg-light); text-align: center;"
+              style="
+                padding: 16px;
+                border: 1px dashed var(--border);
+                border-radius: 12px;
+                background: var(--bg-light);
+                text-align: center;
+              "
             >
               <div *ngIf="!selectedSchemaDatabaseName">
-                <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
-                <strong>Contexte de données requis</strong><br>
-                Sélectionnez une organisation dans le panneau de gauche pour charger le schéma.
+                <div style="font-size: 24px; margin-bottom: 8px">⚠️</div>
+                <strong>Contexte de données requis</strong><br />
+                Sélectionnez une organisation dans le panneau de gauche pour
+                charger le schéma.
               </div>
               <div *ngIf="selectedSchemaDatabaseName">
                 Chargement du schéma SQL Server...
@@ -804,22 +902,50 @@
                   "
                 />
               </div>
-              <div class="form-row" style="margin: 0; grid-column: span 3;">
+              <div class="form-row" style="margin: 0; grid-column: span 3">
                 <label class="form-label">Organisations ayant accès</label>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-light); max-height: 150px; overflow-y: auto;">
-                  <div *ngFor="let org of organizations" style="display: flex; align-items: center; gap: 6px; background: white; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
-                    <input 
-                      type="checkbox" 
+                <div
+                  style="
+                    display: flex;
+                    gap: 12px;
+                    flex-wrap: wrap;
+                    padding: 10px;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    background: var(--bg-light);
+                    max-height: 150px;
+                    overflow-y: auto;
+                  "
+                >
+                  <div
+                    *ngFor="let org of organizations"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 6px;
+                      background: white;
+                      padding: 4px 10px;
+                      border-radius: 20px;
+                      border: 1px solid var(--border);
+                      font-size: 13px;
+                    "
+                  >
+                    <input
+                      type="checkbox"
                       [id]="'fam-org-' + org.id"
                       style="cursor: pointer"
                       [checked]="isFamilyOrganizationSelected(fam.id, org.id)"
                       (change)="toggleFamilyOrganization(fam.id, org.id)"
+                    />
+                    <label
+                      [for]="'fam-org-' + org.id"
+                      style="cursor: pointer; margin: 0"
+                      >{{ org.nom || org.name }}</label
                     >
-                    <label [for]="'fam-org-' + org.id" style="cursor: pointer; margin: 0;">{{ org.nom || org.name }}</label>
                   </div>
                 </div>
               </div>
-              </div>
+            </div>
 
             <div class="form-grid c3" style="margin-top: 14px">
               <div class="form-row" style="margin: 0">
@@ -3200,617 +3326,682 @@
       >
         <div class="section-heading">Explorateur de donnees</div>
 
-        <div class="card" *ngIf="!selectedSchemaDatabaseName" style="padding: 24px; text-align: center; border: 1px dashed var(--border);">
-          <div style="font-size: 32px; margin-bottom: 12px;">⚠️</div>
-          <h3 style="margin-bottom: 8px;">Contexte de données requis</h3>
-          <p class="text-muted">Veuillez sélectionner une organisation dans le panneau de gauche pour charger le schéma de la base de données et explorer les tables.</p>
+        <div
+          class="card"
+          *ngIf="!selectedSchemaDatabaseName"
+          style="
+            padding: 24px;
+            text-align: center;
+            border: 1px dashed var(--border);
+          "
+        >
+          <div style="font-size: 32px; margin-bottom: 12px">⚠️</div>
+          <h3 style="margin-bottom: 8px">Contexte de données requis</h3>
+          <p class="text-muted">
+            Veuillez sélectionner une organisation dans le panneau de gauche
+            pour charger le schéma de la base de données et explorer les tables.
+          </p>
         </div>
 
         <ng-container *ngIf="selectedSchemaDatabaseName">
           <div class="card" *ngIf="selectedTableView as view">
-          <div class="card-header">
-            <div>
-              <div class="card-title">{{ view.label || view.tableName }}</div>
-              <div class="card-subtitle">{{ view.tableName }}</div>
-            </div>
-            <div class="flex gap-8">
-              <button
-                class="btn danger"
-                type="button"
-                (click)="deleteTableViewConfig(view.id)"
-              >
-                Supprimer
-              </button>
-              <button
-                class="btn success"
-                type="button"
-                (click)="saveTableViewConfig(view.id)"
-              >
-                Enregistrer
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" *ngIf="selectedTableView as view">
-          <div class="card-header">
-            <div class="card-title">Vue de données configurable</div>
-          </div>
-          <div class="card-body">
-            <div class="form-grid c2">
-              <div class="form-row" style="margin: 0">
-                <label class="form-label">Libellé pour l'utilisateur</label>
-                <input
-                  class="form-input"
-                  [value]="view.label"
-                  (input)="setSelectedTableViewLabel($any($event.target).value)"
-                />
+            <div class="card-header">
+              <div>
+                <div class="card-title">{{ view.label || view.tableName }}</div>
+                <div class="card-subtitle">{{ view.tableName }}</div>
               </div>
-              <div class="form-row" style="margin: 0">
-                <label class="form-label">Table SQL</label>
-                <select
-                  class="form-input"
-                  [value]="view.tableName"
-                  (change)="
-                    setSelectedTableViewTable($any($event.target).value)
-                  "
+              <div class="flex gap-8">
+                <button
+                  class="btn danger"
+                  type="button"
+                  (click)="deleteTableViewConfig(view.id)"
                 >
-                  <option
-                    *ngFor="let table of tableViewSchemaTables()"
-                    [value]="table.name"
-                    [selected]="table.name === view.tableName"
-                  >
-                    {{ table.comment || table.name }} ({{ table.name }})
-                  </option>
-                </select>
+                  Supprimer
+                </button>
+                <button
+                  class="btn success"
+                  type="button"
+                  (click)="saveTableViewConfig(view.id)"
+                >
+                  Enregistrer
+                </button>
               </div>
-              <div class="form-row" style="margin: 0; grid-column: span 2;">
-                <label class="form-label">Organisations ayant accès</label>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-light); max-height: 150px; overflow-y: auto;">
-                  <div *ngFor="let org of organizations" style="display: flex; align-items: center; gap: 6px; background: white; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
-                    <input 
-                      type="checkbox" 
-                      [id]="'tv-org-' + org.id"
-                      style="cursor: pointer"
-                      [checked]="isTableViewOrganizationSelected(view.id, org.id)"
-                      (change)="toggleTableViewOrganization(view.id, org.id)"
+            </div>
+          </div>
+
+          <div class="card" *ngIf="selectedTableView as view">
+            <div class="card-header">
+              <div class="card-title">Vue de données configurable</div>
+            </div>
+            <div class="card-body">
+              <div class="form-grid c2">
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Libellé pour l'utilisateur</label>
+                  <input
+                    class="form-input"
+                    [value]="view.label"
+                    (input)="
+                      setSelectedTableViewLabel($any($event.target).value)
+                    "
+                  />
+                </div>
+                <div class="form-row" style="margin: 0">
+                  <label class="form-label">Table SQL</label>
+                  <select
+                    class="form-input"
+                    [value]="view.tableName"
+                    (change)="
+                      setSelectedTableViewTable($any($event.target).value)
+                    "
+                  >
+                    <option
+                      *ngFor="let table of tableViewSchemaTables()"
+                      [value]="table.name"
+                      [selected]="table.name === view.tableName"
                     >
-                    <label [for]="'tv-org-' + org.id" style="cursor: pointer; margin: 0;">{{ org.nom || org.name }}</label>
+                      {{ table.comment || table.name }} ({{ table.name }})
+                    </option>
+                  </select>
+                </div>
+                <div class="form-row" style="margin: 0; grid-column: span 2">
+                  <label class="form-label">Organisations ayant accès</label>
+                  <div
+                    style="
+                      display: flex;
+                      gap: 12px;
+                      flex-wrap: wrap;
+                      padding: 10px;
+                      border: 1px solid var(--border);
+                      border-radius: 8px;
+                      background: var(--bg-light);
+                      max-height: 150px;
+                      overflow-y: auto;
+                    "
+                  >
+                    <div
+                      *ngFor="let org of organizations"
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        background: white;
+                        padding: 4px 10px;
+                        border-radius: 20px;
+                        border: 1px solid var(--border);
+                        font-size: 13px;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        [id]="'tv-org-' + org.id"
+                        style="cursor: pointer"
+                        [checked]="
+                          isTableViewOrganizationSelected(view.id, org.id)
+                        "
+                        (change)="toggleTableViewOrganization(view.id, org.id)"
+                      />
+                      <label
+                        [for]="'tv-org-' + org.id"
+                        style="cursor: pointer; margin: 0"
+                        >{{ org.nom || org.name }}</label
+                      >
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="form-grid c3" style="margin-top: 16px">
-              <div class="card" style="margin: 0">
-                <div class="card-header">
-                  <div class="card-title">Visibles</div>
-                </div>
-                <div class="card-body">
-                  <label
-                    style="
-                      display: flex;
-                      align-items: flex-start;
-                      gap: 8px;
-                      margin-bottom: 8px;
-                      cursor: pointer;
-                    "
-                    *ngFor="let column of tableViewColumnsForSelected()"
-                  >
-                    <input
-                      type="checkbox"
-                      [checked]="
-                        isSelectedTableViewFieldChecked(
-                          'visibleFields',
-                          column.name
-                        )
+              <div class="form-grid c3" style="margin-top: 16px">
+                <div class="card" style="margin: 0">
+                  <div class="card-header">
+                    <div class="card-title">Visibles</div>
+                  </div>
+                  <div class="card-body">
+                    <label
+                      style="
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 8px;
+                        margin-bottom: 8px;
+                        cursor: pointer;
                       "
-                      (change)="
-                        toggleSelectedTableViewField(
-                          'visibleFields',
-                          column.name,
-                          $any($event.target).checked
-                        )
-                      "
-                    />
-                    <span style="flex: 1; min-width: 0">
-                      <strong>{{
-                        getTableViewFieldLabel(view, column.name)
-                      }}</strong
-                      ><br />
-                      <span class="text-muted"
-                        >{{ column.name
-                        }}{{
-                          column.comment
-                            ? " - " + column.comment
-                            : column.type
-                              ? " - " + column.type
-                              : ""
-                        }}</span
-                      >
+                      *ngFor="let column of tableViewColumnsForSelected()"
+                    >
                       <input
-                        class="form-input"
-                        [value]="view.fieldLabels[column.name] || ''"
-                        [placeholder]="column.comment || column.name"
-                        (input)="
-                          setSelectedTableViewFieldLabel(
-                            column.name,
-                            $any($event.target).value
+                        type="checkbox"
+                        [checked]="
+                          isSelectedTableViewFieldChecked(
+                            'visibleFields',
+                            column.name
                           )
                         "
-                        style="margin-top: 6px"
+                        (change)="
+                          toggleSelectedTableViewField(
+                            'visibleFields',
+                            column.name,
+                            $any($event.target).checked
+                          )
+                        "
                       />
-                    </span>
-                  </label>
-                </div>
-              </div>
-              <div class="card" style="margin: 0">
-                <div class="card-header">
-                  <div class="card-title">Modifiables</div>
-                </div>
-                <div class="card-body">
-                  <label
-                    style="
-                      display: flex;
-                      align-items: flex-start;
-                      gap: 8px;
-                      margin-bottom: 8px;
-                      cursor: pointer;
-                    "
-                    *ngFor="let column of tableViewColumnsForSelected()"
-                  >
-                    <input
-                      type="checkbox"
-                      [checked]="
-                        isSelectedTableViewFieldChecked(
-                          'editableFields',
-                          column.name
-                        )
-                      "
-                      (change)="
-                        toggleSelectedTableViewField(
-                          'editableFields',
-                          column.name,
-                          $any($event.target).checked
-                        )
-                      "
-                    />
-                    <span style="flex: 1; min-width: 0"
-                      ><strong>{{
-                        getTableViewFieldLabel(view, column.name)
-                      }}</strong></span
-                    >
-                  </label>
-                </div>
-              </div>
-              <div class="card" style="margin: 0">
-                <div class="card-header">
-                  <div class="card-title">Aperçu</div>
-                  <div class="card-subtitle">1 à 3</div>
-                </div>
-                <div class="card-body">
-                  <label
-                    style="
-                      display: flex;
-                      align-items: flex-start;
-                      gap: 8px;
-                      margin-bottom: 8px;
-                      cursor: pointer;
-                    "
-                    *ngFor="let column of tableViewColumnsForSelected()"
-                  >
-                    <input
-                      type="checkbox"
-                      [checked]="
-                        isSelectedTableViewFieldChecked(
-                          'previewFields',
-                          column.name
-                        )
-                      "
-                      [disabled]="
-                        isSelectedTableViewFieldDisabled(
-                          'previewFields',
-                          column.name
-                        )
-                      "
-                      (change)="
-                        toggleSelectedTableViewField(
-                          'previewFields',
-                          column.name,
-                          $any($event.target).checked
-                        )
-                      "
-                    />
-                    <span style="flex: 1; min-width: 0"
-                      ><strong>{{
-                        getTableViewFieldLabel(view, column.name)
-                      }}</strong></span
-                    >
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="card" style="margin-top: 16px; margin-bottom: 0">
-              <div class="card-header">
-                <div class="card-title">Champs code / libelle</div>
-                <div class="card-subtitle">Affichage lookup</div>
-              </div>
-              <div class="card-body">
-                <div *ngIf="view.visibleFields?.length; else noVisibleFields">
-                  <div
-                    style="margin-bottom: 12px"
-                    *ngFor="let fieldName of view.visibleFields"
-                  >
-                    <div style="font-weight: 600; color: var(--text)">
-                      {{ getTableViewFieldLabel(view, fieldName) }}
-                    </div>
-                    <div
-                      class="text-muted"
-                      style="font-size: 10px; margin-top: 2px"
-                    >
-                      {{ fieldName }}
-                    </div>
-                    <div
-                      style="
-                        margin-top: 8px;
-                        padding: 10px;
-                        border: 1px dashed var(--border2);
-                        border-radius: 12px;
-                        background: var(--surface);
-                      "
-                    >
-                      <label
-                        class="form-label"
-                        style="font-size: 10px; color: var(--text2)"
-                      >
-                        Affichage
-                        <select
+                      <span style="flex: 1; min-width: 0">
+                        <strong>{{
+                          getTableViewFieldLabel(view, column.name)
+                        }}</strong
+                        ><br />
+                        <span class="text-muted"
+                          >{{ column.name
+                          }}{{
+                            column.comment
+                              ? " - " + column.comment
+                              : column.type
+                                ? " - " + column.type
+                                : ""
+                          }}</span
+                        >
+                        <input
                           class="form-input"
-                          style="display: block; width: 100%; margin-top: 4px"
-                          [value]="
-                            getSelectedTableViewFieldSetting(fieldName)
-                              .displayMode || 'raw'
-                          "
-                          (change)="
-                            setSelectedTableViewFieldSetting(
-                              fieldName,
-                              'displayMode',
+                          [value]="view.fieldLabels[column.name] || ''"
+                          [placeholder]="column.comment || column.name"
+                          (input)="
+                            setSelectedTableViewFieldLabel(
+                              column.name,
                               $any($event.target).value
                             )
                           "
-                        >
-                          <option value="raw">Valeur source</option>
-                          <option value="lookup">
-                            Code + libelle depuis une table
-                          </option>
-                        </select>
-                      </label>
+                          style="margin-top: 6px"
+                        />
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <div class="card" style="margin: 0">
+                  <div class="card-header">
+                    <div class="card-title">Modifiables</div>
+                  </div>
+                  <div class="card-body">
+                    <label
+                      style="
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 8px;
+                        margin-bottom: 8px;
+                        cursor: pointer;
+                      "
+                      *ngFor="let column of tableViewColumnsForSelected()"
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="
+                          isSelectedTableViewFieldChecked(
+                            'editableFields',
+                            column.name
+                          )
+                        "
+                        (change)="
+                          toggleSelectedTableViewField(
+                            'editableFields',
+                            column.name,
+                            $any($event.target).checked
+                          )
+                        "
+                      />
+                      <span style="flex: 1; min-width: 0"
+                        ><strong>{{
+                          getTableViewFieldLabel(view, column.name)
+                        }}</strong></span
+                      >
+                    </label>
+                  </div>
+                </div>
+                <div class="card" style="margin: 0">
+                  <div class="card-header">
+                    <div class="card-title">Aperçu</div>
+                    <div class="card-subtitle">1 à 3</div>
+                  </div>
+                  <div class="card-body">
+                    <label
+                      style="
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 8px;
+                        margin-bottom: 8px;
+                        cursor: pointer;
+                      "
+                      *ngFor="let column of tableViewColumnsForSelected()"
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="
+                          isSelectedTableViewFieldChecked(
+                            'previewFields',
+                            column.name
+                          )
+                        "
+                        [disabled]="
+                          isSelectedTableViewFieldDisabled(
+                            'previewFields',
+                            column.name
+                          )
+                        "
+                        (change)="
+                          toggleSelectedTableViewField(
+                            'previewFields',
+                            column.name,
+                            $any($event.target).checked
+                          )
+                        "
+                      />
+                      <span style="flex: 1; min-width: 0"
+                        ><strong>{{
+                          getTableViewFieldLabel(view, column.name)
+                        }}</strong></span
+                      >
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="card" style="margin-top: 16px; margin-bottom: 0">
+                <div class="card-header">
+                  <div class="card-title">Champs code / libelle</div>
+                  <div class="card-subtitle">Affichage lookup</div>
+                </div>
+                <div class="card-body">
+                  <div *ngIf="view.visibleFields?.length; else noVisibleFields">
+                    <div
+                      style="margin-bottom: 12px"
+                      *ngFor="let fieldName of view.visibleFields"
+                    >
+                      <div style="font-weight: 600; color: var(--text)">
+                        {{ getTableViewFieldLabel(view, fieldName) }}
+                      </div>
+                      <div
+                        class="text-muted"
+                        style="font-size: 10px; margin-top: 2px"
+                      >
+                        {{ fieldName }}
+                      </div>
                       <div
                         style="
-                          display: grid;
-                          grid-template-columns: 1fr 1fr 1fr;
-                          gap: 8px;
                           margin-top: 8px;
-                        "
-                        *ngIf="
-                          getSelectedTableViewFieldSetting(fieldName)
-                            .displayMode === 'lookup'
+                          padding: 10px;
+                          border: 1px dashed var(--border2);
+                          border-radius: 12px;
+                          background: var(--surface);
                         "
                       >
                         <label
                           class="form-label"
                           style="font-size: 10px; color: var(--text2)"
                         >
-                          Table libelle
+                          Affichage
                           <select
                             class="form-input"
                             style="display: block; width: 100%; margin-top: 4px"
                             [value]="
                               getSelectedTableViewFieldSetting(fieldName)
-                                .lookupTable || ''
+                                .displayMode || 'raw'
                             "
                             (change)="
                               setSelectedTableViewFieldSetting(
                                 fieldName,
-                                'lookupTable',
+                                'displayMode',
                                 $any($event.target).value
                               )
                             "
                           >
-                            <option value="">Choisir une table</option>
-                            <option
-                              *ngFor="let table of tableViewSchemaTables()"
-                              [value]="table.name"
-                              [selected]="
-                                table.name ===
-                                getSelectedTableViewFieldSetting(fieldName)
-                                  .lookupTable
-                              "
-                            >
-                              {{ table.comment || table.name }}
+                            <option value="raw">Valeur source</option>
+                            <option value="lookup">
+                              Code + libelle depuis une table
                             </option>
                           </select>
                         </label>
-                        <label
-                          class="form-label"
-                          style="font-size: 10px; color: var(--text2)"
+                        <div
+                          style="
+                            display: grid;
+                            grid-template-columns: 1fr 1fr 1fr;
+                            gap: 8px;
+                            margin-top: 8px;
+                          "
+                          *ngIf="
+                            getSelectedTableViewFieldSetting(fieldName)
+                              .displayMode === 'lookup'
+                          "
                         >
-                          Colonne code
-                          <select
-                            class="form-input"
-                            style="display: block; width: 100%; margin-top: 4px"
-                            [value]="
-                              getSelectedTableViewFieldSetting(fieldName)
-                                .lookupValueColumn || ''
-                            "
-                            (change)="
-                              setSelectedTableViewFieldSetting(
-                                fieldName,
-                                'lookupValueColumn',
-                                $any($event.target).value
-                              )
-                            "
+                          <label
+                            class="form-label"
+                            style="font-size: 10px; color: var(--text2)"
                           >
-                            <option value="">Choisir une colonne</option>
-                            <option
-                              *ngFor="
-                                let col of selectedTableViewLookupColumns(
-                                  fieldName
+                            Table libelle
+                            <select
+                              class="form-input"
+                              style="
+                                display: block;
+                                width: 100%;
+                                margin-top: 4px;
+                              "
+                              [value]="
+                                getSelectedTableViewFieldSetting(fieldName)
+                                  .lookupTable || ''
+                              "
+                              (change)="
+                                setSelectedTableViewFieldSetting(
+                                  fieldName,
+                                  'lookupTable',
+                                  $any($event.target).value
                                 )
                               "
-                              [value]="col.name"
-                              [selected]="
-                                col.name ===
-                                getSelectedTableViewFieldSetting(fieldName)
-                                  .lookupValueColumn
-                              "
                             >
-                              {{ col.comment || col.name }}
-                            </option>
-                          </select>
-                        </label>
-                        <label
-                          class="form-label"
-                          style="font-size: 10px; color: var(--text2)"
-                        >
-                          Colonne libelle
-                          <select
-                            class="form-input"
-                            style="display: block; width: 100%; margin-top: 4px"
-                            [value]="
-                              getSelectedTableViewFieldSetting(fieldName)
-                                .lookupLabelColumn || ''
-                            "
-                            (change)="
-                              setSelectedTableViewFieldSetting(
-                                fieldName,
-                                'lookupLabelColumn',
-                                $any($event.target).value
-                              )
-                            "
+                              <option value="">Choisir une table</option>
+                              <option
+                                *ngFor="let table of tableViewSchemaTables()"
+                                [value]="table.name"
+                                [selected]="
+                                  table.name ===
+                                  getSelectedTableViewFieldSetting(fieldName)
+                                    .lookupTable
+                                "
+                              >
+                                {{ table.comment || table.name }}
+                              </option>
+                            </select>
+                          </label>
+                          <label
+                            class="form-label"
+                            style="font-size: 10px; color: var(--text2)"
                           >
-                            <option value="">Choisir une colonne</option>
-                            <option
-                              *ngFor="
-                                let col of selectedTableViewLookupColumns(
-                                  fieldName
+                            Colonne code
+                            <select
+                              class="form-input"
+                              style="
+                                display: block;
+                                width: 100%;
+                                margin-top: 4px;
+                              "
+                              [value]="
+                                getSelectedTableViewFieldSetting(fieldName)
+                                  .lookupValueColumn || ''
+                              "
+                              (change)="
+                                setSelectedTableViewFieldSetting(
+                                  fieldName,
+                                  'lookupValueColumn',
+                                  $any($event.target).value
                                 )
                               "
-                              [value]="col.name"
-                              [selected]="
-                                col.name ===
+                            >
+                              <option value="">Choisir une colonne</option>
+                              <option
+                                *ngFor="
+                                  let col of selectedTableViewLookupColumns(
+                                    fieldName
+                                  )
+                                "
+                                [value]="col.name"
+                                [selected]="
+                                  col.name ===
+                                  getSelectedTableViewFieldSetting(fieldName)
+                                    .lookupValueColumn
+                                "
+                              >
+                                {{ col.comment || col.name }}
+                              </option>
+                            </select>
+                          </label>
+                          <label
+                            class="form-label"
+                            style="font-size: 10px; color: var(--text2)"
+                          >
+                            Colonne libelle
+                            <select
+                              class="form-input"
+                              style="
+                                display: block;
+                                width: 100%;
+                                margin-top: 4px;
+                              "
+                              [value]="
                                 getSelectedTableViewFieldSetting(fieldName)
-                                  .lookupLabelColumn
+                                  .lookupLabelColumn || ''
+                              "
+                              (change)="
+                                setSelectedTableViewFieldSetting(
+                                  fieldName,
+                                  'lookupLabelColumn',
+                                  $any($event.target).value
+                                )
                               "
                             >
-                              {{ col.comment || col.name }}
-                            </option>
-                          </select>
-                        </label>
+                              <option value="">Choisir une colonne</option>
+                              <option
+                                *ngFor="
+                                  let col of selectedTableViewLookupColumns(
+                                    fieldName
+                                  )
+                                "
+                                [value]="col.name"
+                                [selected]="
+                                  col.name ===
+                                  getSelectedTableViewFieldSetting(fieldName)
+                                    .lookupLabelColumn
+                                "
+                              >
+                                {{ col.comment || col.name }}
+                              </option>
+                            </select>
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <ng-template #noVisibleFields>
+                    <div class="text-muted">
+                      Ajoutez d'abord au moins un champ visible.
+                    </div>
+                  </ng-template>
                 </div>
-                <ng-template #noVisibleFields>
-                  <div class="text-muted">
-                    Ajoutez d'abord au moins un champ visible.
-                  </div>
-                </ng-template>
               </div>
             </div>
           </div>
-        </div>
-        <div class="card" *ngIf="selectedTableView">
-          <div class="card-header">
-            <div class="card-title">Page générée</div>
-            <div class="flex gap-8">
-              <button
-                class="btn primary"
-                type="button"
-                (click)="createTableViewRow()"
-              >
-                Ajouter
-              </button>
-              <input
-                class="form-input"
-                style="width: 260px"
-                placeholder="Recherche..."
-                [value]="tableViewSearch"
-                (input)="updateTableViewSearchFromEvent($event)"
-              />
-              <button class="btn" type="button" (click)="reloadTableViewRows()">
-                Rafraîchir
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="form-grid c2" *ngIf="selectedTableView as view">
-          <div class="card" style="margin: 0">
+          <div class="card" *ngIf="selectedTableView">
             <div class="card-header">
-              <div class="card-title">{{ view.label || view.tableName }}</div>
-              <div class="card-subtitle">
-                {{ tableViewRowsCache.length }} ligne(s)
+              <div class="card-title">Page générée</div>
+              <div class="flex gap-8">
+                <button
+                  class="btn primary"
+                  type="button"
+                  (click)="createTableViewRow()"
+                >
+                  Ajouter
+                </button>
+                <input
+                  class="form-input"
+                  style="width: 260px"
+                  placeholder="Recherche..."
+                  [value]="tableViewSearch"
+                  (input)="updateTableViewSearchFromEvent($event)"
+                />
+                <button
+                  class="btn"
+                  type="button"
+                  (click)="reloadTableViewRows()"
+                >
+                  Rafraîchir
+                </button>
               </div>
-            </div>
-            <div class="card-body" style="padding: 0">
-              <div
-                class="text-muted"
-                style="padding: 16px"
-                *ngIf="!tableViewRowsCache.length"
-              >
-                Aucune ligne trouvée.
-              </div>
-              <table class="data-table" *ngIf="tableViewRowsCache.length">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th *ngFor="let field of view.previewFields">
-                      {{ getTableViewFieldLabel(view, field) }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    *ngFor="let row of tableViewRowsCache"
-                    (click)="selectTableViewRow(getTableViewRowId(row))"
-                    style="cursor: pointer"
-                  >
-                    <td>
-                      {{
-                        getTableViewRowId(row) === selectedTableViewRowId
-                          ? "●"
-                          : ""
-                      }}
-                    </td>
-                    <td *ngFor="let field of view.previewFields">
-                      {{
-                        resolveTableViewDisplayValue(view, field, row[field])
-                      }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
+          <div class="form-grid c2" *ngIf="selectedTableView as view">
+            <div class="card" style="margin: 0">
+              <div class="card-header">
+                <div class="card-title">{{ view.label || view.tableName }}</div>
+                <div class="card-subtitle">
+                  {{ tableViewRowsCache.length }} ligne(s)
+                </div>
+              </div>
+              <div class="card-body" style="padding: 0">
+                <div
+                  class="text-muted"
+                  style="padding: 16px"
+                  *ngIf="!tableViewRowsCache.length"
+                >
+                  Aucune ligne trouvée.
+                </div>
+                <table class="data-table" *ngIf="tableViewRowsCache.length">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th *ngFor="let field of view.previewFields">
+                        {{ getTableViewFieldLabel(view, field) }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      *ngFor="let row of tableViewRowsCache"
+                      (click)="selectTableViewRow(getTableViewRowId(row))"
+                      style="cursor: pointer"
+                    >
+                      <td>
+                        {{
+                          getTableViewRowId(row) === selectedTableViewRowId
+                            ? "●"
+                            : ""
+                        }}
+                      </td>
+                      <td *ngFor="let field of view.previewFields">
+                        {{
+                          resolveTableViewDisplayValue(view, field, row[field])
+                        }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-          <div class="card" style="margin: 0">
-            <div class="card-header">
-              <div class="card-title">Détails</div>
-              <div class="card-subtitle">
-                {{
-                  isCreatingTableViewRow
-                    ? "Nouvelle ligne"
-                    : selectedTableViewRowId || "Aucune sélection"
-                }}
+            <div class="card" style="margin: 0">
+              <div class="card-header">
+                <div class="card-title">Détails</div>
+                <div class="card-subtitle">
+                  {{
+                    isCreatingTableViewRow
+                      ? "Nouvelle ligne"
+                      : selectedTableViewRowId || "Aucune sélection"
+                  }}
+                </div>
               </div>
-            </div>
-            <div class="card-body">
-              <div class="text-muted" *ngIf="!selectedTableViewRecord">
-                Sélectionnez une ligne pour afficher le détail.
-              </div>
-              <ng-container *ngIf="selectedTableViewRecord">
-                <div class="form-row" *ngFor="let field of view.visibleFields">
-                  <label class="form-label">{{
-                    getTableViewFieldLabel(view, field)
-                  }}</label>
-                  <ng-container
-                    *ngIf="
-                      view.editableFields.includes(field);
-                      else readonlyTableViewField
-                    "
+              <div class="card-body">
+                <div class="text-muted" *ngIf="!selectedTableViewRecord">
+                  Sélectionnez une ligne pour afficher le détail.
+                </div>
+                <ng-container *ngIf="selectedTableViewRecord">
+                  <div
+                    class="form-row"
+                    *ngFor="let field of view.visibleFields"
                   >
-                    <select
-                      class="form-input"
+                    <label class="form-label">{{
+                      getTableViewFieldLabel(view, field)
+                    }}</label>
+                    <ng-container
                       *ngIf="
-                        getSelectedTableViewFieldSetting(field).displayMode ===
-                          'lookup';
-                        else rawTableViewInput
-                      "
-                      [value]="selectedTableViewRecord[field] ?? ''"
-                      (change)="
-                        updateSelectedTableViewField(
-                          field,
-                          $any($event.target).value
-                        )
+                        view.editableFields.includes(field);
+                        else readonlyTableViewField
                       "
                     >
-                      <option value="">Choisir...</option>
-                      <option
-                        *ngFor="
-                          let option of getTableViewLookupOptionsForField(
-                            view,
-                            field
-                          )
-                        "
-                        [value]="option.value"
-                        [selected]="
-                          isTableViewDetailLookupOptionSelected(
-                            option.value,
-                            selectedTableViewRecord[field]
-                          )
-                        "
-                      >
-                        {{ option.label }}
-                      </option>
-                    </select>
-                    <ng-template #rawTableViewInput>
-                      <input
+                      <select
                         class="form-input"
+                        *ngIf="
+                          getSelectedTableViewFieldSetting(field)
+                            .displayMode === 'lookup';
+                          else rawTableViewInput
+                        "
                         [value]="selectedTableViewRecord[field] ?? ''"
-                        (input)="
+                        (change)="
                           updateSelectedTableViewField(
                             field,
                             $any($event.target).value
                           )
                         "
-                      />
+                      >
+                        <option value="">Choisir...</option>
+                        <option
+                          *ngFor="
+                            let option of getTableViewLookupOptionsForField(
+                              view,
+                              field
+                            )
+                          "
+                          [value]="option.value"
+                          [selected]="
+                            isTableViewDetailLookupOptionSelected(
+                              option.value,
+                              selectedTableViewRecord[field]
+                            )
+                          "
+                        >
+                          {{ option.label }}
+                        </option>
+                      </select>
+                      <ng-template #rawTableViewInput>
+                        <input
+                          class="form-input"
+                          [value]="selectedTableViewRecord[field] ?? ''"
+                          (input)="
+                            updateSelectedTableViewField(
+                              field,
+                              $any($event.target).value
+                            )
+                          "
+                        />
+                      </ng-template>
+                    </ng-container>
+                    <ng-template #readonlyTableViewField>
+                      <div
+                        class="form-input"
+                        style="
+                          display: flex;
+                          align-items: center;
+                          min-height: 38px;
+                        "
+                      >
+                        {{
+                          resolveTableViewDisplayValue(
+                            view,
+                            field,
+                            selectedTableViewRecord[field]
+                          )
+                        }}
+                      </div>
                     </ng-template>
-                  </ng-container>
-                  <ng-template #readonlyTableViewField>
-                    <div
-                      class="form-input"
-                      style="
-                        display: flex;
-                        align-items: center;
-                        min-height: 38px;
+                  </div>
+                  <div
+                    class="modal-actions"
+                    style="padding: 0; margin-top: 8px"
+                  >
+                    <button
+                      class="btn danger"
+                      type="button"
+                      (click)="deleteSelectedTableViewRow()"
+                      [disabled]="
+                        !selectedTableViewRowId && !isCreatingTableViewRow
                       "
                     >
-                      {{
-                        resolveTableViewDisplayValue(
-                          view,
-                          field,
-                          selectedTableViewRecord[field]
-                        )
-                      }}
-                    </div>
-                  </ng-template>
-                </div>
-                <div class="modal-actions" style="padding: 0; margin-top: 8px">
-                  <button
-                    class="btn danger"
-                    type="button"
-                    (click)="deleteSelectedTableViewRow()"
-                    [disabled]="
-                      !selectedTableViewRowId && !isCreatingTableViewRow
-                    "
-                  >
-                    Supprimer
-                  </button>
-                  <button
-                    class="btn success"
-                    type="button"
-                    (click)="saveSelectedTableViewRow()"
-                  >
-                    Save
-                  </button>
-                </div>
-              </ng-container>
+                      Supprimer
+                    </button>
+                    <button
+                      class="btn success"
+                      type="button"
+                      (click)="saveSelectedTableViewRow()"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </ng-container>
+              </div>
             </div>
           </div>
-        </div>
-      </ng-container>
+        </ng-container>
+      </div>
     </div>
   </div>
-</div>
 </div>
 
 <div

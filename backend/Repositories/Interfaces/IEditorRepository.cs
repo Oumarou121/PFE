@@ -33,5 +33,10 @@ namespace DocApi.Repositories.Interfaces
         Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config, string? databaseName = null);
         Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request);
         Task DeleteTableViewConfigAsync(string? id);
+        Task<IEnumerable<DocumentResponse>> LoadDocumentsAsync(int? organizationId = null, string? familyId = null, string? beneficiaryTable = null, string? beneficiaryId = null);
+        Task<DocumentListResponse> LoadDocumentsPagedAsync(DocumentListRequest request);
+        Task<DocumentResponse?> GetDocumentByIdAsync(string id);
+        Task<DocumentResponse> CreateDocumentAsync(DocumentCreateRequest request);
+        Task DeleteDocumentAsync(string id);
     }
 }

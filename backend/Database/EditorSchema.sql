@@ -157,6 +157,79 @@ BEGIN
   ALTER TABLE [template] ADD footer_display NVARCHAR(16) NULL;
 END;
 
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'document')
+BEGIN
+CREATE TABLE [document] (
+  id NVARCHAR(64) PRIMARY KEY,
+  etablissement_id INT NULL,
+  family_id NVARCHAR(64) NOT NULL,
+  template_id NVARCHAR(64) NOT NULL,
+  graphic_charter_id NVARCHAR(64) NULL,
+  beneficiary_id NVARCHAR(128) NULL,
+  beneficiary_mode NVARCHAR(32) NULL,
+  beneficiary_table NVARCHAR(128) NULL,
+  beneficiary_link_column NVARCHAR(128) NULL,
+  beneficiary_display_column_1 NVARCHAR(128) NULL,
+  beneficiary_display_column_2 NVARCHAR(128) NULL,
+  beneficiary_display_value_1 NVARCHAR(255) NULL,
+  beneficiary_display_value_2 NVARCHAR(255) NULL,
+  title NVARCHAR(255) NOT NULL,
+  header_html NVARCHAR(MAX) NULL,
+  body_html NVARCHAR(MAX) NULL,
+  footer_html NVARCHAR(MAX) NULL,
+  full_html NVARCHAR(MAX) NOT NULL,
+  mime_type NVARCHAR(127) NULL,
+  status NVARCHAR(32) NULL,
+  generated_by_id NVARCHAR(64) NULL,
+  generated_by_name NVARCHAR(255) NULL,
+  generated_by_email NVARCHAR(255) NULL,
+  generated_at NVARCHAR(64) NULL,
+  created_at NVARCHAR(64) NULL,
+  updated_at NVARCHAR(64) NULL,
+  is_deleted BIT NOT NULL DEFAULT 0
+);
+END;
+
+IF COL_LENGTH('document', 'beneficiary_mode') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD beneficiary_mode NVARCHAR(32) NULL;
+END;
+
+IF COL_LENGTH('document', 'beneficiary_table') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD beneficiary_table NVARCHAR(128) NULL;
+END;
+
+IF COL_LENGTH('document', 'beneficiary_link_column') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD beneficiary_link_column NVARCHAR(128) NULL;
+END;
+
+IF COL_LENGTH('document', 'beneficiary_display_column_1') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD beneficiary_display_column_1 NVARCHAR(128) NULL;
+END;
+
+IF COL_LENGTH('document', 'beneficiary_display_column_2') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD beneficiary_display_column_2 NVARCHAR(128) NULL;
+END;
+
+IF COL_LENGTH('document', 'beneficiary_display_value_1') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD beneficiary_display_value_1 NVARCHAR(255) NULL;
+END;
+
+IF COL_LENGTH('document', 'beneficiary_display_value_2') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD beneficiary_display_value_2 NVARCHAR(255) NULL;
+END;
+
+IF COL_LENGTH('document', 'is_deleted') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD is_deleted BIT NOT NULL DEFAULT 0;
+END;
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'module')
 BEGIN
 CREATE TABLE [module] (
@@ -197,6 +270,15 @@ CREATE INDEX idx_module_table_view_module ON [module_table_view](module_id);
 
 IF NOT EXISTS (SELECT name FROM sys.indexes WHERE name = 'idx_template_family')
 CREATE INDEX idx_template_family ON [template](family_id);
+
+IF NOT EXISTS (SELECT name FROM sys.indexes WHERE name = 'idx_document_org_beneficiary')
+CREATE INDEX idx_document_org_beneficiary ON [document](etablissement_id, beneficiary_table, beneficiary_id, generated_at);
+
+IF NOT EXISTS (SELECT name FROM sys.indexes WHERE name = 'idx_document_generated_by')
+CREATE INDEX idx_document_generated_by ON [document](etablissement_id, generated_by_id, generated_at);
+
+IF NOT EXISTS (SELECT name FROM sys.indexes WHERE name = 'idx_document_family_template')
+CREATE INDEX idx_document_family_template ON [document](family_id, template_id, generated_at);
 
 -- IF NOT EXISTS (SELECT name FROM sys.indexes WHERE name = 'idx_template_etab')
 -- CREATE INDEX idx_template_etab ON [template](etablissement_id);

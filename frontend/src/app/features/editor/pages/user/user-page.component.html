@@ -11,6 +11,14 @@
     <span class="nav-chip">UTILISATEUR FINAL</span>
     <span class="nav-organization">{{ organizationName }}</span>
     <div class="nav-right">
+      <button
+        class="nav-link"
+        type="button"
+        (click)="goToDocumentHistory()"
+        title="Voir l'historique des documents"
+      >
+        📋 Historique
+      </button>
       <button class="nav-link" type="button" (click)="logout()">
         Deconnexion
       </button>
@@ -567,43 +575,71 @@
             <span class="mini-spinner"></span>
             Chargement...
           </div>
-          
+
           <!-- Modules Section -->
           <ng-container *ngIf="modulesList.length > 0">
-            <div class="side-group-label" style="font-size: 10px; font-weight: 700; color: var(--text-muted); padding: 12px 12px 4px; letter-spacing: 0.5px;">MODULES MÉTIER</div>
+            <div
+              class="side-group-label"
+              style="
+                font-size: 10px;
+                font-weight: 700;
+                color: var(--text-muted);
+                padding: 12px 12px 4px;
+                letter-spacing: 0.5px;
+              "
+            >
+              MODULES MÉTIER
+            </div>
             <button
               class="data-view-card"
               type="button"
               *ngFor="let module of modulesList"
               [class.active]="selectedModuleId === module.id"
               (click)="selectModule(module.id)"
-              style="display: flex; align-items: center; gap: 8px;"
+              style="display: flex; align-items: center; gap: 8px"
             >
-              <span style="font-size: 16px;">{{ module.icon || '🧩' }}</span>
+              <span style="font-size: 16px">{{ module.icon || "🧩" }}</span>
               <div class="data-view-name">{{ module.name }}</div>
             </button>
           </ng-container>
 
           <!-- Legacy / Free Views Section -->
           <ng-container *ngIf="dataViewsList.length > 0">
-            <div class="side-group-label" style="font-size: 10px; font-weight: 700; color: var(--text-muted); padding: 12px 12px 4px; letter-spacing: 0.5px;">VUES LIBRES</div>
+            <div
+              class="side-group-label"
+              style="
+                font-size: 10px;
+                font-weight: 700;
+                color: var(--text-muted);
+                padding: 12px 12px 4px;
+                letter-spacing: 0.5px;
+              "
+            >
+              VUES LIBRES
+            </div>
             <button
               class="data-view-card"
               type="button"
               *ngFor="let view of dataViewsList"
-              [class.active]="selectedDataViewId === view.id && !selectedModuleId"
+              [class.active]="
+                selectedDataViewId === view.id && !selectedModuleId
+              "
               [disabled]="dataViewsLoading || dataRowsLoading || lookupLoading"
-              (click)="selectDataView(view.id); selectedModuleId = null;"
-              style="display: flex; align-items: center; gap: 8px;"
+              (click)="selectDataView(view.id); selectedModuleId = null"
+              style="display: flex; align-items: center; gap: 8px"
             >
-              <span style="font-size: 16px;">📊</span>
-              <div class="data-view-name">{{ view.label || view.tableName }}</div>
+              <span style="font-size: 16px">📊</span>
+              <div class="data-view-name">
+                {{ view.label || view.tableName }}
+              </div>
             </button>
           </ng-container>
 
           <div
             class="data-empty"
-            *ngIf="!dataViewsLoading && !modulesList.length && !dataViewsList.length"
+            *ngIf="
+              !dataViewsLoading && !modulesList.length && !dataViewsList.length
+            "
           >
             Aucune vue de donnees disponible.
           </div>
@@ -612,17 +648,57 @@
 
       <div class="data-main">
         <!-- Module Tabs -->
-        <div class="module-tabs" *ngIf="selectedModule" style="display: flex; gap: 4px; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--border);">
-           <button *ngFor="let mtv of selectedModule.tableViews"
-                   class="tab-btn"
-                   [class.active]="activeModuleTableViewId === mtv.tableViewConfigId"
-                   (click)="selectModuleTableView(mtv.tableViewConfigId)"
-                   style="padding: 12px 16px; border: none; background: none; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all 0.2s;"
-                   [style.color]="activeModuleTableViewId === mtv.tableViewConfigId ? 'var(--purple)' : ''"
-                   [style.borderBottomColor]="activeModuleTableViewId === mtv.tableViewConfigId ? 'var(--purple)' : ''">
-              {{ getTableViewLabelById(mtv.tableViewConfigId) }}
-              <span *ngIf="mtv.isPrimary" style="font-size: 9px; background: #f3f4f6; padding: 2px 4px; border-radius: 4px; margin-left: 4px;">Principal</span>
-           </button>
+        <div
+          class="module-tabs"
+          *ngIf="selectedModule"
+          style="
+            display: flex;
+            gap: 4px;
+            padding: 0 24px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+          "
+        >
+          <button
+            *ngFor="let mtv of selectedModule.tableViews"
+            class="tab-btn"
+            [class.active]="activeModuleTableViewId === mtv.tableViewConfigId"
+            (click)="selectModuleTableView(mtv.tableViewConfigId)"
+            style="
+              padding: 12px 16px;
+              border: none;
+              background: none;
+              font-size: 13px;
+              font-weight: 600;
+              cursor: pointer;
+              color: var(--text-muted);
+              border-bottom: 2px solid transparent;
+              transition: all 0.2s;
+            "
+            [style.color]="
+              activeModuleTableViewId === mtv.tableViewConfigId
+                ? 'var(--purple)'
+                : ''
+            "
+            [style.borderBottomColor]="
+              activeModuleTableViewId === mtv.tableViewConfigId
+                ? 'var(--purple)'
+                : ''
+            "
+          >
+            {{ getTableViewLabelById(mtv.tableViewConfigId) }}
+            <span
+              *ngIf="mtv.isPrimary"
+              style="
+                font-size: 9px;
+                background: #f3f4f6;
+                padding: 2px 4px;
+                border-radius: 4px;
+                margin-left: 4px;
+              "
+              >Principal</span
+            >
+          </button>
         </div>
 
         <div class="data-main-hdr">

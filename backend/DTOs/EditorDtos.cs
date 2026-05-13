@@ -130,6 +130,155 @@ namespace DocApi.DTOs
         public string? DatabaseName { get; set; }
     }
 
+    public class DocumentListRequest
+    {
+        public int? OrganizationId { get; set; }
+
+        [MaxLength(64)]
+        public string? FamilyId { get; set; }
+
+        [MaxLength(128)]
+        public string? BeneficiaryTable { get; set; }
+
+        public string? BeneficiaryId { get; set; }
+
+        // Pagination
+        public int Page { get; set; } = 1;
+        public int Limit { get; set; } = 10;
+
+        // Sorting
+        [MaxLength(64)]
+        public string SortBy { get; set; } = "generatedAt";
+        
+        [MaxLength(4)]
+        public string SortOrder { get; set; } = "desc"; // asc or desc
+    }
+
+    public class DocumentListResponse
+    {
+        public IEnumerable<DocumentListItemResponse> Data { get; set; } = new List<DocumentListItemResponse>();
+        public int Total { get; set; }
+        public int Page { get; set; }
+        public int Limit { get; set; }
+        public int TotalPages { get; set; }
+    }
+
+    public class DocumentCreateRequest
+    {
+        [MaxLength(64)]
+        public string Id { get; set; } = string.Empty;
+
+        public int? OrganizationId { get; set; }
+
+        [Required]
+        [MaxLength(64)]
+        public string FamilyId { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(64)]
+        public string TemplateId { get; set; } = string.Empty;
+
+        [MaxLength(64)]
+        public string? GraphicCharterId { get; set; }
+
+        public string? BeneficiaryId { get; set; }
+
+        [MaxLength(32)]
+        public string BeneficiaryMode { get; set; } = "table";
+
+        [MaxLength(128)]
+        public string? BeneficiaryTable { get; set; }
+
+        [MaxLength(128)]
+        public string? BeneficiaryLinkColumn { get; set; }
+
+        [MaxLength(128)]
+        public string? BeneficiaryDisplayColumn1 { get; set; }
+
+        [MaxLength(128)]
+        public string? BeneficiaryDisplayColumn2 { get; set; }
+
+        [MaxLength(255)]
+        public string? BeneficiaryDisplayValue1 { get; set; }
+
+        [MaxLength(255)]
+        public string? BeneficiaryDisplayValue2 { get; set; }
+
+        [Required]
+        [MaxLength(255)]
+        public string Title { get; set; } = string.Empty;
+
+        public string HeaderHtml { get; set; } = string.Empty;
+        public string BodyHtml { get; set; } = string.Empty;
+        public string FooterHtml { get; set; } = string.Empty;
+
+        [Required]
+        public string FullHtml { get; set; } = string.Empty;
+
+        [MaxLength(127)]
+        public string MimeType { get; set; } = "text/html";
+
+        [MaxLength(32)]
+        public string Status { get; set; } = "generated";
+
+        [MaxLength(64)]
+        public string GeneratedById { get; set; } = string.Empty;
+
+        [MaxLength(255)]
+        public string GeneratedByName { get; set; } = string.Empty;
+
+        [MaxLength(255)]
+        public string? GeneratedByEmail { get; set; }
+
+        [MaxLength(64)]
+        public string? GeneratedAt { get; set; }
+    }
+
+    public class DocumentResponse
+    {
+        public string Id { get; set; } = string.Empty;
+        public int? OrganizationId { get; set; }
+        public string FamilyId { get; set; } = string.Empty;
+        public string TemplateId { get; set; } = string.Empty;
+        public string? GraphicCharterId { get; set; }
+        public string? BeneficiaryId { get; set; }
+        public string BeneficiaryMode { get; set; } = "table";
+        public string? BeneficiaryTable { get; set; }
+        public string? BeneficiaryLinkColumn { get; set; }
+        public string? BeneficiaryDisplayColumn1 { get; set; }
+        public string? BeneficiaryDisplayColumn2 { get; set; }
+        public string? BeneficiaryDisplayValue1 { get; set; }
+        public string? BeneficiaryDisplayValue2 { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string HeaderHtml { get; set; } = string.Empty;
+        public string BodyHtml { get; set; } = string.Empty;
+        public string FooterHtml { get; set; } = string.Empty;
+        public string FullHtml { get; set; } = string.Empty;
+        public string MimeType { get; set; } = "text/html";
+        public string Status { get; set; } = "generated";
+        public string GeneratedById { get; set; } = string.Empty;
+        public string GeneratedByName { get; set; } = string.Empty;
+        public string? GeneratedByEmail { get; set; }
+        public string GeneratedAt { get; set; } = string.Empty;
+        public string? CreatedAt { get; set; }
+        public string? UpdatedAt { get; set; }
+    }
+
+    public class DocumentListItemResponse
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string FamilyId { get; set; } = string.Empty;
+        public string? BeneficiaryId { get; set; }
+        public string? BeneficiaryTable { get; set; }
+        public string? BeneficiaryDisplayValue1 { get; set; }
+        public string? BeneficiaryDisplayValue2 { get; set; }
+        public string GeneratedById { get; set; } = string.Empty;
+        public string GeneratedByName { get; set; } = string.Empty;
+        public string? GeneratedByEmail { get; set; }
+        public string GeneratedAt { get; set; } = string.Empty;
+    }
+
     public class FamilyRequest
     {
         [MaxLength(64)]

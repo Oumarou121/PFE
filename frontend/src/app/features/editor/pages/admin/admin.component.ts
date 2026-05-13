@@ -13,6 +13,7 @@ import {
   ViewChild,
   ViewEncapsulation,
 } from "@angular/core";
+import { Router } from "@angular/router";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { firstValueFrom } from "rxjs";
@@ -357,6 +358,7 @@ export class AdminComponent
 
   constructor(
     private auth: AuthService,
+    private router: Router,
     private editorState: EditorStateService,
     private familiesService: FamilyService,
     private templatesService: TemplateService,
@@ -596,7 +598,9 @@ export class AdminComponent
   }
 
   get isFormattingToolbarVisible(): boolean {
-    return this.editorPanel === "document" || this.editorPanel === "headerFooter";
+    return (
+      this.editorPanel === "document" || this.editorPanel === "headerFooter"
+    );
   }
 
   get activeDocumentDirection(): "ltr" | "rtl" {
@@ -676,6 +680,10 @@ export class AdminComponent
 
   logoutAndRedirect(): void {
     this.auth.logout();
+  }
+
+  goToDocumentHistory(): void {
+    this.router.navigate(["/documents"]);
   }
 
   selectFamily(familyId: string): void {
@@ -2370,7 +2378,9 @@ export class AdminComponent
   useGraphicCharterSection(section: "header" | "footer"): void {
     const config = this.selectedGraphicCharterConfig;
     const html =
-      section === "header" ? config.header.html || "" : config.footer.html || "";
+      section === "header"
+        ? config.header.html || ""
+        : config.footer.html || "";
     this.editorContent = {
       ...this.editorContent,
       [section]: html || "<p></p>",
@@ -2378,11 +2388,17 @@ export class AdminComponent
     if (section === "header") {
       this.hasHeader = true;
       this.templateHeaderEditor?.setEditable(true);
-      this.templateHeaderEditor?.commands.setContent(this.editorContent.header, false);
+      this.templateHeaderEditor?.commands.setContent(
+        this.editorContent.header,
+        false,
+      );
     } else {
       this.hasFooter = true;
       this.templateFooterEditor?.setEditable(true);
-      this.templateFooterEditor?.commands.setContent(this.editorContent.footer, false);
+      this.templateFooterEditor?.commands.setContent(
+        this.editorContent.footer,
+        false,
+      );
     }
     this.saveStatus = "ModifiÃ©";
     this._editorPaginationCacheKey = "";
@@ -2430,7 +2446,10 @@ export class AdminComponent
       );
       this.cdr.markForCheck();
     } catch (error) {
-      console.error("[Admin] save header/footer to graphic charter failed", error);
+      console.error(
+        "[Admin] save header/footer to graphic charter failed",
+        error,
+      );
       this.notifications.showError("Impossible d'enregistrer dans la charte");
     }
   }

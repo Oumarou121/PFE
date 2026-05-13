@@ -1,0 +1,24 @@
+<div class="document-viewer-dialog">
+  <div class="dialog-header">
+    <h2>{{ document.title }}</h2>
+    <button mat-icon-button (click)="close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-content">
+    <div class="document-html" [innerHTML]="sanitizedHtml"></div>
+  </div>
+
+  <div class="dialog-actions">
+    <button mat-raised-button (click)="print()" color="primary">
+      <mat-icon>print</mat-icon>
+      Imprimer
+    </button>
+    <button mat-raised-button (click)="download()" color="accent">
+      <mat-icon>download</mat-icon>
+      Télécharger
+    </button>
+    <button mat-raised-button (click)="close()">Fermer</button>
+  </div>
+</div>

@@ -5,6 +5,7 @@ import {
   OnInit,
   ViewEncapsulation,
 } from "@angular/core";
+import { Router } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
@@ -23,6 +24,7 @@ import { OrganizationService } from "../../services/organization.service";
 import { TableViewService } from "../../services/table-view.service";
 import { TemplateService } from "../../services/template.service";
 import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
+import { DocumentService } from "../../services/document.service";
 
 type UserMode = "documents" | "data";
 type Step = 1 | 2 | 3;
@@ -83,6 +85,7 @@ export class UserPageComponent implements OnInit {
 
   constructor(
     private auth: AuthService,
+    private router: Router,
     private state: EditorStateService,
     private familiesService: FamilyService,
     private templatesService: TemplateService,
@@ -90,6 +93,7 @@ export class UserPageComponent implements OnInit {
     private filterRuntime: FilterRuntimeService,
     private documentData: DocumentDataService,
     private documentRender: DocumentRenderService,
+    private documentsService: DocumentService,
     private tableViews: TableViewService,
     private notifications: NotificationService,
     private sanitizer: DomSanitizer,
@@ -110,7 +114,7 @@ export class UserPageComponent implements OnInit {
         user?.organizationId ||
         this.organizationsService.getOrganizations()[0]?.id ||
         null;
-      
+
       this.auth.setActiveOrganizationId(this.organizationId);
 
       const organization = this.organizationId
@@ -243,7 +247,6 @@ export class UserPageComponent implements OnInit {
     this.activeModuleTableViewId = tableViewId;
     this.selectDataView(tableViewId);
   }
-
 
   toggleStep(step: Step): void {
     this.openSteps[step] = !this.openSteps[step];
@@ -407,8 +410,10 @@ export class UserPageComponent implements OnInit {
     this.showWait("Completez les 3 etapes pour generer votre document");
   }
 
-  printDocument(): void {
+  async printDocument(): Promise<void> {
     if (!this.previewTemplate || !this.previewPerson) return;
+
+    await this.persistGeneratedDocument();
     this.documentRender.printDocPaginated(
       this.previewTemplate,
       this.previewPerson,
@@ -720,6 +725,10 @@ export class UserPageComponent implements OnInit {
     this.auth.logout();
   }
 
+  goToDocumentHistory(): void {
+    this.router.navigate(["/documents"]);
+  }
+
   getSelectedBeneficiary(): BeneficiaryRecord | null {
     return (
       this.beneficiaries.find(
@@ -823,6 +832,66 @@ export class UserPageComponent implements OnInit {
     this.previewPlainHtml = "";
     this.previewTemplate = null;
     this.previewPerson = null;
+  }
+
+  private async persistGeneratedDocument(): Promise<void> {
+    if (
+      !this.previewTemplate ||
+      !this.previewPerson ||
+      !this.selectedFamilyId ||
+      !this.selectedTemplateId
+    ) {
+      return;
+    }
+
+    const selectedBeneficiary = this.getSelectedBeneficiary();
+    const family = this.selectedFamily;
+    if (!family) return;
+
+    const printPages = this.documentRender.renderDocumentPages(
+      this.previewTemplate,
+      this.previewPerson,
+      { mode: "print" },
+    );
+    const themeStyle = this.documentRender.getDocumentThemeStyleAttr(
+      this.previewTemplate,
+    );
+    const printableHtml = `<div class="document-pages" style="${themeStyle}">${this.documentRender.buildDocumentPagesHtml(
+      this.previewTemplate,
+      printPages,
+      "document-page",
+      { mode: "print" },
+    )}</div>`;
+
+    const templateTitle =
+      this.getTemplateName(this.previewTemplate) || "Document";
+    const beneficiaryLabel = this.getBeneficiaryLabel(selectedBeneficiary);
+    const title = `${templateTitle} - ${beneficiaryLabel}`;
+
+    try {
+      await this.documentsService.createDocument({
+        familyId: this.selectedFamilyId,
+        templateId: this.selectedTemplateId,
+        graphicCharterId: this.previewTemplate.graphicCharterId || null,
+        beneficiaryId: this.selectedBeneficiaryId,
+        beneficiaryMode: family.beneficiaryMode,
+        beneficiaryTable: family.beneficiaryTable,
+        beneficiaryLinkColumn: family.beneficiaryLinkColumn,
+        beneficiaryDisplayColumn1: family.beneficiaryDisplayColumn1,
+        beneficiaryDisplayColumn2: family.beneficiaryDisplayColumn2,
+        beneficiaryDisplayValue1: beneficiaryLabel,
+        beneficiaryDisplayValue2:
+          this.getBeneficiarySubtitle(selectedBeneficiary),
+        title,
+        fullHtml: printableHtml,
+        mimeType: "text/html",
+        status: "generated",
+      });
+    } catch {
+      this.notifications.showWarning(
+        "Impression lancee mais la sauvegarde du document a echoue.",
+      );
+    }
   }
 
   private async ensureLookupOptions(view: TableViewConfig): Promise<void> {

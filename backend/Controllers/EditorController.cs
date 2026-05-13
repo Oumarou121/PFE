@@ -235,6 +235,77 @@ namespace DocApi.Controllers
             }
         }
 
+        [HttpGet("documents")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<DocumentResponse>>> Documents(
+            [FromQuery] int? organizationId = null,
+            [FromQuery] string? familyId = null,
+            [FromQuery] string? beneficiaryTable = null,
+            [FromQuery] string? beneficiaryId = null)
+        {
+            var rows = await _service.GetDocumentsAsync(new DocumentListRequest
+            {
+                OrganizationId = organizationId,
+                FamilyId = familyId,
+                BeneficiaryTable = beneficiaryTable,
+                BeneficiaryId = beneficiaryId
+            }, CurrentUser());
+            return Ok(rows);
+        }
+
+        [HttpGet("documents/paged")]
+        [Authorize]
+        public async Task<ActionResult<DocumentListResponse>> DocumentsPaged(
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 10,
+            [FromQuery] string? familyId = null,
+            [FromQuery] string? beneficiaryTable = null,
+            [FromQuery] string? beneficiaryId = null,
+            [FromQuery] string sortBy = "generatedAt",
+            [FromQuery] string sortOrder = "desc")
+        {
+            var result = await _service.GetDocumentsPagedAsync(new DocumentListRequest
+            {
+                Page = page,
+                Limit = limit,
+                FamilyId = familyId,
+                BeneficiaryTable = beneficiaryTable,
+                BeneficiaryId = beneficiaryId,
+                SortBy = sortBy,
+                SortOrder = sortOrder
+            }, CurrentUser());
+            return Ok(result);
+        }
+
+        [HttpGet("documents/{id}")]
+        [Authorize]
+        public async Task<ActionResult<DocumentResponse>> DocumentById(string id)
+        {
+            var item = await _service.GetDocumentByIdAsync(id, CurrentUser());
+            return item is null ? NotFound() : Ok(item);
+        }
+
+        [HttpPost("documents")]
+        [Authorize]
+        public async Task<ActionResult<DocumentResponse>> CreateDocument([FromBody] DocumentCreateRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.FullHtml))
+            {
+                return BadRequest(new EditorApiResponse(false, Error: "fullHtml is required"));
+            }
+
+            var item = await _service.CreateDocumentAsync(request, CurrentUser());
+            return Ok(item);
+        }
+
+        [HttpDelete("documents/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteDocument(string id)
+        {
+            await _service.DeleteDocumentAsync(id, CurrentUser());
+            return NoContent();
+        }
+
         [HttpPost("table-view/rows")]
         public async Task<ActionResult> TableViewRows([FromBody] TableViewRowsRequest request)
         {

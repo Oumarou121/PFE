@@ -769,6 +769,204 @@ namespace DocApi.Repositories
             });
         }
 
+        // ─── Documents (ConfigDB) ───────────────────────────────────────────────
+
+        public async Task<IEnumerable<DocumentResponse>> LoadDocumentsAsync(int? organizationId = null, string? familyId = null, string? beneficiaryTable = null, string? beneficiaryId = null)
+        {
+            if (!await ConfigTableExistsAsync("document")) return [];
+
+            var where = new List<string> { "is_deleted = 0" };
+            var parameters = new DynamicParameters();
+
+            if (organizationId.HasValue)
+            {
+                where.Add("etablissement_id = @organizationId");
+                parameters.Add("organizationId", organizationId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(familyId))
+            {
+                where.Add("family_id = @familyId");
+                parameters.Add("familyId", familyId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(beneficiaryTable))
+            {
+                where.Add("beneficiary_table = @beneficiaryTable");
+                parameters.Add("beneficiaryTable", beneficiaryTable);
+            }
+
+            if (!string.IsNullOrWhiteSpace(beneficiaryId))
+            {
+                where.Add("beneficiary_id = @beneficiaryId");
+                parameters.Add("beneficiaryId", beneficiaryId);
+            }
+
+            using var connection = ConfigConnection();
+            var rows = await connection.QueryAsync($"""
+                SELECT id, etablissement_id, family_id, template_id, graphic_charter_id,
+                       beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_link_column,
+                       beneficiary_display_column_1, beneficiary_display_column_2,
+                       beneficiary_display_value_1, beneficiary_display_value_2,
+                       title, header_html, body_html, footer_html, full_html,
+                       mime_type, status, generated_by_id, generated_by_name, generated_by_email,
+                       generated_at, created_at, updated_at
+                FROM document
+                WHERE {string.Join(" AND ", where)}
+                ORDER BY generated_at DESC, created_at DESC
+                """, parameters);
+
+            return rows.Select(MapDocumentRow).ToArray();
+        }
+
+        public async Task<DocumentListResponse> LoadDocumentsPagedAsync(DocumentListRequest request)
+        {
+            if (!await ConfigTableExistsAsync("document"))
+                return new DocumentListResponse { Data = new List<DocumentListItemResponse>(), Total = 0, Page = request.Page, Limit = request.Limit, TotalPages = 0 };
+
+            // Build WHERE clause
+            var where = new List<string> { "is_deleted = 0" };
+            var parameters = new DynamicParameters();
+
+            if (request.OrganizationId.HasValue)
+            {
+                where.Add("etablissement_id = @organizationId");
+                parameters.Add("organizationId", request.OrganizationId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.FamilyId))
+            {
+                where.Add("family_id = @familyId");
+                parameters.Add("familyId", request.FamilyId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.BeneficiaryTable))
+            {
+                where.Add("beneficiary_table = @beneficiaryTable");
+                parameters.Add("beneficiaryTable", request.BeneficiaryTable);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.BeneficiaryId))
+            {
+                where.Add("beneficiary_id = @beneficiaryId");
+                parameters.Add("beneficiaryId", request.BeneficiaryId);
+            }
+
+            // Normalize sort column to valid SQL column name
+            var sortColumn = request.SortBy switch
+            {
+                "title" => "title",
+                "familyId" => "family_id",
+                "generatedBy" => "generated_by_name",
+                "generatedAt" => "generated_at",
+                _ => "generated_at"
+            };
+
+            var sortOrder = request.SortOrder?.ToLower() == "asc" ? "ASC" : "DESC";
+
+            // Get total count
+            using (var connection = ConfigConnection())
+            {
+                var countQuery = $"SELECT COUNT(*) FROM document WHERE {string.Join(" AND ", where)}";
+                var total = await connection.ExecuteScalarAsync<int>(countQuery, parameters);
+
+                // Get paginated data
+                var offset = (request.Page - 1) * request.Limit;
+                var dataQuery = $"""
+                    SELECT id, family_id, title, beneficiary_id, beneficiary_table,
+                           beneficiary_display_value_1, beneficiary_display_value_2,
+                           generated_by_id, generated_by_name, generated_by_email, generated_at
+                    FROM document
+                    WHERE {string.Join(" AND ", where)}
+                    ORDER BY {sortColumn} {sortOrder}
+                    OFFSET {offset} ROWS FETCH NEXT {request.Limit} ROWS ONLY
+                    """;
+
+                var rows = await connection.QueryAsync(dataQuery, parameters);
+
+                var documents = rows.Select(row => new DocumentListItemResponse
+                {
+                    Id = Str(row, "id"),
+                    Title = Str(row, "title"),
+                    FamilyId = Str(row, "family_id"),
+                    BeneficiaryId = StrOrNull(row, "beneficiary_id"),
+                    BeneficiaryTable = StrOrNull(row, "beneficiary_table"),
+                    BeneficiaryDisplayValue1 = StrOrNull(row, "beneficiary_display_value_1"),
+                    BeneficiaryDisplayValue2 = StrOrNull(row, "beneficiary_display_value_2"),
+                    GeneratedById = Str(row, "generated_by_id"),
+                    GeneratedByName = Str(row, "generated_by_name"),
+                    GeneratedByEmail = StrOrNull(row, "generated_by_email"),
+                    GeneratedAt = Str(row, "generated_at")
+                }).ToList();
+
+                var totalPages = (int)Math.Ceiling((double)total / request.Limit);
+
+                return new DocumentListResponse
+                {
+                    Data = documents,
+                    Total = total,
+                    Page = request.Page,
+                    Limit = request.Limit,
+                    TotalPages = totalPages
+                };
+            }
+        }
+
+        public async Task<DocumentResponse?> GetDocumentByIdAsync(string id)
+        {
+            if (!await ConfigTableExistsAsync("document")) return null;
+            using var connection = ConfigConnection();
+            var row = await connection.QueryFirstOrDefaultAsync("""
+                SELECT TOP (1) id, etablissement_id, family_id, template_id, graphic_charter_id,
+                               beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_link_column,
+                               beneficiary_display_column_1, beneficiary_display_column_2,
+                               beneficiary_display_value_1, beneficiary_display_value_2,
+                               title, header_html, body_html, footer_html, full_html,
+                               mime_type, status, generated_by_id, generated_by_name, generated_by_email,
+                               generated_at, created_at, updated_at
+                FROM document
+                WHERE id = @id AND is_deleted = 0
+                """, new { id });
+            return row is null ? null : MapDocumentRow(row);
+        }
+
+        public async Task<DocumentResponse> CreateDocumentAsync(DocumentCreateRequest request)
+        {
+            var document = NormalizeDocument(request);
+            using var connection = ConfigConnection();
+            await connection.ExecuteAsync("""
+                INSERT INTO document (
+                  id, etablissement_id, family_id, template_id, graphic_charter_id,
+                  beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_link_column,
+                  beneficiary_display_column_1, beneficiary_display_column_2,
+                  beneficiary_display_value_1, beneficiary_display_value_2,
+                  title, header_html, body_html, footer_html, full_html,
+                  mime_type, status, generated_by_id, generated_by_name, generated_by_email,
+                  generated_at, created_at, updated_at, is_deleted
+                )
+                VALUES (
+                  @id, @etablissement_id, @family_id, @template_id, @graphic_charter_id,
+                  @beneficiary_id, @beneficiary_mode, @beneficiary_table, @beneficiary_link_column,
+                  @beneficiary_display_column_1, @beneficiary_display_column_2,
+                  @beneficiary_display_value_1, @beneficiary_display_value_2,
+                  @title, @header_html, @body_html, @footer_html, @full_html,
+                  @mime_type, @status, @generated_by_id, @generated_by_name, @generated_by_email,
+                  @generated_at, @created_at, @updated_at, 0
+                )
+                """, DocumentParams(document));
+
+            return (await GetDocumentByIdAsync(document.Id)) ?? document;
+        }
+
+        public async Task DeleteDocumentAsync(string id)
+        {
+            if (!await ConfigTableExistsAsync("document")) return;
+            using var connection = ConfigConnection();
+            await connection.ExecuteAsync(
+                "UPDATE document SET is_deleted = 1, updated_at = @updatedAt WHERE id = @id",
+                new { id, updatedAt = DateTimeOffset.UtcNow.ToString("O") });
+        }
+
         // ─── Private helpers : ConfigDB introspection ────────────────────────────
 
         private async Task<bool> ConfigTableExistsAsync(string tableName)
@@ -1014,6 +1212,36 @@ namespace DocApi.Repositories
             footer_html = template.Footer
         };
 
+        private static object DocumentParams(DocumentResponse document) => new
+        {
+            id = document.Id,
+            etablissement_id = document.OrganizationId,
+            family_id = document.FamilyId,
+            template_id = document.TemplateId,
+            graphic_charter_id = document.GraphicCharterId,
+            beneficiary_id = document.BeneficiaryId,
+            beneficiary_mode = document.BeneficiaryMode,
+            beneficiary_table = document.BeneficiaryTable,
+            beneficiary_link_column = document.BeneficiaryLinkColumn,
+            beneficiary_display_column_1 = document.BeneficiaryDisplayColumn1,
+            beneficiary_display_column_2 = document.BeneficiaryDisplayColumn2,
+            beneficiary_display_value_1 = document.BeneficiaryDisplayValue1,
+            beneficiary_display_value_2 = document.BeneficiaryDisplayValue2,
+            title = document.Title,
+            header_html = document.HeaderHtml,
+            body_html = document.BodyHtml,
+            footer_html = document.FooterHtml,
+            full_html = document.FullHtml,
+            mime_type = document.MimeType,
+            status = document.Status,
+            generated_by_id = document.GeneratedById,
+            generated_by_name = document.GeneratedByName,
+            generated_by_email = document.GeneratedByEmail,
+            generated_at = document.GeneratedAt,
+            created_at = document.CreatedAt,
+            updated_at = document.UpdatedAt
+        };
+
         // ─── Normalizers ──────────────────────────────────────────────────────────
 
         private static FamilyResponse NormalizeFamily(FamilyRequest source) => new()
@@ -1083,6 +1311,74 @@ namespace DocApi.Repositories
             CreatedAt = source.CreatedAt,
             UpdatedAt = source.UpdatedAt
         };
+
+        private static DocumentResponse NormalizeDocument(DocumentCreateRequest source)
+        {
+            var now = DateTimeOffset.UtcNow.ToString("O");
+            return new DocumentResponse
+            {
+                Id = string.IsNullOrWhiteSpace(source.Id) ? $"doc_{Guid.NewGuid():N}" : source.Id,
+                OrganizationId = source.OrganizationId,
+                FamilyId = source.FamilyId,
+                TemplateId = source.TemplateId,
+                GraphicCharterId = source.GraphicCharterId,
+                BeneficiaryId = source.BeneficiaryId,
+                BeneficiaryMode = string.IsNullOrWhiteSpace(source.BeneficiaryMode) ? "table" : source.BeneficiaryMode,
+                BeneficiaryTable = source.BeneficiaryTable,
+                BeneficiaryLinkColumn = source.BeneficiaryLinkColumn,
+                BeneficiaryDisplayColumn1 = source.BeneficiaryDisplayColumn1,
+                BeneficiaryDisplayColumn2 = source.BeneficiaryDisplayColumn2,
+                BeneficiaryDisplayValue1 = source.BeneficiaryDisplayValue1,
+                BeneficiaryDisplayValue2 = source.BeneficiaryDisplayValue2,
+                Title = source.Title,
+                HeaderHtml = source.HeaderHtml ?? string.Empty,
+                BodyHtml = source.BodyHtml ?? string.Empty,
+                FooterHtml = source.FooterHtml ?? string.Empty,
+                FullHtml = source.FullHtml ?? string.Empty,
+                MimeType = string.IsNullOrWhiteSpace(source.MimeType) ? "text/html" : source.MimeType,
+                Status = string.IsNullOrWhiteSpace(source.Status) ? "generated" : source.Status,
+                GeneratedById = source.GeneratedById,
+                GeneratedByName = source.GeneratedByName,
+                GeneratedByEmail = source.GeneratedByEmail,
+                GeneratedAt = string.IsNullOrWhiteSpace(source.GeneratedAt) ? now : source.GeneratedAt,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+        }
+
+        private static DocumentResponse MapDocumentRow(object row)
+        {
+            var item = Row(row);
+            return new DocumentResponse
+            {
+                Id = Str(item, "id") ?? string.Empty,
+                OrganizationId = IntOrNull(item, "etablissement_id"),
+                FamilyId = Str(item, "family_id") ?? string.Empty,
+                TemplateId = Str(item, "template_id") ?? string.Empty,
+                GraphicCharterId = StrOrNull(item, "graphic_charter_id"),
+                BeneficiaryId = StrOrNull(item, "beneficiary_id"),
+                BeneficiaryMode = Str(item, "beneficiary_mode") ?? "table",
+                BeneficiaryTable = StrOrNull(item, "beneficiary_table"),
+                BeneficiaryLinkColumn = StrOrNull(item, "beneficiary_link_column"),
+                BeneficiaryDisplayColumn1 = StrOrNull(item, "beneficiary_display_column_1"),
+                BeneficiaryDisplayColumn2 = StrOrNull(item, "beneficiary_display_column_2"),
+                BeneficiaryDisplayValue1 = StrOrNull(item, "beneficiary_display_value_1"),
+                BeneficiaryDisplayValue2 = StrOrNull(item, "beneficiary_display_value_2"),
+                Title = Str(item, "title") ?? string.Empty,
+                HeaderHtml = Str(item, "header_html") ?? string.Empty,
+                BodyHtml = Str(item, "body_html") ?? string.Empty,
+                FooterHtml = Str(item, "footer_html") ?? string.Empty,
+                FullHtml = Str(item, "full_html") ?? string.Empty,
+                MimeType = Str(item, "mime_type") ?? "text/html",
+                Status = Str(item, "status") ?? "generated",
+                GeneratedById = Str(item, "generated_by_id") ?? string.Empty,
+                GeneratedByName = Str(item, "generated_by_name") ?? string.Empty,
+                GeneratedByEmail = StrOrNull(item, "generated_by_email"),
+                GeneratedAt = Str(item, "generated_at") ?? string.Empty,
+                CreatedAt = Str(item, "created_at"),
+                UpdatedAt = Str(item, "updated_at")
+            };
+        }
 
         private static List<string> NormalizeFieldList(IEnumerable<string>? fields)
             => (fields ?? [])
