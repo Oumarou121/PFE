@@ -255,6 +255,10 @@ export class DocumentHistoryPageComponent implements OnInit {
     return parts.length > 0 ? parts.join(" - ") : document.beneficiaryId || "-";
   }
 
+  goBack(): void {
+    window.history.back();
+  }
+
   logout(): void {
     this.authService.logout();
   }
