@@ -205,7 +205,7 @@ interface TableSchema {
                       <label class="form-label">Table source</label>
                       <select
                         class="form-input"
-                        [(ngModel)]="(filter.sqlBuilder || {}).tableName"
+                        [(ngModel)]="filter.sqlBuilder!.tableName"
                         (change)="ensureSqlBuilder(i)"
                       >
                         <option value="">Choisir une table</option>
@@ -222,7 +222,7 @@ interface TableSchema {
                       <label class="form-label">Colonne des valeurs</label>
                       <select
                         class="form-input"
-                        [(ngModel)]="(filter.sqlBuilder || {}).valueColumn"
+                        [(ngModel)]="filter.sqlBuilder!.valueColumn"
                         (change)="ensureSqlBuilder(i)"
                       >
                         <option value="">Choisir une colonne</option>
@@ -239,7 +239,7 @@ interface TableSchema {
                       <label class="form-label">Colonne des libellés</label>
                       <select
                         class="form-input"
-                        [(ngModel)]="(filter.sqlBuilder || {}).labelColumn"
+                        [(ngModel)]="filter.sqlBuilder!.labelColumn"
                         (change)="ensureSqlBuilder(i)"
                       >
                         <option value="">Choisir une colonne</option>
@@ -257,22 +257,20 @@ interface TableSchema {
                     <label style="display: flex; align-items: center; gap: 6px">
                       <input
                         type="checkbox"
-                        [(ngModel)]="(filter.sqlBuilder || {}).distinct"
+                        [(ngModel)]="filter.sqlBuilder!.distinct"
                       />
                       <span>Éliminer les doublons (DISTINCT)</span>
                     </label>
                   </div>
 
                   <!-- Preview de la requête SQL -->
-                  <div
-                    class="sql-preview"
-                    *ngIf="filter.sqlBuilder as sqlBuilder"
-                  >
+                  <div class="sql-preview" *ngIf="filter.sqlBuilder?.tableName">
                     <div class="sql-preview-label">Aperçu SQL:</div>
                     <code
-                      >SELECT DISTINCT {{ sqlBuilder.valueColumn }} AS value,
-                      {{ sqlBuilder.labelColumn }} AS label FROM
-                      {{ sqlBuilder.tableName }} ORDER BY label ASC</code
+                      >SELECT DISTINCT {{ filter.sqlBuilder!.valueColumn }} AS
+                      value, {{ filter.sqlBuilder!.labelColumn }} AS label FROM
+                      {{ filter.sqlBuilder!.tableName }} ORDER BY label
+                      ASC</code
                     >
                   </div>
                 </div>
@@ -312,7 +310,7 @@ interface TableSchema {
         gap: 12px;
         margin-bottom: 16px;
         padding: 12px 14px;
-        background: var(--bg-light);
+        background: var(--surface2);
         border: 1px solid var(--border);
         border-radius: 8px;
       }
@@ -356,9 +354,9 @@ interface TableSchema {
 
       .filter-section {
         padding: 12px;
-        background: var(--bg-light);
+        background: var(--surface2);
         border-radius: 6px;
-        border-left: 3px solid var(--primary);
+        border-left: 3px solid var(--accent);
       }
 
       .section-title {
@@ -428,19 +426,23 @@ interface TableSchema {
 
       .btn {
         padding: 6px 12px;
-        border: none;
+        border: 1px solid var(--border);
         border-radius: 4px;
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
+        background: var(--surface2);
+        color: var(--text2);
 
         &.primary {
-          background: var(--primary);
-          color: white;
+          background: var(--accent);
+          color: #fff;
+          border-color: var(--accent);
 
           &:hover {
-            background: var(--primary-dark);
+            background: var(--accent2);
+            border-color: var(--accent2);
           }
         }
 
@@ -450,11 +452,13 @@ interface TableSchema {
         }
 
         &.danger {
-          background: var(--danger);
-          color: white;
+          background: var(--red-bg);
+          color: var(--red);
+          border-color: var(--red);
 
           &:hover {
-            background: var(--danger-dark);
+            background: var(--red);
+            color: #fff;
           }
         }
       }
@@ -533,6 +537,22 @@ export class TableViewFiltersConfigComponent implements OnInit {
     if (this.view && !this.view.filters) {
       this.view.filters = [];
     }
+    // S'assurer que tous les filtres ont les propriétés requises
+    if (this.view?.filters) {
+      this.view.filters.forEach((filter) => {
+        if (!filter.staticOptions) {
+          filter.staticOptions = [];
+        }
+        if (!filter.sqlBuilder) {
+          filter.sqlBuilder = {
+            tableName: "",
+            valueColumn: "",
+            labelColumn: "",
+            distinct: true,
+          };
+        }
+      });
+    }
   }
 
   addFilter() {
@@ -547,6 +567,12 @@ export class TableViewFiltersConfigComponent implements OnInit {
       linkColumn: "",
       sourceType: TableFilterSourceType.Static,
       staticOptions: [{ value: "", label: "" }],
+      sqlBuilder: {
+        tableName: "",
+        valueColumn: "",
+        labelColumn: "",
+        distinct: true,
+      },
       enabled: true,
       helpText: "",
     };

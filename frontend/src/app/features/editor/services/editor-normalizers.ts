@@ -823,10 +823,16 @@ export function normalizeTableViewRecord(
       .map((filter, index) => {
         const raw =
           filter && typeof filter === "object" ? (filter as UnknownRecord) : {};
+        const rawSourceType = String(raw["sourceType"] || "Static")
+          .trim()
+          .toLowerCase();
         const sourceType =
-          String(raw["sourceType"] || "Static").trim() === "Table"
+          rawSourceType === "table"
             ? TableFilterSourceType.Table
             : TableFilterSourceType.Static;
+        const normalizedStaticOptions = normalizeTableViewOptions(
+          raw["staticOptions"],
+        );
         return {
           id: String(raw["id"] || genId("tvf")),
           name: String(raw["name"] || `Filtre ${index + 1}`).trim(),
@@ -834,12 +840,12 @@ export function normalizeTableViewRecord(
           sourceType,
           staticOptions:
             sourceType === TableFilterSourceType.Static
-              ? normalizeTableViewOptions(raw["staticOptions"])
-              : undefined,
+              ? normalizedStaticOptions
+              : [],
           sqlBuilder:
-            sourceType === TableFilterSourceType.Table && raw["sqlBuilder"]
+            sourceType === TableFilterSourceType.Table
               ? normalizeFilterSqlBuilder(raw["sqlBuilder"])
-              : undefined,
+              : normalizeFilterSqlBuilder({}),
           helpText: String(raw["helpText"] || "").trim(),
           enabled: raw["enabled"] !== false,
         } satisfies TableViewFilter;
