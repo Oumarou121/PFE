@@ -262,11 +262,11 @@ function mmToPx(mm: number): number {
 
 export interface PaginationConfig {
   orientation: "portrait" | "landscape";
-  marginTop: number;    // mm
+  marginTop: number; // mm
   marginBottom: number; // mm
-  marginLeft: number;   // mm
-  marginRight: number;  // mm
-  headerTop?: number;   // mm
+  marginLeft: number; // mm
+  marginRight: number; // mm
+  headerTop?: number; // mm
   footerBottom?: number; // mm
   contentMarginTop?: number; // mm
   contentMarginBottom?: number; // mm
@@ -279,7 +279,7 @@ export interface PaginationConfig {
 function buildPaginationPlusConfig(config?: PaginationConfig) {
   const portrait = !config || config.orientation !== "landscape";
   // A4: 210×297 mm → 794×1123 px (96 dpi)
-  const pageWidth  = portrait ? 794 : 1123;
+  const pageWidth = portrait ? 794 : 1123;
   const pageHeight = portrait ? 1123 : 794;
 
   return PaginationPlus.configure({
@@ -290,15 +290,15 @@ function buildPaginationPlusConfig(config?: PaginationConfig) {
     pageGapBorderSize: 1,
     pageGapBorderColor: "#d1d5db", // Gris un peu plus soutenu pour la ligne de séparation
     pageBreakBackground: "#f0f2f5", // Doit correspondre au fond du pcanvas dans admin.component.scss
-    marginTop:    config ? mmToPx(config.marginTop)    : mmToPx(20),
+    marginTop: config ? mmToPx(config.marginTop) : mmToPx(20),
     marginBottom: config ? mmToPx(config.marginBottom) : mmToPx(20),
-    marginLeft:   0,
-    marginRight:  0,
-    contentMarginTop:    config ? mmToPx(config.contentMarginTop ?? 0) : 0,
+    marginLeft: 0,
+    marginRight: 0,
+    contentMarginTop: config ? mmToPx(config.contentMarginTop ?? 0) : 0,
     contentMarginBottom: config ? mmToPx(config.contentMarginBottom ?? 0) : 0,
-    headerLeft:  config?.headerHtml ?? "",
+    headerLeft: config?.headerHtml ?? "",
     headerRight: "",
-    footerLeft:  config?.footerHtml ?? "",
+    footerLeft: config?.footerHtml ?? "",
     footerRight: "",
     customHeader: config?.customHeader ?? {},
     customFooter: config?.customFooter ?? {},
@@ -324,7 +324,7 @@ const BASE_EXTENSIONS = [
   ImagePlus.configure({ inline: false, allowBase64: true }),
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   // TablePlus remplace Table + ajoute duplicateRow/duplicateColumn
-  TablePlus.configure({ resizable: true }),
+  TablePlus.configure({ resizable: true, lastColumnResizable: false }),
   TableRow,
   // TableCellWithStyle/TableHeaderWithStyle préservent les attrs custom de style
   TableCellWithStyle,
@@ -369,10 +369,7 @@ export function buildEditorExtensions(
   paginationConfig?: PaginationConfig,
 ) {
   if (section === "body") {
-    return [
-      ...BASE_EXTENSIONS,
-      buildPaginationPlusConfig(paginationConfig),
-    ];
+    return [...BASE_EXTENSIONS, buildPaginationPlusConfig(paginationConfig)];
   }
   return [...BASE_EXTENSIONS];
 }
