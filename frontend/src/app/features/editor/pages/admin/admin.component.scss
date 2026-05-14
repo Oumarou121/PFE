@@ -1371,9 +1371,20 @@ button {
   table-layout: fixed;
   box-sizing: border-box;
   border-collapse: collapse;
+  overflow: hidden; /* Clip columns that try to exceed 100% width */
   /* Prevent columns from growing beyond container bounds */
   word-break: break-word;
   overflow-wrap: break-word;
+}
+
+/* table-plus wraps the table in a relative div; constrain it too,
+   otherwise resizing a middle column can expand the wrapper itself. */
+.editor-host .rm-with-pagination .ProseMirror div[style*="position: relative"] {
+  max-width: 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
 }
 .editor-host .rm-with-pagination table tbody,
 .editor-host .rm-with-pagination .table-row-group {
