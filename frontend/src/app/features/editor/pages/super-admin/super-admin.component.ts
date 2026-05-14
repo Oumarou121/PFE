@@ -1363,7 +1363,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
   private newFamily(): void {
     const id = this.genId("fam");
-    const defaultOrg = this.getFirstAccessibleOrganization([]);
     const family: Family = {
       id,
       nom: "Nouvelle famille",
@@ -1376,7 +1375,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       beneficiarySql: "",
       filterCatalog: [],
       classes: [],
-      organizationIds: defaultOrg ? [Number(defaultOrg.id)] : [],
+      organizationIds: [],
     };
     void this.familyService
       .saveFamily(family)
@@ -1535,7 +1534,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       });
     }
-    this.saveTableViewConfig(view.id);
+    if (view.tableName) this.saveTableViewConfig(view.id);
   }
 
   private async saveFamilyLocal(fam: any): Promise<void> {
@@ -1674,10 +1673,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const ids = (Array.isArray(organizationIds) ? organizationIds : [])
       .map((id) => Number(id))
       .filter((id) => Number.isFinite(id));
-    const allowed = ids
+    return ids
       .map((id) => this.organizations.find((org) => Number(org.id) === id))
       .find((org) => !!org?.databaseName);
-    return allowed || this.organizations.find((org) => !!org.databaseName) || null;
   }
 
   private async useSchemaForOrganizationIds(
@@ -1716,9 +1714,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       await this.useSchemaForOrganizationIds(this.selectedTableView.organizationIds);
       return;
     }
-    if (!this.selectedSchemaDatabaseName) {
-      await this.useSchemaForOrganizationIds([]);
-    }
+    if (!this.selectedSchemaDatabaseName) await this.useSchemaForOrganizationIds([]);
   }
 
   private async ensureSchemaMeta(): Promise<any> {
@@ -5128,8 +5124,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   private async newTableViewConfig(): Promise<void> {
-    const defaultOrg = this.getFirstAccessibleOrganization([]);
-    await this.useSchemaForOrganizationIds(defaultOrg ? [Number(defaultOrg.id)] : []);
+    await this.useSchemaForOrganizationIds([]);
     const schema = this.tableViewSchemaCache || (await this.ensureSchemaMeta());
     this.tableViewSchemaCache = schema;
     if (!this.schemaMetaCache) this.schemaMetaCache = schema;
@@ -5149,10 +5144,22 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       previewFields: columns.slice(0, 2).map((column: any) => column.name),
       fieldLabels: {},
       fieldSettings: {},
-      organizationIds: defaultOrg ? [Number(defaultOrg.id)] : [],
+      organizationIds: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    this.saveTableViewLocal(item);
+    this.selectedTableViewId = item.id;
+    this.selectedTableViewRowId = null;
+    this.selectedTableViewRecord = null;
+    this.isCreatingTableViewRow = false;
+    this.renderLeftPanel();
+    this.renderTableViewsContent();
+    this.toast(
+      "Vue creee localement. Cochez une organisation puis choisissez la table SQL.",
+      "success",
+    );
+    /*
     this.tableViewService
       .saveConfig(item)
       .pipe(takeUntil(this.destroy$))
@@ -5169,6 +5176,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         },
         error: () => this.toast("Création impossible", "error"),
       });
+    */
   }
 
   private getAllowedTableViewTables(schema: any): any[] {

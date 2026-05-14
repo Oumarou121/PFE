@@ -7,6 +7,7 @@ export interface DocumentCreatePayload {
   beneficiaryId?: string | null;
   beneficiaryMode: "table" | "organization" | string;
   beneficiaryTable?: string | null;
+  beneficiaryTableLabel?: string | null;
   beneficiaryLinkColumn?: string | null;
   beneficiaryDisplayColumn1?: string | null;
   beneficiaryDisplayColumn2?: string | null;
@@ -27,8 +28,12 @@ export interface DocumentRecord extends DocumentCreatePayload {
   generatedById: string;
   generatedByName: string;
   generatedByEmail?: string | null;
+  generatedByRole?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  deletedAt?: string | null;
+  deletedById?: string | null;
+  deletedByName?: string | null;
 }
 
 export interface DocumentListItem {
@@ -37,11 +42,13 @@ export interface DocumentListItem {
   familyId: string;
   beneficiaryId?: string | null;
   beneficiaryTable?: string | null;
+  beneficiaryTableLabel?: string | null;
   beneficiaryDisplayValue1?: string | null;
   beneficiaryDisplayValue2?: string | null;
   generatedById: string;
   generatedByName: string;
   generatedByEmail?: string | null;
+  generatedByRole?: string | null;
   generatedAt: string;
 }
 

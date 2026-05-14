@@ -1,35 +1,83 @@
 <div class="login-page">
-  <div class="shell">
-    <!-- Hero panel -->
-    <section class="hero">
-      <div>
-        <div class="badge">SIRH DOC • Accès sécurisé</div>
-        <h1>Connexion<br />par rôle</h1>
-        <p>
-          Authentifiez-vous avant d'accéder aux modules. Vous serez redirigé
-          automatiquement vers l'espace correspondant à votre rôle.
-        </p>
+  <!-- Header with logo -->
+  <header class="login-header">
+    <div class="logo-wrap">
+      <div class="logo-icon">
+        <svg
+          class="logo-svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+          />
+        </svg>
       </div>
-    </section>
+      <span class="logo-text">
+        <span class="logo-green">SIRH</span
+        ><span class="logo-dark">&nbsp;DOC</span>
+      </span>
+    </div>
+  </header>
 
-    <!-- Form panel -->
-    <section class="card">
-      <h2>Se connecter</h2>
-      <p class="subtitle">Entrez vos identifiants pour ouvrir la session.</p>
+  <!-- Main card -->
+  <main class="login-main">
+    <div class="login-card">
+      <!-- Card header -->
+      <div class="card-header">
+        <h1>Se connecter</h1>
+      </div>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <!-- Form body -->
+      <form
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        novalidate
+        class="card-body"
+      >
+        <!-- Global error -->
+        <div class="error-banner" *ngIf="errorMessage" role="alert">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            />
+          </svg>
+          {{ errorMessage }}
+        </div>
+
+        <!-- Email field -->
         <div class="field">
-          <label for="email">E-mail</label>
-          <input
-            id="email"
-            type="email"
-            formControlName="email"
-            autocomplete="email"
-            placeholder="votre@email.com"
-            [class.invalid]="
+          <div
+            class="input-wrap"
+            [class.input-invalid]="
               form.get('email')?.invalid && form.get('email')?.touched
             "
-          />
+          >
+            <span class="input-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5.121 17.804A9 9 0 1118.88 6.196M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            </span>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="E-mail"
+            />
+          </div>
           <span
             class="field-error"
             *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
@@ -38,18 +86,38 @@
           </span>
         </div>
 
+        <!-- Password field -->
         <div class="field">
-          <label for="password">Mot de passe</label>
-          <input
-            id="password"
-            type="password"
-            formControlName="password"
-            autocomplete="current-password"
-            placeholder="••••••••"
-            [class.invalid]="
+          <div
+            class="input-wrap"
+            [class.input-invalid]="
               form.get('password')?.invalid && form.get('password')?.touched
             "
-          />
+          >
+            <span class="input-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
+              </svg>
+            </span>
+            <input
+              id="password"
+              type="password"
+              formControlName="password"
+              autocomplete="current-password"
+              placeholder="Mot de passe"
+            />
+          </div>
           <span
             class="field-error"
             *ngIf="
@@ -60,15 +128,33 @@
           </span>
         </div>
 
-        <div class="error-msg" *ngIf="errorMessage" role="alert">
-          {{ errorMessage }}
-        </div>
+        <!-- Actions row -->
+        <div class="actions-row">
+          <a href="#" class="forgot-link">Mot de passe oublié ?</a>
 
-        <button type="submit" class="submit-btn" [disabled]="loading">
-          <span *ngIf="!loading">Ouvrir la session</span>
-          <span *ngIf="loading" class="spinner"></span>
-        </button>
+          <button type="submit" class="submit-btn" [disabled]="loading">
+            <ng-container *ngIf="!loading">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                />
+              </svg>
+              S'authentifier
+            </ng-container>
+            <span *ngIf="loading" class="spinner"></span>
+          </button>
+        </div>
       </form>
-    </section>
-  </div>
+    </div>
+
+    <p class="tagline">Système de Gestion des Ressources Humaines</p>
+  </main>
+
+  <!-- Footer -->
+  <footer class="login-footer">
+    <p>© 2026 SIRH DOC</p>
+  </footer>
 </div>

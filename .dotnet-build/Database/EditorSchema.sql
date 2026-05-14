@@ -173,6 +173,7 @@ CREATE TABLE [document] (
   beneficiary_id NVARCHAR(128) NULL,
   beneficiary_mode NVARCHAR(32) NULL,
   beneficiary_table NVARCHAR(128) NULL,
+  beneficiary_table_label NVARCHAR(255) NULL,
   beneficiary_link_column NVARCHAR(128) NULL,
   beneficiary_display_column_1 NVARCHAR(128) NULL,
   beneficiary_display_column_2 NVARCHAR(128) NULL,
@@ -188,10 +189,14 @@ CREATE TABLE [document] (
   generated_by_id NVARCHAR(64) NULL,
   generated_by_name NVARCHAR(255) NULL,
   generated_by_email NVARCHAR(255) NULL,
+  generated_by_role NVARCHAR(64) NULL,
   generated_at NVARCHAR(64) NULL,
   created_at NVARCHAR(64) NULL,
   updated_at NVARCHAR(64) NULL,
-  is_deleted BIT NOT NULL DEFAULT 0
+  is_deleted BIT NOT NULL DEFAULT 0,
+  deleted_at NVARCHAR(64) NULL,
+  deleted_by_id NVARCHAR(64) NULL,
+  deleted_by_name NVARCHAR(255) NULL
 );
 END;
 
@@ -203,6 +208,11 @@ END;
 IF COL_LENGTH('document', 'beneficiary_table') IS NULL
 BEGIN
   ALTER TABLE [document] ADD beneficiary_table NVARCHAR(128) NULL;
+END;
+
+IF COL_LENGTH('document', 'beneficiary_table_label') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD beneficiary_table_label NVARCHAR(255) NULL;
 END;
 
 IF COL_LENGTH('document', 'beneficiary_link_column') IS NULL
@@ -233,6 +243,26 @@ END;
 IF COL_LENGTH('document', 'is_deleted') IS NULL
 BEGIN
   ALTER TABLE [document] ADD is_deleted BIT NOT NULL DEFAULT 0;
+END;
+
+IF COL_LENGTH('document', 'generated_by_role') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD generated_by_role NVARCHAR(64) NULL;
+END;
+
+IF COL_LENGTH('document', 'deleted_at') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD deleted_at NVARCHAR(64) NULL;
+END;
+
+IF COL_LENGTH('document', 'deleted_by_id') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD deleted_by_id NVARCHAR(64) NULL;
+END;
+
+IF COL_LENGTH('document', 'deleted_by_name') IS NULL
+BEGIN
+  ALTER TABLE [document] ADD deleted_by_name NVARCHAR(255) NULL;
 END;
 
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'module')

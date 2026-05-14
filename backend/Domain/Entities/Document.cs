@@ -10,6 +10,7 @@ namespace DocApi.Domain.Entities
         public string? BeneficiaryId { get; set; }
         public string BeneficiaryMode { get; set; } = "table";
         public string? BeneficiaryTable { get; set; }
+        public string? BeneficiaryTableLabel { get; set; }
         public string? BeneficiaryLinkColumn { get; set; }
         public string? BeneficiaryDisplayColumn1 { get; set; }
         public string? BeneficiaryDisplayColumn2 { get; set; }
@@ -25,9 +26,13 @@ namespace DocApi.Domain.Entities
         public string GeneratedById { get; set; } = string.Empty;
         public string GeneratedByName { get; set; } = string.Empty;
         public string? GeneratedByEmail { get; set; }
+        public string? GeneratedByRole { get; set; }
         public string GeneratedAt { get; set; } = string.Empty;
         public string? CreatedAt { get; set; }
         public string? UpdatedAt { get; set; }
         public bool IsDeleted { get; set; }
+        public string? DeletedAt { get; set; }
+        public string? DeletedById { get; set; }
+        public string? DeletedByName { get; set; }
     }
 }

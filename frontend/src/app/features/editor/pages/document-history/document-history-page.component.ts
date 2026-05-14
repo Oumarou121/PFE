@@ -1,32 +1,43 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
-import {
-  FormsModule,
-  ReactiveFormsModule,
-  FormBuilder,
-  FormGroup,
-} from "@angular/forms";
-import { MatTableModule } from "@angular/material/table";
-import { MatPaginatorModule, PageEvent } from "@angular/material/paginator";
-import { MatSortModule, Sort } from "@angular/material/sort";
-import { MatInputModule } from "@angular/material/input";
-import { MatSelectModule } from "@angular/material/select";
-import { MatDatepickerModule } from "@angular/material/datepicker";
-import { MatNativeDateModule } from "@angular/material/core";
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
 import { MatCardModule } from "@angular/material/card";
+import { MatDatepickerModule } from "@angular/material/datepicker";
+import { MatDialog, MatDialogModule } from "@angular/material/dialog";
+import { MatIconModule } from "@angular/material/icon";
+import { MatInputModule } from "@angular/material/input";
+import { MatNativeDateModule } from "@angular/material/core";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatSelectModule } from "@angular/material/select";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { MatDialogModule, MatDialog } from "@angular/material/dialog";
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
 import { DocumentService } from "../../services/document.service";
 import { FamilyService } from "../../services/family.service";
 import { OrganizationService } from "../../services/organization.service";
-import { DocumentRecord, DocumentListItem } from "../../models/document.model";
+import { DocumentListItem } from "../../models/document.model";
 import { FamilyRecord } from "../../models/family.model";
 import { DocumentViewerDialogComponent } from "../../components/document-viewer-dialog/document-viewer-dialog.component";
+
+interface BeneficiaryDocumentGroup {
+  key: string;
+  beneficiaryId: string | null;
+  title: string;
+  subtitle: string;
+  documents: DocumentListItem[];
+  familyIds: string[];
+}
+
+interface TableDocumentGroup {
+  key: string;
+  tableName: string | null;
+  label: string;
+  isOrganization: boolean;
+  documents: DocumentListItem[];
+  beneficiaries: BeneficiaryDocumentGroup[];
+  familyIds: string[];
+}
 
 @Component({
   selector: "app-document-history-page",
@@ -35,49 +46,33 @@ import { DocumentViewerDialogComponent } from "../../components/document-viewer-
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatInputModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
     MatButtonModule,
-    MatIconModule,
     MatCardModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
+    MatDatepickerModule,
     MatDialogModule,
+    MatIconModule,
+    MatInputModule,
+    MatNativeDateModule,
+    MatProgressSpinnerModule,
+    MatSelectModule,
+    MatTooltipModule,
   ],
   templateUrl: "./document-history-page.component.html",
   styleUrls: ["./document-history-page.component.scss"],
 })
 export class DocumentHistoryPageComponent implements OnInit {
-  // Data
   documents: DocumentListItem[] = [];
+  tableGroups: TableDocumentGroup[] = [];
   families: FamilyRecord[] = [];
-
-  // Display control
-  displayedColumns: string[] = [
-    "title",
-    "family",
-    "beneficiary",
-    "generatedBy",
-    "generatedAt",
-    "actions",
-  ];
-  loading = false;
   organizationName = "";
-
-  // Pagination
-  pageSize = 10;
-  pageIndex = 0;
+  loading = false;
   totalDocuments = 0;
+  expandedTableKey: string | null = null;
+  selectedBeneficiaryKey: string | null = null;
+  selectedTableGroup: TableDocumentGroup | null = null;
+  selectedBeneficiaryGroup: BeneficiaryDocumentGroup | null = null;
 
-  // Filters
   filterForm: FormGroup;
-  sortBy = "generatedAt";
-  sortOrder: "asc" | "desc" = "desc";
 
   constructor(
     private documentService: DocumentService,
@@ -90,11 +85,9 @@ export class DocumentHistoryPageComponent implements OnInit {
   ) {
     this.filterForm = this.formBuilder.group({
       familyId: [""],
-      beneficiaryTable: [""],
-      beneficiaryId: [""],
+      query: [""],
       dateFrom: [""],
       dateTo: [""],
-      generatedById: [""],
     });
   }
 
@@ -106,9 +99,7 @@ export class DocumentHistoryPageComponent implements OnInit {
       await this.loadDocuments();
     } catch (error) {
       console.error("Error initializing document history page", error);
-      this.notificationService.showError(
-        "Erreur lors du chargement des données",
-      );
+      this.notificationService.showError("Erreur lors du chargement des donnees");
     } finally {
       this.loading = false;
     }
@@ -116,12 +107,9 @@ export class DocumentHistoryPageComponent implements OnInit {
 
   private loadOrganization(): void {
     const user = this.authService.getCurrentUser();
-    if (user?.organizationId) {
-      const organization = this.organizationService.getOrganization(
-        user.organizationId,
-      );
-      this.organizationName = organization?.nom || organization?.name || "";
-    }
+    if (!user?.organizationId) return;
+    const organization = this.organizationService.getOrganization(user.organizationId);
+    this.organizationName = organization?.nom || organization?.name || "";
   }
 
   private loadFamilies(): void {
@@ -136,123 +124,108 @@ export class DocumentHistoryPageComponent implements OnInit {
     this.loading = true;
     try {
       const filters = this.filterForm.value;
-      const params: any = {
-        page: this.pageIndex + 1,
-        limit: this.pageSize,
-        sortBy: this.sortBy,
-        sortOrder: this.sortOrder,
-      };
-
-      // Add optional filters
-      if (filters.familyId) params.familyId = filters.familyId;
-      if (filters.beneficiaryTable)
-        params.beneficiaryTable = filters.beneficiaryTable;
-      if (filters.beneficiaryId) params.beneficiaryId = filters.beneficiaryId;
-
-      const response = await this.documentService.getDocumentsPaged(params);
-      this.documents = response.data;
-      this.totalDocuments = response.total;
+      const response = await this.documentService.getDocumentsPaged({
+        page: 1,
+        limit: 500,
+        familyId: filters.familyId || undefined,
+        sortBy: "generatedAt",
+        sortOrder: "desc",
+      });
+      this.documents = this.applyClientFilters(response.data || []);
+      this.totalDocuments = this.documents.length;
+      this.tableGroups = this.buildTableGroups(this.documents);
+      this.syncSelection();
     } catch (error) {
       console.error("Error loading documents", error);
-      this.notificationService.showError(
-        "Erreur lors du chargement des documents",
-      );
+      this.notificationService.showError("Erreur lors du chargement des documents");
     } finally {
       this.loading = false;
     }
   }
 
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadDocuments();
-  }
-
-  onSortChange(sort: Sort): void {
-    this.sortBy = sort.active || "generatedAt";
-    this.sortOrder = (sort.direction as "asc" | "desc") || "desc";
-    this.pageIndex = 0; // Reset to first page
-    this.loadDocuments();
-  }
-
   onFilterChange(): void {
-    this.pageIndex = 0; // Reset to first page when filter changes
-    this.loadDocuments();
+    void this.loadDocuments();
   }
 
   resetFilters(): void {
-    this.filterForm.reset();
-    this.pageIndex = 0;
-    this.sortBy = "generatedAt";
-    this.sortOrder = "desc";
-    this.loadDocuments();
+    this.filterForm.reset({ familyId: "", query: "", dateFrom: "", dateTo: "" });
+    void this.loadDocuments();
+  }
+
+  toggleTableGroup(group: TableDocumentGroup): void {
+    this.expandedTableKey = this.expandedTableKey === group.key ? null : group.key;
+    this.selectedTableGroup = this.expandedTableKey ? group : null;
+    if (group.isOrganization) {
+      this.selectedBeneficiaryKey = null;
+      this.selectedBeneficiaryGroup = null;
+      return;
+    }
+    const first = group.beneficiaries[0] || null;
+    this.selectedBeneficiaryKey = first?.key || null;
+    this.selectedBeneficiaryGroup = first;
+  }
+
+  selectBeneficiary(group: TableDocumentGroup, beneficiary: BeneficiaryDocumentGroup): void {
+    this.expandedTableKey = group.key;
+    this.selectedTableGroup = group;
+    this.selectedBeneficiaryKey = beneficiary.key;
+    this.selectedBeneficiaryGroup = beneficiary;
   }
 
   viewDocument(document: DocumentListItem): void {
-    // Fetch full document first
     this.documentService.getDocumentById(document.id).then((fullDoc) => {
-      if (fullDoc) {
-        this.dialog.open(DocumentViewerDialogComponent, {
-          width: "90%",
-          height: "90%",
-          data: { document: fullDoc },
-        });
-      }
+      if (!fullDoc) return;
+      this.dialog.open(DocumentViewerDialogComponent, {
+        width: "90%",
+        height: "90%",
+        data: { document: fullDoc },
+      });
     });
   }
 
   async deleteDocument(document: DocumentListItem): Promise<void> {
-    const confirmed = confirm(
-      `Êtes-vous sûr de vouloir supprimer le document "${document.title}" ?`,
-    );
+    const confirmed = confirm(`Supprimer le document "${document.title}" ?`);
     if (!confirmed) return;
-
     try {
       await this.documentService.deleteDocument(document.id);
-      this.notificationService.showSuccess("Document supprimé avec succès");
-      this.loadDocuments();
+      this.notificationService.showSuccess("Document supprime avec succes");
+      await this.loadDocuments();
     } catch (error) {
       console.error("Error deleting document", error);
-      this.notificationService.showError(
-        "Erreur lors de la suppression du document",
-      );
+      this.notificationService.showError("Erreur lors de la suppression du document");
     }
   }
 
   downloadDocument(document: DocumentListItem): void {
-    // Fetch full document first to get HTML content
     this.documentService.getDocumentById(document.id).then((fullDoc) => {
-      if (fullDoc && fullDoc.fullHtml) {
-        const blob = new Blob([fullDoc.fullHtml], {
-          type: "text/html;charset=utf-8;",
-        });
-        const link = globalThis.document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${document.title}.html`);
-        link.style.visibility = "hidden";
-        globalThis.document.body.appendChild(link);
-        link.click();
-        globalThis.document.body.removeChild(link);
-      }
+      if (!fullDoc?.fullHtml) return;
+      const blob = new Blob([fullDoc.fullHtml], { type: "text/html;charset=utf-8;" });
+      const link = globalThis.document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${document.title}.html`);
+      link.style.visibility = "hidden";
+      globalThis.document.body.appendChild(link);
+      link.click();
+      globalThis.document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     });
   }
 
   getFamilyName(familyId: string | undefined): string {
     if (!familyId) return "-";
     const family = this.families.find((f) => f.id === familyId);
-    return family?.nom ?? familyId ?? "-";
+    return family?.nom || family?.name || familyId || "-";
   }
 
-  getBeneficiaryDisplay(document: DocumentRecord): string {
-    const parts = [];
-    if (document.beneficiaryDisplayValue1) {
-      parts.push(document.beneficiaryDisplayValue1);
-    }
-    if (document.beneficiaryDisplayValue2) {
-      parts.push(document.beneficiaryDisplayValue2);
-    }
-    return parts.length > 0 ? parts.join(" - ") : document.beneficiaryId || "-";
+  getFamilyNames(familyIds: string[]): string {
+    return familyIds.map((id) => this.getFamilyName(id)).join(", ");
+  }
+
+  getDocumentDate(value: string | null | undefined): Date | null {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 
   goBack(): void {
@@ -261,5 +234,130 @@ export class DocumentHistoryPageComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  private applyClientFilters(rows: DocumentListItem[]): DocumentListItem[] {
+    const { query, dateFrom, dateTo } = this.filterForm.value;
+    const search = String(query || "").trim().toLowerCase();
+    const from = dateFrom ? new Date(dateFrom) : null;
+    const to = dateTo ? new Date(dateTo) : null;
+    if (to) to.setHours(23, 59, 59, 999);
+    return rows.filter((doc) => {
+      const generatedAt = this.getDocumentDate(doc.generatedAt);
+      if (from && generatedAt && generatedAt < from) return false;
+      if (to && generatedAt && generatedAt > to) return false;
+      if (!search) return true;
+      return [
+        doc.title,
+        doc.familyId,
+        doc.beneficiaryId,
+        doc.beneficiaryTable,
+        doc.beneficiaryTableLabel,
+        doc.beneficiaryDisplayValue1,
+        doc.beneficiaryDisplayValue2,
+        doc.generatedByName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(search);
+    });
+  }
+
+  private buildTableGroups(rows: DocumentListItem[]): TableDocumentGroup[] {
+    const map = new Map<string, TableDocumentGroup>();
+    for (const document of rows) {
+      const hasTable = !!String(document.beneficiaryTable || "").trim();
+      const key = hasTable ? String(document.beneficiaryTable) : "__organization__";
+      const tableGroup =
+        map.get(key) ||
+        {
+          key,
+          tableName: hasTable ? String(document.beneficiaryTable) : null,
+          label: hasTable
+            ? this.getBeneficiaryTableLabel(document)
+            : "Documents lies a l'organisation",
+          isOrganization: !hasTable,
+          documents: [],
+          beneficiaries: [],
+          familyIds: [],
+        };
+      tableGroup.documents.push(document);
+      tableGroup.familyIds = this.uniqueValues([...tableGroup.familyIds, document.familyId]);
+      map.set(key, tableGroup);
+    }
+
+    const groups = [...map.values()].map((group) => ({
+      ...group,
+      beneficiaries: group.isOrganization ? [] : this.buildBeneficiaryGroups(group.documents),
+    }));
+    return groups.sort((a, b) => Number(a.isOrganization) - Number(b.isOrganization) || a.label.localeCompare(b.label));
+  }
+
+  private buildBeneficiaryGroups(rows: DocumentListItem[]): BeneficiaryDocumentGroup[] {
+    const map = new Map<string, BeneficiaryDocumentGroup>();
+    for (const document of rows) {
+      const key = String(document.beneficiaryId || "__without_beneficiary__");
+      const group =
+        map.get(key) ||
+        {
+          key,
+          beneficiaryId: document.beneficiaryId || null,
+          title: this.getBeneficiaryTitle(document),
+          subtitle: document.beneficiaryId ? `ID ${document.beneficiaryId}` : "Beneficiaire non renseigne",
+          documents: [],
+          familyIds: [],
+        };
+      group.documents.push(document);
+      group.familyIds = this.uniqueValues([...group.familyIds, document.familyId]);
+      map.set(key, group);
+    }
+    return [...map.values()].sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  private syncSelection(): void {
+    if (!this.tableGroups.length) {
+      this.expandedTableKey = null;
+      this.selectedTableGroup = null;
+      this.selectedBeneficiaryKey = null;
+      this.selectedBeneficiaryGroup = null;
+      return;
+    }
+    const table =
+      this.tableGroups.find((group) => group.key === this.expandedTableKey) ||
+      this.tableGroups[0];
+    this.expandedTableKey = table.key;
+    this.selectedTableGroup = table;
+    if (table.isOrganization) {
+      this.selectedBeneficiaryKey = null;
+      this.selectedBeneficiaryGroup = null;
+      return;
+    }
+    const beneficiary =
+      table.beneficiaries.find((item) => item.key === this.selectedBeneficiaryKey) ||
+      table.beneficiaries[0] ||
+      null;
+    this.selectedBeneficiaryKey = beneficiary?.key || null;
+    this.selectedBeneficiaryGroup = beneficiary;
+  }
+
+  private getBeneficiaryTableLabel(document: DocumentListItem): string {
+    return (
+      document.beneficiaryTableLabel ||
+      this.families.find((family) => family.id === document.familyId)?.beneficiaryTableLabel ||
+      document.beneficiaryTable ||
+      "Table beneficiaire"
+    );
+  }
+
+  private getBeneficiaryTitle(document: DocumentListItem): string {
+    const title = [document.beneficiaryDisplayValue1, document.beneficiaryDisplayValue2]
+      .filter((value) => !!String(value || "").trim())
+      .join(" - ");
+    return title || document.beneficiaryId || "Beneficiaire";
+  }
+
+  private uniqueValues(values: Array<string | null | undefined>): string[] {
+    return [...new Set(values.filter((value): value is string => !!value))];
   }
 }

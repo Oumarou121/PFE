@@ -875,6 +875,8 @@ export class UserPageComponent implements OnInit {
         beneficiaryId: this.selectedBeneficiaryId,
         beneficiaryMode: family.beneficiaryMode,
         beneficiaryTable: family.beneficiaryTable,
+        beneficiaryTableLabel:
+          family.beneficiaryTableLabel || family.beneficiaryTable || null,
         beneficiaryLinkColumn: family.beneficiaryLinkColumn,
         beneficiaryDisplayColumn1: family.beneficiaryDisplayColumn1,
         beneficiaryDisplayColumn2: family.beneficiaryDisplayColumn2,

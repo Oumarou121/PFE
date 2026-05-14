@@ -836,12 +836,12 @@ namespace DocApi.Repositories
             using var connection = TenantConnection();
             var rows = await connection.QueryAsync($"""
                 SELECT id, etablissement_id, family_id, template_id, graphic_charter_id,
-                       beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_link_column,
+                       beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_table_label, beneficiary_link_column,
                        beneficiary_display_column_1, beneficiary_display_column_2,
                        beneficiary_display_value_1, beneficiary_display_value_2,
                        title, header_html, body_html, footer_html, full_html,
-                       mime_type, status, generated_by_id, generated_by_name, generated_by_email,
-                       generated_at, created_at, updated_at
+                       mime_type, status, generated_by_id, generated_by_name, generated_by_email, generated_by_role,
+                       generated_at, created_at, updated_at, deleted_at, deleted_by_id, deleted_by_name
                 FROM document
                 WHERE {string.Join(" AND ", where)}
                 ORDER BY generated_at DESC, created_at DESC
@@ -905,9 +905,9 @@ namespace DocApi.Repositories
                 // Get paginated data
                 var offset = (request.Page - 1) * request.Limit;
                 var dataQuery = $"""
-                    SELECT id, family_id, title, beneficiary_id, beneficiary_table,
+                    SELECT id, family_id, title, beneficiary_id, beneficiary_table, beneficiary_table_label,
                            beneficiary_display_value_1, beneficiary_display_value_2,
-                           generated_by_id, generated_by_name, generated_by_email, generated_at
+                           generated_by_id, generated_by_name, generated_by_email, generated_by_role, generated_at
                     FROM document
                     WHERE {string.Join(" AND ", where)}
                     ORDER BY {sortColumn} {sortOrder}
@@ -923,11 +923,13 @@ namespace DocApi.Repositories
                     FamilyId = Str(row, "family_id"),
                     BeneficiaryId = StrOrNull(row, "beneficiary_id"),
                     BeneficiaryTable = StrOrNull(row, "beneficiary_table"),
+                    BeneficiaryTableLabel = StrOrNull(row, "beneficiary_table_label"),
                     BeneficiaryDisplayValue1 = StrOrNull(row, "beneficiary_display_value_1"),
                     BeneficiaryDisplayValue2 = StrOrNull(row, "beneficiary_display_value_2"),
                     GeneratedById = Str(row, "generated_by_id"),
                     GeneratedByName = Str(row, "generated_by_name"),
                     GeneratedByEmail = StrOrNull(row, "generated_by_email"),
+                    GeneratedByRole = StrOrNull(row, "generated_by_role"),
                     GeneratedAt = Str(row, "generated_at")
                 }).ToList();
 
@@ -950,12 +952,12 @@ namespace DocApi.Repositories
             using var connection = TenantConnection();
             var row = await connection.QueryFirstOrDefaultAsync("""
                 SELECT TOP (1) id, etablissement_id, family_id, template_id, graphic_charter_id,
-                               beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_link_column,
+                               beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_table_label, beneficiary_link_column,
                                beneficiary_display_column_1, beneficiary_display_column_2,
                                beneficiary_display_value_1, beneficiary_display_value_2,
                                title, header_html, body_html, footer_html, full_html,
-                               mime_type, status, generated_by_id, generated_by_name, generated_by_email,
-                               generated_at, created_at, updated_at
+                               mime_type, status, generated_by_id, generated_by_name, generated_by_email, generated_by_role,
+                               generated_at, created_at, updated_at, deleted_at, deleted_by_id, deleted_by_name
                 FROM document
                 WHERE id = @id AND is_deleted = 0
                 """, new { id });
@@ -969,20 +971,20 @@ namespace DocApi.Repositories
             await connection.ExecuteAsync("""
                 INSERT INTO document (
                   id, etablissement_id, family_id, template_id, graphic_charter_id,
-                  beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_link_column,
+                  beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_table_label, beneficiary_link_column,
                   beneficiary_display_column_1, beneficiary_display_column_2,
                   beneficiary_display_value_1, beneficiary_display_value_2,
                   title, header_html, body_html, footer_html, full_html,
-                  mime_type, status, generated_by_id, generated_by_name, generated_by_email,
+                  mime_type, status, generated_by_id, generated_by_name, generated_by_email, generated_by_role,
                   generated_at, created_at, updated_at, is_deleted
                 )
                 VALUES (
                   @id, @etablissement_id, @family_id, @template_id, @graphic_charter_id,
-                  @beneficiary_id, @beneficiary_mode, @beneficiary_table, @beneficiary_link_column,
+                  @beneficiary_id, @beneficiary_mode, @beneficiary_table, @beneficiary_table_label, @beneficiary_link_column,
                   @beneficiary_display_column_1, @beneficiary_display_column_2,
                   @beneficiary_display_value_1, @beneficiary_display_value_2,
                   @title, @header_html, @body_html, @footer_html, @full_html,
-                  @mime_type, @status, @generated_by_id, @generated_by_name, @generated_by_email,
+                  @mime_type, @status, @generated_by_id, @generated_by_name, @generated_by_email, @generated_by_role,
                   @generated_at, @created_at, @updated_at, 0
                 )
                 """, DocumentParams(document));
@@ -990,13 +992,27 @@ namespace DocApi.Repositories
             return (await GetDocumentByIdAsync(document.Id)) ?? document;
         }
 
-        public async Task DeleteDocumentAsync(string id)
+        public async Task DeleteDocumentAsync(string id, AuthUserResponse? deletedBy = null)
         {
             if (!await TenantTableExistsAsync("document")) return;
             using var connection = TenantConnection();
             await connection.ExecuteAsync(
-                "UPDATE document SET is_deleted = 1, updated_at = @updatedAt WHERE id = @id",
-                new { id, updatedAt = DateTimeOffset.UtcNow.ToString("O") });
+                """
+                UPDATE document
+                SET is_deleted = 1,
+                    updated_at = @updatedAt,
+                    deleted_at = @updatedAt,
+                    deleted_by_id = @deletedById,
+                    deleted_by_name = @deletedByName
+                WHERE id = @id
+                """,
+                new
+                {
+                    id,
+                    updatedAt = DateTimeOffset.UtcNow.ToString("O"),
+                    deletedById = deletedBy?.Id,
+                    deletedByName = deletedBy?.Name
+                });
         }
 
         // ─── Private helpers : ConfigDB introspection ────────────────────────────
@@ -1255,6 +1271,7 @@ namespace DocApi.Repositories
             beneficiary_id = document.BeneficiaryId,
             beneficiary_mode = document.BeneficiaryMode,
             beneficiary_table = document.BeneficiaryTable,
+            beneficiary_table_label = document.BeneficiaryTableLabel,
             beneficiary_link_column = document.BeneficiaryLinkColumn,
             beneficiary_display_column_1 = document.BeneficiaryDisplayColumn1,
             beneficiary_display_column_2 = document.BeneficiaryDisplayColumn2,
@@ -1270,6 +1287,7 @@ namespace DocApi.Repositories
             generated_by_id = document.GeneratedById,
             generated_by_name = document.GeneratedByName,
             generated_by_email = document.GeneratedByEmail,
+            generated_by_role = document.GeneratedByRole,
             generated_at = document.GeneratedAt,
             created_at = document.CreatedAt,
             updated_at = document.UpdatedAt
@@ -1359,6 +1377,7 @@ namespace DocApi.Repositories
                 BeneficiaryId = source.BeneficiaryId,
                 BeneficiaryMode = string.IsNullOrWhiteSpace(source.BeneficiaryMode) ? "table" : source.BeneficiaryMode,
                 BeneficiaryTable = source.BeneficiaryTable,
+                BeneficiaryTableLabel = source.BeneficiaryTableLabel,
                 BeneficiaryLinkColumn = source.BeneficiaryLinkColumn,
                 BeneficiaryDisplayColumn1 = source.BeneficiaryDisplayColumn1,
                 BeneficiaryDisplayColumn2 = source.BeneficiaryDisplayColumn2,
@@ -1374,6 +1393,7 @@ namespace DocApi.Repositories
                 GeneratedById = source.GeneratedById,
                 GeneratedByName = source.GeneratedByName,
                 GeneratedByEmail = source.GeneratedByEmail,
+                GeneratedByRole = source.GeneratedByRole,
                 GeneratedAt = string.IsNullOrWhiteSpace(source.GeneratedAt) ? now : source.GeneratedAt,
                 CreatedAt = now,
                 UpdatedAt = now
@@ -1393,6 +1413,7 @@ namespace DocApi.Repositories
                 BeneficiaryId = StrOrNull(item, "beneficiary_id"),
                 BeneficiaryMode = Str(item, "beneficiary_mode") ?? "table",
                 BeneficiaryTable = StrOrNull(item, "beneficiary_table"),
+                BeneficiaryTableLabel = StrOrNull(item, "beneficiary_table_label"),
                 BeneficiaryLinkColumn = StrOrNull(item, "beneficiary_link_column"),
                 BeneficiaryDisplayColumn1 = StrOrNull(item, "beneficiary_display_column_1"),
                 BeneficiaryDisplayColumn2 = StrOrNull(item, "beneficiary_display_column_2"),
@@ -1408,9 +1429,13 @@ namespace DocApi.Repositories
                 GeneratedById = Str(item, "generated_by_id") ?? string.Empty,
                 GeneratedByName = Str(item, "generated_by_name") ?? string.Empty,
                 GeneratedByEmail = StrOrNull(item, "generated_by_email"),
+                GeneratedByRole = StrOrNull(item, "generated_by_role"),
                 GeneratedAt = Str(item, "generated_at") ?? string.Empty,
                 CreatedAt = Str(item, "created_at"),
-                UpdatedAt = Str(item, "updated_at")
+                UpdatedAt = Str(item, "updated_at"),
+                DeletedAt = StrOrNull(item, "deleted_at"),
+                DeletedById = StrOrNull(item, "deleted_by_id"),
+                DeletedByName = StrOrNull(item, "deleted_by_name")
             };
         }
 

@@ -200,6 +200,9 @@ namespace DocApi.DTOs
         [MaxLength(128)]
         public string? BeneficiaryTable { get; set; }
 
+        [MaxLength(255)]
+        public string? BeneficiaryTableLabel { get; set; }
+
         [MaxLength(128)]
         public string? BeneficiaryLinkColumn { get; set; }
 
@@ -242,6 +245,9 @@ namespace DocApi.DTOs
         public string? GeneratedByEmail { get; set; }
 
         [MaxLength(64)]
+        public string? GeneratedByRole { get; set; }
+
+        [MaxLength(64)]
         public string? GeneratedAt { get; set; }
     }
 
@@ -255,6 +261,7 @@ namespace DocApi.DTOs
         public string? BeneficiaryId { get; set; }
         public string BeneficiaryMode { get; set; } = "table";
         public string? BeneficiaryTable { get; set; }
+        public string? BeneficiaryTableLabel { get; set; }
         public string? BeneficiaryLinkColumn { get; set; }
         public string? BeneficiaryDisplayColumn1 { get; set; }
         public string? BeneficiaryDisplayColumn2 { get; set; }
@@ -270,9 +277,13 @@ namespace DocApi.DTOs
         public string GeneratedById { get; set; } = string.Empty;
         public string GeneratedByName { get; set; } = string.Empty;
         public string? GeneratedByEmail { get; set; }
+        public string? GeneratedByRole { get; set; }
         public string GeneratedAt { get; set; } = string.Empty;
         public string? CreatedAt { get; set; }
         public string? UpdatedAt { get; set; }
+        public string? DeletedAt { get; set; }
+        public string? DeletedById { get; set; }
+        public string? DeletedByName { get; set; }
     }
 
     public class DocumentListItemResponse
@@ -282,11 +293,13 @@ namespace DocApi.DTOs
         public string FamilyId { get; set; } = string.Empty;
         public string? BeneficiaryId { get; set; }
         public string? BeneficiaryTable { get; set; }
+        public string? BeneficiaryTableLabel { get; set; }
         public string? BeneficiaryDisplayValue1 { get; set; }
         public string? BeneficiaryDisplayValue2 { get; set; }
         public string GeneratedById { get; set; } = string.Empty;
         public string GeneratedByName { get; set; } = string.Empty;
         public string? GeneratedByEmail { get; set; }
+        public string? GeneratedByRole { get; set; }
         public string GeneratedAt { get; set; } = string.Empty;
     }
 

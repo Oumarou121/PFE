@@ -1,132 +1,181 @@
 :host {
   display: block;
+  height: 100%;
 }
 
+/* ─── Page shell ─────────────────────────────────────────────────── */
 .login-page {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  font-family: Georgia, "Times New Roman", serif;
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(15, 118, 110, 0.16),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at bottom right,
-      rgba(217, 119, 6, 0.16),
-      transparent 28%
-    ),
-    linear-gradient(135deg, #efe7da, #f8f6f1 55%, #ece6da);
-  padding: 24px;
-}
-
-.shell {
-  width: min(960px, 100%);
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 28px;
-  overflow: hidden;
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.18);
-}
-
-/* Hero */
-.hero {
-  padding: 44px;
-  background:
-    linear-gradient(160deg, rgba(15, 118, 110, 0.92), rgba(17, 94, 89, 0.82)),
-    linear-gradient(135deg, #115e59, #134e4a);
-  color: #f8fafc;
+  min-width: max-content;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 560px;
+  align-items: center;
+  overflow: auto;
+
+  /* Grid background identical to Takara screenshot */
+  background-color: #e5e7eb;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
-.badge {
+/* ─── Header / Logo ──────────────────────────────────────────────── */
+.login-header {
+  padding: 24px 0 20px;
+  text-align: center;
+}
+
+.logo-wrap {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  font-size: 13px;
-  background: rgba(255, 255, 255, 0.08);
-  margin-bottom: 22px;
 }
 
-.hero h1 {
-  margin: 0 0 14px;
-  font-size: clamp(34px, 5vw, 54px);
-  line-height: 1;
+.logo-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #337ab7, #2563eb);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(51, 122, 183, 0.35);
 }
 
-.hero p {
-  margin: 0;
-  max-width: 34ch;
-  line-height: 1.7;
-  color: rgba(248, 250, 252, 0.84);
+.logo-svg {
+  width: 26px;
+  height: 26px;
+  color: #fff;
 }
 
-/* Card */
-.card {
-  padding: 44px 36px;
+.logo-text {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.logo-green {
+  color: #337ab7;
+}
+.logo-dark {
+  color: #374151;
+}
+
+/* ─── Main area ──────────────────────────────────────────────────── */
+.login-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-}
-
-.card h2 {
-  margin: 0 0 6px;
-  font-size: 32px;
-  color: #1f2937;
-}
-
-.subtitle {
-  margin: 0 0 28px;
-  color: #6b7280;
-  font-size: 14px;
-  font-family: Inter, Arial, sans-serif;
-}
-
-.field {
-  margin-bottom: 18px;
-}
-
-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #374151;
-  font-family: Inter, Arial, sans-serif;
-}
-
-input {
+  align-items: center;
+  padding: 8px 16px 24px;
   width: 100%;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 14px;
-  padding: 13px 16px;
-  font-family: Inter, Arial, sans-serif;
+}
+
+/* ─── Card ───────────────────────────────────────────────────────── */
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 26px 32px 22px;
+  text-align: center;
+  border-bottom: 1px solid #f3f4f6;
+
+  h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #337ab7; /* sky-500 */
+  }
+}
+
+.card-body {
+  padding: 26px 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ─── Error banner ───────────────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 13px;
+  margin-bottom: 18px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+/* ─── Fields ─────────────────────────────────────────────────────── */
+.field {
+  margin-bottom: 14px;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: #9ca3af;
+  }
+}
+
+.input-wrap input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   font-size: 14px;
+  color: #374151;
   background: #fff;
   outline: none;
+  box-sizing: border-box;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
-  box-sizing: border-box;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
 
   &:focus {
-    border-color: #0f766e;
-    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    border-color: #337ab7;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
   }
+}
 
-  &.invalid {
-    border-color: #dc2626;
-  }
+.input-wrap.input-invalid input {
+  border-color: #f87171;
 }
 
 .field-error {
@@ -134,51 +183,71 @@ input {
   margin-top: 4px;
   font-size: 12px;
   color: #dc2626;
-  font-family: Inter, Arial, sans-serif;
 }
 
-.error-msg {
-  padding: 10px 14px;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  border-radius: 10px;
-  color: #b91c1c;
+/* ─── Actions row ────────────────────────────────────────────────── */
+.actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.forgot-link {
   font-size: 13px;
-  font-family: Inter, Arial, sans-serif;
-  margin-bottom: 16px;
+  color: #337ab7;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #0284c7;
+    text-decoration: underline;
+  }
 }
 
+/* ─── Submit button ──────────────────────────────────────────────── */
 .submit-btn {
-  width: 100%;
-  border: none;
-  border-radius: 14px;
-  padding: 14px 16px;
-  font-family: Inter, Arial, sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #fff;
+  border: 1.5px solid #337ab7;
+  color: #337ab7;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  background: linear-gradient(135deg, #0f766e, #0d9488);
-  transition: opacity 0.15s;
-  display: grid;
-  place-items: center;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    background: #f0f9ff;
+    color: #0284c7;
+    border-color: #0284c7;
+  }
 
   &:disabled {
-    opacity: 0.65;
+    opacity: 0.55;
     cursor: not-allowed;
-  }
-
-  &:not(:disabled):hover {
-    opacity: 0.9;
   }
 }
 
+/* ─── Spinner ────────────────────────────────────────────────────── */
 .spinner {
   display: inline-block;
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(14, 165, 233, 0.3);
+  border-top-color: #337ab7;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -189,15 +258,44 @@ input {
   }
 }
 
-@media (max-width: 780px) {
-  .shell {
-    grid-template-columns: 1fr;
+/* ─── Tagline ────────────────────────────────────────────────────── */
+.tagline {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────── */
+.login-footer {
+  padding: 16px;
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #337ab7;
   }
-  .hero {
-    min-height: auto;
-    padding: 30px;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .login-card {
+    border-radius: 10px;
   }
-  .card {
-    padding: 30px 22px;
+  .card-header,
+  .card-body {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .actions-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .submit-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

@@ -39,6 +39,6 @@ namespace DocApi.Repositories.Interfaces
         Task<DocumentListResponse> LoadDocumentsPagedAsync(DocumentListRequest request);
         Task<DocumentResponse?> GetDocumentByIdAsync(string id);
         Task<DocumentResponse> CreateDocumentAsync(DocumentCreateRequest request);
-        Task DeleteDocumentAsync(string id);
+        Task DeleteDocumentAsync(string id, AuthUserResponse? deletedBy = null);
     }
 }

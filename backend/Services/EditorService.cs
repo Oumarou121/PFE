@@ -256,7 +256,7 @@ namespace DocApi.Services
                 BeneficiaryTable = request.BeneficiaryTable,
                 BeneficiaryId = request.BeneficiaryId,
                 Page = request.Page > 0 ? request.Page : 1,
-                Limit = request.Limit > 0 ? Math.Min(request.Limit, 100) : 10, // Cap at 100 per page
+                Limit = request.Limit > 0 ? Math.Min(request.Limit, 500) : 10,
                 SortBy = request.SortBy,
                 SortOrder = request.SortOrder
             };
@@ -283,6 +283,7 @@ namespace DocApi.Services
             request.GeneratedById = string.IsNullOrWhiteSpace(request.GeneratedById) ? currentUser?.Id ?? string.Empty : request.GeneratedById;
             request.GeneratedByName = string.IsNullOrWhiteSpace(request.GeneratedByName) ? currentUser?.Name ?? string.Empty : request.GeneratedByName;
             request.GeneratedByEmail = string.IsNullOrWhiteSpace(request.GeneratedByEmail) ? currentUser?.Email : request.GeneratedByEmail;
+            request.GeneratedByRole = string.IsNullOrWhiteSpace(request.GeneratedByRole) ? currentUser?.Role : request.GeneratedByRole;
             return await _repository.CreateDocumentAsync(request);
         }
 
@@ -298,7 +299,7 @@ namespace DocApi.Services
                 throw new UnauthorizedAccessException("Suppression non autorisee pour ce document.");
             }
 
-            await _repository.DeleteDocumentAsync(id);
+            await _repository.DeleteDocumentAsync(id, currentUser);
         }
     }
 }
