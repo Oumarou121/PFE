@@ -43,62 +43,6 @@
       background: transparent;
       padding: 0;
       box-shadow: none;
-      
-      ::ng-deep {
-        .document-pages {
-           display: flex;
-           flex-direction: column;
-           gap: 20px;
-           padding-bottom: 20px;
-        }
-
-        .document-render, .document-page, .preview-page {
-          background-color: white;
-          width: var(--page-w, 210mm);
-          height: var(--page-h, 297mm);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-          display: grid !important;
-          grid-template-rows: auto minmax(0, 1fr) auto !important;
-          position: relative;
-          overflow: hidden;
-          box-sizing: border-box;
-          
-          /* Background image fidelity */
-          background-image: var(--doc-page-bg-image, none);
-          background-size: var(--doc-page-bg-size, cover);
-          background-position: var(--doc-page-bg-position, center center);
-          background-repeat: var(--doc-page-bg-repeat, no-repeat);
-        }
-
-        .doc-page-header {
-          grid-row: 1;
-          padding: var(--page-header-top, 5mm) var(--page-mr, 25mm) 3mm var(--page-ml, 25mm);
-          font-family: var(--doc-font-body, serif);
-          color: var(--doc-color-text, #111);
-        }
-
-        .doc-page-body {
-          grid-row: 2;
-          padding: var(--page-mt, 20mm) var(--page-mr, 25mm) var(--page-mb, 20mm) var(--page-ml, 25mm);
-          font-family: var(--doc-font-body, serif);
-          color: var(--doc-color-text, #111);
-        }
-        .doc-page-body.no-header { padding-top: var(--page-mt, 20mm); }
-        .doc-page-body.no-footer { padding-bottom: var(--page-mb, 20mm); }
-
-        .doc-page-footer {
-          grid-row: 3;
-          padding: 3mm var(--page-mr, 25mm) var(--page-footer-bottom, 5mm) var(--page-ml, 25mm);
-          font-family: var(--doc-font-body, serif);
-          color: var(--doc-color-text, #111);
-        }
-
-        /* Elements styles inside document */
-        p { margin: 0 0 0.4em; }
-        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-        td, th { border: 1px solid var(--doc-color-border, #ccc); padding: 6px 10px; word-break: break-word; }
-        img { max-width: 100%; height: auto; display: block; }
-      }
     }
   }
 
@@ -135,7 +79,9 @@
     .dialog-content {
       padding: 10px;
       .document-html {
-        ::ng-deep .document-render, ::ng-deep .document-page, ::ng-deep .preview-page {
+        ::ng-deep .document-render,
+        ::ng-deep .document-page,
+        ::ng-deep .preview-page {
           width: 100%;
           height: auto;
           min-height: 297mm;

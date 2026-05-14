@@ -117,12 +117,12 @@ export class DocumentRenderService {
     template: TemplateRecord,
     pages: RenderedDocumentPage[],
     className = "preview-page",
-    options: { mode?: RenderMode } = {},
+    options: { mode?: RenderMode; themeStyle?: string } = {},
   ): string {
     const headerDir = this.getSectionDirectionAttrs(template, "header");
     const bodyDir = this.getSectionDirectionAttrs(template, "body");
     const footerDir = this.getSectionDirectionAttrs(template, "footer");
-    const themeStyle = this.getDocumentThemeStyleAttr(template);
+    const themeStyle = options.themeStyle || this.getDocumentThemeStyleAttr(template);
     const watermark = this.getTemplateWatermark(template);
     const watermarkHtml = watermark.enabled
       ? `<div class="doc-page-watermark" aria-hidden="true" style="color:${this.escapeHtml(watermark.color)};opacity:${watermark.opacity};font-size:${watermark.size}px">${this.escapeHtml(watermark.text)}</div>`
@@ -158,10 +158,6 @@ export class DocumentRenderService {
   printDocPaginated(template: TemplateRecord, person: UnknownRecord): void {
     if (!template || !person) return;
     const orientation = this.getTemplateOrientation(template);
-    const pageWidth = orientation === "landscape" ? "297mm" : "210mm";
-    const pageHeight = orientation === "landscape" ? "210mm" : "297mm";
-    const margins = this.getTemplatePageMargins(template);
-    const paddings = this.getPageSectionPaddings(template);
     const pages = this.renderDocumentPages(template, person, { mode: "print" });
     const printCSS = `
       @page { size: A4 ${orientation}; margin: 0; }
@@ -170,77 +166,7 @@ export class DocumentRenderService {
         overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important;
       }
       #sirh-print-area { display: block; }
-      .document-render--print, .preview-page, .sirh-print-page {
-        width: ${pageWidth}; height: ${pageHeight}; background-color: #fff;
-        background-image: var(--doc-page-bg-image, none); background-size: var(--doc-page-bg-size, cover);
-        background-position: var(--doc-page-bg-position, center center); background-repeat: var(--doc-page-bg-repeat, no-repeat);
-        print-color-adjust: exact; -webkit-print-color-adjust: exact; display: block;
-        position: relative; box-sizing: border-box;
-        overflow: hidden; page-break-after: always; break-after: page;
-      }
-      .document-render--print:last-child, .preview-page:last-child, .sirh-print-page:last-child { page-break-after: auto; break-after: auto; }
-      .document-render--print, .preview-page { box-shadow: none; border-radius: 0; flex-shrink: 0; }
-      .doc-page-header {
-        position: absolute; inset: 0 0 auto 0; z-index: 1;
-        box-sizing: border-box; padding: ${paddings.header};
-        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
-        color: var(--doc-color-text, #111); background: transparent;
-        overflow: hidden; white-space: normal; overflow-wrap: anywhere;
-      }
-      .doc-page-watermark {
-        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-        transform: rotate(-32deg); font-weight: 800; letter-spacing: 0.08em; pointer-events: none;
-        z-index: 0; user-select: none; text-align: center; white-space: nowrap;
-      }
-      .doc-page-body {
-        width: 100%; height: 100%; min-height: 0; box-sizing: border-box; padding: ${paddings.body};
-        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
-        color: var(--doc-color-text, #111); overflow: hidden; white-space: normal; overflow-wrap: anywhere;
-      }
-      .doc-page-body.no-header { padding-top: ${margins.mt}mm; }
-      .doc-page-body.no-footer { padding-bottom: ${margins.mb}mm; }
-      .doc-page-body.no-header.no-footer { padding: ${paddings.bodyNoHeaderFooter}; }
-      .doc-page-footer {
-        position: absolute; inset: auto 0 0 0; z-index: 1;
-        box-sizing: border-box; padding: ${paddings.footer};
-        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
-        color: var(--doc-color-text, #111); background: transparent;
-        overflow: hidden; white-space: normal; overflow-wrap: anywhere;
-      }
-      .doc-page-header p, .doc-page-body p, .doc-page-footer p { margin: 0 0 0.4em; white-space: inherit; }
-      .doc-page-header u, .doc-page-body u, .doc-page-footer u,
-      .doc-page-header a, .doc-page-body a, .doc-page-footer a {
-        text-decoration-thickness: 1px; text-underline-offset: 0.14em; text-decoration-skip-ink: none;
-      }
-      .preview-page ul, .doc-page-header ul, .doc-page-body ul, .doc-page-footer ul,
-      .preview-page ol, .doc-page-header ol, .doc-page-body ol, .doc-page-footer ol {
-        padding-left: 2em; list-style: revert;
-      }
-      li { display: list-item; }
-      .preview-page table, .sirh-print-page table, table {
-        border-collapse: collapse; width: 100%; max-width: 100%;
-        table-layout: fixed; margin: 6px 0; box-sizing: border-box; overflow-wrap: anywhere;
-      }
-      .preview-page td, .preview-page th, td, th {
-        border: 1px solid var(--doc-color-border, #c8cdd8); padding: 6px 10px; min-width: 0;
-        position: relative; box-sizing: border-box; word-break: normal; overflow-wrap: anywhere;
-        white-space: normal; print-color-adjust: exact; -webkit-print-color-adjust: exact;
-      }
-      .preview-page td p, .preview-page th p, td p, th p { color: inherit; margin: 0; white-space: inherit; }
-      .preview-page th:not([style]), th:not([style]) {
-        background: var(--doc-table-header-bg, transparent); color: var(--doc-color-text, #111);
-        font-weight: 700; text-align: left;
-      }
-      th { font-weight: 700; }
-      thead { display: table-header-group; }
-      tfoot { display: table-footer-group; }
-      tr, img { break-inside: avoid; page-break-inside: avoid; }
-      img { max-width: 100%; height: auto; display: block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-      .document-render--print .var-resolved, #sirh-print-area .var-resolved {
-        color: #111 !important; font-weight: inherit !important;
-        background: none !important; padding: 0 !important; border-radius: 0 !important;
-      }
-      .document-render--print .var-missing, #sirh-print-area .var-missing { color: #dc2626 !important; }
+      ${this.getDocumentPrintCss()}
     `;
     document.getElementById("sirh-print-area")?.remove();
     document.getElementById("sirh-print-css")?.remove();
@@ -283,6 +209,118 @@ export class DocumentRenderService {
     return Object.entries(this.getDocumentThemeVars(template))
       .map(([key, value]) => `${key}:${value}`)
       .join(";");
+  }
+
+  async buildStandaloneDocumentHtml(
+    template: TemplateRecord,
+    pages: RenderedDocumentPage[],
+    className = "document-page",
+    options: { mode?: RenderMode } = {},
+  ): Promise<string> {
+    const themeVars = this.getDocumentThemeVars(template);
+    themeVars["--doc-page-bg-image"] = await this.inlineCssUrlValue(
+      themeVars["--doc-page-bg-image"],
+    );
+    const themeStyle = Object.entries(themeVars)
+      .map(([key, value]) => `${key}:${value}`)
+      .join(";");
+    const pagesHtml = this.buildDocumentPagesHtml(template, pages, className, {
+      ...options,
+      themeStyle,
+    });
+    const inlinedPagesHtml = await this.inlineHtmlAssetUrls(pagesHtml);
+    return `<div class="document-snapshot" data-sirh-document-snapshot="true"><style data-sirh-document-snapshot-style="true">${this.getDocumentPrintCss()}</style><div class="document-pages" style="${themeStyle}">${inlinedPagesHtml}</div></div>`;
+  }
+
+  getDocumentPrintCss(options: { preview?: boolean } = {}): string {
+    const previewCss = options.preview
+      ? `
+      .document-pages {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding-bottom: 20px;
+      }
+      .document-render--print, .document-page, .preview-page, .sirh-print-page {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      }
+    `
+      : "";
+    return `
+      .document-render--print, .document-page, .preview-page, .sirh-print-page {
+        width: var(--page-w, 210mm); height: var(--page-h, 297mm); background-color: #fff;
+        background-image: var(--doc-page-bg-image, none); background-size: var(--doc-page-bg-size, cover);
+        background-position: var(--doc-page-bg-position, center center); background-repeat: var(--doc-page-bg-repeat, no-repeat);
+        print-color-adjust: exact; -webkit-print-color-adjust: exact; display: block;
+        position: relative; box-sizing: border-box;
+        overflow: hidden; page-break-after: always; break-after: page;
+      }
+      .document-render--print:last-child, .document-page:last-child, .preview-page:last-child, .sirh-print-page:last-child { page-break-after: auto; break-after: auto; }
+      .document-render--print, .preview-page { box-shadow: none; border-radius: 0; flex-shrink: 0; }
+      .doc-page-header {
+        position: absolute; inset: 0 0 auto 0; z-index: 1;
+        box-sizing: border-box; padding: var(--page-header-top, 5mm) var(--page-mr, 25mm) 3mm var(--page-ml, 25mm);
+        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
+        color: var(--doc-color-text, #111); background: transparent;
+        overflow: hidden; white-space: normal; overflow-wrap: anywhere;
+      }
+      .doc-page-watermark {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        transform: rotate(-32deg); font-weight: 800; letter-spacing: 0.08em; pointer-events: none;
+        z-index: 0; user-select: none; text-align: center; white-space: nowrap;
+      }
+      .doc-page-body {
+        width: 100%; height: 100%; min-height: 0; box-sizing: border-box;
+        padding: var(--page-mt, 20mm) var(--page-mr, 25mm) var(--page-mb, 20mm) var(--page-ml, 25mm);
+        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
+        color: var(--doc-color-text, #111); overflow: hidden; white-space: normal; overflow-wrap: anywhere;
+      }
+      .doc-page-body.no-header { padding-top: var(--page-mt, 20mm); }
+      .doc-page-body.no-footer { padding-bottom: var(--page-mb, 20mm); }
+      .doc-page-body.no-header.no-footer { padding: var(--page-mt, 20mm) var(--page-mr, 25mm) var(--page-mb, 20mm) var(--page-ml, 25mm); }
+      .doc-page-footer {
+        position: absolute; inset: auto 0 0 0; z-index: 1;
+        box-sizing: border-box; padding: 3mm var(--page-mr, 25mm) var(--page-footer-bottom, 5mm) var(--page-ml, 25mm);
+        font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
+        color: var(--doc-color-text, #111); background: transparent;
+        overflow: hidden; white-space: normal; overflow-wrap: anywhere;
+      }
+      .doc-page-header p, .doc-page-body p, .doc-page-footer p { margin: 0 0 0.4em; white-space: inherit; }
+      .doc-page-header u, .doc-page-body u, .doc-page-footer u,
+      .doc-page-header a, .doc-page-body a, .doc-page-footer a {
+        text-decoration-thickness: 1px; text-underline-offset: 0.14em; text-decoration-skip-ink: none;
+      }
+      .preview-page ul, .document-page ul, .doc-page-header ul, .doc-page-body ul, .doc-page-footer ul,
+      .preview-page ol, .document-page ol, .doc-page-header ol, .doc-page-body ol, .doc-page-footer ol {
+        padding-left: 2em; list-style: revert;
+      }
+      li { display: list-item; }
+      .preview-page table, .document-page table, .sirh-print-page table, table {
+        border-collapse: collapse; width: 100%; max-width: 100%;
+        table-layout: fixed; margin: 6px 0; box-sizing: border-box; overflow-wrap: anywhere;
+      }
+      .preview-page td, .preview-page th, .document-page td, .document-page th, td, th {
+        border: 1px solid var(--doc-color-border, #c8cdd8); padding: 6px 10px; min-width: 0;
+        position: relative; box-sizing: border-box; word-break: normal; overflow-wrap: anywhere;
+        white-space: normal; print-color-adjust: exact; -webkit-print-color-adjust: exact;
+      }
+      .preview-page td p, .preview-page th p, .document-page td p, .document-page th p, td p, th p { color: inherit; margin: 0; white-space: inherit; }
+      .preview-page th:not([style]), .document-page th:not([style]), th:not([style]) {
+        background: var(--doc-table-header-bg, transparent); color: var(--doc-color-text, #111);
+        font-weight: 700; text-align: left;
+      }
+      th { font-weight: 700; }
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+      tr, img { break-inside: avoid; page-break-inside: avoid; }
+      img { max-width: 100%; height: auto; display: block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .document-render--print .var-resolved, #sirh-print-area .var-resolved {
+        color: #111 !important; font-weight: inherit !important;
+        background: none !important; padding: 0 !important; border-radius: 0 !important;
+      }
+      .document-render--print .var-missing, #sirh-print-area .var-missing { color: #dc2626 !important; }
+      ${previewCss}
+    `;
   }
 
   private buildDocumentContext(
@@ -1075,6 +1113,49 @@ export class DocumentRenderService {
         ? `${raw}${raw.includes("?") ? "&" : "?"}v=${encodeURIComponent(cacheKey)}`
         : raw;
     return `url("${finalValue.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}")`;
+  }
+
+  private async inlineCssUrlValue(value: unknown): Promise<string> {
+    const raw = String(value || "").trim();
+    const match = /^url\((["']?)(.*?)\1\)$/i.exec(raw);
+    if (!match) return raw || "none";
+    const inlined = await this.inlineAssetUrl(match[2]);
+    return `url("${inlined.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}")`;
+  }
+
+  private async inlineHtmlAssetUrls(html: string): Promise<string> {
+    if (!html || typeof DOMParser === "undefined") return html || "";
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+    const root = doc.body.firstElementChild;
+    if (!root) return html;
+    const images = Array.from(root.querySelectorAll<HTMLImageElement>("img[src]"));
+    await Promise.all(
+      images.map(async (image) => {
+        const src = image.getAttribute("src");
+        if (!src) return;
+        image.setAttribute("src", await this.inlineAssetUrl(src));
+      }),
+    );
+    return root.innerHTML;
+  }
+
+  private async inlineAssetUrl(url: string): Promise<string> {
+    const raw = String(url || "").trim();
+    if (!raw || /^data:/i.test(raw) || /^blob:/i.test(raw)) return raw;
+    try {
+      const response = await fetch(raw, { credentials: "include" });
+      if (!response.ok) return raw;
+      const blob = await response.blob();
+      return await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || raw));
+        reader.onerror = () => resolve(raw);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return raw;
+    }
   }
 
   private humanize(value: string): string {

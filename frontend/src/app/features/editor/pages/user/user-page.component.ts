@@ -848,15 +848,12 @@ export class UserPageComponent implements OnInit {
       this.previewPerson,
       { mode: "print" },
     );
-    const themeStyle = this.documentRender.getDocumentThemeStyleAttr(
-      this.previewTemplate,
-    );
-    const printableHtml = `<div class="document-pages" style="${themeStyle}">${this.documentRender.buildDocumentPagesHtml(
+    const printableHtml = await this.documentRender.buildStandaloneDocumentHtml(
       this.previewTemplate,
       printPages,
       "document-page",
       { mode: "print" },
-    )}</div>`;
+    );
 
     const templateTitle =
       this.getTemplateName(this.previewTemplate) || "Document";
