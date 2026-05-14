@@ -1,279 +1,143 @@
-<div class="document-history-page">
+<div class="document-history-page app-page">
   <div class="loading-overlay" *ngIf="loading">
     <div class="spinner"></div>
     <p>Chargement de l'historique...</p>
   </div>
 
-  <nav class="navbar">
-    <!-- ── Top bar ── -->
-    <div class="topnav">
-      <div class="nav-logo">
-        <svg
-          class="nav-logo__icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-          <path d="M6 12v5c3 3 9 3 12 0v-5" />
-        </svg>
-        SIRH-<span class="nav-logo__light">Doc</span>
-      </div>
-
-      <div class="nav-center">
-        <span class="nav-org-pill">{{ organizationName || "Historique" }}</span>
-      </div>
-
-      <div class="nav-right">
-        <div class="heading-stats">
-          <strong>{{ totalDocuments }}</strong>
-          <span>documents</span>
-        </div>
-        <button class="nav-action-btn" type="button" (click)="goBack()">
-          <i class="fa fa-arrow-left"></i>
-          Retour
-        </button>
-        <button class="nav-logout-btn" type="button" (click)="logout()">
-          <i class="fa fa-sign-out"></i>
-          Déconnexion
-        </button>
-      </div>
+  <nav class="topnav">
+    <div class="nav-logo">
+      <svg
+        class="nav-logo__icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+      SIRH-<span class="nav-logo__light">Doc</span>
     </div>
 
-    <!-- ── Filter sub-navbar ── -->
-    <div class="bottomnav" [formGroup]="filterForm">
-      <label class="filter-label">
-        <i class="fa fa-th-large filter-icon"></i>
-        <select formControlName="familyId" (change)="onFilterChange()">
-          <option value="">Toutes les familles</option>
-          <option *ngFor="let family of families" [value]="family.id">
-            {{ family.nom || family.name || family.id }}
-          </option>
-        </select>
-      </label>
+    <div class="nav-center">
+      <span class="nav-org-pill">{{ organizationName || "Historique" }}</span>
+    </div>
 
-      <div class="filter-divider"></div>
-
-      <label class="filter-label filter-label--search">
-        <i class="fa fa-search filter-icon"></i>
-        <input
-          formControlName="query"
-          placeholder="Document, bénéficiaire, table..."
-          (input)="onFilterChange()"
-        />
-      </label>
-
-      <div class="filter-divider"></div>
-
-      <label class="filter-label">
-        <i class="fa fa-calendar filter-icon"></i>
-        <input
-          type="date"
-          formControlName="dateFrom"
-          (change)="onFilterChange()"
-        />
-      </label>
-
-      <span class="filter-range-sep">→</span>
-
-      <label class="filter-label">
-        <input
-          type="date"
-          formControlName="dateTo"
-          (change)="onFilterChange()"
-        />
-      </label>
-
-      <div class="filter-divider"></div>
-
-      <button type="button" class="reset-btn" (click)="resetFilters()">
-        <i class="fa fa-times"></i>
-        Réinitialiser
+    <div class="nav-right">
+      <div class="heading-stats">
+        <strong>{{ totalDocuments }}</strong>
+        <span>documents</span>
+      </div>
+      <button class="nav-action-btn" type="button" (click)="goBack()">
+        <i class="fa fa-arrow-left"></i>
+        Retour
+      </button>
+      <button class="nav-logout-btn" type="button" (click)="logout()">
+        <i class="fa fa-sign-out"></i>
+        Déconnexion
       </button>
     </div>
   </nav>
 
-  <!-- ── Main shell ── -->
-  <div class="shell" *ngIf="!loading">
-    <main class="content">
-      <section class="content-head">
-        <div class="header">
-          <h2>Historique des documents</h2>
-        </div>
-        <p class="description">
-          Documents regroupés par table bénéficiaire, bénéficiaire, puis
-          génération.
-        </p>
-      </section>
+  <div class="bottomnav history-filters" [formGroup]="filterForm">
+    <label class="filter-label">
+      <i class="fa fa-th-large filter-icon"></i>
+      <select formControlName="familyId" (change)="onFilterChange()">
+        <option value="">Toutes les familles</option>
+        <option *ngFor="let family of families" [value]="family.id">
+          {{ family.nom || family.name || family.id }}
+        </option>
+      </select>
+    </label>
 
-      <!-- ── Table group grid ── -->
-      <section
-        class="table-group-grid"
-        *ngIf="tableGroups.length; else emptyState"
+    <div class="filter-divider"></div>
+
+    <label class="filter-label filter-label--search">
+      <i class="fa fa-search filter-icon"></i>
+      <input
+        formControlName="query"
+        placeholder="Document, bénéficiaire, table..."
+        (input)="onFilterChange()"
+      />
+    </label>
+
+    <div class="filter-divider"></div>
+
+    <label class="filter-label">
+      <i class="fa fa-calendar filter-icon"></i>
+      <input type="date" formControlName="dateFrom" (change)="onFilterChange()" />
+    </label>
+
+    <span class="filter-range-sep">à</span>
+
+    <label class="filter-label">
+      <input type="date" formControlName="dateTo" (change)="onFilterChange()" />
+    </label>
+
+    <div class="filter-divider"></div>
+
+    <button type="button" class="reset-btn" (click)="resetFilters()">
+      <i class="fa fa-times"></i>
+      Réinitialiser
+    </button>
+  </div>
+
+  <main class="app-shell" *ngIf="!loading">
+    <section class="history-heading">
+      <div>
+        <span class="eyebrow">Historique documentaire</span>
+        <h1>Modules de documents</h1>
+      </div>
+    </section>
+
+    <section class="card-grid history-card-grid" *ngIf="tableGroups.length; else emptyState">
+      <button
+        class="module-card history-module-card"
+        type="button"
+        *ngFor="let group of tableGroups"
+        [class.organization-card]="group.isOrganization"
+        (click)="openGroup(group)"
       >
-        <button
-          class="table-group-card"
-          type="button"
-          *ngFor="let group of tableGroups"
-          [class.active]="expandedTableKey === group.key"
-          [class.organization-card]="group.isOrganization"
-          (click)="toggleTableGroup(group)"
-        >
-          <div class="table-group-card__top">
+        <div class="module-card__header">
+          <div class="module-card__left">
             <i
               class="fa"
               [class.fa-building]="group.isOrganization"
               [class.fa-table]="!group.isOrganization"
             ></i>
-            <span>{{ group.documents.length }} doc.</span>
           </div>
-          <div class="table-group-card__footer">
-            <div>
-              <strong>{{ group.label }}</strong>
-              <small>{{
-                group.isOrganization ? "Organisation" : group.tableName
-              }}</small>
-            </div>
+          <div class="history-card-count">
+            <strong>{{ group.documents.length }}</strong>
+            <span>doc.</span>
+          </div>
+        </div>
+
+        <div class="module-card__footer">
+          <span class="module-card__title">
+            {{ group.label }}
+            <small>{{ getGroupSubtitle(group) }}</small>
+          </span>
+          <span class="module-card__arrow">
             <i class="fa fa-arrow-circle-right"></i>
-          </div>
-        </button>
-      </section>
-
-      <!-- ── Drilldown panel ── -->
-      <section class="drilldown-panel" *ngIf="selectedTableGroup as tableGroup">
-        <div class="section-title">
-          <div>
-            <h3>{{ tableGroup.label }}</h3>
-            <p>{{ getFamilyNames(tableGroup.familyIds) }}</p>
-          </div>
-          <span>{{ tableGroup.documents.length }} document(s)</span>
+          </span>
         </div>
 
-        <!-- Organisation documents -->
-        <div class="document-list" *ngIf="tableGroup.isOrganization">
-          <article
-            class="document-row"
-            *ngFor="let document of tableGroup.documents"
-          >
-            <div class="doc-info">
-              <strong>{{ document.title }}</strong>
-              <span>{{ getFamilyName(document.familyId) }}</span>
-            </div>
-            <div class="document-meta">
-              <span>{{ document.generatedByName || "Système" }}</span>
-              <span>{{
-                getDocumentDate(document.generatedAt) | date: "dd/MM/yyyy HH:mm"
-              }}</span>
-            </div>
-            <div class="document-actions">
-              <button
-                type="button"
-                (click)="viewDocument(document)"
-                title="Aperçu"
-              >
-                <i class="fa fa-eye"></i>
-              </button>
-              <button
-                type="button"
-                (click)="downloadDocument(document)"
-                title="Télécharger"
-              >
-                <i class="fa fa-download"></i>
-              </button>
-              <button
-                type="button"
-                class="danger"
-                (click)="deleteDocument(document)"
-                title="Supprimer"
-              >
-                <i class="fa fa-trash"></i>
-              </button>
-            </div>
-          </article>
+        <div class="history-card-meta">
+          <span>{{ getFamilyNames(group.familyIds) || "Toutes les familles" }}</span>
+          <span *ngIf="!group.isOrganization">
+            {{ group.beneficiaries.length }} bénéficiaire(s)
+          </span>
         </div>
-
-        <!-- Beneficiary layout -->
-        <div class="beneficiary-layout" *ngIf="!tableGroup.isOrganization">
-          <div class="beneficiary-grid">
-            <button
-              class="beneficiary-card"
-              type="button"
-              *ngFor="let beneficiary of tableGroup.beneficiaries"
-              [class.active]="selectedBeneficiaryKey === beneficiary.key"
-              (click)="selectBeneficiary(tableGroup, beneficiary)"
-            >
-              <div class="beneficiary-card__avatar">
-                {{ beneficiary.title.slice(0, 2).toUpperCase() }}
-              </div>
-              <div class="beneficiary-card__info">
-                <strong>{{ beneficiary.title }}</strong>
-              </div>
-              <em>{{ beneficiary.documents.length }}</em>
-            </button>
-          </div>
-
-          <div
-            class="document-stack"
-            *ngIf="selectedBeneficiaryGroup as beneficiaryGroup"
-          >
-            <div class="stack-header">
-              <div>
-                <h4>{{ beneficiaryGroup.title }}</h4>
-              </div>
-              <span>{{ beneficiaryGroup.documents.length }} génération(s)</span>
-            </div>
-            <article
-              class="document-row"
-              *ngFor="let document of beneficiaryGroup.documents"
-            >
-              <div class="doc-info">
-                <strong>{{ document.title }}</strong>
-              </div>
-              <div class="document-meta">
-                <span>{{ document.generatedByName || "Système" }}</span>
-                <span>{{
-                  getDocumentDate(document.generatedAt)
-                    | date: "dd/MM/yyyy HH:mm"
-                }}</span>
-              </div>
-              <div class="document-actions">
-                <button
-                  type="button"
-                  (click)="viewDocument(document)"
-                  title="Aperçu"
-                >
-                  <i class="fa fa-eye"></i>
-                </button>
-                <button
-                  type="button"
-                  (click)="downloadDocument(document)"
-                  title="Télécharger"
-                >
-                  <i class="fa fa-download"></i>
-                </button>
-                <button
-                  type="button"
-                  class="danger"
-                  (click)="deleteDocument(document)"
-                  title="Supprimer"
-                >
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
+      </button>
+    </section>
+  </main>
 
   <ng-template #emptyState>
     <div class="empty-state">
       <i class="fa fa-folder-open"></i>
-      <p>Aucun document ne correspond aux filtres actuels.</p>
+      <p>Aucun module ne correspond aux filtres actuels.</p>
     </div>
   </ng-template>
 </div>

@@ -73,6 +73,15 @@ export const routes: Routes = [
     data: { page: "user", roles: ["user"] },
   },
   {
+    path: "documents/group/:groupKey",
+    loadComponent: () =>
+      import("./features/editor/pages/document-history/document-history-detail-page.component").then(
+        (m) => m.DocumentHistoryDetailPageComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "documentDetails", roles: ["user", "admin", "supAdmin"] },
+  },
+  {
     path: "documents",
     loadComponent: () =>
       import("./features/editor/pages/document-history/document-history-page.component").then(
