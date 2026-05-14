@@ -122,6 +122,20 @@
           </div>
           <div class="export-panel-actions">
             <button
+              class="action-btn"
+              type="button"
+              (click)="selectAllExportFields()"
+            >
+              Tout sélectionner
+            </button>
+            <button
+              class="action-btn"
+              type="button"
+              (click)="deselectAllExportFields()"
+            >
+              Tout désélectionner
+            </button>
+            <button
               class="action-btn primary"
               type="button"
               (click)="exportToExcel()"
@@ -139,17 +153,49 @@
         </div>
 
         <div class="export-fields">
-          <label
-            *ngFor="let field of view.visibleFields"
+          <div
+            *ngFor="let field of getOrderedExportFields(view)"
             class="export-field-item"
           >
-            <input
-              type="checkbox"
-              [checked]="isExportFieldSelected(field)"
-              (change)="toggleExportField(field, $any($event.target).checked)"
-            />
-            <span>{{ getDataFieldLabel(view, field) }}</span>
-          </label>
+            <label class="export-field-main">
+              <input
+                type="checkbox"
+                [checked]="isExportFieldSelected(field)"
+                (change)="toggleExportField(field, $any($event.target).checked)"
+              />
+              <span>{{ getDataFieldLabel(view, field) }}</span>
+            </label>
+
+            <div
+              class="export-field-order"
+              *ngIf="isExportFieldSelected(field)"
+            >
+              <button
+                type="button"
+                class="order-btn"
+                (click)="moveExportField(field, 'up')"
+                [disabled]="selectedExportFields.indexOf(field) === 0"
+                aria-label="Monter"
+              >
+                ▲
+              </button>
+              <span class="order-index">
+                {{ selectedExportFields.indexOf(field) + 1 }}
+              </span>
+              <button
+                type="button"
+                class="order-btn"
+                (click)="moveExportField(field, 'down')"
+                [disabled]="
+                  selectedExportFields.indexOf(field) ===
+                  selectedExportFields.length - 1
+                "
+                aria-label="Descendre"
+              >
+                ▼
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

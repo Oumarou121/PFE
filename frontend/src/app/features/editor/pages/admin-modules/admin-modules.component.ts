@@ -299,6 +299,16 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
     return this.selectedExportFields.includes(field);
   }
 
+  getOrderedExportFields(view: TableViewConfig): string[] {
+    const orderedSelected = this.selectedExportFields.filter((field) =>
+      view.visibleFields.includes(field),
+    );
+    const remainingFields = view.visibleFields.filter(
+      (field) => !orderedSelected.includes(field),
+    );
+    return [...orderedSelected, ...remainingFields];
+  }
+
   toggleExportField(field: string, checked: boolean): void {
     if (checked) {
       if (!this.selectedExportFields.includes(field)) {
@@ -310,6 +320,34 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
     this.selectedExportFields = this.selectedExportFields.filter(
       (item) => item !== field,
     );
+  }
+
+  selectAllExportFields(): void {
+    const view = this.selectedDataView;
+    if (!view) return;
+
+    this.selectedExportFields = [...view.visibleFields];
+  }
+
+  deselectAllExportFields(): void {
+    this.selectedExportFields = [];
+  }
+
+  moveExportField(field: string, direction: "up" | "down"): void {
+    const index = this.selectedExportFields.indexOf(field);
+    if (index === -1) return;
+
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= this.selectedExportFields.length) {
+      return;
+    }
+
+    const nextFields = [...this.selectedExportFields];
+    [nextFields[index], nextFields[targetIndex]] = [
+      nextFields[targetIndex],
+      nextFields[index],
+    ];
+    this.selectedExportFields = nextFields;
   }
 
   async exportToExcel(): Promise<void> {
