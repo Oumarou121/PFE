@@ -1360,7 +1360,8 @@ button {
 /* Fix: PaginationPlus applies `display: contents` to tables which removes
    table semantics and collapses layout (width/height become 0).
    We use display:table with table-layout:fixed to respect colgroup widths
-   and allow tiptap-table-plus resize feature to work properly. */
+   and allow tiptap-table-plus resize feature to work properly.
+   max-width:100% prevents table from expanding beyond container. */
 .editor-host .rm-with-pagination table,
 .editor-host .rm-with-pagination table.table-plus {
   display: table !important;
@@ -1370,6 +1371,9 @@ button {
   table-layout: fixed;
   box-sizing: border-box;
   border-collapse: collapse;
+  /* Prevent columns from growing beyond container bounds */
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .editor-host .rm-with-pagination table tbody,
 .editor-host .rm-with-pagination .table-row-group {
@@ -1411,7 +1415,9 @@ button {
   width: 100% !important;
   height: 100% !important;
   min-height: 0 !important;
-  overflow: visible !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important; /* Empêche le tableau de sortir horizontalement */
+  box-sizing: border-box !important;
 }
 
 /* Cache les clones vides pour ne pas créer de marges inutiles */
