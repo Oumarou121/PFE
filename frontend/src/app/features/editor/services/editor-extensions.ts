@@ -292,8 +292,8 @@ function buildPaginationPlusConfig(config?: PaginationConfig) {
     pageBreakBackground: "#f0f2f5", // Doit correspondre au fond du pcanvas dans admin.component.scss
     marginTop:    config ? mmToPx(config.marginTop)    : mmToPx(20),
     marginBottom: config ? mmToPx(config.marginBottom) : mmToPx(20),
-    marginLeft:   config ? mmToPx(config.marginLeft)   : mmToPx(25),
-    marginRight:  config ? mmToPx(config.marginRight)  : mmToPx(25),
+    marginLeft:   0,
+    marginRight:  0,
     contentMarginTop:    config ? mmToPx(config.contentMarginTop ?? 0) : 0,
     contentMarginBottom: config ? mmToPx(config.contentMarginBottom ?? 0) : 0,
     headerLeft:  config?.headerHtml ?? "",
