@@ -2732,10 +2732,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         label: col.comment || this.humanizeSchemaName(col.name),
       })),
     };
-    if (state.baseTable && tableName !== state.baseTable) {
-      nextVar.sqlQuery = this.buildDefaultListObjectSqlQuery(famId, nextVar);
-      nextVar.customSqlQuery = false;
-    }
+    nextVar.sqlQuery =
+      this.buildDefaultListObjectSqlQuery(famId, nextVar) ||
+      this.buildSimpleListObjectSqlQuery(tableName, nextVar);
+    nextVar.customSqlQuery = false;
+    this.syncListObjectColumnsFromSql(nextVar);
     this.upsertGeneratedVar(famId, tableName, nextVar);
   }
 
@@ -2969,6 +2970,27 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     ]
       .filter(Boolean)
       .join("\n");
+  }
+
+  private buildSimpleListObjectSqlQuery(tableName: string, varDef: any): string {
+    const selectedColumns =
+      Array.isArray(varDef?.sourceColumns) && varDef.sourceColumns.length
+        ? varDef.sourceColumns
+        : Array.isArray(varDef?.columns)
+          ? varDef.columns
+          : [];
+    const selectEntries = selectedColumns
+      .map((col: any) => {
+        const sourceColumn = String(col?.column || col?.key || "").trim();
+        const key = String(col?.key || sourceColumn).trim();
+        if (!sourceColumn || !key) return null;
+        return `  ${this.sqlId(sourceColumn)} AS ${this.sqlId(key)}`;
+      })
+      .filter(Boolean);
+    if (!tableName || !selectEntries.length) return "";
+    return ["SELECT", selectEntries.join(",\n"), `FROM ${this.sqlId(tableName)}`].join(
+      "\n",
+    );
   }
 
   private refreshGeneratedListObjectQueries(

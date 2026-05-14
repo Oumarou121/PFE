@@ -2478,13 +2478,13 @@
                             class="sql-input"
                             rows="8"
                             style="min-height: 150px"
-                            [value]="v.sqlQuery || ''"
-                            (change)="
+                            [ngModel]="v.sqlQuery || ''"
+                            (ngModelChange)="
                               updateListObjectSqlQuery(
                                 famId,
                                 ci,
                                 vi,
-                                $any($event.target).value
+                                $event
                               )
                             "
                             placeholder="SELECT ... FROM ..."
