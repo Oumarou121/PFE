@@ -1,7 +1,7 @@
 -- ============================================================
--- Migration : UnivadConfiDB (base de configuration globale)
+-- Migration : base de configuration globale
 -- Cible      : SQL Server
--- Usage      : Exécuter UNE FOIS sur la DB UnivadConfiDB
+-- Usage      : Exécuter UNE FOIS sur la base de configuration globale
 -- ============================================================
 
 -- ── 1. Table family (ressource mutualisée, partagée entre orgs) ────────────

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Dapper;
+using DocApi.Common;
 using DocApi.Common.Tenant;
 using DocApi.Domain.ValueObjects;
 using DocApi.DTOs;
@@ -12,11 +13,6 @@ using Microsoft.Extensions.Options;
 
 namespace DocApi.Repositories
 {
-    public class EditorDatabaseOptions
-    {
-        public string AuthDatabaseName { get; set; } = "DSSGAEIAM";
-    }
-
     /// <summary>
     /// Repository multi-tenant :
     /// - ConfigDB  (IConfigDbConnectionFactory)  → family, graphic_charter, template, table_view_config, app_setting
@@ -52,7 +48,7 @@ namespace DocApi.Repositories
 
         // ─── Helpers : connexions ────────────────────────────────────────────────
 
-        /// <summary>Connexion vers UnivadConfiDB (config globale).</summary>
+        /// <summary>Connexion vers la base de configuration globale.</summary>
         private IDbConnection ConfigConnection() => _configFactory.CreateConnection();
 
         /// <summary>

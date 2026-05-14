@@ -1,6 +1,8 @@
 using System.Data;
+using DocApi.Common;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace DocApi.Infrastructure.ConnectionFactories
 {
@@ -8,14 +10,14 @@ namespace DocApi.Infrastructure.ConnectionFactories
     {
         private readonly string _connectionString;
 
-        public AuthDbConnectionFactory(IConfiguration configuration)
+        public AuthDbConnectionFactory(IConfiguration configuration, IOptions<EditorDatabaseOptions> options)
         {
-            var internalDbName = configuration["EditorDatabase:AuthDatabaseName"] ?? "DSSGAEIAM";
             var baseConnString = configuration.GetConnectionString("EditorSqlServer");
+            var databaseName = options.Value.AuthDatabaseName;
             
             var connectionStringBuilder = new SqlConnectionStringBuilder(baseConnString)
             {
-                InitialCatalog = internalDbName
+                InitialCatalog = databaseName
             };
             
             _connectionString = connectionStringBuilder.ConnectionString;
