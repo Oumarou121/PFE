@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
+import { ApiService } from "../core/services/api.service";
 
 export interface TableFilterOption {
   value: string;
@@ -48,17 +48,13 @@ export interface GetFilterOptionsRequest {
   providedIn: "root",
 })
 export class TableFiltersService {
-  private apiUrl = "/api/editor";
-
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiService) {}
 
   /**
    * Obtient les filtres d'une TableViewConfig
    */
   getTableViewFilters(tableViewConfigId: string): Observable<any> {
-    return this.http.get(
-      `${this.apiUrl}/table-view-config/${tableViewConfigId}/filters`,
-    );
+    return this.api.get(`table-view-config/${tableViewConfigId}/filters`);
   }
 
   /**
@@ -72,7 +68,7 @@ export class TableFiltersService {
       filter,
       databaseName,
     };
-    return this.http.post(`${this.apiUrl}/table-view-filters/options`, request);
+    return this.api.post("table-view-filters/options", request);
   }
 
   /**

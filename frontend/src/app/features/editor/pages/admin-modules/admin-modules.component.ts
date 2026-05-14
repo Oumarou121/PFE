@@ -11,13 +11,14 @@ import { ConfirmDialogComponent } from "../../../../shared/components/confirm-di
 import { EditorStateService } from "../../services/editor-state.service";
 import { OrganizationService } from "../../services/organization.service";
 import { TableViewService } from "../../services/table-view.service";
+import { TableFiltersComponent } from "../../components/table-filters/table-filters.component";
 import { ModuleRecord } from "../../models/module.model";
 import { TableViewConfig } from "../../models/table-view.model";
 
 @Component({
   selector: "app-admin-modules",
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent],
   templateUrl: "./admin-modules.component.html",
   styleUrls: ["./admin-modules.component.scss"],
   encapsulation: ViewEncapsulation.None,
@@ -25,6 +26,7 @@ import { TableViewConfig } from "../../models/table-view.model";
 export class AdminModulesComponent implements OnInit, OnDestroy {
   loading = true;
   organizationName = "";
+  organizationDatabaseName: string | null = null;
   selectedModuleId: string | null = null;
   activeModuleTableViewId: string | null = null;
   dataViewSearch = "";
@@ -40,6 +42,7 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   dataSaving = false;
   dataDeleting = false;
   dataStatusMessage = "";
+  selectedFilters: Record<string, string[]> = {};
   private dataRowsRequestId = 0;
   private destroy$ = new Subject<void>();
 
@@ -67,6 +70,7 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
         ? this.organizationsService.getOrganization(user.organizationId)
         : this.organizationsService.getOrganizations()[0] || null;
       this.organizationName = organization?.nom || organization?.name || "";
+      this.organizationDatabaseName = organization?.databaseName || null;
 
       this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
         const moduleId = params.get("moduleId");
@@ -163,6 +167,7 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
     this.creatingDataRow = false;
     this.dataRows = [];
     this.dataRowSearch = "";
+    this.selectedFilters = {};
     await this.renderDataContent();
   }
 
@@ -192,6 +197,7 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
       const rows = await this.tableViews.getTableViewRows(view.id, {
         config: view,
         search: this.dataRowSearch,
+        selectedFilters: this.selectedFilters,
       });
       if (requestId !== this.dataRowsRequestId) return;
       this.dataRows = rows;
@@ -223,6 +229,11 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   }
 
   async updateDataSearch(): Promise<void> {
+    await this.reloadDataRows();
+  }
+
+  async onFiltersChanged(filters: Record<string, string[]>): Promise<void> {
+    this.selectedFilters = filters || {};
     await this.reloadDataRows();
   }
 

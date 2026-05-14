@@ -41,24 +41,6 @@
     </div>
   </nav>
 
-  <!-- <section class="subnav" *ngIf="selectedModule?.tableViews?.length">
-    <div class="subnav-head">
-      <span class="subnav-label">Vues</span>
-      <span class="subnav-hint">Sélectionnez la table à gérer</span>
-    </div>
-    <div class="tabs">
-      <button
-        *ngFor="let mtv of selectedModule?.tableViews || []"
-        class="tab-btn"
-        [class.active]="activeModuleTableViewId === mtv.tableViewConfigId"
-        (click)="selectModuleTableView(mtv.tableViewConfigId)"
-        type="button"
-      >
-        {{ getTableViewLabelById(mtv.tableViewConfigId) }}
-        <span *ngIf="mtv.isPrimary" class="primary-tag">Principal</span>
-      </button>
-    </div>
-  </section> -->
   <div class="loading-overlay" *ngIf="loading">
     <div class="spinner"></div>
     <p>Chargement des modules...</p>
@@ -78,6 +60,16 @@
           {{ selectedModule?.description }}
         </p>
       </section>
+
+      <ng-container *ngIf="selectedDataView as view">
+        <div class="filters-panel" *ngIf="view.filters?.length">
+          <app-table-filters
+            [filters]="view.filters || []"
+            [databaseName]="organizationDatabaseName || undefined"
+            (filterChange)="onFiltersChanged($event)"
+          ></app-table-filters>
+        </div>
+      </ng-container>
 
       <div class="panel-actions" *ngIf="selectedDataView">
         <input

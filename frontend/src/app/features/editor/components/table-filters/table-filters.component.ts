@@ -1,6 +1,11 @@
 import { Component, OnInit, Input, Output, EventEmitter } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl } from "@angular/forms";
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  FormControl,
+} from "@angular/forms";
 import {
   TableFiltersService,
   TableViewFilter,
@@ -50,7 +55,7 @@ export class TableFiltersComponent implements OnInit {
     const enabledFilters = (this.filters || []).filter((f) => f.enabled);
 
     enabledFilters.forEach((filter) => {
-      this.filterForm.addControl(filter.id, new FormControl([]));
+      this.filterForm.addControl(filter.id, new FormControl(""));
 
       // Si le filtre est statique, charger les options directement
       if (
@@ -69,7 +74,7 @@ export class TableFiltersComponent implements OnInit {
         if (Array.isArray(val) && val.length > 0) {
           filterParams[key] = val;
         } else if (val && !Array.isArray(val) && String(val).trim() !== "") {
-           filterParams[key] = [String(val)];
+          filterParams[key] = [String(val)];
         }
       });
       this.filterChange.emit(filterParams);
@@ -107,7 +112,11 @@ export class TableFiltersComponent implements OnInit {
    * Réinitialise tous les filtres
    */
   resetFilters(): void {
-    this.filterForm.reset();
+    this.filterForm.reset(
+      Object.fromEntries(
+        Object.keys(this.filterForm.controls).map((key) => [key, ""]),
+      ),
+    );
   }
 
   /**
@@ -128,7 +137,9 @@ export class TableFiltersComponent implements OnInit {
    * Obtient le contrôle de formulaire pour un filtre
    */
   getControl(filterId: string): FormControl {
-    return (this.filterForm.get(filterId) as FormControl) || new FormControl([]);
+    return (
+      (this.filterForm.get(filterId) as FormControl) || new FormControl("")
+    );
   }
 
   /**
@@ -147,10 +158,20 @@ export class TableFiltersComponent implements OnInit {
       .getTableFilterOptions(filter, this.databaseName)
       .subscribe({
         next: (response: any) => {
-          if (response.ok && response.options) {
-            this.filterOptions.set(filterId, response.options);
+          const options =
+            response?.options ||
+            response?.data ||
+            response?.Options ||
+            response?.Data;
+
+          if (response?.ok && Array.isArray(options)) {
+            this.filterOptions.set(filterId, options);
+            this.errorMessages.delete(filterId);
           } else {
-            this.errorMessages.set(filterId, response.error || "Erreur lors du rechargement");
+            this.errorMessages.set(
+              filterId,
+              response?.error || "Erreur lors du rechargement",
+            );
           }
           this.loadingFilters.delete(filterId);
         },
