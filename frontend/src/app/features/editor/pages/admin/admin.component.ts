@@ -3281,16 +3281,6 @@ export class AdminComponent
     const headerHtml = this.hasHeader ? this.editorContent.header || "" : "";
     const footerHtml = this.hasFooter ? this.editorContent.footer || "" : "";
 
-    // ─── ALIGNEMENT AVEC PagePaginator.ts ───
-    // Dans l'éditeur (PaginationPlus), marginTop et marginBottom définissent
-    // la zone INTERNE de la page où le contenu peut couler.
-    //
-    // Si l'en-tête est ON :
-    //   La marge haute doit être au moins égale à la marge du template (mt).
-    //   On ajoute un petit décalage pour ne pas que le texte colle à l'en-tête.
-    // Si l'en-tête est OFF :
-    //   On utilise simplement la marge mt du template.
-
     const mt = this.pageSettingsForm.mt;
     const mb = this.pageSettingsForm.mb;
 
@@ -3305,17 +3295,16 @@ export class AdminComponent
 
     return {
       orientation: this.pageSettingsForm.orientation,
-      // Marges de la page physique (PaginationPlus réserve cet espace)
+      // Marges réelles du corps du document.
       marginTop: mt,
       marginBottom: mb,
       marginLeft: this.pageSettingsForm.ml,
       marginRight: this.pageSettingsForm.mr,
-      // On positionne les clones au même endroit que les zones réelles
+      // Distances de l'en-tête/pied par rapport aux bords physiques.
       headerTop: headerHtml ? this.pageSettingsForm.headerTop : undefined,
       footerBottom: footerHtml ? this.pageSettingsForm.footerBottom : undefined,
-      // On laisse PaginationPlus gérer le flux du body
-      contentMarginTop: headerHtml ? mt + 3 : 0,
-      contentMarginBottom: footerHtml ? mb + 3 : 0,
+      contentMarginTop: 0,
+      contentMarginBottom: 0,
       headerHtml: header.common,
       footerHtml: footer.common,
       customHeader: header.custom,

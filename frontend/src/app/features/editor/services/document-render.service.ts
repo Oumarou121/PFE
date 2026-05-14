@@ -174,14 +174,15 @@ export class DocumentRenderService {
         width: ${pageWidth}; height: ${pageHeight}; background-color: #fff;
         background-image: var(--doc-page-bg-image, none); background-size: var(--doc-page-bg-size, cover);
         background-position: var(--doc-page-bg-position, center center); background-repeat: var(--doc-page-bg-repeat, no-repeat);
-        print-color-adjust: exact; -webkit-print-color-adjust: exact; display: grid;
-        grid-template-rows: auto minmax(0, 1fr) auto; position: relative; box-sizing: border-box;
+        print-color-adjust: exact; -webkit-print-color-adjust: exact; display: block;
+        position: relative; box-sizing: border-box;
         overflow: hidden; page-break-after: always; break-after: page;
       }
       .document-render--print:last-child, .preview-page:last-child, .sirh-print-page:last-child { page-break-after: auto; break-after: auto; }
       .document-render--print, .preview-page { box-shadow: none; border-radius: 0; flex-shrink: 0; }
       .doc-page-header {
-        grid-row: 1; box-sizing: border-box; padding: ${paddings.header};
+        position: absolute; inset: 0 0 auto 0; z-index: 1;
+        box-sizing: border-box; padding: ${paddings.header};
         font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
         color: var(--doc-color-text, #111); background: transparent;
         overflow: hidden; white-space: normal; overflow-wrap: anywhere;
@@ -192,7 +193,7 @@ export class DocumentRenderService {
         z-index: 0; user-select: none; text-align: center; white-space: nowrap;
       }
       .doc-page-body {
-        grid-row: 2; min-height: 0; box-sizing: border-box; padding: ${paddings.body};
+        width: 100%; height: 100%; min-height: 0; box-sizing: border-box; padding: ${paddings.body};
         font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
         color: var(--doc-color-text, #111); overflow: hidden; white-space: normal; overflow-wrap: anywhere;
       }
@@ -200,9 +201,10 @@ export class DocumentRenderService {
       .doc-page-body.no-footer { padding-bottom: ${margins.mb}mm; }
       .doc-page-body.no-header.no-footer { padding: ${paddings.bodyNoHeaderFooter}; }
       .doc-page-footer {
-        grid-row: 3; box-sizing: border-box; padding: ${paddings.footer};
+        position: absolute; inset: auto 0 0 0; z-index: 1;
+        box-sizing: border-box; padding: ${paddings.footer};
         font-family: var(--doc-font-body, "Times New Roman", Times, serif); font-size: 12pt; line-height: 1.6;
-        color: var(--doc-color-text, #111); background: transparent; position: relative; z-index: 1;
+        color: var(--doc-color-text, #111); background: transparent;
         overflow: hidden; white-space: normal; overflow-wrap: anywhere;
       }
       .doc-page-header p, .doc-page-body p, .doc-page-footer p { margin: 0 0 0.4em; white-space: inherit; }

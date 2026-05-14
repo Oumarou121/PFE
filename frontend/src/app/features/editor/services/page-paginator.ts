@@ -132,10 +132,7 @@ export class PagePaginator {
 
     const availableHeight = Math.max(
       1,
-      this.contentHeightPx -
-        this.headerHeight -
-        this.footerHeight -
-        this.printSafetyBufferPx,
+      this.contentHeightPx - this.printSafetyBufferPx,
     );
     const parser = new DOMParser();
     const doc = parser.parseFromString(
