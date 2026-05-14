@@ -1401,9 +1401,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.zone.run(() => this.auth.logout());
   }
 
-  goToDocumentHistory(): void {
-    this.router.navigate(["/documents"]);
-  }
+
 
   // Phase 4 Tranche 5: openModal/closeModal simplifiées — fallback DOM supprimé.
   // Seules les modales Organization et Admin existent; elles sont 100% Angular state.

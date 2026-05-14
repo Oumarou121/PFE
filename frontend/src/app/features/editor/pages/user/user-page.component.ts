@@ -724,10 +724,6 @@ export class UserPageComponent implements OnInit {
     this.auth.logout();
   }
 
-  goToDocumentHistory(): void {
-    this.router.navigate(["/documents"]);
-  }
-
   getSelectedBeneficiary(): BeneficiaryRecord | null {
     return (
       this.beneficiaries.find(

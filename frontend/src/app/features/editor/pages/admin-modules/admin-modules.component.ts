@@ -335,12 +335,11 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
         view,
         this.importHeaders,
       );
-      this.importUniqueFields =
-        view.editableFields.length > 0
-          ? [view.editableFields[0]]
-          : view.visibleFields.length > 0
-            ? [view.visibleFields[0]]
-            : [];
+      this.importUniqueFields = view.editableFields.length > 0
+        ? [view.editableFields[0]]
+        : view.visibleFields.length > 0
+          ? [view.visibleFields[0]]
+          : [];
       this.importProgress = {
         total: this.importRows.length,
         processed: 0,
@@ -363,7 +362,7 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   async runImport(): Promise<void> {
     const view = this.selectedDataView;
     if (!view || !this.importRows.length) return;
-
+    
     const importableFields = view.editableFields.filter(
       (field) => this.importFieldMappings[field],
     );

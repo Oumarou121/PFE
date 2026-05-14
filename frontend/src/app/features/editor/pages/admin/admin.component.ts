@@ -2404,7 +2404,7 @@ export class AdminComponent
         false,
       );
     }
-    this.saveStatus = "ModifiÃ©";
+    this.saveStatus = "Modifié";
     this._editorPaginationCacheKey = "";
     this.cdr.markForCheck();
   }
@@ -2757,7 +2757,7 @@ export class AdminComponent
             [section]: this.normalizeEditorHtml(editor.getHTML()),
           };
           this.ngZone.run(() => {
-            this.saveStatus = "ModifiÃ©";
+            this.saveStatus = "Modifié";
             this._editorPaginationCacheKey = "";
             this.cdr.markForCheck();
           });

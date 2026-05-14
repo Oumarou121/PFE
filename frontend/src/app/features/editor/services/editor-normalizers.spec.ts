@@ -95,13 +95,14 @@ describe("editor normalizers", () => {
     expect(tableView.visibleFields).toEqual(["nom", "grade"]);
     expect(tableView.previewFields).toEqual(["a", "b", "c"]);
     expect(tableView.fieldSettings["orgId"].displayMode).toBe("lookup");
-    expect(tableView.filters[0].sourceType).toBe("Static");
-    expect(tableView.filters[0].staticOptions?.[0]).toEqual({
+    const filters = tableView.filters ?? [];
+    expect(filters[0].sourceType).toBe("Static");
+    expect(filters[0].staticOptions?.[0]).toEqual({
       value: "actif",
       label: "Actif",
     });
-    expect(tableView.filters[1].sourceType).toBe("Table");
-    expect(tableView.filters[1].sqlBuilder?.tableName).toBe("department");
+    expect(filters[1].sourceType).toBe("Table");
+    expect(filters[1].sqlBuilder?.tableName).toBe("department");
   });
 
   it("builds document filter params and enabled runtime filters", () => {

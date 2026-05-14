@@ -8,8 +8,9 @@ import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import {
   TableFiltersService,
+  TableFilterSourceType,
   TableViewFilter,
-} from "./services/table-filters.service";
+} from "../../../services/table-filters.service";
 
 interface TableViewData {
   id: string;
@@ -327,7 +328,7 @@ export const EXAMPLE_FILTERS: TableViewFilter[] = [
     id: "flt_status",
     name: "Statut",
     linkColumn: "status",
-    sourceType: "Static",
+    sourceType: TableFilterSourceType.Static,
     staticOptions: [
       { value: "draft", label: "Brouillon" },
       { value: "published", label: "Publié" },
@@ -340,7 +341,7 @@ export const EXAMPLE_FILTERS: TableViewFilter[] = [
     id: "flt_author",
     name: "Auteur",
     linkColumn: "author_id",
-    sourceType: "Table",
+    sourceType: TableFilterSourceType.Table,
     sqlBuilder: {
       tableName: "users",
       valueColumn: "id",
@@ -354,7 +355,7 @@ export const EXAMPLE_FILTERS: TableViewFilter[] = [
     id: "flt_category",
     name: "Catégorie",
     linkColumn: "category_id",
-    sourceType: "Table",
+    sourceType: TableFilterSourceType.Table,
     sqlBuilder: {
       tableName: "categories",
       valueColumn: "id",
