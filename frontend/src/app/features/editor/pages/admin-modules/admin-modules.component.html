@@ -99,6 +99,58 @@
         >
           Rafraîchir
         </button>
+        <button
+          class="action-btn"
+          type="button"
+          (click)="toggleExportMode()"
+          [disabled]="
+            dataRowsLoading || lookupLoading || dataSaving || dataDeleting
+          "
+        >
+          Exporter
+        </button>
+      </div>
+
+      <div class="export-panel" *ngIf="exportMode && selectedDataView as view">
+        <div class="export-panel-head">
+          <div>
+            <h4>Export Excel</h4>
+            <p>
+              Sélectionnez les champs visibles à exporter et les lignes à
+              garder.
+            </p>
+          </div>
+          <div class="export-panel-actions">
+            <button
+              class="action-btn primary"
+              type="button"
+              (click)="exportToExcel()"
+            >
+              Télécharger Excel
+            </button>
+            <button
+              class="action-btn"
+              type="button"
+              (click)="cancelExportMode()"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+
+        <div class="export-fields">
+          <label
+            *ngFor="let field of view.visibleFields"
+            class="export-field-item"
+          >
+            <input
+              type="checkbox"
+              [checked]="isExportFieldSelected(field)"
+              (change)="toggleExportField(field, $any($event.target).checked)"
+            />
+            <span>{{ getDataFieldLabel(view, field) }}</span>
+          </label>
+        </div>
       </div>
 
       <div class="empty-state large" *ngIf="!selectedDataView">
@@ -135,6 +187,15 @@
             <table class="data-table" *ngIf="dataRows.length">
               <thead>
                 <tr>
+                  <th *ngIf="exportMode" class="export-col export-col--head">
+                    <input
+                      type="checkbox"
+                      [checked]="isAllExportRowsSelected()"
+                      (change)="
+                        toggleAllExportRows($any($event.target).checked)
+                      "
+                    />
+                  </th>
                   <th *ngFor="let field of view.previewFields">
                     {{ getDataFieldLabel(view, field) }}
                   </th>
@@ -149,6 +210,22 @@
                   "
                   (click)="selectDataRow(getDataRowId(view, row))"
                 >
+                  <td
+                    *ngIf="exportMode"
+                    class="export-col"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <input
+                      type="checkbox"
+                      [checked]="isExportRowSelected(getDataRowId(view, row))"
+                      (change)="
+                        toggleExportRow(
+                          getDataRowId(view, row),
+                          $any($event.target).checked
+                        )
+                      "
+                    />
+                  </td>
                   <td *ngFor="let field of view.previewFields">
                     {{ getDisplayValue(view, field, row[field]) }}
                   </td>

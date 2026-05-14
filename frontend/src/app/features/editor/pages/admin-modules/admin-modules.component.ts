@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { Subject, takeUntil } from "rxjs";
+import * as XLSX from "xlsx";
 
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
@@ -43,6 +44,9 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   dataDeleting = false;
   dataStatusMessage = "";
   selectedFilters: Record<string, string[]> = {};
+  exportMode = false;
+  selectedExportFields: string[] = [];
+  selectedExportRowIds = new Set<string>();
   private dataRowsRequestId = 0;
   private destroy$ = new Subject<void>();
 
@@ -201,6 +205,9 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
       });
       if (requestId !== this.dataRowsRequestId) return;
       this.dataRows = rows;
+      if (this.exportMode) {
+        this.syncExportSelections(view);
+      }
       if (
         this.selectedDataRowId &&
         !this.dataRows.some(
@@ -235,6 +242,141 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   async onFiltersChanged(filters: Record<string, string[]>): Promise<void> {
     this.selectedFilters = filters || {};
     await this.reloadDataRows();
+  }
+
+  toggleExportMode(): void {
+    const view = this.selectedDataView;
+    if (!view) return;
+
+    this.exportMode = !this.exportMode;
+    if (this.exportMode) {
+      this.selectedExportFields = [...view.visibleFields];
+      this.syncExportSelections(view);
+      return;
+    }
+
+    this.selectedExportFields = [];
+    this.selectedExportRowIds.clear();
+  }
+
+  cancelExportMode(): void {
+    this.exportMode = false;
+    this.selectedExportFields = [];
+    this.selectedExportRowIds.clear();
+  }
+
+  isExportRowSelected(rowId: string): boolean {
+    return this.selectedExportRowIds.has(rowId);
+  }
+
+  toggleExportRow(rowId: string, checked: boolean): void {
+    if (checked) {
+      this.selectedExportRowIds.add(rowId);
+    } else {
+      this.selectedExportRowIds.delete(rowId);
+    }
+    this.selectedExportRowIds = new Set(this.selectedExportRowIds);
+  }
+
+  toggleAllExportRows(checked: boolean): void {
+    const view = this.selectedDataView;
+    if (!view) return;
+
+    if (checked) {
+      this.selectedExportRowIds = new Set(
+        this.dataRows
+          .map((row) => this.getDataRowId(view, row))
+          .filter(Boolean),
+      );
+      return;
+    }
+
+    this.selectedExportRowIds.clear();
+    this.selectedExportRowIds = new Set();
+  }
+
+  isExportFieldSelected(field: string): boolean {
+    return this.selectedExportFields.includes(field);
+  }
+
+  toggleExportField(field: string, checked: boolean): void {
+    if (checked) {
+      if (!this.selectedExportFields.includes(field)) {
+        this.selectedExportFields = [...this.selectedExportFields, field];
+      }
+      return;
+    }
+
+    this.selectedExportFields = this.selectedExportFields.filter(
+      (item) => item !== field,
+    );
+  }
+
+  async exportToExcel(): Promise<void> {
+    const view = this.selectedDataView;
+    if (!view) return;
+
+    const fields = this.selectedExportFields.length
+      ? this.selectedExportFields
+      : [...view.visibleFields];
+    const rows = this.dataRows.filter((row) => {
+      const rowId = this.getDataRowId(view, row);
+      return this.selectedExportRowIds.size
+        ? this.selectedExportRowIds.has(rowId)
+        : true;
+    });
+
+    if (!fields.length) {
+      this.notifications.showError(
+        "Sélectionnez au moins un champ à exporter.",
+      );
+      return;
+    }
+
+    if (!rows.length) {
+      this.notifications.showError(
+        "Sélectionnez au moins une ligne à exporter.",
+      );
+      return;
+    }
+
+    const header = fields.map((field) => this.getDataFieldLabel(view, field));
+    const worksheetData = [
+      header,
+      ...rows.map((row) =>
+        fields.map((field) => this.getDisplayValue(view, field, row[field])),
+      ),
+    ];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Export");
+
+    const fileName = `${(view.label || view.tableName || "export")
+      .toString()
+      .replace(/[^a-z0-9-_]+/gi, "_")
+      .replace(/_{2,}/g, "_")
+      .replace(/^_|_$/g, "")}.xlsx`;
+
+    XLSX.writeFile(workbook, fileName);
+    this.notifications.showSuccess("Export Excel lancé.");
+    this.cancelExportMode();
+  }
+
+  isAllExportRowsSelected(): boolean {
+    const view = this.selectedDataView;
+    if (!view || !this.dataRows.length) return false;
+    return this.dataRows.every((row) =>
+      this.selectedExportRowIds.has(this.getDataRowId(view, row)),
+    );
+  }
+
+  private syncExportSelections(view: TableViewConfig): void {
+    this.selectedExportRowIds = new Set(
+      this.dataRows.map((row) => this.getDataRowId(view, row)).filter(Boolean),
+    );
+    if (!this.selectedExportFields.length) {
+      this.selectedExportFields = [...view.visibleFields];
+    }
   }
 
   createDataRow(): void {
