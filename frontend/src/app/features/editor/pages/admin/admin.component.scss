@@ -1358,29 +1358,35 @@ button {
 }
 
 /* Fix: PaginationPlus applies `display: contents` to tables which removes
-   table semantics and collapses layout (width/height become 0). This set
-   of rules restores table display for tables inside the pagination wrapper
-   while keeping the pagination visuals intact. */
+   table semantics and collapses layout (width/height become 0). The plugin
+   itself expects row grids, so we keep the table as a block container and let
+   rows manage their own column grid. */
 .editor-host .rm-with-pagination table,
 .editor-host .rm-with-pagination table.table-plus {
-  display: table !important;
+  display: block !important;
   width: 100% !important;
   min-width: 0 !important;
-  table-layout: fixed !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
 }
-.editor-host .rm-with-pagination table > tr,
-.editor-host .rm-with-pagination table tbody > tr,
-.editor-host .rm-with-pagination table thead > tr {
-  display: table-row !important;
-}
-.editor-host .rm-with-pagination table tbody {
-  display: table-row-group !important;
+.editor-host .rm-with-pagination table tbody,
+.editor-host .rm-with-pagination .table-row-group {
+  display: contents !important;
   overflow: visible !important;
   max-height: none !important;
 }
-.editor-host .rm-with-pagination table col,
-.editor-host .rm-with-pagination table colgroup {
-  width: auto !important;
+.editor-host .rm-with-pagination table tr {
+  display: flex !important;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.editor-host .rm-with-pagination table td,
+.editor-host .rm-with-pagination table th {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Assure que la page physique de l'éditeur se comporte comme une colonne flex 

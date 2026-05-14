@@ -1864,61 +1864,16 @@ export class AdminComponent
       ) as HTMLElement | null;
       if (!tableEl) return;
 
-      // Force the table to fill its wrapper
+      // Force the table to fill its wrapper, but leave column sizes to
+      // tiptap-table-plus (it uses --cell-percentage on table rows).
       tableEl.style.width = "100%";
+      tableEl.style.minWidth = "0";
 
       // Ensure the NodeView wrapper (position:relative) is also full-width
       const wrapper = tableEl.closest(
         'div[style*="position: relative"]',
       ) as HTMLElement | null;
       if (wrapper) wrapper.style.width = "100%";
-
-      // Remove any explicit <col width> attributes that could lock the layout
-      const colEls = Array.from(
-        tableEl.querySelectorAll("col"),
-      ) as HTMLTableColElement[];
-      colEls.forEach((c) => {
-        c.removeAttribute("width");
-        c.style.width = "";
-      });
-
-      // Ensure there's a colgroup with as many <col> as columns in the first row
-      const firstRow = tableEl.querySelector("tr");
-      const colsCount = firstRow
-        ? Math.max(1, firstRow.children.length)
-        : Math.max(1, colEls.length);
-      let colgroup = tableEl.querySelector(
-        "colgroup",
-      ) as HTMLTableColElement | null;
-      if (!colgroup) {
-        colgroup = document.createElement(
-          "colgroup",
-        ) as unknown as HTMLTableColElement;
-        tableEl.insertBefore(colgroup as any, tableEl.firstChild);
-      }
-      // Create missing <col> elements if needed
-      while (colgroup.children.length < colsCount) {
-        colgroup.appendChild(document.createElement("col"));
-      }
-
-      // Distribute widths evenly in percent so the table fills 100%
-      const percent = Math.floor(100 / colsCount);
-      const remainder = 100 - percent * colsCount;
-      Array.from(colgroup.children)
-        .slice(0, colsCount)
-        .forEach((c, idx) => {
-          const w = percent + (idx === 0 ? remainder : 0);
-          (c as HTMLElement).style.width = `${w}%`;
-          (c as HTMLElement).removeAttribute?.("width");
-        });
-
-      // Clear inline widths on cells (if any) so CSS/table-layout can recalc
-      Array.from(tableEl.querySelectorAll("td,th")).forEach((cell) => {
-        (cell as HTMLElement).style.width = "";
-      });
-
-      // Force fixed layout to respect col widths while allowing handles to resize
-      (tableEl as HTMLTableElement).style.tableLayout = "fixed";
     }, 50);
 
     this.tableModalOpen = false;
