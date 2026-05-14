@@ -39,7 +39,10 @@
     <header class="page-heading">
       <div>
         <h1>Historique des documents</h1>
-        <p>Documents regroupes par table beneficiaire, beneficiaire, puis generation.</p>
+        <p>
+          Documents regroupes par table beneficiaire, beneficiaire, puis
+          generation.
+        </p>
       </div>
       <div class="heading-stats">
         <strong>{{ totalDocuments }}</strong>
@@ -67,18 +70,29 @@
       </label>
       <label>
         Date debut
-        <input type="date" formControlName="dateFrom" (change)="onFilterChange()" />
+        <input
+          type="date"
+          formControlName="dateFrom"
+          (change)="onFilterChange()"
+        />
       </label>
       <label>
         Date fin
-        <input type="date" formControlName="dateTo" (change)="onFilterChange()" />
+        <input
+          type="date"
+          formControlName="dateTo"
+          (change)="onFilterChange()"
+        />
       </label>
       <button type="button" class="reset-btn" (click)="resetFilters()">
         Reinitialiser
       </button>
     </section>
 
-    <section class="table-group-grid" *ngIf="tableGroups.length; else emptyState">
+    <section
+      class="table-group-grid"
+      *ngIf="tableGroups.length; else emptyState"
+    >
       <button
         class="table-group-card"
         type="button"
@@ -88,13 +102,19 @@
         (click)="toggleTableGroup(group)"
       >
         <div class="table-group-card__top">
-          <i class="fa" [class.fa-building]="group.isOrganization" [class.fa-table]="!group.isOrganization"></i>
+          <i
+            class="fa"
+            [class.fa-building]="group.isOrganization"
+            [class.fa-table]="!group.isOrganization"
+          ></i>
           <span>{{ group.documents.length }} doc.</span>
         </div>
         <div class="table-group-card__footer">
           <div>
             <strong>{{ group.label }}</strong>
-            <small>{{ group.isOrganization ? "Organisation" : group.tableName }}</small>
+            <small>{{
+              group.isOrganization ? "Organisation" : group.tableName
+            }}</small>
           </div>
           <i class="fa fa-arrow-circle-right"></i>
         </div>
@@ -111,23 +131,41 @@
       </div>
 
       <div class="document-list" *ngIf="tableGroup.isOrganization">
-        <article class="document-row" *ngFor="let document of tableGroup.documents">
+        <article
+          class="document-row"
+          *ngFor="let document of tableGroup.documents"
+        >
           <div>
             <strong>{{ document.title }}</strong>
             <span>{{ getFamilyName(document.familyId) }}</span>
           </div>
           <div class="document-meta">
             <span>{{ document.generatedByName || "Systeme" }}</span>
-            <span>{{ getDocumentDate(document.generatedAt) | date: "dd/MM/yyyy HH:mm" }}</span>
+            <span>{{
+              getDocumentDate(document.generatedAt) | date: "dd/MM/yyyy HH:mm"
+            }}</span>
           </div>
           <div class="document-actions">
-            <button type="button" (click)="viewDocument(document)" title="Apercu">
+            <button
+              type="button"
+              (click)="viewDocument(document)"
+              title="Apercu"
+            >
               <i class="fa fa-eye"></i>
             </button>
-            <button type="button" (click)="downloadDocument(document)" title="Telecharger">
+            <button
+              type="button"
+              (click)="downloadDocument(document)"
+              title="Telecharger"
+            >
               <i class="fa fa-download"></i>
             </button>
-            <button type="button" class="danger" (click)="deleteDocument(document)" title="Supprimer">
+            <button
+              type="button"
+              class="danger"
+              (click)="deleteDocument(document)"
+              title="Supprimer"
+            >
               <i class="fa fa-trash"></i>
             </button>
           </div>
@@ -148,38 +186,59 @@
             </div>
             <div>
               <strong>{{ beneficiary.title }}</strong>
-              <span>{{ beneficiary.subtitle }}</span>
-              <small>{{ getFamilyNames(beneficiary.familyIds) }}</small>
+              <!-- <span>{{ beneficiary.subtitle }}</span> -->
+              <!-- <small>{{ getFamilyNames(beneficiary.familyIds) }}</small> -->
             </div>
             <em>{{ beneficiary.documents.length }}</em>
           </button>
         </div>
 
-        <div class="document-stack" *ngIf="selectedBeneficiaryGroup as beneficiaryGroup">
+        <div
+          class="document-stack"
+          *ngIf="selectedBeneficiaryGroup as beneficiaryGroup"
+        >
           <div class="stack-header">
             <div>
               <h3>{{ beneficiaryGroup.title }}</h3>
-              <p>{{ beneficiaryGroup.subtitle }}</p>
+              <!-- <p>{{ beneficiaryGroup.subtitle }}</p> -->
             </div>
             <span>{{ beneficiaryGroup.documents.length }} generation(s)</span>
           </div>
-          <article class="document-row" *ngFor="let document of beneficiaryGroup.documents">
+          <article
+            class="document-row"
+            *ngFor="let document of beneficiaryGroup.documents"
+          >
             <div>
               <strong>{{ document.title }}</strong>
-              <span>{{ getFamilyName(document.familyId) }}</span>
+              <!-- <span>{{ getFamilyName(document.familyId) }}</span> -->
             </div>
             <div class="document-meta">
               <span>{{ document.generatedByName || "Systeme" }}</span>
-              <span>{{ getDocumentDate(document.generatedAt) | date: "dd/MM/yyyy HH:mm" }}</span>
+              <span>{{
+                getDocumentDate(document.generatedAt) | date: "dd/MM/yyyy HH:mm"
+              }}</span>
             </div>
             <div class="document-actions">
-              <button type="button" (click)="viewDocument(document)" title="Apercu">
+              <button
+                type="button"
+                (click)="viewDocument(document)"
+                title="Apercu"
+              >
                 <i class="fa fa-eye"></i>
               </button>
-              <button type="button" (click)="downloadDocument(document)" title="Telecharger">
+              <button
+                type="button"
+                (click)="downloadDocument(document)"
+                title="Telecharger"
+              >
                 <i class="fa fa-download"></i>
               </button>
-              <button type="button" class="danger" (click)="deleteDocument(document)" title="Supprimer">
+              <button
+                type="button"
+                class="danger"
+                (click)="deleteDocument(document)"
+                title="Supprimer"
+              >
                 <i class="fa fa-trash"></i>
               </button>
             </div>
