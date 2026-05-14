@@ -1358,35 +1358,37 @@ button {
 }
 
 /* Fix: PaginationPlus applies `display: contents` to tables which removes
-   table semantics and collapses layout (width/height become 0). The plugin
-   itself expects row grids, so we keep the table as a block container and let
-   rows manage their own column grid. */
+   table semantics and collapses layout (width/height become 0).
+   We use display:table with table-layout:fixed to respect colgroup widths
+   and allow tiptap-table-plus resize feature to work properly. */
 .editor-host .rm-with-pagination table,
 .editor-host .rm-with-pagination table.table-plus {
-  display: block !important;
+  display: table !important;
   width: 100% !important;
   min-width: 0 !important;
   max-width: 100% !important;
+  table-layout: fixed;
   box-sizing: border-box;
+  border-collapse: collapse;
 }
 .editor-host .rm-with-pagination table tbody,
 .editor-host .rm-with-pagination .table-row-group {
-  display: contents !important;
+  display: table-row-group !important;
   overflow: visible !important;
   max-height: none !important;
 }
 .editor-host .rm-with-pagination table tr {
-  display: flex !important;
+  display: table-row !important;
   position: relative;
   width: 100%;
   min-width: 0;
 }
 .editor-host .rm-with-pagination table td,
 .editor-host .rm-with-pagination table th {
-  display: flex;
-  flex: 1;
+  display: table-cell;
   min-width: 0;
   overflow: hidden;
+  word-wrap: break-word;
 }
 
 /* Assure que la page physique de l'éditeur se comporte comme une colonne flex 
