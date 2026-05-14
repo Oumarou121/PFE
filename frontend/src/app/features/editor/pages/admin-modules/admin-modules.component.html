@@ -267,20 +267,33 @@
           <label class="import-control">
             <span>Détection doublons (champs)</span>
             <div class="import-unique-fields-list">
-              <label *ngFor="let field of view.editableFields" class="unique-field-checkbox">
+              <label
+                *ngFor="let field of view.editableFields"
+                class="unique-field-checkbox"
+              >
                 <input
                   type="checkbox"
                   [checked]="isImportFieldUnique(field)"
-                  (change)="toggleImportUniqueField(field, !isImportFieldUnique(field))"
+                  (change)="
+                    toggleImportUniqueField(field, !isImportFieldUnique(field))
+                  "
                 />
                 {{ getDataFieldLabel(view, field) }}
               </label>
             </div>
             <div class="import-unique-fields-buttons">
-              <button type="button" (click)="selectAllImportUniqueFields()" class="btn-sm">
+              <button
+                type="button"
+                (click)="selectAllImportUniqueFields()"
+                class="btn-sm"
+              >
                 Tous
               </button>
-              <button type="button" (click)="deselectAllImportUniqueFields()" class="btn-sm">
+              <button
+                type="button"
+                (click)="deselectAllImportUniqueFields()"
+                class="btn-sm"
+              >
                 Aucun
               </button>
             </div>
