@@ -1,3 +1,12 @@
+/* permettre au root d'occuper tout le viewport et autoriser le scroll */
+html,
+body,
+app-root {
+  height: 100%;
+  margin: 0;
+  overflow: auto;
+}
+
 .mat-mdc-dialog-container {
   --mdc-dialog-container-color: white;
   --mdc-dialog-supporting-text-color: var(--text-primary);
@@ -36,4 +45,9 @@
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
+}
+
+:host {
+  display: block;
+  min-height: 100vh;
 }

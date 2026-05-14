@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow: auto;
+  overflow-x: hidden;
 
   /* Grid background identical to Takara screenshot */
   background-color: #e5e7eb;
