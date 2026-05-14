@@ -14,7 +14,6 @@ namespace DocApi.Repositories
 {
     public class EditorDatabaseOptions
     {
-        public string InternalDatabaseName { get; set; } = "UnivAdENIMDB";
         public string AuthDatabaseName { get; set; } = "DSSGAEIAM";
     }
 

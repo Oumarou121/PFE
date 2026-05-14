@@ -1,5 +1,12 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from "@angular/core";
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  ViewEncapsulation,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
@@ -47,6 +54,23 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   exportMode = false;
   selectedExportFields: string[] = [];
   selectedExportRowIds = new Set<string>();
+  importMode = false;
+  importing = false;
+  importFileName = "";
+  importHeaders: string[] = [];
+  importRows: Record<string, string>[] = [];
+  importFieldMappings: Record<string, string> = {};
+  importUniqueFields: string[] = [];
+  importDuplicateStrategy: "skip" | "update" = "skip";
+  importProgress = {
+    total: 0,
+    processed: 0,
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    failed: 0,
+  };
+  @ViewChild("importFileInput") importFileInput?: ElementRef<HTMLInputElement>;
   private dataRowsRequestId = 0;
   private destroy$ = new Subject<void>();
 
@@ -257,6 +281,331 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
 
     this.selectedExportFields = [];
     this.selectedExportRowIds.clear();
+  }
+
+  openImportMode(): void {
+    const view = this.selectedDataView;
+    if (!view) return;
+
+    this.resetImportState();
+    this.importMode = true;
+    queueMicrotask(() => this.importFileInput?.nativeElement.click());
+  }
+
+  cancelImportMode(): void {
+    this.resetImportState();
+  }
+
+  async handleImportFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] || null;
+    input.value = "";
+    if (!file) return;
+
+    const view = this.selectedDataView;
+    if (!view) return;
+
+    this.importing = true;
+    this.importFileName = file.name;
+    try {
+      const workbook = await this.readWorkbook(file);
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        throw new Error("Aucune feuille trouvée dans le fichier.");
+      }
+
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {
+        defval: "",
+      });
+      if (!rows.length) {
+        throw new Error("Le fichier ne contient aucune ligne exploitable.");
+      }
+
+      this.importHeaders = Object.keys(rows[0] || {});
+      this.importRows = rows.map((row) => {
+        const normalizedRow: Record<string, string> = {};
+        this.importHeaders.forEach((header) => {
+          normalizedRow[header] = String(row[header] ?? "").trim();
+        });
+        return normalizedRow;
+      });
+
+      this.importFieldMappings = this.buildDefaultImportMappings(
+        view,
+        this.importHeaders,
+      );
+      this.importUniqueFields = view.editableFields.length > 0
+        ? [view.editableFields[0]]
+        : view.visibleFields.length > 0
+          ? [view.visibleFields[0]]
+          : [];
+      this.importProgress = {
+        total: this.importRows.length,
+        processed: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        failed: 0,
+      };
+      this.importMode = true;
+    } catch (error: any) {
+      this.notifications.showError(
+        error?.message || "Impossible de lire le fichier Excel.",
+      );
+      this.resetImportState();
+    } finally {
+      this.importing = false;
+    }
+  }
+
+  async runImport(): Promise<void> {
+    const view = this.selectedDataView;
+    if (!view || !this.importRows.length) return;
+    
+    const importableFields = view.editableFields.filter(
+      (field) => this.importFieldMappings[field],
+    );
+    if (!importableFields.length) {
+      this.notifications.showError("Mappez au moins un champ éditable.");
+      return;
+    }
+
+    if (!this.importUniqueFields.length) {
+      this.notifications.showError(
+        "Sélectionnez au moins un champ pour détecter les doublons.",
+      );
+      return;
+    }
+
+    this.importing = true;
+    this.importProgress = {
+      total: this.importRows.length,
+      processed: 0,
+      created: 0,
+      updated: 0,
+      skipped: 0,
+      failed: 0,
+    };
+
+    try {
+      for (const row of this.importRows) {
+        try {
+          const uniqueValues = this.importUniqueFields.map((field) => {
+            const rawValue = row[this.importFieldMappings[field]] || "";
+            return this.normalizeImportValue(view, field, rawValue);
+          });
+          if (!uniqueValues.some((v) => String(v || "").trim())) {
+            this.importProgress.failed += 1;
+            this.importProgress.processed += 1;
+            continue;
+          }
+
+          const values: Record<string, any> = {};
+          view.editableFields.forEach((field) => {
+            const sourceHeader = this.importFieldMappings[field];
+            if (!sourceHeader) return;
+            const rawValue = row[sourceHeader] ?? "";
+            values[field] = this.normalizeImportValue(view, field, rawValue);
+          });
+
+          const existingRow = this.findExistingImportRow(
+            view,
+            this.importUniqueFields,
+            uniqueValues,
+          );
+          if (existingRow) {
+            if (this.importDuplicateStrategy === "skip") {
+              this.importProgress.skipped += 1;
+              this.importProgress.processed += 1;
+              continue;
+            }
+
+            await this.tableViews.saveTableViewRecord(
+              view.id,
+              this.getDataRowId(view, existingRow),
+              values,
+              this.organizationDatabaseName || undefined,
+            );
+            this.importProgress.updated += 1;
+          } else {
+            await this.tableViews.createTableViewRecord(
+              view.id,
+              values,
+              view,
+              this.organizationDatabaseName || undefined,
+            );
+            this.importProgress.created += 1;
+          }
+
+          this.importProgress.processed += 1;
+        } catch (rowError: any) {
+          this.importProgress.failed += 1;
+          this.importProgress.processed += 1;
+          console.error("Import row failed:", rowError, { row });
+        }
+      }
+
+      await this.reloadDataRows();
+      this.notifications.showSuccess(
+        `Import terminé: ${this.importProgress.created} créés, ${this.importProgress.updated} mis à jour, ${this.importProgress.skipped} ignorés, ${this.importProgress.failed} échoués.`,
+      );
+      this.cancelImportMode();
+    } catch (error: any) {
+      this.notifications.showError(
+        error?.message || "Impossible d'importer le fichier.",
+      );
+    } finally {
+      this.importing = false;
+    }
+  }
+
+  selectAllImportFields(): void {
+    const view = this.selectedDataView;
+    if (!view) return;
+    this.importFieldMappings = this.buildDefaultImportMappings(
+      view,
+      this.importHeaders,
+    );
+  }
+
+  clearImportFieldMappings(): void {
+    this.importFieldMappings = {};
+  }
+
+  setImportFieldMapping(field: string, header: string): void {
+    if (!header) {
+      delete this.importFieldMappings[field];
+      this.importFieldMappings = { ...this.importFieldMappings };
+      return;
+    }
+    this.importFieldMappings = { ...this.importFieldMappings, [field]: header };
+  }
+
+  getImportPreviewRows(limit = 5): Record<string, string>[] {
+    return this.importRows.slice(0, limit);
+  }
+
+  isImportFieldUnique(field: string): boolean {
+    return this.importUniqueFields.includes(field);
+  }
+
+  toggleImportUniqueField(field: string, checked: boolean): void {
+    if (checked) {
+      if (!this.importUniqueFields.includes(field)) {
+        this.importUniqueFields = [...this.importUniqueFields, field];
+      }
+    } else {
+      this.importUniqueFields = this.importUniqueFields.filter(
+        (f) => f !== field,
+      );
+    }
+  }
+
+  selectAllImportUniqueFields(): void {
+    const view = this.selectedDataView;
+    if (!view) return;
+    this.importUniqueFields = [...view.editableFields];
+  }
+
+  deselectAllImportUniqueFields(): void {
+    this.importUniqueFields = [];
+  }
+
+  private resetImportState(): void {
+    this.importMode = false;
+    this.importing = false;
+    this.importFileName = "";
+    this.importHeaders = [];
+    this.importRows = [];
+    this.importFieldMappings = {};
+    this.importUniqueFields = [];
+    this.importDuplicateStrategy = "skip";
+    this.importProgress = {
+      total: 0,
+      processed: 0,
+      created: 0,
+      updated: 0,
+      skipped: 0,
+      failed: 0,
+    };
+  }
+
+  private async readWorkbook(file: File): Promise<XLSX.WorkBook> {
+    const data = await file.arrayBuffer();
+    return XLSX.read(data, { type: "array" });
+  }
+
+  private buildDefaultImportMappings(
+    view: TableViewConfig,
+    headers: string[],
+  ): Record<string, string> {
+    const normalizedHeaders = new Map<string, string>();
+    headers.forEach((header) => {
+      normalizedHeaders.set(this.normalizeKey(header), header);
+    });
+
+    const mappings: Record<string, string> = {};
+    view.editableFields.forEach((field) => {
+      const candidates = [field, view.fieldLabels[field], this.humanize(field)]
+        .filter(Boolean)
+        .map((value) => this.normalizeKey(String(value)));
+      const match = candidates
+        .map((candidate) => normalizedHeaders.get(candidate))
+        .find(Boolean);
+      if (match) {
+        mappings[field] = match as string;
+      }
+    });
+    return mappings;
+  }
+
+  private normalizeImportValue(
+    view: TableViewConfig,
+    field: string,
+    rawValue: unknown,
+  ): string {
+    const value = String(rawValue ?? "").trim();
+    if (!value) return "";
+
+    const setting = view.fieldSettings[field];
+    if (setting?.displayMode !== "lookup") {
+      return value;
+    }
+
+    const options = this.lookupOptions[`${view.id}::${field}`] || [];
+    const match = options.find(
+      (option) =>
+        this.normalizeKey(option.value) === this.normalizeKey(value) ||
+        this.normalizeKey(option.label) === this.normalizeKey(value),
+    );
+    return match?.value || value;
+  }
+
+  private findExistingImportRow(
+    view: TableViewConfig,
+    fields: string[],
+    values: string[],
+  ): Record<string, any> | null {
+    return (
+      this.dataRows.find((row) => {
+        return fields.every((field, idx) => {
+          const rowValue = this.normalizeImportValue(view, field, row[field]);
+          const importValue = values[idx];
+          return this.normalizeKey(rowValue) === this.normalizeKey(importValue);
+        });
+      }) || null
+    );
+  }
+
+  private normalizeKey(value: string): string {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
   }
 
   cancelExportMode(): void {

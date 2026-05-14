@@ -423,6 +423,156 @@
   gap: 8px;
 }
 
+.import-panel {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.import-meta {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.import-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.import-control {
+  display: grid;
+  gap: 6px;
+}
+
+.import-control span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.import-control select,
+.import-field-select {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+
+.import-unique-fields-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.unique-field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.unique-field-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.import-unique-fields-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 11px;
+  background: #f1f5f9;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e2e8f0;
+  }
+}
+
+.import-fields {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.import-field-header,
+.import-field-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(240px, 1.2fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.import-field-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  padding: 0 2px;
+}
+
+.import-field-row {
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.import-field-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.import-preview {
+  margin-bottom: 12px;
+}
+
+.import-preview-title {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.import-preview-table-wrap {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.import-preview-table th,
+.import-preview-table td {
+  white-space: nowrap;
+}
+
+.import-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  font-size: 12px;
+  color: #475569;
+}
+
 .export-field-item {
   display: flex;
   align-items: center;
@@ -625,5 +775,11 @@
 
   .badge-stack {
     min-width: 0;
+  }
+
+  .import-controls,
+  .import-field-header,
+  .import-field-row {
+    grid-template-columns: 1fr;
   }
 }

@@ -109,6 +109,16 @@
         >
           Exporter
         </button>
+        <button
+          class="action-btn"
+          type="button"
+          (click)="openImportMode()"
+          [disabled]="
+            dataRowsLoading || lookupLoading || dataSaving || dataDeleting
+          "
+        >
+          Importer
+        </button>
       </div>
 
       <div class="export-panel" *ngIf="exportMode && selectedDataView as view">
@@ -196,6 +206,150 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div class="import-panel" *ngIf="importMode && selectedDataView as view">
+        <input
+          #importFileInput
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          hidden
+          (change)="handleImportFileSelected($event)"
+        />
+
+        <div class="export-panel-head">
+          <div>
+            <h4>Import Excel</h4>
+            <p>
+              Mappez les colonnes du fichier aux champs éditables avant de
+              lancer l'import.
+            </p>
+          </div>
+          <div class="export-panel-actions">
+            <button
+              class="action-btn"
+              type="button"
+              (click)="importFileInput.click()"
+            >
+              Choisir fichier
+            </button>
+            <button
+              class="action-btn"
+              type="button"
+              (click)="selectAllImportFields()"
+            >
+              Auto-mapper
+            </button>
+            <button
+              class="action-btn primary"
+              type="button"
+              (click)="runImport()"
+              [disabled]="!importRows.length || importing"
+            >
+              {{ importing ? "Import en cours..." : "Lancer l'import" }}
+            </button>
+            <button
+              class="action-btn"
+              type="button"
+              (click)="cancelImportMode()"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+
+        <div class="import-meta" *ngIf="importFileName">
+          Fichier: {{ importFileName }} · Lignes: {{ importRows.length }}
+        </div>
+
+        <div class="import-controls">
+          <label class="import-control">
+            <span>Détection doublons (champs)</span>
+            <div class="import-unique-fields-list">
+              <label *ngFor="let field of view.editableFields" class="unique-field-checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="isImportFieldUnique(field)"
+                  (change)="toggleImportUniqueField(field, !isImportFieldUnique(field))"
+                />
+                {{ getDataFieldLabel(view, field) }}
+              </label>
+            </div>
+            <div class="import-unique-fields-buttons">
+              <button type="button" (click)="selectAllImportUniqueFields()" class="btn-sm">
+                Tous
+              </button>
+              <button type="button" (click)="deselectAllImportUniqueFields()" class="btn-sm">
+                Aucun
+              </button>
+            </div>
+          </label>
+
+          <label class="import-control">
+            <span>Stratégie doublons</span>
+            <select [(ngModel)]="importDuplicateStrategy">
+              <option value="skip">Ignorer</option>
+              <option value="update">Mettre à jour</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="import-fields">
+          <div class="import-field-header">
+            <span>Champ cible</span>
+            <span>Colonne source</span>
+          </div>
+          <div
+            class="import-field-row"
+            *ngFor="let field of view.editableFields"
+          >
+            <div class="import-field-name">
+              {{ getDataFieldLabel(view, field) }}
+            </div>
+            <select
+              class="import-field-select"
+              [ngModel]="importFieldMappings[field] || ''"
+              (ngModelChange)="setImportFieldMapping(field, $event)"
+            >
+              <option value="">Ignorer</option>
+              <option *ngFor="let header of importHeaders" [value]="header">
+                {{ header }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="import-preview" *ngIf="importRows.length">
+          <div class="import-preview-title">Aperçu des premières lignes</div>
+          <div class="table-wrap import-preview-table-wrap">
+            <table class="data-table import-preview-table">
+              <thead>
+                <tr>
+                  <th *ngFor="let header of importHeaders">{{ header }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getImportPreviewRows()">
+                  <td *ngFor="let header of importHeaders">
+                    {{ row[header] }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="import-progress" *ngIf="importRows.length">
+          <span
+            >Traitées: {{ importProgress.processed }}/{{
+              importProgress.total
+            }}</span
+          >
+          <span>Créées: {{ importProgress.created }}</span>
+          <span>Mises à jour: {{ importProgress.updated }}</span>
+          <span>Ignorées: {{ importProgress.skipped }}</span>
+          <span>Erreurs: {{ importProgress.failed }}</span>
         </div>
       </div>
 
