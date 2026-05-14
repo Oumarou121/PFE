@@ -4,55 +4,49 @@
     <p>Chargement de l'historique...</p>
   </div>
 
-  <nav class="topnav">
-    <div class="nav-logo">
-      <svg
-        class="nav-logo__icon"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-        <path d="M6 12v5c3 3 9 3 12 0v-5" />
-      </svg>
-      SIRH-<span class="nav-logo__light">Doc</span>
-    </div>
-    <div class="nav-center">
-      <span class="nav-org-pill">{{ organizationName || "Historique" }}</span>
-    </div>
-    <div class="nav-right">
-      <button class="nav-action-btn" type="button" (click)="goBack()">
-        <i class="fa fa-arrow-left"></i>
-        Retour
-      </button>
-      <button class="nav-logout-btn" type="button" (click)="logout()">
-        <i class="fa fa-sign-out"></i>
-        Deconnexion
-      </button>
-    </div>
-  </nav>
-
-  <main class="history-shell" *ngIf="!loading">
-    <header class="page-heading">
-      <div>
-        <h1>Historique des documents</h1>
-        <p>
-          Documents regroupes par table beneficiaire, beneficiaire, puis
-          generation.
-        </p>
+  <nav class="navbar">
+    <!-- ── Top bar ── -->
+    <div class="topnav">
+      <div class="nav-logo">
+        <svg
+          class="nav-logo__icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+        SIRH-<span class="nav-logo__light">Doc</span>
       </div>
-      <div class="heading-stats">
-        <strong>{{ totalDocuments }}</strong>
-        <span>documents</span>
-      </div>
-    </header>
 
-    <section class="filter-panel" [formGroup]="filterForm">
-      <label>
-        Famille
+      <div class="nav-center">
+        <span class="nav-org-pill">{{ organizationName || "Historique" }}</span>
+      </div>
+
+      <div class="nav-right">
+        <div class="heading-stats">
+          <strong>{{ totalDocuments }}</strong>
+          <span>documents</span>
+        </div>
+        <button class="nav-action-btn" type="button" (click)="goBack()">
+          <i class="fa fa-arrow-left"></i>
+          Retour
+        </button>
+        <button class="nav-logout-btn" type="button" (click)="logout()">
+          <i class="fa fa-sign-out"></i>
+          Déconnexion
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Filter sub-navbar ── -->
+    <div class="bottomnav" [formGroup]="filterForm">
+      <label class="filter-label">
+        <i class="fa fa-th-large filter-icon"></i>
         <select formControlName="familyId" (change)="onFilterChange()">
           <option value="">Toutes les familles</option>
           <option *ngFor="let family of families" [value]="family.id">
@@ -60,160 +54,116 @@
           </option>
         </select>
       </label>
-      <label>
-        Recherche
+
+      <div class="filter-divider"></div>
+
+      <label class="filter-label filter-label--search">
+        <i class="fa fa-search filter-icon"></i>
         <input
           formControlName="query"
-          placeholder="Document, beneficiaire, table..."
+          placeholder="Document, bénéficiaire, table..."
           (input)="onFilterChange()"
         />
       </label>
-      <label>
-        Date debut
+
+      <div class="filter-divider"></div>
+
+      <label class="filter-label">
+        <i class="fa fa-calendar filter-icon"></i>
         <input
           type="date"
           formControlName="dateFrom"
           (change)="onFilterChange()"
         />
       </label>
-      <label>
-        Date fin
+
+      <span class="filter-range-sep">→</span>
+
+      <label class="filter-label">
         <input
           type="date"
           formControlName="dateTo"
           (change)="onFilterChange()"
         />
       </label>
+
+      <div class="filter-divider"></div>
+
       <button type="button" class="reset-btn" (click)="resetFilters()">
-        Reinitialiser
+        <i class="fa fa-times"></i>
+        Réinitialiser
       </button>
-    </section>
+    </div>
+  </nav>
 
-    <section
-      class="table-group-grid"
-      *ngIf="tableGroups.length; else emptyState"
-    >
-      <button
-        class="table-group-card"
-        type="button"
-        *ngFor="let group of tableGroups"
-        [class.active]="expandedTableKey === group.key"
-        [class.organization-card]="group.isOrganization"
-        (click)="toggleTableGroup(group)"
+  <!-- ── Main shell ── -->
+  <div class="shell" *ngIf="!loading">
+    <main class="content">
+      <section class="content-head">
+        <div class="header">
+          <h2>Historique des documents</h2>
+        </div>
+        <p class="description">
+          Documents regroupés par table bénéficiaire, bénéficiaire, puis
+          génération.
+        </p>
+      </section>
+
+      <!-- ── Table group grid ── -->
+      <section
+        class="table-group-grid"
+        *ngIf="tableGroups.length; else emptyState"
       >
-        <div class="table-group-card__top">
-          <i
-            class="fa"
-            [class.fa-building]="group.isOrganization"
-            [class.fa-table]="!group.isOrganization"
-          ></i>
-          <span>{{ group.documents.length }} doc.</span>
-        </div>
-        <div class="table-group-card__footer">
-          <div>
-            <strong>{{ group.label }}</strong>
-            <small>{{
-              group.isOrganization ? "Organisation" : group.tableName
-            }}</small>
-          </div>
-          <i class="fa fa-arrow-circle-right"></i>
-        </div>
-      </button>
-    </section>
-
-    <section class="drilldown-panel" *ngIf="selectedTableGroup as tableGroup">
-      <div class="section-title">
-        <div>
-          <h2>{{ tableGroup.label }}</h2>
-          <p>{{ getFamilyNames(tableGroup.familyIds) }}</p>
-        </div>
-        <span>{{ tableGroup.documents.length }} document(s)</span>
-      </div>
-
-      <div class="document-list" *ngIf="tableGroup.isOrganization">
-        <article
-          class="document-row"
-          *ngFor="let document of tableGroup.documents"
+        <button
+          class="table-group-card"
+          type="button"
+          *ngFor="let group of tableGroups"
+          [class.active]="expandedTableKey === group.key"
+          [class.organization-card]="group.isOrganization"
+          (click)="toggleTableGroup(group)"
         >
-          <div>
-            <strong>{{ document.title }}</strong>
-            <span>{{ getFamilyName(document.familyId) }}</span>
+          <div class="table-group-card__top">
+            <i
+              class="fa"
+              [class.fa-building]="group.isOrganization"
+              [class.fa-table]="!group.isOrganization"
+            ></i>
+            <span>{{ group.documents.length }} doc.</span>
           </div>
-          <div class="document-meta">
-            <span>{{ document.generatedByName || "Systeme" }}</span>
-            <span>{{
-              getDocumentDate(document.generatedAt) | date: "dd/MM/yyyy HH:mm"
-            }}</span>
-          </div>
-          <div class="document-actions">
-            <button
-              type="button"
-              (click)="viewDocument(document)"
-              title="Apercu"
-            >
-              <i class="fa fa-eye"></i>
-            </button>
-            <button
-              type="button"
-              (click)="downloadDocument(document)"
-              title="Telecharger"
-            >
-              <i class="fa fa-download"></i>
-            </button>
-            <button
-              type="button"
-              class="danger"
-              (click)="deleteDocument(document)"
-              title="Supprimer"
-            >
-              <i class="fa fa-trash"></i>
-            </button>
-          </div>
-        </article>
-      </div>
-
-      <div class="beneficiary-layout" *ngIf="!tableGroup.isOrganization">
-        <div class="beneficiary-grid">
-          <button
-            class="beneficiary-card"
-            type="button"
-            *ngFor="let beneficiary of tableGroup.beneficiaries"
-            [class.active]="selectedBeneficiaryKey === beneficiary.key"
-            (click)="selectBeneficiary(tableGroup, beneficiary)"
-          >
-            <div class="beneficiary-card__avatar">
-              {{ beneficiary.title.slice(0, 2).toUpperCase() }}
-            </div>
+          <div class="table-group-card__footer">
             <div>
-              <strong>{{ beneficiary.title }}</strong>
-              <!-- <span>{{ beneficiary.subtitle }}</span> -->
-              <!-- <small>{{ getFamilyNames(beneficiary.familyIds) }}</small> -->
+              <strong>{{ group.label }}</strong>
+              <small>{{
+                group.isOrganization ? "Organisation" : group.tableName
+              }}</small>
             </div>
-            <em>{{ beneficiary.documents.length }}</em>
-          </button>
+            <i class="fa fa-arrow-circle-right"></i>
+          </div>
+        </button>
+      </section>
+
+      <!-- ── Drilldown panel ── -->
+      <section class="drilldown-panel" *ngIf="selectedTableGroup as tableGroup">
+        <div class="section-title">
+          <div>
+            <h3>{{ tableGroup.label }}</h3>
+            <p>{{ getFamilyNames(tableGroup.familyIds) }}</p>
+          </div>
+          <span>{{ tableGroup.documents.length }} document(s)</span>
         </div>
 
-        <div
-          class="document-stack"
-          *ngIf="selectedBeneficiaryGroup as beneficiaryGroup"
-        >
-          <div class="stack-header">
-            <div>
-              <h3>{{ beneficiaryGroup.title }}</h3>
-              <!-- <p>{{ beneficiaryGroup.subtitle }}</p> -->
-            </div>
-            <span>{{ beneficiaryGroup.documents.length }} generation(s)</span>
-          </div>
+        <!-- Organisation documents -->
+        <div class="document-list" *ngIf="tableGroup.isOrganization">
           <article
             class="document-row"
-            *ngFor="let document of beneficiaryGroup.documents"
+            *ngFor="let document of tableGroup.documents"
           >
-            <div>
+            <div class="doc-info">
               <strong>{{ document.title }}</strong>
-              <!-- <span>{{ getFamilyName(document.familyId) }}</span> -->
+              <span>{{ getFamilyName(document.familyId) }}</span>
             </div>
             <div class="document-meta">
-              <span>{{ document.generatedByName || "Systeme" }}</span>
+              <span>{{ document.generatedByName || "Système" }}</span>
               <span>{{
                 getDocumentDate(document.generatedAt) | date: "dd/MM/yyyy HH:mm"
               }}</span>
@@ -222,14 +172,14 @@
               <button
                 type="button"
                 (click)="viewDocument(document)"
-                title="Apercu"
+                title="Aperçu"
               >
                 <i class="fa fa-eye"></i>
               </button>
               <button
                 type="button"
                 (click)="downloadDocument(document)"
-                title="Telecharger"
+                title="Télécharger"
               >
                 <i class="fa fa-download"></i>
               </button>
@@ -244,9 +194,81 @@
             </div>
           </article>
         </div>
-      </div>
-    </section>
-  </main>
+
+        <!-- Beneficiary layout -->
+        <div class="beneficiary-layout" *ngIf="!tableGroup.isOrganization">
+          <div class="beneficiary-grid">
+            <button
+              class="beneficiary-card"
+              type="button"
+              *ngFor="let beneficiary of tableGroup.beneficiaries"
+              [class.active]="selectedBeneficiaryKey === beneficiary.key"
+              (click)="selectBeneficiary(tableGroup, beneficiary)"
+            >
+              <div class="beneficiary-card__avatar">
+                {{ beneficiary.title.slice(0, 2).toUpperCase() }}
+              </div>
+              <div class="beneficiary-card__info">
+                <strong>{{ beneficiary.title }}</strong>
+              </div>
+              <em>{{ beneficiary.documents.length }}</em>
+            </button>
+          </div>
+
+          <div
+            class="document-stack"
+            *ngIf="selectedBeneficiaryGroup as beneficiaryGroup"
+          >
+            <div class="stack-header">
+              <div>
+                <h4>{{ beneficiaryGroup.title }}</h4>
+              </div>
+              <span>{{ beneficiaryGroup.documents.length }} génération(s)</span>
+            </div>
+            <article
+              class="document-row"
+              *ngFor="let document of beneficiaryGroup.documents"
+            >
+              <div class="doc-info">
+                <strong>{{ document.title }}</strong>
+              </div>
+              <div class="document-meta">
+                <span>{{ document.generatedByName || "Système" }}</span>
+                <span>{{
+                  getDocumentDate(document.generatedAt)
+                    | date: "dd/MM/yyyy HH:mm"
+                }}</span>
+              </div>
+              <div class="document-actions">
+                <button
+                  type="button"
+                  (click)="viewDocument(document)"
+                  title="Aperçu"
+                >
+                  <i class="fa fa-eye"></i>
+                </button>
+                <button
+                  type="button"
+                  (click)="downloadDocument(document)"
+                  title="Télécharger"
+                >
+                  <i class="fa fa-download"></i>
+                </button>
+                <button
+                  type="button"
+                  class="danger"
+                  (click)="deleteDocument(document)"
+                  title="Supprimer"
+                >
+                  <i class="fa fa-trash"></i>
+                </button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <ng-template #emptyState>
     <div class="empty-state">

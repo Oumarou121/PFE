@@ -1,6 +1,11 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from "@angular/forms";
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+} from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
 import { MatCardModule } from "@angular/material/card";
 import { MatDatepickerModule } from "@angular/material/datepicker";
@@ -14,6 +19,7 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
 import { DocumentService } from "../../services/document.service";
+import { EditorStateService } from "../../services/editor-state.service";
 import { FamilyService } from "../../services/family.service";
 import { OrganizationService } from "../../services/organization.service";
 import { DocumentListItem } from "../../models/document.model";
@@ -76,6 +82,7 @@ export class DocumentHistoryPageComponent implements OnInit {
 
   constructor(
     private documentService: DocumentService,
+    private editorState: EditorStateService,
     private familyService: FamilyService,
     private organizationService: OrganizationService,
     private authService: AuthService,
@@ -94,12 +101,15 @@ export class DocumentHistoryPageComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.loading = true;
     try {
+      await this.editorState.loadBootstrap();
       this.loadOrganization();
       this.loadFamilies();
       await this.loadDocuments();
     } catch (error) {
       console.error("Error initializing document history page", error);
-      this.notificationService.showError("Erreur lors du chargement des donnees");
+      this.notificationService.showError(
+        "Erreur lors du chargement des donnees",
+      );
     } finally {
       this.loading = false;
     }
@@ -108,7 +118,9 @@ export class DocumentHistoryPageComponent implements OnInit {
   private loadOrganization(): void {
     const user = this.authService.getCurrentUser();
     if (!user?.organizationId) return;
-    const organization = this.organizationService.getOrganization(user.organizationId);
+    const organization = this.organizationService.getOrganization(
+      user.organizationId,
+    );
     this.organizationName = organization?.nom || organization?.name || "";
   }
 
@@ -137,7 +149,9 @@ export class DocumentHistoryPageComponent implements OnInit {
       this.syncSelection();
     } catch (error) {
       console.error("Error loading documents", error);
-      this.notificationService.showError("Erreur lors du chargement des documents");
+      this.notificationService.showError(
+        "Erreur lors du chargement des documents",
+      );
     } finally {
       this.loading = false;
     }
@@ -148,12 +162,18 @@ export class DocumentHistoryPageComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterForm.reset({ familyId: "", query: "", dateFrom: "", dateTo: "" });
+    this.filterForm.reset({
+      familyId: "",
+      query: "",
+      dateFrom: "",
+      dateTo: "",
+    });
     void this.loadDocuments();
   }
 
   toggleTableGroup(group: TableDocumentGroup): void {
-    this.expandedTableKey = this.expandedTableKey === group.key ? null : group.key;
+    this.expandedTableKey =
+      this.expandedTableKey === group.key ? null : group.key;
     this.selectedTableGroup = this.expandedTableKey ? group : null;
     if (group.isOrganization) {
       this.selectedBeneficiaryKey = null;
@@ -165,7 +185,10 @@ export class DocumentHistoryPageComponent implements OnInit {
     this.selectedBeneficiaryGroup = first;
   }
 
-  selectBeneficiary(group: TableDocumentGroup, beneficiary: BeneficiaryDocumentGroup): void {
+  selectBeneficiary(
+    group: TableDocumentGroup,
+    beneficiary: BeneficiaryDocumentGroup,
+  ): void {
     this.expandedTableKey = group.key;
     this.selectedTableGroup = group;
     this.selectedBeneficiaryKey = beneficiary.key;
@@ -192,14 +215,18 @@ export class DocumentHistoryPageComponent implements OnInit {
       await this.loadDocuments();
     } catch (error) {
       console.error("Error deleting document", error);
-      this.notificationService.showError("Erreur lors de la suppression du document");
+      this.notificationService.showError(
+        "Erreur lors de la suppression du document",
+      );
     }
   }
 
   downloadDocument(document: DocumentListItem): void {
     this.documentService.getDocumentById(document.id).then((fullDoc) => {
       if (!fullDoc?.fullHtml) return;
-      const blob = new Blob([fullDoc.fullHtml], { type: "text/html;charset=utf-8;" });
+      const blob = new Blob([fullDoc.fullHtml], {
+        type: "text/html;charset=utf-8;",
+      });
       const link = globalThis.document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
@@ -238,7 +265,9 @@ export class DocumentHistoryPageComponent implements OnInit {
 
   private applyClientFilters(rows: DocumentListItem[]): DocumentListItem[] {
     const { query, dateFrom, dateTo } = this.filterForm.value;
-    const search = String(query || "").trim().toLowerCase();
+    const search = String(query || "")
+      .trim()
+      .toLowerCase();
     const from = dateFrom ? new Date(dateFrom) : null;
     const to = dateTo ? new Date(dateTo) : null;
     if (to) to.setHours(23, 59, 59, 999);
@@ -268,48 +297,62 @@ export class DocumentHistoryPageComponent implements OnInit {
     const map = new Map<string, TableDocumentGroup>();
     for (const document of rows) {
       const hasTable = !!String(document.beneficiaryTable || "").trim();
-      const key = hasTable ? String(document.beneficiaryTable) : "__organization__";
-      const tableGroup =
-        map.get(key) ||
-        {
-          key,
-          tableName: hasTable ? String(document.beneficiaryTable) : null,
-          label: hasTable
-            ? this.getBeneficiaryTableLabel(document)
-            : "Documents lies a l'organisation",
-          isOrganization: !hasTable,
-          documents: [],
-          beneficiaries: [],
-          familyIds: [],
-        };
+      const key = hasTable
+        ? String(document.beneficiaryTable)
+        : "__organization__";
+      const tableGroup = map.get(key) || {
+        key,
+        tableName: hasTable ? String(document.beneficiaryTable) : null,
+        label: hasTable
+          ? this.getBeneficiaryTableLabel(document)
+          : "Documents lies a l'organisation",
+        isOrganization: !hasTable,
+        documents: [],
+        beneficiaries: [],
+        familyIds: [],
+      };
       tableGroup.documents.push(document);
-      tableGroup.familyIds = this.uniqueValues([...tableGroup.familyIds, document.familyId]);
+      tableGroup.familyIds = this.uniqueValues([
+        ...tableGroup.familyIds,
+        document.familyId,
+      ]);
       map.set(key, tableGroup);
     }
 
     const groups = [...map.values()].map((group) => ({
       ...group,
-      beneficiaries: group.isOrganization ? [] : this.buildBeneficiaryGroups(group.documents),
+      beneficiaries: group.isOrganization
+        ? []
+        : this.buildBeneficiaryGroups(group.documents),
     }));
-    return groups.sort((a, b) => Number(a.isOrganization) - Number(b.isOrganization) || a.label.localeCompare(b.label));
+    return groups.sort(
+      (a, b) =>
+        Number(a.isOrganization) - Number(b.isOrganization) ||
+        a.label.localeCompare(b.label),
+    );
   }
 
-  private buildBeneficiaryGroups(rows: DocumentListItem[]): BeneficiaryDocumentGroup[] {
+  private buildBeneficiaryGroups(
+    rows: DocumentListItem[],
+  ): BeneficiaryDocumentGroup[] {
     const map = new Map<string, BeneficiaryDocumentGroup>();
     for (const document of rows) {
       const key = String(document.beneficiaryId || "__without_beneficiary__");
-      const group =
-        map.get(key) ||
-        {
-          key,
-          beneficiaryId: document.beneficiaryId || null,
-          title: this.getBeneficiaryTitle(document),
-          subtitle: document.beneficiaryId ? `ID ${document.beneficiaryId}` : "Beneficiaire non renseigne",
-          documents: [],
-          familyIds: [],
-        };
+      const group = map.get(key) || {
+        key,
+        beneficiaryId: document.beneficiaryId || null,
+        title: this.getBeneficiaryTitle(document),
+        subtitle: document.beneficiaryId
+          ? `ID ${document.beneficiaryId}`
+          : "Beneficiaire non renseigne",
+        documents: [],
+        familyIds: [],
+      };
       group.documents.push(document);
-      group.familyIds = this.uniqueValues([...group.familyIds, document.familyId]);
+      group.familyIds = this.uniqueValues([
+        ...group.familyIds,
+        document.familyId,
+      ]);
       map.set(key, group);
     }
     return [...map.values()].sort((a, b) => a.title.localeCompare(b.title));
@@ -334,7 +377,9 @@ export class DocumentHistoryPageComponent implements OnInit {
       return;
     }
     const beneficiary =
-      table.beneficiaries.find((item) => item.key === this.selectedBeneficiaryKey) ||
+      table.beneficiaries.find(
+        (item) => item.key === this.selectedBeneficiaryKey,
+      ) ||
       table.beneficiaries[0] ||
       null;
     this.selectedBeneficiaryKey = beneficiary?.key || null;
@@ -344,14 +389,18 @@ export class DocumentHistoryPageComponent implements OnInit {
   private getBeneficiaryTableLabel(document: DocumentListItem): string {
     return (
       document.beneficiaryTableLabel ||
-      this.families.find((family) => family.id === document.familyId)?.beneficiaryTableLabel ||
+      this.families.find((family) => family.id === document.familyId)
+        ?.beneficiaryTableLabel ||
       document.beneficiaryTable ||
       "Table beneficiaire"
     );
   }
 
   private getBeneficiaryTitle(document: DocumentListItem): string {
-    const title = [document.beneficiaryDisplayValue1, document.beneficiaryDisplayValue2]
+    const title = [
+      document.beneficiaryDisplayValue1,
+      document.beneficiaryDisplayValue2,
+    ]
       .filter((value) => !!String(value || "").trim())
       .join(" - ");
     return title || document.beneficiaryId || "Beneficiaire";
