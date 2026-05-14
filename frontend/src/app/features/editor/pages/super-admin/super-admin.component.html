@@ -3800,6 +3800,15 @@
               </div>
             </div>
           </div>
+
+          <div class="card" *ngIf="selectedTableView as view">
+            <app-table-view-filters-config
+              [view]="view"
+              [schema]="databaseSchema"
+              (filterChange)="onFiltersChanged($event)"
+            ></app-table-view-filters-config>
+          </div>
+
           <div class="card" *ngIf="selectedTableView">
             <div class="card-header">
               <div class="card-title">Page générée</div>

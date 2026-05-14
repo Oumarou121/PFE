@@ -1,9 +1,11 @@
 using DocApi.DTOs;
+using DocApi.Domain.ValueObjects;
 
 namespace DocApi.Services.Interfaces
 {
     public interface IEditorService
     {
+        Task EnsureSchemaAsync();
         Task<IEnumerable<FamilyResponse>> GetFamiliesAsync();
         Task<FamilyResponse?> GetFamilyByIdAsync(string id);
         Task<FamilyResponse> UpsertFamilyAsync(FamilyRequest request);
@@ -22,6 +24,7 @@ namespace DocApi.Services.Interfaces
         Task<TableViewConfigResponse?> GetTableViewConfigByIdAsync(string id);
         Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request);
         Task DeleteTableViewConfigAsync(string? id);
+        Task<IEnumerable<TableFilterOption>> GetTableFilterOptionsAsync(TableFilterSqlBuilder sqlBuilder, string? databaseName = null);
         Task<EditorStateResponse> LoadStateAsync(AuthUserResponse? currentUser);
         Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null);
         Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser);

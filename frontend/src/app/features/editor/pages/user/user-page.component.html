@@ -537,3 +537,196 @@
     </div>
   </div>
 </div>
+
+<div class="view-shell active" *ngIf="mode === 'data'">
+  <div class="data-wrap">
+    <!-- SIDEBAR: Modules and Table Views -->
+    <div class="data-sidebar">
+      <div class="data-side-hdr">
+        <div class="data-side-title">Explorateur de données</div>
+        <div class="data-side-sub">Modules et vues disponibles</div>
+      </div>
+      <div class="data-search">
+        <input
+          type="text"
+          placeholder="Rechercher un module..."
+          [(ngModel)]="dataViewSearch"
+        />
+      </div>
+      <div class="data-view-list">
+        <div
+          class="data-view-card"
+          *ngFor="let module of modulesList"
+          [class.active]="selectedModuleId === module.id"
+          (click)="selectModule(module.id)"
+        >
+          <div class="data-view-name">
+            <span class="icon" style="margin-right: 6px">{{
+              module.icon || "📦"
+            }}</span>
+            {{ module.name }}
+          </div>
+          <div class="data-view-meta" *ngIf="selectedModuleId === module.id">
+            <div
+              class="sub-item"
+              *ngFor="let mtv of module.tableViews"
+              [class.active]="activeModuleTableViewId === mtv.tableViewConfigId"
+              (click)="
+                $event.stopPropagation();
+                selectModuleTableView(mtv.tableViewConfigId)
+              "
+              style="margin-top: 6px; padding: 4px 8px; border-radius: 6px"
+            >
+              • {{ getTableViewLabelById(mtv.tableViewConfigId) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT: Table and Filters -->
+    <div class="data-main" *ngIf="selectedDataView as view">
+      <div
+        class="data-main-hdr"
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <div>
+          <div class="data-main-title">{{ view.label }}</div>
+          <div class="data-main-sub">
+            {{ dataRows.length }} ligne(s) trouvée(s)
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px">
+          <button
+            class="btn-primary"
+            style="padding: 6px 12px; font-size: 11px"
+            (click)="createDataRow()"
+          >
+            + Ajouter
+          </button>
+          <button
+            class="btn-secondary"
+            style="padding: 6px 12px; font-size: 11px"
+            (click)="reloadDataRows()"
+          >
+            🔄 Actualiser
+          </button>
+        </div>
+      </div>
+
+      <!-- FILTERS -->
+      <div
+        style="padding: 12px 16px; border-bottom: 1px solid var(--border)"
+        *ngIf="view.filters && view.filters.length > 0"
+      >
+        <app-table-filters
+          [filters]="view.filters"
+          (filterChange)="onFilterParamsChange($event)"
+        ></app-table-filters>
+      </div>
+
+      <div class="data-search">
+        <input
+          type="text"
+          placeholder="Rechercher dans cette vue..."
+          [(ngModel)]="dataRowSearch"
+          (keyup.enter)="reloadDataRows()"
+        />
+      </div>
+
+      <div style="overflow-x: auto; padding: 12px 16px">
+        <table
+          class="data-table"
+          style="width: 100%; border-collapse: collapse; font-size: 12px"
+        >
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border)">
+              <th
+                *ngFor="let field of view.visibleFields"
+                style="text-align: left; padding: 10px 8px; color: var(--text2)"
+              >
+                {{ getDataFieldLabel(view, field) }}
+              </th>
+              <th style="text-align: right; padding: 10px 8px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="dataRowsLoading">
+              <td
+                [attr.colspan]="view.visibleFields.length + 1"
+                style="text-align: center; padding: 40px"
+              >
+                <div class="spinner"></div>
+                Chargement des données...
+              </td>
+            </tr>
+            <tr *ngIf="!dataRowsLoading && dataRows.length === 0">
+              <td
+                [attr.colspan]="view.visibleFields.length + 1"
+                style="text-align: center; padding: 40px; color: var(--text3)"
+              >
+                Aucun résultat pour cette recherche ou ces filtres.
+              </td>
+            </tr>
+            <tr
+              *ngFor="let row of dataRows"
+              [class.selected]="selectedDataRowId === getRowId(row)"
+              (click)="selectDataRow(getRowId(row))"
+              style="border-bottom: 1px solid var(--border); cursor: pointer"
+              onmouseover="this.style.background = 'var(--surface2)'"
+              onmouseout="this.style.background = 'transparent'"
+            >
+              <td
+                *ngFor="let field of view.visibleFields"
+                style="padding: 10px 8px"
+              >
+                {{ getDisplayValue(view, field, row[field]) }}
+              </td>
+              <td style="padding: 10px 8px; text-align: right">
+                <button
+                  class="btn-icon"
+                  title="Modifier"
+                  (click)="
+                    $event.stopPropagation();
+                    selectDataRow(getRowId(row));
+                    editingDataRowId = getRowId(row)
+                  "
+                >
+                  ✏️
+                </button>
+                <button
+                  class="btn-icon"
+                  title="Supprimer"
+                  style="color: var(--danger)"
+                  (click)="
+                    $event.stopPropagation();
+                    selectDataRow(getRowId(row));
+                    deleteDataRow()
+                  "
+                >
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div
+      class="data-main"
+      *ngIf="!selectedDataView && !dataViewsLoading"
+      style="padding: 60px; text-align: center"
+    >
+      <div style="font-size: 48px; margin-bottom: 20px">🗂️</div>
+      <div class="data-main-title">Prêt à explorer vos données</div>
+      <div class="data-main-sub">
+        Sélectionnez un module et une vue dans la barre latérale pour commencer.
+      </div>
+    </div>
+  </div>
+</div>

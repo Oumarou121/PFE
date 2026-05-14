@@ -25,6 +25,7 @@ import { TableViewService } from "../../services/table-view.service";
 import { TemplateService } from "../../services/template.service";
 import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
 import { DocumentService } from "../../services/document.service";
+import { TableFiltersComponent } from "../../components/table-filters/table-filters.component";
 
 type UserMode = "documents" | "data";
 type Step = 1 | 2 | 3;
@@ -32,7 +33,7 @@ type Step = 1 | 2 | 3;
 @Component({
   selector: "app-user-page",
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent],
   templateUrl: "./user-page.component.html",
   styleUrls: ["./user-page.component.scss"],
   encapsulation: ViewEncapsulation.None,
@@ -72,6 +73,7 @@ export class UserPageComponent implements OnInit {
   dataRowSearch = "";
   dataRows: Record<string, any>[] = [];
   selectedDataRowId: string | null = null;
+  editingDataRowId: string | null = null;
   selectedDataRecord: Record<string, any> | null = null;
   creatingDataRow = false;
   lookupOptions: Record<string, Array<{ value: string; label: string }>> = {};
@@ -448,6 +450,8 @@ export class UserPageComponent implements OnInit {
     }
   }
 
+  selectedFilters: { [key: string]: string[] } = {};
+
   async reloadDataRows(): Promise<void> {
     const view = this.selectedDataView;
     if (!view) return;
@@ -458,6 +462,7 @@ export class UserPageComponent implements OnInit {
       const rows = await this.tableViews.getTableViewRows(view.id, {
         config: view,
         search: this.dataRowSearch,
+        selectedFilters: this.selectedFilters,
       });
       if (requestId !== this.dataRowsRequestId) return;
       this.dataRows = rows;
@@ -486,6 +491,11 @@ export class UserPageComponent implements OnInit {
         this.dataStatusMessage = "";
       }
     }
+  }
+
+  onFilterParamsChange(filters: { [key: string]: string[] }): void {
+    this.selectedFilters = filters;
+    void this.reloadDataRows();
   }
 
   async updateDataSearch(): Promise<void> {

@@ -12,6 +12,7 @@ import { Router } from "@angular/router";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { Subject, firstValueFrom } from "rxjs";
 import { takeUntil } from "rxjs/operators";
+import { TableViewFiltersConfigComponent } from "./components/table-view-filters-config/table-view-filters-config.component";
 
 import { AuthService } from "../../../../core/services/auth.service";
 import { ApiService } from "../../../../core/services/api.service";
@@ -53,6 +54,7 @@ import { ModuleFormComponent } from "./components/module-form/module-form.compon
     MatDialogModule,
     ModuleListComponent,
     ModuleFormComponent,
+    TableViewFiltersConfigComponent,
   ],
   templateUrl: "./super-admin.component.html",
   styleUrls: ["./super-admin.component.scss"],
@@ -131,6 +133,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   selectedTableViewRecord: any = null;
   tableViewSearch = "";
   isCreatingTableViewRow = false;
+  databaseSchema: any = null;
   beneficiaryPreviewText =
     'Cliquez sur "Tester la liste" pour voir un bénéficiaire retourné.';
 
@@ -241,6 +244,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       });
 
     void this.initializeState();
+
+    if (this.selectedSchemaDatabaseName) {
+      this.loadDatabaseSchema();
+    }
   }
 
   private updateSelectedModule() {
@@ -339,6 +346,34 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       ? this.tableViews.find((view) => view.id === this.selectedTableViewId) ||
           null
       : null;
+  }
+
+  onFiltersChanged(updatedView: TableViewConfig | null): void {
+    if (!updatedView) return;
+    const index = this.tableViews.findIndex((v) => v.id === updatedView.id);
+    if (index >= 0) {
+      this.tableViews[index] = { ...updatedView };
+      this.cdr.markForCheck();
+    }
+  }
+
+  loadDatabaseSchema(): void {
+    if (!this.selectedSchemaDatabaseName) return;
+    const url = `schema?databaseName=${encodeURIComponent(
+      this.selectedSchemaDatabaseName,
+    )}`;
+    this.api
+      .get<any>(url)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (payload) => {
+          this.databaseSchema = payload?.schema || payload;
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error("Erreur lors du chargement du schéma:", err);
+        },
+      });
   }
 
   get selectedFamily(): Family | null {
@@ -1611,6 +1646,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.schemaMetaCache = null; // Force reload
     this.tableViewSchemaCache = null;
     this.cdr.markForCheck();
+
+    if (this.selectedSchemaDatabaseName) {
+      this.loadDatabaseSchema();
+    }
   }
 
   private async ensureSchemaMeta(): Promise<any> {
@@ -1623,6 +1662,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     )}`;
     const payload = await firstValueFrom(this.api.get<any>(url));
     this.schemaMetaCache = payload?.schema || payload;
+    this.databaseSchema = this.schemaMetaCache;
     return this.schemaMetaCache;
   }
 
@@ -5491,6 +5531,45 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       return;
     }
     item.updatedAt = new Date().toISOString();
+    // Validate filters before sending to server
+    if (item.filters && item.filters.length) {
+      for (const f of item.filters) {
+        if (!f.name || !f.name.trim()) {
+          this.toast(
+            `Le filtre '${f.id || "(nouveau)"}' doit avoir un nom`,
+            "error",
+          );
+          return;
+        }
+        if (!f.linkColumn || !f.linkColumn.trim()) {
+          this.toast(
+            `Le filtre '${f.name}' doit avoir une colonne cible`,
+            "error",
+          );
+          return;
+        }
+        if (f.sourceType === "Table") {
+          const sb = (f as any).sqlBuilder;
+          if (!sb || !sb.tableName || !sb.valueColumn || !sb.labelColumn) {
+            this.toast(
+              `Le filtre '${f.name}' nécessite une configuration SQL complète (table, colonne valeur, colonne libellé)`,
+              "error",
+            );
+            return;
+          }
+        }
+        if (f.sourceType === "Static") {
+          const opts = (f as any).staticOptions || [];
+          if (!opts.length || opts.every((o: any) => !o || !o.value)) {
+            this.toast(
+              `Le filtre '${f.name}' doit contenir au moins une option statique valide`,
+              "error",
+            );
+            return;
+          }
+        }
+      }
+    }
     this.tableViewService
       .saveConfig(item)
       .pipe(takeUntil(this.destroy$))

@@ -108,6 +108,11 @@ BEGIN
   ALTER TABLE [table_view_config] ADD organization_ids_json NVARCHAR(MAX) NULL;
 END;
 
+IF COL_LENGTH('table_view_config', 'filters_json') IS NULL
+BEGIN
+  ALTER TABLE [table_view_config] ADD filters_json NVARCHAR(MAX) NOT NULL DEFAULT '[]';
+END;
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'template')
 BEGIN
 CREATE TABLE [template] (

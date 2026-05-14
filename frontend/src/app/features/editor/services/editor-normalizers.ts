@@ -25,6 +25,11 @@ import {
   TableViewFieldSetting,
 } from "../models/table-view.model";
 import {
+  TableFilterOption,
+  TableFilterSourceType,
+  TableViewFilter,
+} from "../../../services/table-filters.service";
+import {
   HeaderFooterDistances,
   TemplateRecord,
   TemplateSectionDirections,
@@ -798,6 +803,49 @@ export function normalizeTableViewRecord(
         .filter(([field]) => field),
     );
   };
+  const normalizeTableViewOptions = (value: unknown): TableFilterOption[] => {
+    const source = Array.isArray(value) ? value : [];
+    return source
+      .map((option) => {
+        const raw =
+          option && typeof option === "object" ? (option as UnknownRecord) : {};
+        const valueText = String(raw["value"] || "").trim();
+        const labelText = String(raw["label"] || valueText || "").trim();
+        return valueText
+          ? { value: valueText, label: labelText || valueText }
+          : null;
+      })
+      .filter(Boolean) as TableFilterOption[];
+  };
+  const normalizeTableViewFilters = (value: unknown): TableViewFilter[] => {
+    const source = Array.isArray(value) ? value : [];
+    return source
+      .map((filter, index) => {
+        const raw =
+          filter && typeof filter === "object" ? (filter as UnknownRecord) : {};
+        const sourceType =
+          String(raw["sourceType"] || "Static").trim() === "Table"
+            ? TableFilterSourceType.Table
+            : TableFilterSourceType.Static;
+        return {
+          id: String(raw["id"] || genId("tvf")),
+          name: String(raw["name"] || `Filtre ${index + 1}`).trim(),
+          linkColumn: String(raw["linkColumn"] || "").trim(),
+          sourceType,
+          staticOptions:
+            sourceType === TableFilterSourceType.Static
+              ? normalizeTableViewOptions(raw["staticOptions"])
+              : undefined,
+          sqlBuilder:
+            sourceType === TableFilterSourceType.Table && raw["sqlBuilder"]
+              ? normalizeFilterSqlBuilder(raw["sqlBuilder"])
+              : undefined,
+          helpText: String(raw["helpText"] || "").trim(),
+          enabled: raw["enabled"] !== false,
+        } satisfies TableViewFilter;
+      })
+      .filter((filter) => filter.name && filter.linkColumn);
+  };
   return {
     ...next,
     id: String(next["id"] || genId("tvw")),
@@ -808,6 +856,7 @@ export function normalizeTableViewRecord(
     previewFields: normalizeFieldList(next["previewFields"], 3),
     fieldLabels: normalizeFieldLabels(next["fieldLabels"]),
     fieldSettings: normalizeFieldSettings(next["fieldSettings"]),
+    filters: normalizeTableViewFilters(next["filters"]),
     organizationIds: Array.isArray(
       next["organizationIds"] || next["OrganizationIds"],
     )

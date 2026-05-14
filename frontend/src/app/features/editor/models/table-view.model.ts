@@ -1,7 +1,8 @@
-import type { UnknownRecord } from './editor-common.model';
+import type { UnknownRecord } from "./editor-common.model";
+import type { TableViewFilter } from "../../../services/table-filters.service";
 
 export interface TableViewFieldSetting {
-  displayMode: 'raw' | 'lookup';
+  displayMode: "raw" | "lookup";
   lookupTable: string;
   lookupValueColumn: string;
   lookupLabelColumn: string;
@@ -20,12 +21,14 @@ export interface TableViewConfig extends UnknownRecord {
   fieldSettings: Record<string, TableViewFieldSetting>;
   createdAt: string | null;
   updatedAt: string | null;
+  filters?: TableViewFilter[];
 }
 
 export interface TableViewRowsOptions {
   config?: TableViewConfig | null;
   search?: string;
   limit?: number;
+  selectedFilters?: { [key: string]: string[] } | null;
 }
 
 export interface TableViewRowsResponse {

@@ -16,7 +16,8 @@ namespace DocApi.DTOs
         ModuleResponse? Module = null,
         string? Token = null,
         string? Error = null,
-        string? RedirectTo = null);
+        string? RedirectTo = null,
+        object? Data = null);
 
     public class EditorLoginRequest
     {
@@ -76,6 +77,8 @@ namespace DocApi.DTOs
         public TableViewConfigRequest? Config { get; set; }
 
         public string? DatabaseName { get; set; }
+
+        public Dictionary<string, List<string>>? SelectedFilters { get; set; }
     }
 
     public class TableViewRecordRequest
@@ -111,6 +114,14 @@ namespace DocApi.DTOs
 
         [MaxLength(64)]
         public string Id { get; set; } = string.Empty;
+    }
+
+    public class GetFilterOptionsRequest
+    {
+        public TableViewFilter? Filter { get; set; }
+
+        [MaxLength(128)]
+        public string? DatabaseName { get; set; }
     }
 
     public class PreviewRequest
@@ -398,6 +409,7 @@ namespace DocApi.DTOs
         public List<string> PreviewFields { get; set; } = [];
         public Dictionary<string, string> FieldLabels { get; set; } = [];
         public Dictionary<string, TableViewFieldSetting> FieldSettings { get; set; } = [];
+        public List<TableViewFilter> Filters { get; set; } = [];
         public string? CreatedAt { get; set; }
         public string? UpdatedAt { get; set; }
     }

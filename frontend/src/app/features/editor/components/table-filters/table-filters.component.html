@@ -1,0 +1,100 @@
+<div class="table-filters-container">
+  <form [formGroup]="filterForm" class="filters-form">
+    <div class="filters-header">
+      <h3 style="font-size: 14px; margin: 0; font-weight: 600;">Filtres</h3>
+      <button
+        type="button"
+        class="btn-link"
+        style="font-size: 11px; padding: 0; border: none; background: none; color: var(--accent); cursor: pointer;"
+        (click)="resetFilters()"
+      >
+        Réinitialiser
+      </button>
+    </div>
+
+    <div class="filters-grid" style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px;">
+      <ng-container *ngFor="let filter of filters">
+        <ng-container *ngIf="filter.enabled">
+          <div class="filter-group" style="min-width: 150px;">
+            <label class="filter-label" style="display: block; font-size: 11px; color: var(--text2); font-weight: 600; margin-bottom: 4px;">
+              {{ filter.name }}
+              <span
+                *ngIf="filter.helpText"
+                style="display: inline-block; width: 14px; height: 14px; line-height: 14px; text-align: center; border-radius: 50%; background: var(--surface3); font-size: 9px; cursor: help;"
+                [title]="filter.helpText"
+                >?</span
+              >
+            </label>
+
+            <!-- Filtre statique -->
+            <ng-container
+              *ngIf="filter.sourceType === TableFilterSourceType.Static"
+            >
+              <div class="filter-options static-options">
+                <select
+                  multiple
+                  style="display: block; width: 100%; font-size: 12px; border: 1px solid var(--border); border-radius: var(--r); padding: 4px 8px; background: var(--surface2); color: var(--text);"
+                  [formControl]="getControl(filter.id)"
+                >
+                  <option
+                    *ngFor="let option of getFilterOptions(filter.id)"
+                    [value]="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+            </ng-container>
+
+            <!-- Filtre dynamique -->
+            <ng-container
+              *ngIf="filter.sourceType === TableFilterSourceType.Table"
+            >
+              <div class="filter-dynamic">
+                <!-- En cours de chargement -->
+                <div
+                  *ngIf="isLoading(filter.id)"
+                  style="font-size: 10px; color: var(--text3);"
+                >
+                  Chargement...
+                </div>
+
+                <!-- Options chargées -->
+                <ng-container *ngIf="!isLoading(filter.id)">
+                  <select
+                    multiple
+                    style="display: block; width: 100%; font-size: 12px; border: 1px solid var(--border); border-radius: var(--r); padding: 4px 8px; background: var(--surface2); color: var(--text);"
+                    [formControl]="getControl(filter.id)"
+                  >
+                    <option
+                      *ngFor="let option of getFilterOptions(filter.id)"
+                      [value]="option.value"
+                    >
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </ng-container>
+
+                <!-- Message d'erreur -->
+                <div
+                  *ngIf="getErrorMessage(filter.id)"
+                  style="font-size: 10px; color: var(--danger); margin-top: 4px;"
+                >
+                  {{ getErrorMessage(filter.id) }}
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+
+    <!-- Message si aucun filtre -->
+    <div
+      *ngIf="!filters || filters.length === 0"
+      style="font-size: 11px; color: var(--text3); font-style: italic;"
+    >
+      Aucun filtre disponible
+    </div>
+  </form>
+</div>

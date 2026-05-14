@@ -13,6 +13,7 @@ namespace DocApi.Domain.Entities
         public List<string> PreviewFields { get; set; } = [];
         public Dictionary<string, string> FieldLabels { get; set; } = [];
         public Dictionary<string, TableViewFieldSetting> FieldSettings { get; set; } = [];
+        public List<TableViewFilter> Filters { get; set; } = [];
         public string? CreatedAt { get; set; }
         public string? UpdatedAt { get; set; }
     }

@@ -72,8 +72,22 @@ namespace DocApi.Repositories
             var schemaPath = Path.Combine(_environment.ContentRootPath, "Database", "EditorSchema.sql");
             if (!File.Exists(schemaPath)) return;
 
-            using var connection = ConfigConnection();
-            await connection.ExecuteAsync(await File.ReadAllTextAsync(schemaPath));
+            var sql = await File.ReadAllTextAsync(schemaPath);
+
+            // Apply schema to ConfigDB (for families, templates, graphic_charters, table_view_config, app_settings)
+            using var configConnection = ConfigConnection();
+            await configConnection.ExecuteAsync(sql);
+
+            // Apply schema to TenantDB (for documents table within organization database)
+            try
+            {
+                using var tenantConnection = TenantConnection();
+                await tenantConnection.ExecuteAsync(sql);
+            }
+            catch
+            {
+                // TenantDB schema application is non-critical; continue if no tenant is resolved
+            }
         }
 
         // ─── Families (ConfigDB) ─────────────────────────────────────────────────
@@ -419,11 +433,13 @@ namespace DocApi.Repositories
             var hasFieldSettings = await ConfigTableHasColumnAsync("table_view_config", "field_settings_json");
             var hasFieldLabels = await ConfigTableHasColumnAsync("table_view_config", "field_labels_json");
             var hasOrganizationIds = await ConfigTableHasColumnAsync("table_view_config", "organization_ids_json");
+            var hasFilters = await ConfigTableHasColumnAsync("table_view_config", "filters_json");
             var sql = $"""
                 SELECT id, table_name, label, visible_fields_json, editable_fields_json,
                        preview_fields_json,
                        {(hasFieldLabels ? "field_labels_json" : "'{}'")} AS field_labels_json,
                        {(hasFieldSettings ? "field_settings_json" : "'{}'")} AS field_settings_json,
+                       {(hasFilters ? "filters_json" : "'[]'")} AS filters_json,
                        {(hasOrganizationIds ? "organization_ids_json" : "'[]'")} AS organization_ids_json,
                        created_at, updated_at
                 FROM table_view_config
@@ -445,6 +461,7 @@ namespace DocApi.Repositories
                     PreviewFields = JsonValue(item, "preview_fields_json", new List<string>()),
                     FieldLabels = JsonValue(item, "field_labels_json", new Dictionary<string, string>()),
                     FieldSettings = JsonValue(item, "field_settings_json", new Dictionary<string, TableViewFieldSetting>()),
+                    Filters = JsonValue(item, "filters_json", new List<TableViewFilter>()),
                     CreatedAt = Str(item, "created_at"),
                     UpdatedAt = Str(item, "updated_at")
                 };
@@ -464,10 +481,10 @@ namespace DocApi.Repositories
                 WHEN MATCHED THEN UPDATE SET table_name = @table_name, label = @label,
                   visible_fields_json = @visible_fields_json, editable_fields_json = @editable_fields_json,
                   preview_fields_json = @preview_fields_json, field_labels_json = @field_labels_json, 
-                  field_settings_json = @field_settings_json, organization_ids_json = @organization_ids_json, 
-                  updated_at = @updated_at
-                WHEN NOT MATCHED THEN INSERT (id, table_name, label, visible_fields_json, editable_fields_json, preview_fields_json, field_labels_json, field_settings_json, organization_ids_json, created_at, updated_at)
-                  VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json, @preview_fields_json, @field_labels_json, @field_settings_json, @organization_ids_json, @created_at, @updated_at);
+                  field_settings_json = @field_settings_json, filters_json = @filters_json, 
+                  organization_ids_json = @organization_ids_json, updated_at = @updated_at
+                WHEN NOT MATCHED THEN INSERT (id, table_name, label, visible_fields_json, editable_fields_json, preview_fields_json, field_labels_json, field_settings_json, filters_json, organization_ids_json, created_at, updated_at)
+                  VALUES (@id, @table_name, @label, @visible_fields_json, @editable_fields_json, @preview_fields_json, @field_labels_json, @field_settings_json, @filters_json, @organization_ids_json, @created_at, @updated_at);
                 """, TableViewParams(normalized));
             return normalized;
         }
@@ -607,7 +624,7 @@ namespace DocApi.Repositories
 
         // ─── GetTableViewRows (TenantDB — données métier) ────────────────────────
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config, string? databaseName = null)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null)
         {
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -628,12 +645,29 @@ namespace DocApi.Repositories
 
             var parameters = new DynamicParameters();
             parameters.Add("limit", Math.Max(1, Math.Min(limit ?? 200, 500)));
-            var where = "";
+            
+            var whereClauses = new List<string>();
             if (!string.IsNullOrWhiteSpace(search) && previewFields.Length > 0)
             {
                 parameters.Add("search", $"%{search}%");
-                where = "WHERE " + string.Join(" OR ", previewFields.Select(field => $"CONVERT(NVARCHAR(MAX), {Quote(field)}) LIKE @search"));
+                whereClauses.Add("(" + string.Join(" OR ", previewFields.Select(field => $"CONVERT(NVARCHAR(MAX), {Quote(field)}) LIKE @search")) + ")");
             }
+
+            if (selectedFilters != null && selectedFilters.Any())
+            {
+                foreach (var filterPair in selectedFilters)
+                {
+                    var filterDef = tableView.Filters.FirstOrDefault(f => f.Id == filterPair.Key);
+                    if (filterDef != null && !string.IsNullOrWhiteSpace(filterDef.LinkColumn) && filterPair.Value.Any())
+                    {
+                        var paramName = $"filter_{filterDef.Id.Replace("-", "_")}";
+                        parameters.Add(paramName, filterPair.Value);
+                        whereClauses.Add($"{Quote(filterDef.LinkColumn)} IN @{paramName}");
+                    }
+                }
+            }
+
+            var where = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
 
             using var connection = TenantConnection(databaseName);
             var rows = await connection.QueryAsync(
@@ -769,16 +803,18 @@ namespace DocApi.Repositories
             });
         }
 
-        // ─── Documents (ConfigDB) ───────────────────────────────────────────────
+        // ─── Documents (TenantDB - Organization Database) ─────────────────────────
 
         public async Task<IEnumerable<DocumentResponse>> LoadDocumentsAsync(int? organizationId = null, string? familyId = null, string? beneficiaryTable = null, string? beneficiaryId = null)
         {
-            if (!await ConfigTableExistsAsync("document")) return [];
+            if (!await TenantTableExistsAsync("document")) return [];
 
             var where = new List<string> { "is_deleted = 0" };
             var parameters = new DynamicParameters();
 
-            if (organizationId.HasValue)
+            // Note: organizationId parameter is now implicit via TenantConnection
+            // Only filter by organizationId if explicitly needed for cross-org queries
+            if (organizationId.HasValue && organizationId.Value != _tenantProvider.GetOrganizationId())
             {
                 where.Add("etablissement_id = @organizationId");
                 parameters.Add("organizationId", organizationId.Value);
@@ -802,7 +838,7 @@ namespace DocApi.Repositories
                 parameters.Add("beneficiaryId", beneficiaryId);
             }
 
-            using var connection = ConfigConnection();
+            using var connection = TenantConnection();
             var rows = await connection.QueryAsync($"""
                 SELECT id, etablissement_id, family_id, template_id, graphic_charter_id,
                        beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_link_column,
@@ -821,14 +857,15 @@ namespace DocApi.Repositories
 
         public async Task<DocumentListResponse> LoadDocumentsPagedAsync(DocumentListRequest request)
         {
-            if (!await ConfigTableExistsAsync("document"))
+            if (!await TenantTableExistsAsync("document"))
                 return new DocumentListResponse { Data = new List<DocumentListItemResponse>(), Total = 0, Page = request.Page, Limit = request.Limit, TotalPages = 0 };
 
             // Build WHERE clause
             var where = new List<string> { "is_deleted = 0" };
             var parameters = new DynamicParameters();
 
-            if (request.OrganizationId.HasValue)
+            // Note: organizationId is now implicit via TenantConnection
+            if (request.OrganizationId.HasValue && request.OrganizationId.Value != _tenantProvider.GetOrganizationId())
             {
                 where.Add("etablissement_id = @organizationId");
                 parameters.Add("organizationId", request.OrganizationId.Value);
@@ -865,7 +902,7 @@ namespace DocApi.Repositories
             var sortOrder = request.SortOrder?.ToLower() == "asc" ? "ASC" : "DESC";
 
             // Get total count
-            using (var connection = ConfigConnection())
+            using (var connection = TenantConnection())
             {
                 var countQuery = $"SELECT COUNT(*) FROM document WHERE {string.Join(" AND ", where)}";
                 var total = await connection.ExecuteScalarAsync<int>(countQuery, parameters);
@@ -914,8 +951,8 @@ namespace DocApi.Repositories
 
         public async Task<DocumentResponse?> GetDocumentByIdAsync(string id)
         {
-            if (!await ConfigTableExistsAsync("document")) return null;
-            using var connection = ConfigConnection();
+            if (!await TenantTableExistsAsync("document")) return null;
+            using var connection = TenantConnection();
             var row = await connection.QueryFirstOrDefaultAsync("""
                 SELECT TOP (1) id, etablissement_id, family_id, template_id, graphic_charter_id,
                                beneficiary_id, beneficiary_mode, beneficiary_table, beneficiary_link_column,
@@ -933,7 +970,7 @@ namespace DocApi.Repositories
         public async Task<DocumentResponse> CreateDocumentAsync(DocumentCreateRequest request)
         {
             var document = NormalizeDocument(request);
-            using var connection = ConfigConnection();
+            using var connection = TenantConnection();
             await connection.ExecuteAsync("""
                 INSERT INTO document (
                   id, etablissement_id, family_id, template_id, graphic_charter_id,
@@ -960,8 +997,8 @@ namespace DocApi.Repositories
 
         public async Task DeleteDocumentAsync(string id)
         {
-            if (!await ConfigTableExistsAsync("document")) return;
-            using var connection = ConfigConnection();
+            if (!await TenantTableExistsAsync("document")) return;
+            using var connection = TenantConnection();
             await connection.ExecuteAsync(
                 "UPDATE document SET is_deleted = 1, updated_at = @updatedAt WHERE id = @id",
                 new { id, updatedAt = DateTimeOffset.UtcNow.ToString("O") });
@@ -1166,6 +1203,7 @@ namespace DocApi.Repositories
             preview_fields_json = JsonString(tableView.PreviewFields, "[]"),
             field_labels_json = JsonString(tableView.FieldLabels, "{}"),
             field_settings_json = JsonString(tableView.FieldSettings, "{}"),
+            filters_json = JsonString(tableView.Filters, "[]"),
             organization_ids_json = JsonString(tableView.OrganizationIds, "[]"),
             created_at = tableView.CreatedAt ?? DateTimeOffset.UtcNow.ToString("O"),
             updated_at = DateTimeOffset.UtcNow.ToString("O")
@@ -1308,6 +1346,7 @@ namespace DocApi.Repositories
             PreviewFields = NormalizeFieldList(source.PreviewFields).Take(3).ToList(),
             FieldLabels = source.FieldLabels ?? [],
             FieldSettings = source.FieldSettings ?? [],
+            Filters = NormalizeTableViewFilters(source.Filters),
             CreatedAt = source.CreatedAt,
             UpdatedAt = source.UpdatedAt
         };
@@ -1386,6 +1425,60 @@ namespace DocApi.Repositories
                 .Where(f => !string.IsNullOrWhiteSpace(f))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+
+        private static List<TableViewFilter> NormalizeTableViewFilters(IEnumerable<TableViewFilter>? filters)
+        {
+            if (filters == null || !filters.Any()) return [];
+
+            return filters.Select(f => new TableViewFilter
+            {
+                Id = string.IsNullOrWhiteSpace(f.Id) ? $"tvf_{Guid.NewGuid():N}" : f.Id,
+                Name = f.Name,
+                LinkColumn = f.LinkColumn,
+                SourceType = f.SourceType,
+                StaticOptions = f.StaticOptions ?? [],
+                SqlBuilder = f.SqlBuilder ?? new TableFilterSqlBuilder(),
+                HelpText = f.HelpText ?? string.Empty,
+                Enabled = f.Enabled
+            }).ToList();
+        }
+
+        // ─── TableView Filters ────────────────────────────────────────────────────
+
+        public async Task<IEnumerable<TableFilterOption>> GetTableFilterOptionsAsync(TableFilterSqlBuilder sqlBuilder, string? databaseName = null)
+        {
+            if (sqlBuilder == null || string.IsNullOrWhiteSpace(sqlBuilder.TableName) ||
+                string.IsNullOrWhiteSpace(sqlBuilder.ValueColumn) || string.IsNullOrWhiteSpace(sqlBuilder.LabelColumn))
+                return [];
+
+            try
+            {
+                var distinctKeyword = sqlBuilder.Distinct ? "DISTINCT" : "";
+                var sql = $"""
+                    SELECT {distinctKeyword} 
+                      {sqlBuilder.ValueColumn} AS value, 
+                      {sqlBuilder.LabelColumn} AS label
+                    FROM {sqlBuilder.TableName}
+                    ORDER BY label ASC
+                    """;
+
+                using var connection = TenantConnection(databaseName);
+                var rows = await connection.QueryAsync(sql);
+                return rows.Select(row =>
+                {
+                    var item = Row(row);
+                    return new TableFilterOption
+                    {
+                        Value = Str(item, "value") ?? string.Empty,
+                        Label = Str(item, "label") ?? string.Empty
+                    };
+                });
+            }
+            catch
+            {
+                return [];
+            }
+        }
 
         // ─── Query helpers ────────────────────────────────────────────────────────
 

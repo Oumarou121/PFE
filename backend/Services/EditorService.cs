@@ -1,4 +1,5 @@
 using DocApi.DTOs;
+using DocApi.Domain.ValueObjects;
 using DocApi.Repositories.Interfaces;
 using DocApi.Services.Interfaces;
 
@@ -13,6 +14,11 @@ namespace DocApi.Services
         {
             _repository = repository;
             _moduleRepository = moduleRepository;
+        }
+
+        public async Task EnsureSchemaAsync()
+        {
+            await _repository.EnsureSchemaAsync();
         }
 
         public async Task<IEnumerable<FamilyResponse>> GetFamiliesAsync()
@@ -123,6 +129,11 @@ namespace DocApi.Services
             return await _repository.GetTableViewConfigByIdAsync(id);
         }
 
+        public async Task<IEnumerable<TableFilterOption>> GetTableFilterOptionsAsync(TableFilterSqlBuilder sqlBuilder, string? databaseName = null)
+        {
+            return await _repository.GetTableFilterOptionsAsync(sqlBuilder, databaseName);
+        }
+
         public async Task<EditorStateResponse> LoadStateAsync(AuthUserResponse? currentUser)
         {
             await _repository.EnsureSchemaAsync();
@@ -178,7 +189,7 @@ namespace DocApi.Services
         public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Limit, request.Search, request.Config, request.DatabaseName);
+            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Limit, request.Search, request.Config, request.DatabaseName, request.SelectedFilters);
         }
 
         public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request)

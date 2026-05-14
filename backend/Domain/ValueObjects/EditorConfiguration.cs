@@ -362,4 +362,66 @@ namespace DocApi.Domain.ValueObjects
         [MaxLength(128)]
         public string LookupLabelColumn2 { get; set; } = string.Empty;
     }
+
+    public enum TableFilterSourceType
+    {
+        Static,     // Liste d'options statiques (value, label)
+        Table       // Données provenant d'une table (requête SQL)
+    }
+
+    public class TableFilterOption
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Value { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(255)]
+        public string Label { get; set; } = string.Empty;
+    }
+
+    public class TableFilterSqlBuilder
+    {
+        [Required]
+        [MaxLength(128)]
+        public string TableName { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(128)]
+        public string ValueColumn { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(128)]
+        public string LabelColumn { get; set; } = string.Empty;
+
+        public bool Distinct { get; set; } = true;
+    }
+
+    public class TableViewFilter
+    {
+        [Required]
+        [MaxLength(64)]
+        public string Id { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(128)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(128)]
+        public string LinkColumn { get; set; } = string.Empty;
+
+        public TableFilterSourceType SourceType { get; set; } = TableFilterSourceType.Static;
+
+        // Pour sourceType = "Static"
+        public List<TableFilterOption>? StaticOptions { get; set; }
+
+        // Pour sourceType = "Table"
+        public TableFilterSqlBuilder? SqlBuilder { get; set; }
+
+        [MaxLength(1000)]
+        public string HelpText { get; set; } = string.Empty;
+
+        public bool Enabled { get; set; } = true;
+    }
 }

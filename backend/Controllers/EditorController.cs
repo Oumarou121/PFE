@@ -365,6 +365,36 @@ namespace DocApi.Controllers
             return Ok(new EditorApiResponse(true));
         }
 
+        [HttpGet("table-view-config/{id}/filters")]
+        public async Task<ActionResult> GetTableViewFilters(string id)
+        {
+            await _service.EnsureSchemaAsync();
+            var config = await _service.GetTableViewConfigByIdAsync(id);
+            if (config == null) return NotFound(new EditorApiResponse(false, Error: "TableView not found"));
+            
+            return Ok(new EditorApiResponse(true, Data: config.Filters ?? []));
+        }
+
+        [HttpPost("table-view-filters/options")]
+        public async Task<ActionResult> GetTableFilterOptions([FromBody] GetFilterOptionsRequest request)
+        {
+            if (request?.Filter?.SourceType != TableFilterSourceType.Table)
+                return BadRequest(new EditorApiResponse(false, Error: "Only table-based filters are supported"));
+
+            if (string.IsNullOrWhiteSpace(request.Filter.SqlBuilder?.TableName))
+                return BadRequest(new EditorApiResponse(false, Error: "SqlBuilder configuration is required"));
+
+            try
+            {
+                var options = await _service.GetTableFilterOptionsAsync(request.Filter.SqlBuilder, request.DatabaseName);
+                return Ok(new EditorApiResponse(true, Data: options));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new EditorApiResponse(false, Error: $"Failed to fetch filter options: {ex.Message}"));
+            }
+        }
+
         private string? SanitizeDatabaseName(string? databaseName)
         {
             if (string.IsNullOrEmpty(databaseName)) return null;
