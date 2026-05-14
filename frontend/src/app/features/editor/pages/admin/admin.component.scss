@@ -2932,10 +2932,6 @@ body.resize-cursor * {
     margin: 0;
   }
 
-  tr:nth-child(even) td {
-    background-color: var(--doc-table-alt-row-bg, #f8fafc);
-  }
-
   .var-missing {
     color: var(--red);
     background: var(--red-bg);
