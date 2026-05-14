@@ -2808,6 +2808,152 @@
                                       </option>
                                     </select>
                                   </label>
+                                  <label
+                                    class="form-label"
+                                    style="font-size: 10px; color: var(--text2)"
+                                  >
+                                    Colonne code
+                                    <input
+                                      *ngIf="
+                                        sourceMeta.lookupEditorMode === 'manual'
+                                      "
+                                      class="form-input"
+                                      [value]="
+                                        sourceMeta.lookupValueColumn || ''
+                                      "
+                                      (change)="
+                                        updateVarColumnLookupField(
+                                          famId,
+                                          ci,
+                                          vi,
+                                          colIndex,
+                                          'lookupValueColumn',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                      style="
+                                        display: block;
+                                        width: 100%;
+                                        margin-top: 4px;
+                                      "
+                                      placeholder="Ex: Id"
+                                    />
+                                    <select
+                                      *ngIf="
+                                        sourceMeta.lookupEditorMode !== 'manual'
+                                      "
+                                      class="form-input"
+                                      [value]="
+                                        sourceMeta.lookupValueColumn || ''
+                                      "
+                                      (change)="
+                                        updateVarColumnLookupField(
+                                          famId,
+                                          ci,
+                                          vi,
+                                          colIndex,
+                                          'lookupValueColumn',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                      style="
+                                        display: block;
+                                        width: 100%;
+                                        margin-top: 4px;
+                                      "
+                                    >
+                                      <option value="">
+                                        Choisir une colonne
+                                      </option>
+                                      <option
+                                        *ngFor="
+                                          let col of getLookupColumnOptions(
+                                            sourceMeta.lookupTable || ''
+                                          )
+                                        "
+                                        [value]="col.name"
+                                        [selected]="
+                                          col.name ===
+                                          (sourceMeta.lookupValueColumn || '')
+                                        "
+                                      >
+                                        {{ col.comment || col.name }}
+                                      </option>
+                                    </select>
+                                  </label>
+                                  <label
+                                    class="form-label"
+                                    style="font-size: 10px; color: var(--text2)"
+                                  >
+                                    Colonne libellé
+                                    <input
+                                      *ngIf="
+                                        sourceMeta.lookupEditorMode === 'manual'
+                                      "
+                                      class="form-input"
+                                      [value]="
+                                        sourceMeta.lookupLabelColumn || ''
+                                      "
+                                      (change)="
+                                        updateVarColumnLookupField(
+                                          famId,
+                                          ci,
+                                          vi,
+                                          colIndex,
+                                          'lookupLabelColumn',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                      style="
+                                        display: block;
+                                        width: 100%;
+                                        margin-top: 4px;
+                                      "
+                                      placeholder="Ex: Libelle"
+                                    />
+                                    <select
+                                      *ngIf="
+                                        sourceMeta.lookupEditorMode !== 'manual'
+                                      "
+                                      class="form-input"
+                                      [value]="
+                                        sourceMeta.lookupLabelColumn || ''
+                                      "
+                                      (change)="
+                                        updateVarColumnLookupField(
+                                          famId,
+                                          ci,
+                                          vi,
+                                          colIndex,
+                                          'lookupLabelColumn',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                      style="
+                                        display: block;
+                                        width: 100%;
+                                        margin-top: 4px;
+                                      "
+                                    >
+                                      <option value="">
+                                        Choisir une colonne
+                                      </option>
+                                      <option
+                                        *ngFor="
+                                          let col of getLookupColumnOptions(
+                                            sourceMeta.lookupTable || ''
+                                          )
+                                        "
+                                        [value]="col.name"
+                                        [selected]="
+                                          col.name ===
+                                          (sourceMeta.lookupLabelColumn || '')
+                                        "
+                                      >
+                                        {{ col.comment || col.name }}
+                                      </option>
+                                    </select>
+                                  </label>
                                 </ng-container>
                               </ng-container>
                             </div>
