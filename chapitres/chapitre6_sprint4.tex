@@ -2,15 +2,15 @@
 % CHAPITRE 6
 %=================================================
 
-\chapter{Sprint 4 : Administration des modules métier}
+\chapter{Sprint 4 : Administration métier, intégration et livraison}
 
 \section{Introduction}
 
-Le quatrième sprint a pour objectif de compléter le coeur documentaire par les modules métier nécessaires à son exploitation. Un éditeur de modèles ne suffit pas à lui seul à produire des documents fiables. Il faut également définir les familles de documents, les chartes graphiques, les configurations de vues de tables, les bénéficiaires et les filtres permettant de sélectionner les données métier utilisées dans la génération.
+Le quatrième sprint a pour objectif de compléter le coeur documentaire par les modules métier nécessaires à son exploitation, puis de consolider l'ensemble de la solution. Un éditeur de modèles ne suffit pas à lui seul à produire des documents fiables. Il faut également définir les familles de documents, les chartes graphiques, les configurations de vues de tables, les bénéficiaires et les filtres permettant de sélectionner les données métier utilisées dans la génération.
 
 Ce sprint représente donc une étape structurante. Il transforme l'application en une véritable plateforme d'administration documentaire. Les familles permettent de classer les modèles et de décrire les sources de données associées. Les modèles définissent la structure documentaire. Les chartes graphiques assurent l'identité visuelle. Les configurations de vues de tables, représentées par l'entité \texttt{TableViewConfig}, permettent d'exposer des données métier sous forme de vues administrables. Enfin, les bénéficiaires et les filtres permettent de sélectionner les données injectées dans les documents.
 
-La complexité de ce sprint vient de l'interdépendance entre ces modules. Un modèle appartient à une famille, peut être lié à une organisation et peut utiliser une charte graphique. Une famille peut référencer une table de bénéficiaires ou une requête SQL. Une configuration de vue de table décrit les champs visibles, modifiables et utilisés pour la prévisualisation. L'enjeu est donc de proposer une administration cohérente, tout en conservant une architecture maintenable.
+La complexité de ce sprint vient de l'interdépendance entre ces modules. Un modèle appartient à une famille, peut être lié à une organisation et peut utiliser une charte graphique. Une famille peut référencer une table de bénéficiaires ou une requête SQL. Une configuration de vue de table décrit les champs visibles, modifiables et utilisés pour la prévisualisation. L'enjeu est donc de proposer une administration cohérente, tout en conservant une architecture maintenable. Cette dernière itération inclut aussi la stabilisation des parcours, les tests de non-régression, la préparation des captures et la mise en cohérence du livrable PFE.
 
 \section{Objectifs du sprint}
 
@@ -24,7 +24,9 @@ Les objectifs du sprint sont les suivants :
     \item permettre la consultation, la création, la modification et la suppression des enregistrements métier à travers les vues de tables ;
     \item associer les modèles aux familles et aux chartes graphiques ;
     \item configurer les filtres et les bénéficiaires utilisés pour la génération documentaire ;
-    \item valider les données envoyées aux endpoints et normaliser les structures JSON échangées.
+    \item valider les données envoyées aux endpoints et normaliser les structures JSON échangées ;
+    \item vérifier les parcours complets de génération documentaire ;
+    \item préparer la documentation, les captures et la démonstration finale.
 \end{itemize}
 
 \section{Backlog du sprint}
@@ -48,6 +50,8 @@ US4.3 & En tant qu'administrateur, je peux définir des chartes graphiques. & Cr
 US4.4 & En tant que super administrateur, je peux configurer les vues de tables métier. & Implémenter \texttt{TableViewConfig}, champs visibles, champs éditables, champs de prévisualisation et paramètres de lookup.\\
 \midrule
 US4.5 & En tant qu'utilisateur, je peux sélectionner un bénéficiaire à partir des données métier. & Implémenter \texttt{/api/search-beneficiaries}, appliquer les filtres et retourner les lignes disponibles.\\
+\midrule
+US4.6 & En tant qu'évaluateur PFE, je peux suivre un parcours complet et reproductible. & Exécuter les tests, vérifier la sécurité, préparer les captures, documenter l'installation et stabiliser la démonstration.\\
 \bottomrule
 \end{longtable}
 
@@ -240,6 +244,14 @@ L'interface du super administrateur permet de créer ces modules, de leur associ
 
 \screenshotplaceholder{sprint4_modules.png}{Administration des modules métier}{Interface de regroupement des vues de tables par domaine}
 
+\subsection{Intégration finale et préparation de la livraison}
+
+La fin du sprint a été consacrée à la validation globale de la plateforme. Cette étape ne consiste pas uniquement à vérifier que chaque écran fonctionne séparément. Elle consiste surtout à rejouer les parcours réels : connexion, sélection du rôle, chargement de l'état de l'éditeur, configuration d'une famille, association d'un modèle, choix d'un bénéficiaire, application des filtres d'année universitaire et prévisualisation du document généré.
+
+Cette consolidation a permis de vérifier la cohérence entre le frontend Angular, les endpoints ASP.NET Core, les services applicatifs, les repositories et les données SQL Server. Les contrôles de sécurité ont également été revus : accès par rôle, portée multi-tenant, validation des requêtes SQL de lecture, filtrage par année universitaire et protection des opérations d'écriture lorsque l'année est clôturée.
+
+Enfin, la préparation de la livraison a porté sur les éléments nécessaires à une soutenance PFE : documentation d'installation, captures d'écran, scénarios de démonstration, vérification des builds et clarification des limites connues. Cette phase donne au projet une forme présentable et exploitable, au-delà du simple fonctionnement technique.
+
 \section{Tests et validation}
 
 \begin{longtable}{p{0.25\textwidth} p{0.43\textwidth} p{0.22\textwidth}}
@@ -265,6 +277,12 @@ Regroupement en module & Créer un module et y associer plusieurs vues de tables
 CRUD enregistrement métier & Créer, modifier et supprimer une ligne via \texttt{TableViewService}. & Les opérations sont répercutées en base.\\
 \midrule
 Recherche bénéficiaire & Rechercher un bénéficiaire avec filtre. & La liste retournée respecte la famille et les filtres.\\
+\midrule
+Parcours complet & Générer un document depuis une famille, un modèle, un bénéficiaire et une année universitaire. & Le document rendu contient les données attendues et respecte la charte.\\
+\midrule
+Validation sécurité & Tester les accès selon les rôles et l'organisation active. & Les données hors périmètre ne sont pas exposées.\\
+\midrule
+Préparation livraison & Exécuter les builds, préparer les captures et rejouer la démonstration. & Le projet est stable et présentable pour l'évaluation.\\
 \bottomrule
 \end{longtable}
 
@@ -272,6 +290,6 @@ Les tests fonctionnels ont validé les opérations CRUD principales. Les tests d
 
 \section{Conclusion}
 
-Le sprint 4 a transformé la plateforme en un système documentaire administrable. Les familles, modèles, chartes graphiques, configurations de vues de tables et bénéficiaires sont désormais structurés et exploitables. L'ajout explicite de \texttt{TableViewConfig} constitue un apport important, car il permet d'administrer les données métier de manière configurable sans développer une interface spécifique pour chaque table.
+Le sprint 4 a transformé la plateforme en un système documentaire administrable et prêt à être présenté. Les familles, modèles, chartes graphiques, configurations de vues de tables et bénéficiaires sont désormais structurés et exploitables. L'ajout explicite de \texttt{TableViewConfig} constitue un apport important, car il permet d'administrer les données métier de manière configurable sans développer une interface spécifique pour chaque table.
 
-À l'issue de ce sprint, les principales fonctionnalités métier sont présentes. Le sprint suivant peut donc se concentrer sur l'intégration finale, les tests, l'optimisation, la documentation et la préparation de la livraison.
+À l'issue de ce sprint, les principales fonctionnalités métier sont présentes et les parcours essentiels ont été consolidés. Le projet dispose ainsi d'une base fonctionnelle complète : authentification, rôles, édition documentaire, administration métier, configuration des vues de tables, gestion des bénéficiaires, filtrage par année universitaire et prévisualisation dynamique.

@@ -592,9 +592,31 @@ export class PagePaginator {
       el.style.margin = "10px 0";
     });
     root.querySelectorAll<HTMLElement>("img").forEach((el) => {
+      const width =
+        el.style.width ||
+        el.getAttribute("width") ||
+        el.getAttribute("data-width") ||
+        "";
+      const alignment =
+        el.getAttribute("alignment") || el.getAttribute("data-align") || "";
+      if (width) {
+        el.style.width = width;
+        el.setAttribute("width", width);
+        el.setAttribute("data-width", width);
+      }
       el.style.maxWidth = "100%";
       el.style.height = "auto";
       el.style.display = "block";
+      if (alignment === "center") {
+        el.style.marginLeft = "auto";
+        el.style.marginRight = "auto";
+      } else if (alignment === "right") {
+        el.style.marginLeft = "auto";
+        el.style.marginRight = "0";
+      } else if (alignment === "left") {
+        el.style.marginLeft = "0";
+        el.style.marginRight = "auto";
+      }
     });
   }
 

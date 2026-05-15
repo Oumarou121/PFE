@@ -319,6 +319,9 @@ export class DocumentRenderService {
       tfoot { display: table-footer-group; }
       tr, img { break-inside: avoid; page-break-inside: avoid; }
       img { max-width: 100%; height: auto; display: block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      img[alignment="center"], img[data-align="center"] { margin-left: auto; margin-right: auto; }
+      img[alignment="right"], img[data-align="right"] { margin-left: auto; margin-right: 0; }
+      img[alignment="left"], img[data-align="left"] { margin-left: 0; margin-right: auto; }
       .document-render--print .var-resolved, #sirh-print-area .var-resolved {
         color: #111 !important; font-weight: inherit !important;
         background: none !important; padding: 0 !important; border-radius: 0 !important;
@@ -378,6 +381,7 @@ export class DocumentRenderService {
     out = this.resolveListTags(out, person, preview);
     out = this.resolveScalars(out, person, preview);
     out = this.normalizeResolvedTableWidthsHtml(out);
+    out = this.normalizeImageLayoutHtml(out);
     return out;
   }
 
@@ -793,6 +797,55 @@ export class DocumentRenderService {
       }
     });
     return root.innerHTML;
+  }
+
+  private normalizeImageLayoutHtml(html: string): string {
+    if (!html || typeof DOMParser === "undefined") return html || "";
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+    const root = doc.body.firstElementChild as HTMLElement | null;
+    if (!root) return html;
+    root.querySelectorAll<HTMLImageElement>("img").forEach((image) => {
+      const width = String(
+        image.style.width ||
+          image.getAttribute("width") ||
+          image.getAttribute("data-width") ||
+          "",
+      ).trim();
+      const alignment = this.normalizeImageAlignment(image);
+      if (width) {
+        image.style.width = width;
+        image.setAttribute("width", width);
+        image.setAttribute("data-width", width);
+      }
+      image.style.maxWidth = "100%";
+      image.style.height = "auto";
+      image.style.display = "block";
+      image.setAttribute("alignment", alignment);
+      image.setAttribute("data-align", alignment);
+      if (alignment === "center") {
+        image.style.marginLeft = "auto";
+        image.style.marginRight = "auto";
+      } else if (alignment === "right") {
+        image.style.marginLeft = "auto";
+        image.style.marginRight = "0";
+      } else {
+        image.style.marginLeft = "0";
+        image.style.marginRight = "auto";
+      }
+    });
+    return root.innerHTML;
+  }
+
+  private normalizeImageAlignment(image: HTMLImageElement): "left" | "center" | "right" {
+    const attr = String(
+      image.getAttribute("alignment") || image.getAttribute("data-align") || "",
+    ).toLowerCase();
+    if (attr === "left" || attr === "center" || attr === "right") return attr;
+    if (image.style.marginLeft === "auto" && image.style.marginRight === "auto")
+      return "center";
+    if (image.style.marginLeft === "auto") return "right";
+    return "left";
   }
 
   private splitManualPages(html: string): string[] {

@@ -210,11 +210,11 @@ Génération & Un document peut être prévisualisé à partir d'un modèle et d
 
 \subsection{Découpage temporel}
 
-Le projet est découpé en cinq sprints. Ce découpage permet de passer progressivement de l'infrastructure vers la valeur métier. Chaque sprint produit un livrable vérifiable et prépare le sprint suivant.
+Le projet est découpé en quatre sprints. Ce découpage permet de passer progressivement de l'infrastructure vers la valeur métier, puis de regrouper la consolidation finale avec l'administration opérationnelle. Chaque sprint produit un livrable vérifiable et prépare le sprint suivant.
 
 \subsection{Objectifs par sprint}
 
-Le premier sprint concerne l'authentification et le socle applicatif. Le deuxième sprint met en place la gestion des rôles. Le troisième sprint développe l'édition documentaire. Le quatrième sprint ajoute l'administration des modules métier. Le cinquième sprint consolide l'intégration, les tests et la livraison.
+Le premier sprint concerne l'authentification et le socle applicatif. Le deuxième sprint met en place la gestion des rôles. Le troisième sprint développe l'édition documentaire. Le quatrième sprint ajoute l'administration des modules métier et prend en charge l'intégration, les tests et la livraison.
 
 \subsection{Livrables attendus}
 
@@ -246,8 +246,24 @@ L'architecture globale repose sur une séparation claire entre le frontend, le b
 
 Cette architecture présente plusieurs avantages. Elle sépare l'expérience utilisateur de la logique serveur, facilite les tests, permet l'évolution indépendante des couches et offre une base solide pour de futures extensions, comme l'export PDF avancé, la signature électronique ou l'historisation des documents générés.
 
+\section{Analyse technique globale du projet}
+
+L'analyse du projet SIRH-Doc montre une architecture organisée autour de trois responsabilités principales. Le backend ASP.NET Core expose les contrats REST, applique les règles de sécurité et centralise l'accès aux données. Le frontend Angular porte l'expérience utilisateur, les écrans d'administration, l'éditeur documentaire et les services clients. La base SQL Server conserve à la fois les données de configuration documentaire et les données métier utilisées pour alimenter les documents.
+
+Côté backend, la séparation entre contrôleurs, services, repositories et DTOs rend le code lisible et maintenable. Les contrôleurs restent proches du protocole HTTP, tandis que les services portent l'orchestration applicative. Les repositories isolent les requêtes SQL et facilitent l'évolution des accès aux données. Cette organisation n'est pas un DDD strict au sens tactique complet, mais elle reprend une logique de séparation par responsabilités qui convient au périmètre du projet.
+
+La gestion multi-tenant constitue un point structurant. Le tenant courant permet d'associer les traitements à une organisation et à une base de données cible. L'ajout de l'année universitaire active renforce cette logique, car plusieurs tables métier doivent être filtrées selon la période académique. Ce mécanisme améliore la traçabilité des dossiers du personnel et évite de mélanger des données appartenant à des exercices universitaires différents.
+
+Le système de génération documentaire repose sur les familles, les modèles, les chartes graphiques, les variables simples, les listes et les tableaux dynamiques. Cette conception rend le moteur documentaire configurable : un administrateur peut faire évoluer un modèle sans modifier le code source. Les modules dynamiques, notamment les vues de tables, complètent cette logique en permettant d'exposer des données métier sans créer une interface spécifique pour chaque table.
+
+La sécurité repose sur l'authentification JWT, le contrôle des rôles, les guards Angular, les middlewares backend et la validation des requêtes. Les points sensibles concernent surtout l'exécution de requêtes SQL configurables et l'accès aux données multi-tenant. Ces risques sont limités par l'autorisation des requêtes de lecture uniquement, la normalisation des paramètres, le filtrage par organisation et l'ajout de contrôles liés à l'année universitaire.
+
+Sur le plan UX/UI, l'application adopte une organisation par espaces : super administrateur, administrateur et utilisateur. Cette séparation clarifie les responsabilités, mais impose de garder une cohérence forte dans les formulaires, les messages d'erreur et les écrans de configuration. Les améliorations appliquées pendant la consolidation ont principalement visé la fiabilité de l'éditeur, la génération des tableaux dynamiques, la gestion des images et le chargement complet des données nécessaires.
+
+En matière de maintenabilité, le projet présente une base saine : services spécialisés, modèles typés côté frontend, repositories centralisés côté backend et composants dédiés pour les fonctions principales. Les axes d'amélioration à poursuivre concernent l'augmentation des tests automatisés, la documentation des conventions SQL configurables, la surveillance des performances sur les gros volumes et la mise en place progressive d'un audit plus détaillé des actions sensibles.
+
 \section{Conclusion}
 
 Ce chapitre a permis de formaliser les besoins de la plateforme. Les acteurs ont été identifiés, les concepts métier clarifiés, les fonctionnalités décrites et les contraintes non fonctionnelles précisées. Le backlog produit et les critères d'acceptation donnent une base de suivi pour la réalisation.
 
-La modélisation UML globale complète cette analyse en offrant une vision structurée du système. Les chapitres suivants décrivent maintenant la réalisation progressive de la plateforme à travers les cinq sprints définis.
+La modélisation UML globale complète cette analyse en offrant une vision structurée du système. Les chapitres suivants décrivent maintenant la réalisation progressive de la plateforme à travers les quatre sprints définis.

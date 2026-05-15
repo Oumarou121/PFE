@@ -2119,7 +2119,7 @@
                 [style.background]="(cls.couleur || '#555') + '12'"
                 [style.color]="cls.couleur || '#555'"
                 [style.border-color]="(cls.couleur || '#555') + '33'"
-                (click)="insertVariable(variable.tech || variable.key)"
+                (click)="handleVariableClick(variable)"
               >
                 {{ variable.label || variable.tech || variable.key }}
               </button>
@@ -3094,6 +3094,74 @@
         Annuler
       </button>
       <button class="btn primary" type="button" (click)="insertImage()">
+        Insérer
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay open" *ngIf="tableVariableModalOpen">
+  <div class="modal">
+    <div class="mhdr">
+      <span class="mtitle">
+        Insérer le tableau
+        {{ tableVariableDraft?.label || tableVariableDraft?.tech || "" }}
+      </span>
+      <button class="mclose" type="button" (click)="closeEditorModal()">
+        ×
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="muted" style="margin-top: 0">
+        Choisissez les colonnes et leur ordre d'affichage.
+      </p>
+      <div class="vars-panel-empty" *ngIf="!tableVariableColumns.length">
+        Aucune colonne n'est configurée pour cette variable tableau.
+      </div>
+      <div
+        class="frow"
+        style="margin: 0 0 8px"
+        *ngFor="let column of tableVariableColumns; let i = index"
+      >
+        <label style="display: flex; align-items: center; gap: 8px">
+          <input
+            type="checkbox"
+            [checked]="column.selected"
+            (change)="toggleTableVariableColumn(i, $any($event.target).checked)"
+          />
+          <span>{{ column.label }}</span>
+          <small class="muted">({{ column.key }})</small>
+        </label>
+        <div style="display: flex; gap: 4px; margin-top: 6px">
+          <button
+            class="btn sm"
+            type="button"
+            [disabled]="i === 0"
+            (click)="moveTableVariableColumn(i, -1)"
+          >
+            Monter
+          </button>
+          <button
+            class="btn sm"
+            type="button"
+            [disabled]="i === tableVariableColumns.length - 1"
+            (click)="moveTableVariableColumn(i, 1)"
+          >
+            Descendre
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="mactions">
+      <button class="btn" type="button" (click)="closeEditorModal()">
+        Annuler
+      </button>
+      <button
+        class="btn primary"
+        type="button"
+        [disabled]="!tableVariableColumns.length"
+        (click)="insertTableVariable()"
+      >
         Insérer
       </button>
     </div>

@@ -62,13 +62,13 @@ Cette solution apporte trois bénéfices principaux. Elle réduit les erreurs ma
 
 Pour mener le projet, la méthodologie Agile Scrum a été retenue. Ce choix est adapté à un projet PFE, car il permet d'organiser le travail en incréments fonctionnels, de valider progressivement les résultats et d'ajuster les priorités en fonction des difficultés rencontrées. Même si le développement a été réalisé par un seul développeur, l'esprit Scrum reste pertinent : découper le travail, définir un objectif par sprint, produire un livrable à la fin de chaque itération et effectuer une revue régulière de l'avancement.
 
-Dans ce projet, chaque sprint correspond à une étape logique de construction de la plateforme. Le premier sprint pose les fondations techniques. Le deuxième introduit la gouvernance d'accès. Le troisième développe le coeur d'édition documentaire. Le quatrième ajoute les modules métier d'administration. Le cinquième consolide l'intégration, la qualité et la livraison.
+Dans ce projet, chaque sprint correspond à une étape logique de construction de la plateforme. Le premier sprint pose les fondations techniques. Le deuxième introduit la gouvernance d'accès. Le troisième développe le coeur d'édition documentaire. Le quatrième regroupe l'administration métier, l'intégration finale, les tests et la préparation de la livraison.
 
 Cette progression évite de commencer par les écrans les plus complexes sans base technique solide. Elle permet aussi de valider rapidement les choix structurants : authentification, architecture backend, communication Angular/API, persistance SQL Server et organisation des services.
 
 \subsection{Planification globale du projet}
 
-La planification du projet a été organisée sur cinq sprints. Ce découpage respecte une logique de dépendance entre les fonctionnalités. Il aurait été difficile de développer la génération documentaire avant de définir les modèles et les familles, ou de sécuriser les modules métier sans système d'authentification. La planification retenue suit donc l'ordre naturel de construction d'une application professionnelle.
+La planification du projet a été organisée sur quatre sprints. Ce découpage respecte une logique de dépendance entre les fonctionnalités tout en évitant de disperser la phase finale dans une itération isolée. Il aurait été difficile de développer la génération documentaire avant de définir les modèles et les familles, ou de sécuriser les modules métier sans système d'authentification. La planification retenue suit donc l'ordre naturel de construction d'une application professionnelle.
 
 \begin{longtable}{p{0.16\textwidth} p{0.24\textwidth} p{0.48\textwidth}}
 \caption{Planification globale des sprints}\\
@@ -86,9 +86,7 @@ Sprint 2 & Rôles et gouvernance d'accès & Routes protégées, redirection selo
 \midrule
 Sprint 3 & Édition documentaire & Intégration de Tiptap, gestion du contenu des modèles, prévisualisation documentaire.\\
 \midrule
-Sprint 4 & Administration métier & CRUD des familles, modèles, chartes graphiques, configurations de vues de tables et bénéficiaires.\\
-\midrule
-Sprint 5 & Intégration et livraison & Tests, validation des parcours, documentation, optimisation et préparation de la démonstration.\\
+Sprint 4 & Administration métier, intégration et livraison & CRUD des familles, modèles, chartes graphiques, configurations de vues de tables et bénéficiaires, puis tests, validation des parcours, documentation et préparation de la démonstration.\\
 \bottomrule
 \end{longtable}
 
@@ -124,4 +122,4 @@ L'environnement technique retenu vise un équilibre entre productivité, mainten
 
 Ce chapitre a présenté le cadre général du projet, depuis le contexte métier jusqu'aux choix techniques. L'étude de l'existant a montré les limites d'une production documentaire manuelle et dispersée. La solution proposée répond à ces limites par une plateforme web sécurisée, centralisée et configurable.
 
-La méthodologie Agile Scrum permet de structurer la réalisation en cinq sprints cohérents. Les technologies retenues, notamment ASP.NET Core, Angular, SQL Server, JWT et Tiptap, offrent une base solide pour construire une application documentaire dynamique. Le chapitre suivant approfondit l'analyse des besoins, identifie les acteurs, formalise le backlog produit et présente la modélisation globale du système.
+La méthodologie Agile Scrum permet de structurer la réalisation en quatre sprints cohérents. Les technologies retenues, notamment ASP.NET Core, Angular, SQL Server, JWT et Tiptap, offrent une base solide pour construire une application documentaire dynamique. Le chapitre suivant approfondit l'analyse des besoins, identifie les acteurs, formalise le backlog produit et présente la modélisation globale du système.

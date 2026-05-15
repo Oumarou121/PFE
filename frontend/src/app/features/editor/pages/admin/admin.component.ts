@@ -28,7 +28,11 @@ import {
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
 import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
-import { BeneficiaryRecord, FamilyRecord } from "../../models/family.model";
+import {
+  BeneficiaryRecord,
+  FamilyRecord,
+  VariableDefinition,
+} from "../../models/family.model";
 import { TemplateRecord } from "../../models/template.model";
 import { OrganizationRecord } from "../../models/organization.model";
 import {
@@ -86,6 +90,12 @@ interface AdminVariableGroup {
   nom: string;
   name: string;
   count: number;
+}
+
+interface TableVariableColumnOption {
+  key: string;
+  label: string;
+  selected: boolean;
 }
 
 // PHASE 1: FontSize, renderTableCellStyle, TableCellExt, TableHeaderExt,
@@ -153,6 +163,9 @@ export class AdminComponent
   linkModalOpen = false;
   imageModalOpen = false;
   tableModalOpen = false;
+  tableVariableModalOpen = false;
+  tableVariableDraft: VariableDefinition | null = null;
+  tableVariableColumns: TableVariableColumnOption[] = [];
   dateVariableModalOpen = false;
   linkUrl = "";
   imageUrl = "";
@@ -1381,8 +1394,17 @@ export class AdminComponent
     );
   }
 
+  handleVariableClick(variable: VariableDefinition): void {
+    if (variable?.type === "list-object") {
+      this.openTableVariableModal(variable);
+      return;
+    }
+    this.insertVariable(variable?.tech || variable?.["key"] || "");
+  }
+
   insertVariable(tech: string): void {
     if (this.editorPanel === "filters") return;
+    if (!tech) return;
     const editor = this.getActiveTiptapEditor();
     if (editor) {
       editor.chain().focus().insertContent(`{{${tech}}}`).run();
@@ -1393,6 +1415,102 @@ export class AdminComponent
   }
 
   // ─── CHANGED: reads private field, no longer causes excessive CD ─────────────
+  openTableVariableModal(variable: VariableDefinition): void {
+    this.closeAllModals();
+    this.tableVariableDraft = variable;
+    this.tableVariableColumns = this.getTableVariableColumns(variable).map(
+      (column) => ({ ...column, selected: true }),
+    );
+    this.tableVariableModalOpen = true;
+    this.cdr.markForCheck();
+  }
+
+  toggleTableVariableColumn(index: number, selected: boolean): void {
+    const column = this.tableVariableColumns[index];
+    if (!column) return;
+    column.selected = selected;
+    this.cdr.markForCheck();
+  }
+
+  moveTableVariableColumn(index: number, direction: -1 | 1): void {
+    const target = index + direction;
+    if (target < 0 || target >= this.tableVariableColumns.length) return;
+    const columns = [...this.tableVariableColumns];
+    const [column] = columns.splice(index, 1);
+    columns.splice(target, 0, column);
+    this.tableVariableColumns = columns;
+    this.cdr.markForCheck();
+  }
+
+  insertTableVariable(): void {
+    const variable = this.tableVariableDraft;
+    const tech = String(variable?.tech || variable?.["key"] || "").trim();
+    const selectedColumns = this.tableVariableColumns.filter(
+      (column) => column.selected && column.key,
+    );
+    if (!tech || !selectedColumns.length) {
+      this.notifications.showWarning("Choisissez au moins une colonne");
+      return;
+    }
+    const html = this.buildTableVariableHtml(tech, selectedColumns);
+    const editor = this.getActiveTiptapEditor();
+    if (editor) {
+      editor.chain().focus().insertContent(html).run();
+    } else {
+      this.editorContent[this.activeEditorSection] += html;
+    }
+    this.tableVariableModalOpen = false;
+    this.tableVariableDraft = null;
+    this.tableVariableColumns = [];
+    this.saveStatus = "ModifiÃ©";
+    this.cdr.markForCheck();
+  }
+
+  private getTableVariableColumns(
+    variable: VariableDefinition,
+  ): Array<{ key: string; label: string }> {
+    const rawColumns =
+      Array.isArray(variable.columns) && variable.columns.length
+        ? variable.columns
+        : Array.isArray((variable as any).sourceColumns)
+          ? (variable as any).sourceColumns
+          : [];
+    return rawColumns
+      .map((column: any) => {
+        const key = String(
+          column?.key || column?.tech || column?.column || column?.name || "",
+        ).trim();
+        const label = String(
+          column?.label || column?.comment || column?.column || key,
+        ).trim();
+        return key ? { key, label: label || key } : null;
+      })
+      .filter(
+        (column: { key: string; label: string } | null): column is {
+          key: string;
+          label: string;
+        } => !!column,
+      );
+  }
+
+  private buildTableVariableHtml(
+    tech: string,
+    columns: Array<{ key: string; label: string }>,
+  ): string {
+    const headerCells = columns
+      .map((column) => `<th><p>${this.escapeHtml(column.label)}</p></th>`)
+      .join("");
+    const marker = `{{#${tech}:table:${columns.map((column) => column.key).join(",")}}}`;
+    const bodyCells = columns
+      .map((column, index) =>
+        index === 0
+          ? `<td><p>${this.escapeHtml(marker)}</p></td>`
+          : `<td><p>{{${this.escapeHtml(column.key)}}}</p></td>`,
+      )
+      .join("");
+    return `<table><tbody><tr>${headerCells}</tr><tr>${bodyCells}</tr></tbody></table><p></p>`;
+  }
+
   isEditorActive(name: string, attrs?: Record<string, unknown>): boolean {
     void this._toolbarStateVersion;
     try {
@@ -1894,6 +2012,9 @@ export class AdminComponent
     this.linkModalOpen = false;
     this.imageModalOpen = false;
     this.tableModalOpen = false;
+    this.tableVariableModalOpen = false;
+    this.tableVariableDraft = null;
+    this.tableVariableColumns = [];
     this.dateVariableModalOpen = false;
     this.cdr.markForCheck();
   }
@@ -1906,6 +2027,9 @@ export class AdminComponent
     this.linkModalOpen = false;
     this.imageModalOpen = false;
     this.tableModalOpen = false;
+    this.tableVariableModalOpen = false;
+    this.tableVariableDraft = null;
+    this.tableVariableColumns = [];
     this.dateVariableModalOpen = false;
     this.watermarkModalOpen = false;
     this.activeTablePopover = null;

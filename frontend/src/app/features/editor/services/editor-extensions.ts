@@ -256,6 +256,72 @@ export const TableHeaderWithStyle = TableHeaderPlus.extend({
 // ─── Config PaginationPlus ────────────────────────────────────────────────────
 // Convertit les marges mm (stockées dans le template) en pixels (96 dpi).
 
+const StableImagePlus = ImagePlus.extend({
+  addAttributes() {
+    const parentAttrs = this.parent?.() || {};
+    return {
+      ...parentAttrs,
+      width: {
+        ...(parentAttrs as any)["width"],
+        default: "",
+        parseHTML: (element: HTMLElement) => {
+          const styleWidth = String(element.style.width || "").trim();
+          if (styleWidth) return styleWidth;
+          return (
+            element.getAttribute("width") ||
+            element.getAttribute("data-width") ||
+            ""
+          );
+        },
+        renderHTML: (attributes: Record<string, unknown>) => {
+          const width = String(attributes["width"] || "").trim();
+          const alignment = String(attributes["alignment"] || "center").trim();
+          const styles: string[] = ["max-width:100%", "height:auto"];
+          if (width) styles.push(`width:${width}`);
+          if (alignment === "center") {
+            styles.push(
+              "display:block",
+              "margin-left:auto",
+              "margin-right:auto",
+            );
+          } else if (alignment === "right") {
+            styles.push("display:block", "margin-left:auto", "margin-right:0");
+          } else {
+            styles.push("display:block", "margin-left:0", "margin-right:auto");
+          }
+          return {
+            ...(width ? { width, "data-width": width } : {}),
+            style: styles.join(";"),
+          };
+        },
+      },
+      alignment: {
+        ...(parentAttrs as any)["alignment"],
+        default: "center",
+        parseHTML: (element: HTMLElement) => {
+          const attr =
+            element.getAttribute("alignment") ||
+            element.getAttribute("data-align") ||
+            "";
+          if (["left", "center", "right"].includes(attr)) return attr;
+          const marginLeft = element.style.marginLeft;
+          const marginRight = element.style.marginRight;
+          if (marginLeft === "auto" && marginRight === "auto") return "center";
+          if (marginLeft === "auto") return "right";
+          return "left";
+        },
+        renderHTML: (attributes: Record<string, unknown>) => {
+          const alignment = String(attributes["alignment"] || "center").trim();
+          return {
+            alignment,
+            "data-align": alignment,
+          };
+        },
+      },
+    };
+  },
+});
+
 function mmToPx(mm: number): number {
   return Math.round((mm * 96) / 25.4);
 }
@@ -321,7 +387,7 @@ const BASE_EXTENSIONS = [
   // position de ImagePlus (voir PositionController.createPositionControls).
   // On passe inline:false pour avoir Gauche / Centre / Droite disponibles.
   // allowBase64:true conservé pour le support des uploads locaux.
-  ImagePlus.configure({ inline: false, allowBase64: true }),
+  StableImagePlus.configure({ inline: false, allowBase64: true }),
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   // TablePlus remplace Table + ajoute duplicateRow/duplicateColumn
   TablePlus.configure({ resizable: true, lastColumnResizable: false }),
@@ -349,7 +415,7 @@ const STRUCTURED_DOCUMENT_EXTENSIONS = [
   Highlight.configure({ multicolor: true }),
   Link.configure({ openOnClick: false, autolink: true }),
   // BUG FIX: inline:false pour activer le bouton Centre (voir BASE_EXTENSIONS).
-  ImagePlus.configure({ inline: false, allowBase64: true }),
+  StableImagePlus.configure({ inline: false, allowBase64: true }),
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   TablePlus.configure({ resizable: true }),
   TableRow,

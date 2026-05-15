@@ -12,7 +12,7 @@ Déposer ici les captures exportées pour le rapport PFE. Les fichiers attendus 
 - `sprint4_templates.png`
 - `sprint4_charters.png`
 - `sprint4_tableviews.png`
-- `sprint5_demo.png`
-- `sprint5_tests.png`
+- `sprint4_demo.png`
+- `sprint4_tests.png`
 
 Si une image n'est pas encore présente, `main.tex` affiche automatiquement un emplacement de capture à insérer.
