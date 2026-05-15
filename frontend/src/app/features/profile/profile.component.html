@@ -41,13 +41,13 @@
           <h1>{{ profile.name }}</h1>
           <p>{{ profile.email }}</p>
         </div>
-        <span class="role-pill">{{ profile.role }}</span>
+        <span class="role-pill">{{ getRoleLabel(profile.role) }}</span>
       </div>
 
       <div class="profile-grid">
-        <div class="info-item">
+        <div class="info-item" *ngIf="profile.role != 'supAdmin'">
           <span>Organisation</span>
-          <strong>{{ profile.organizationId || "-" }}</strong>
+          <strong>{{ organizationName || "-" }}</strong>
         </div>
         <div class="info-item">
           <span>Profil</span>
@@ -61,8 +61,11 @@
           <span>Acces annees</span>
           <strong>{{ accessYearsLabel }}</strong>
         </div>
-        <div class="info-item">
-          <span>Modules autorises</span>
+        <div
+          class="info-item"
+          *ngIf="profile.role != 'admin' && profile.role != 'supAdmin'"
+        >
+          <span>Modules autorisés</span>
           <strong>{{ profile.moduleIds.length || 0 }}</strong>
         </div>
         <div class="info-item">
