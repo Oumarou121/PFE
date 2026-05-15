@@ -4489,7 +4489,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const whereClauses = [etabFilter, ...extraFilterClauses].filter(Boolean);
     return [
       "SELECT",
-      `  TOP (500) ${sourceAlias}.${this.sqlId(pk)} AS id,`,
+      `  ${sourceAlias}.${this.sqlId(pk)} AS id,`,
       `  ${labelSqlExpr} AS libelle${subtitleSqlExpr ? "," : ""}`,
       subtitleSqlExpr ? `  ${subtitleSqlExpr} AS sous_libelle` : "",
       `FROM ${this.sqlId(tableName)} ${sourceAlias}`,
@@ -5881,7 +5881,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
           configId: item.id,
           config: item,
           search: String(this.tableViewSearch || "").trim(),
-          limit: 200,
           databaseName: this.selectedSchemaDatabaseName,
         }),
       );

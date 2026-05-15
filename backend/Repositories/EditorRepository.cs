@@ -554,7 +554,7 @@ namespace DocApi.Repositories
 
             using var connection = TenantConnection();
             var rows = await connection.QueryAsync(
-                $"SELECT TOP (500) {string.Join(", ", select)} FROM {Quote(AcademicYearTable)} ORDER BY {Quote(AcademicYearCodeColumn)} DESC");
+                $"SELECT {string.Join(", ", select)} FROM {Quote(AcademicYearTable)} ORDER BY {Quote(AcademicYearCodeColumn)} DESC");
 
             return rows.Select(row =>
             {
@@ -718,7 +718,7 @@ namespace DocApi.Repositories
 
         // ─── GetTableViewRows (TenantDB — données métier) ────────────────────────
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, int? limit, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null)
         {
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -738,7 +738,6 @@ namespace DocApi.Repositories
             if (selectFields.Length == 0) return [];
 
             var parameters = new DynamicParameters();
-            parameters.Add("limit", Math.Max(1, Math.Min(limit ?? 200, 500)));
             
             var whereClauses = new List<string>();
             if (!string.IsNullOrWhiteSpace(search) && previewFields.Length > 0)
@@ -772,7 +771,7 @@ namespace DocApi.Repositories
 
             using var connection = TenantConnection(databaseName);
             var rows = await connection.QueryAsync(
-                $"SELECT TOP (@limit) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} {where} ORDER BY {Quote(pk)} DESC",
+                $"SELECT {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} {where} ORDER BY {Quote(pk)} DESC",
                 parameters);
             return rows.Select(row => (IDictionary<string, object?>)CleanRow(row)).ToArray();
         }
@@ -1007,7 +1006,7 @@ namespace DocApi.Repositories
         public async Task<DocumentListResponse> LoadDocumentsPagedAsync(DocumentListRequest request)
         {
             if (!await TenantTableExistsAsync("document"))
-                return new DocumentListResponse { Data = new List<DocumentListItemResponse>(), Total = 0, Page = request.Page, Limit = request.Limit, TotalPages = 0 };
+                return new DocumentListResponse { Data = new List<DocumentListItemResponse>(), Total = 0, Page = request.Page, Limit = 0, TotalPages = 0 };
 
             // Build WHERE clause
             var where = new List<string> { "is_deleted = 0" };
@@ -1056,8 +1055,6 @@ namespace DocApi.Repositories
                 var countQuery = $"SELECT COUNT(*) FROM document WHERE {string.Join(" AND ", where)}";
                 var total = await connection.ExecuteScalarAsync<int>(countQuery, parameters);
 
-                // Get paginated data
-                var offset = (request.Page - 1) * request.Limit;
                 var dataQuery = $"""
                     SELECT id, family_id, title, beneficiary_id, beneficiary_table, beneficiary_table_label,
                            beneficiary_display_value_1, beneficiary_display_value_2,
@@ -1065,7 +1062,6 @@ namespace DocApi.Repositories
                     FROM document
                     WHERE {string.Join(" AND ", where)}
                     ORDER BY {sortColumn} {sortOrder}
-                    OFFSET {offset} ROWS FETCH NEXT {request.Limit} ROWS ONLY
                     """;
 
                 var rows = await connection.QueryAsync(dataQuery, parameters);
@@ -1087,15 +1083,13 @@ namespace DocApi.Repositories
                     GeneratedAt = Str(row, "generated_at")
                 }).ToList();
 
-                var totalPages = (int)Math.Ceiling((double)total / request.Limit);
-
                 return new DocumentListResponse
                 {
                     Data = documents,
                     Total = total,
                     Page = request.Page,
-                    Limit = request.Limit,
-                    TotalPages = totalPages
+                    Limit = total,
+                    TotalPages = total > 0 ? 1 : 0
                 };
             }
         }
@@ -1964,10 +1958,8 @@ namespace DocApi.Repositories
         {
             var match = Regex.Match(sql, @"\s+LIMIT\s+(\d+)\s*$", RegexOptions.IgnoreCase);
             if (!match.Success) return sql;
-            var limit = match.Groups[1].Value;
             var withoutLimit = sql[..match.Index].TrimEnd();
-            if (Regex.IsMatch(withoutLimit, @"^\s*SELECT\s+TOP\s*\(", RegexOptions.IgnoreCase)) return withoutLimit;
-            return Regex.Replace(withoutLimit, @"^\s*SELECT\s+", $"SELECT TOP ({limit}) ", RegexOptions.IgnoreCase);
+            return withoutLimit;
         }
 
         private static string StripDanglingSelectCommas(string sql)

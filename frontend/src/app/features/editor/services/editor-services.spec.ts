@@ -49,10 +49,10 @@ describe('editor services', () => {
   it('maps table view endpoints through ApiService', async () => {
     const service = TestBed.inject(TableViewService);
 
-    const rowsPromise = service.getTableViewRows('tv_1', { search: 'ali', limit: 10 });
+    const rowsPromise = service.getTableViewRows('tv_1', { search: 'ali' });
     const rowsReq = http.expectOne(`${environment.apiUrl}/table-view/rows`);
     expect(rowsReq.request.method).toBe('POST');
-    expect(rowsReq.request.body).toEqual({ configId: 'tv_1', config: null, search: 'ali', limit: 10, databaseName: undefined });
+    expect(rowsReq.request.body).toEqual({ configId: 'tv_1', config: null, search: 'ali', databaseName: undefined, selectedFilters: null });
     rowsReq.flush({ rows: [{ id: 1, nom: 'Ali' }] });
     expect(await rowsPromise).toEqual([{ id: 1, nom: 'Ali' }]);
 

@@ -73,7 +73,6 @@ export class TableViewService {
         configId,
         config: options.config || null,
         search: String(options.search || "").trim(),
-        limit: Number(options.limit) || 200,
         databaseName,
         selectedFilters: options.selectedFilters || null,
       }),

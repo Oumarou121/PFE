@@ -82,7 +82,6 @@ export class DocumentArchivePageComponent implements OnInit {
       const filters = this.filterForm.value;
       const response = await this.documentService.getDocumentsPaged({
         page: 1,
-        limit: 1000,
         familyId: filters.familyId || undefined,
         sortBy: "generatedAt",
         sortOrder: "desc",

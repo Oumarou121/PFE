@@ -27,7 +27,6 @@ export interface TableViewConfig extends UnknownRecord {
 export interface TableViewRowsOptions {
   config?: TableViewConfig | null;
   search?: string;
-  limit?: number;
   selectedFilters?: { [key: string]: string[] } | null;
 }
 

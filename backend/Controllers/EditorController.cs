@@ -148,8 +148,6 @@ namespace DocApi.Controllers
                 }
 
                 if (!string.IsNullOrWhiteSpace(request.Search)) parameters["search"] = request.Search;
-                parameters["limit"] = request.Limit;
-
                 IEnumerable<IDictionary<string, object?>> rows;
                 if (family.BeneficiaryMode == BeneficiaryMode.Organization)
                 {
@@ -173,7 +171,7 @@ namespace DocApi.Controllers
                         var labelExpr = string.IsNullOrWhiteSpace(display2)
                             ? $"CONVERT(NVARCHAR(255), {display1})"
                             : $"LTRIM(RTRIM(COALESCE(CONVERT(NVARCHAR(255), {display1}), '') + ' ' + COALESCE(CONVERT(NVARCHAR(255), {display2}), '')))";
-                        beneficiarySql = $"SELECT TOP ({request.Limit}) {linkColumn} AS id, {labelExpr} AS libelle FROM {tableName}";
+                        beneficiarySql = $"SELECT {linkColumn} AS id, {labelExpr} AS libelle FROM {tableName}";
                     }
 
                     rows = (await _service.RunSelectQueryAsync(beneficiarySql ?? string.Empty, parameters, SanitizeDatabaseName(request.DatabaseName))).ToArray();
@@ -259,7 +257,6 @@ namespace DocApi.Controllers
         [Authorize]
         public async Task<ActionResult<DocumentListResponse>> DocumentsPaged(
             [FromQuery] int page = 1,
-            [FromQuery] int limit = 10,
             [FromQuery] string? familyId = null,
             [FromQuery] string? beneficiaryTable = null,
             [FromQuery] string? beneficiaryId = null,
@@ -269,7 +266,6 @@ namespace DocApi.Controllers
             var result = await _service.GetDocumentsPagedAsync(new DocumentListRequest
             {
                 Page = page,
-                Limit = limit,
                 FamilyId = familyId,
                 BeneficiaryTable = beneficiaryTable,
                 BeneficiaryId = beneficiaryId,

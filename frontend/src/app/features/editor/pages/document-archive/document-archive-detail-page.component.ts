@@ -130,7 +130,6 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
       const filters = this.filterForm.value;
       const response = await this.documentService.getDocumentsPaged({
         page: 1,
-        limit: 1000,
         familyId: filters.familyId || undefined,
         beneficiaryTable: this.isOrganizationGroup ? undefined : this.groupKey,
         sortBy: "generatedAt",

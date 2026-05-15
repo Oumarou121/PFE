@@ -57,7 +57,6 @@ namespace DocApi.DTOs
         [MaxLength(255)]
         public string? Search { get; set; }
 
-        [Range(1, 500)]
         public int Limit { get; set; } = 200;
 
         public string? DatabaseName { get; set; }
@@ -67,9 +66,6 @@ namespace DocApi.DTOs
     {
         [MaxLength(64)]
         public string? ConfigId { get; set; }
-
-        [Range(1, 500)]
-        public int? Limit { get; set; }
 
         [MaxLength(255)]
         public string? Search { get; set; }
@@ -155,7 +151,6 @@ namespace DocApi.DTOs
 
         // Pagination
         public int Page { get; set; } = 1;
-        public int Limit { get; set; } = 10;
 
         // Sorting
         [MaxLength(64)]

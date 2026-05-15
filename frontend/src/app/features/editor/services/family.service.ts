@@ -164,7 +164,7 @@ export class FamilyService {
         : "",
       ...filterClauses,
     ].filter(Boolean);
-    const sql = `SELECT TOP (500)
+    const sql = `SELECT
              src.${quoteSqlIdentifier(pk)} AS id${labelSqlExpr ? `,\n             ${labelSqlExpr} AS libelle` : ""}
            FROM ${quoteSqlIdentifier(tableName)} src${whereClauses.length ? `\n           WHERE ${whereClauses.join("\n             AND ")}` : ""}
            ORDER BY src.${quoteSqlIdentifier(defaultOrderColumn)} ASC`;

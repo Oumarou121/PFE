@@ -36,7 +36,6 @@ export class DocumentService {
   async getDocumentsPaged(
     params: {
       page?: number;
-      limit?: number;
       familyId?: string;
       beneficiaryTable?: string;
       beneficiaryId?: string;

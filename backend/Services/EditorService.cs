@@ -255,7 +255,7 @@ namespace DocApi.Services
         public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Limit, request.Search, request.Config, request.DatabaseName, request.SelectedFilters);
+            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Search, request.Config, request.DatabaseName, request.SelectedFilters);
         }
 
         public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request)
@@ -322,7 +322,6 @@ namespace DocApi.Services
                 BeneficiaryTable = request.BeneficiaryTable,
                 BeneficiaryId = request.BeneficiaryId,
                 Page = request.Page > 0 ? request.Page : 1,
-                Limit = request.Limit > 0 ? Math.Min(request.Limit, 500) : 10,
                 SortBy = request.SortBy,
                 SortOrder = request.SortOrder
             };
