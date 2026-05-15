@@ -150,14 +150,9 @@ app-root {
   white-space: nowrap;
 }
 
-.nav-logo__light {
-  color: var(--primary);
-  font-weight: 300;
-}
-
 .nav-logo__icon {
-  width: 22px;
-  height: 22px;
+  width: 25px;
+  height: 25px;
   color: var(--primary);
 }
 
@@ -420,7 +415,11 @@ app-root {
   justify-content: space-between;
   overflow: hidden;
   padding: 16px 18px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-dark) 100%
+  );
 
   &::after {
     position: absolute;
@@ -674,4 +673,30 @@ app-root {
     grid-template-columns: 1fr;
     gap: 10px;
   }
+}
+
+.tlogo-text {
+  color: var(--text);
+
+  span {
+    color: var(--accent);
+  }
+}
+
+@media (max-width: 760px) {
+  .tlogo-text {
+    display: none;
+  }
+}
+
+.tlogo-text {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tlogo-text span {
+  color: var(--accent);
 }
