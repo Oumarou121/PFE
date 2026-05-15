@@ -723,6 +723,7 @@ namespace DocApi.Repositories
             if (!parameters.ContainsKey("organizationId")) parameters["organizationId"] = null;
             if (!parameters.ContainsKey("academicYear")) parameters["academicYear"] = _tenantProvider.GetAcademicYearCode();
             cleaned = CompileNamedParameters(cleaned, parameters, dynamicParameters);
+            cleaned = await ApplyAutomaticAcademicYearFilterAsync(cleaned, dynamicParameters, databaseName);
 
             using var connection = TenantConnection(databaseName);
             return (await connection.QueryAsync(cleaned, dynamicParameters))
@@ -1745,6 +1746,86 @@ namespace DocApi.Repositories
             if (year?.IsClosed == true)
                 throw new InvalidOperationException("Cette annee universitaire est cloturee. Les modifications sont bloquees.");
         }
+
+        private async Task<string> ApplyAutomaticAcademicYearFilterAsync(string sql, DynamicParameters parameters, string? databaseName = null)
+        {
+            var yearCode = _tenantProvider.GetAcademicYearCode();
+            var organizationId = _tenantProvider.GetOrganizationId();
+            if (string.IsNullOrWhiteSpace(yearCode) || !organizationId.HasValue) return sql;
+
+            var config = await GetAcademicYearConfigAsync(organizationId.Value);
+            if (config is null || config.AffectedTables.Count == 0) return sql;
+
+            foreach (var table in config.AffectedTables)
+            {
+                var tableMatch = MatchTableReference(sql, table.TableName);
+                if (!tableMatch.Success) continue;
+                if (HasExplicitAcademicYearPredicate(sql, table.YearColumn)) return sql;
+
+                var columns = await GetTenantColumnsAsync(table.TableName, databaseName);
+                var column = columns.FirstOrDefault(item => string.Equals(item.Name, table.YearColumn, StringComparison.OrdinalIgnoreCase));
+                if (column is null) continue;
+
+                var alias = tableMatch.Groups["alias"].Value;
+                var qualifier = string.IsNullOrWhiteSpace(alias) ? Quote(table.TableName) : Quote(alias);
+                parameters.Add("__academicYearCode", yearCode);
+                return InsertWherePredicate(sql, $"{qualifier}.{Quote(column.Name)} = @__academicYearCode");
+            }
+
+            return sql;
+        }
+
+        private static Match MatchTableReference(string sql, string tableName)
+        {
+            var escapedTable = Regex.Escape(tableName);
+            var match = Regex.Match(
+                sql,
+                $@"\b(?:FROM|JOIN)\s+(?:\[{escapedTable}\]|{escapedTable})(?:\s+(?:AS\s+)?(?<alias>[A-Za-z_]\w*))?",
+                RegexOptions.IgnoreCase);
+            if (!match.Success) return match;
+
+            var alias = match.Groups["alias"].Value;
+            return IsSqlClauseKeyword(alias) ? Regex.Match(sql, "$.^") : match;
+        }
+
+        private static string InsertWherePredicate(string sql, string predicate)
+        {
+            var clauseMatch = Regex.Match(sql, @"\b(GROUP\s+BY|HAVING|ORDER\s+BY)\b", RegexOptions.IgnoreCase);
+            var whereMatch = Regex.Match(sql, @"\bWHERE\b", RegexOptions.IgnoreCase);
+
+            if (whereMatch.Success)
+            {
+                var insertAt = clauseMatch.Success && clauseMatch.Index > whereMatch.Index ? clauseMatch.Index : sql.Length;
+                var before = sql[..insertAt].TrimEnd();
+                var after = sql[insertAt..].TrimStart();
+                return string.IsNullOrWhiteSpace(after)
+                    ? $"{before} AND {predicate}"
+                    : $"{before} AND {predicate} {after}";
+            }
+
+            if (clauseMatch.Success)
+            {
+                var before = sql[..clauseMatch.Index].TrimEnd();
+                var after = sql[clauseMatch.Index..].TrimStart();
+                return $"{before} WHERE {predicate} {after}";
+            }
+
+            return $"{sql} WHERE {predicate}";
+        }
+
+        private static bool IsSqlClauseKeyword(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "where", "join", "inner", "left", "right", "full", "cross", "on",
+                "group", "having", "order", "union", "except", "intersect"
+            }.Contains(value);
+        }
+
+        private static bool HasExplicitAcademicYearPredicate(string sql, string yearColumn)
+            => Regex.IsMatch(sql, @"[@:]academicYear\b", RegexOptions.IgnoreCase)
+               || Regex.IsMatch(sql, $@"\b{Regex.Escape(yearColumn)}\b\s*(=|IN\b|LIKE\b)", RegexOptions.IgnoreCase);
 
         private static bool IsSafeIdentifier(string? value)
             => !string.IsNullOrWhiteSpace(value) && Regex.IsMatch(value, @"^[A-Za-z0-9_]+$");

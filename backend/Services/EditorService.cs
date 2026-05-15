@@ -199,10 +199,18 @@ namespace DocApi.Services
             var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId;
             if (!organizationId.HasValue) return [];
 
-            var config = await _repository.GetAcademicYearConfigAsync(organizationId.Value);
-            if (config is null) return [];
+            var config = await _repository.GetAcademicYearConfigAsync(organizationId.Value)
+                ?? CreateDefaultAcademicYearConfig(organizationId.Value);
 
-            var years = (await _repository.LoadAcademicYearsAsync(config)).ToArray();
+            AcademicYearResponse[] years;
+            try
+            {
+                years = (await _repository.LoadAcademicYearsAsync(config)).ToArray();
+            }
+            catch
+            {
+                return [];
+            }
             if (!string.Equals(currentUser?.Role, "user", StringComparison.OrdinalIgnoreCase)) return years;
             if (currentUser is null) return [];
             if (currentUser.AccessAllYears) return years;
@@ -221,7 +229,7 @@ namespace DocApi.Services
             var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId
                 ?? throw new InvalidOperationException("Organisation introuvable pour l'annee universitaire.");
             var config = await _repository.GetAcademicYearConfigAsync(organizationId)
-                ?? throw new InvalidOperationException("Configuration des annees universitaires introuvable.");
+                ?? CreateDefaultAcademicYearConfig(organizationId);
             return await _repository.CreateAcademicYearAsync(config, request);
         }
 
@@ -235,7 +243,7 @@ namespace DocApi.Services
             var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId
                 ?? throw new InvalidOperationException("Organisation introuvable pour l'annee universitaire.");
             var config = await _repository.GetAcademicYearConfigAsync(organizationId)
-                ?? throw new InvalidOperationException("Configuration des annees universitaires introuvable.");
+                ?? CreateDefaultAcademicYearConfig(organizationId);
             await _repository.CloseAcademicYearAsync(config, code);
         }
 
@@ -380,5 +388,16 @@ namespace DocApi.Services
             return raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
+
+        private static AcademicYearConfigResponse CreateDefaultAcademicYearConfig(int organizationId) => new()
+        {
+            OrganizationId = organizationId,
+            AcademicYearTable = "ANNEEUNIV",
+            CodeColumn = "CODE",
+            StartDateColumn = "DATEDEBUT",
+            EndDateColumn = "DATEFIN",
+            StatusColumn = "ETATPLANETUDES",
+            AffectedTables = []
+        };
     }
 }
