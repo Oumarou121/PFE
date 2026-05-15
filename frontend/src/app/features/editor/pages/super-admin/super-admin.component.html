@@ -29,7 +29,6 @@
   </nav>
 
   <div class="icon-sidebar app-icon-sidebar">
-    <div class="app-logo">SA</div>
     <button
       class="icon-nav-btn"
       [class.active]="currentSection === 'families'"
@@ -88,7 +87,6 @@
       </svg>
       <span>Admins</span>
     </button>
-    <div class="icon-nav-sep"></div>
     <button
       class="icon-nav-btn"
       [class.active]="currentSection === 'tableviews'"
@@ -128,10 +126,6 @@
       </svg>
       <span>Modules</span>
     </button>
-    <div class="icon-nav-bottom">
-      <div class="icon-nav-sep" style="width: 32px"></div>
-      <div class="user-avatar" title="Super Admin">SA</div>
-    </div>
   </div>
 
   <div class="left-panel app-side-panel" id="leftPanel">
@@ -299,15 +293,6 @@
   </div>
 
   <div class="main app-workspace">
-    <div class="topbar">
-      <span class="chip chip-purple">SUPER ADMIN</span>
-      <div class="topbar-sep">/</div>
-      <span class="topbar-title" id="topbarTitle">{{ topbarTitle }}</span>
-      <div class="ml-auto flex gap-8">
-        <app-user-menu></app-user-menu>
-      </div>
-    </div>
-
     <div class="content">
       <div
         class="content-panel"
@@ -2482,12 +2467,7 @@
                             style="min-height: 150px"
                             [ngModel]="v.sqlQuery || ''"
                             (ngModelChange)="
-                              updateListObjectSqlQuery(
-                                famId,
-                                ci,
-                                vi,
-                                $event
-                              )
+                              updateListObjectSqlQuery(famId, ci, vi, $event)
                             "
                             placeholder="SELECT ... FROM ..."
                           ></textarea>
@@ -3752,7 +3732,7 @@
                   <div class="card-subtitle">Affichage lookup</div>
                 </div>
                 <div class="card-body">
-                  <div *ngIf="view.visibleFields?.length; else noVisibleFields">
+                  <div *ngIf="view.visibleFields.length; else noVisibleFields">
                     <div
                       style="margin-bottom: 12px"
                       *ngFor="let fieldName of view.visibleFields"
