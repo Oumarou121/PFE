@@ -3,13 +3,13 @@
   font-family: var(--app-font-sans);
 }
 
-.document-history-detail {
+.document-archive-detail {
   min-height: 100vh;
   background: var(--surface-2);
   color: var(--text-900);
 }
 
-.history-detail-shell {
+.archive-detail-shell {
   display: grid;
   gap: 18px;
 }
@@ -76,7 +76,7 @@
 }
 
 .beneficiary-panel,
-.documents-panel {
+.archives-panel {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);

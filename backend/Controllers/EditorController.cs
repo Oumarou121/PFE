@@ -237,7 +237,7 @@ namespace DocApi.Controllers
             }
         }
 
-        [HttpGet("documents")]
+        [HttpGet("archives")]
         [Authorize]
         public async Task<ActionResult<IEnumerable<DocumentResponse>>> Documents(
             [FromQuery] int? organizationId = null,
@@ -255,7 +255,7 @@ namespace DocApi.Controllers
             return Ok(rows);
         }
 
-        [HttpGet("documents/paged")]
+        [HttpGet("archives/paged")]
         [Authorize]
         public async Task<ActionResult<DocumentListResponse>> DocumentsPaged(
             [FromQuery] int page = 1,
@@ -279,7 +279,7 @@ namespace DocApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("documents/{id}")]
+        [HttpGet("archives/{id}")]
         [Authorize]
         public async Task<ActionResult<DocumentResponse>> DocumentById(string id)
         {
@@ -287,7 +287,7 @@ namespace DocApi.Controllers
             return item is null ? NotFound() : Ok(item);
         }
 
-        [HttpPost("documents")]
+        [HttpPost("archives")]
         [Authorize]
         public async Task<ActionResult<DocumentResponse>> CreateDocument([FromBody] DocumentCreateRequest request)
         {
@@ -300,7 +300,7 @@ namespace DocApi.Controllers
             return Ok(item);
         }
 
-        [HttpDelete("documents/{id}")]
+        [HttpDelete("archives/{id}")]
         [Authorize]
         public async Task<IActionResult> DeleteDocument(string id)
         {

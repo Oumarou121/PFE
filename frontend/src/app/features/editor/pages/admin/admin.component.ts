@@ -685,8 +685,8 @@ export class AdminComponent
     this.auth.logout();
   }
 
-  goToDocumentHistory(): void {
-    this.router.navigate(["/documents"]);
+  goToDocumentArchive(): void {
+    this.router.navigate(["/archives"]);
   }
 
   goToAdminHome(): void {
@@ -2217,15 +2217,16 @@ export class AdminComponent
     if (!template) return;
     const renderTemplate = this.buildPreviewTemplate(template);
     const person = await this.getPreviewPerson();
-    const saved = await this.persistAdminGeneratedDocument(renderTemplate, person);
+    const saved = await this.persistAdminGeneratedDocument(
+      renderTemplate,
+      person,
+    );
     this.documentRender.printDocPaginated(
       renderTemplate,
       person || this.currentOrganization || {},
     );
     if (saved) {
-      this.notifications.showSuccess(
-        "Document genere et ajoute a l'historique.",
-      );
+      this.notifications.showSuccess("Document généré et ajouté à l'archive.");
     }
   }
 
@@ -2322,7 +2323,7 @@ export class AdminComponent
       return true;
     } catch {
       this.notifications.showWarning(
-        "Generation lancee mais la sauvegarde dans l'historique a echoue.",
+        "Génération lancée mais la sauvegarde dans l'archive a échoué.",
       );
       return false;
     }
