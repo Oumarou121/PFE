@@ -64,11 +64,26 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      color: white;
 
       mat-icon {
         font-size: 18px;
         width: 18px;
         height: 18px;
+      }
+    }
+
+    .btn-print {
+      background-color: var(--primary);
+      &:hover {
+        background-color: var(--primary-dark);
+      }
+    }
+
+    .btn-close {
+      background-color: #6c757d;
+      &:hover {
+        background-color: #5a6268;
       }
     }
   }

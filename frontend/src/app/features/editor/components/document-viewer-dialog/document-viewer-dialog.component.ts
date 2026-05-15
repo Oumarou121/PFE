@@ -51,62 +51,102 @@ export class DocumentViewerDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
-  download(): void {
-    const blob = new Blob([this.document.fullHtml], {
-      type: "text/html;charset=utf-8;",
-    });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${this.document.title}.html`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  // print(): void {
+  //   const printWindow = window.open("", "_blank");
+  //   if (!printWindow) return;
+  //   const orientation = this.getSnapshotOrientation();
+
+  //   const html = `
+  //     <!DOCTYPE html>
+  //     <html>
+  //       <head>
+  //         <title>${this.document.title}</title>
+  //         <style>
+  //           @page {
+  //             margin: 0;
+  //             size: A4 ${orientation};
+  //           }
+  //           body {
+  //             margin: 0;
+  //             padding: 0;
+  //             background: #fff;
+  //           }
+  //           * { box-sizing: border-box; }
+  //           ${this.documentRender.getDocumentPrintCss()}
+  //         </style>
+  //       </head>
+  //       <body>
+  //         <div id="sirh-print-area">
+  //           ${this.document.fullHtml}
+  //         </div>
+  //         <script>
+  //           window.onload = function() {
+  //             window.print();
+  //             setTimeout(function() { window.close(); }, 500);
+  //           };
+  //         </script>
+  //       </body>
+  //     </html>
+  //   `;
+
+  //   printWindow.document.write(html);
+  //   printWindow.document.close();
+  // }
 
   print(): void {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
     const orientation = this.getSnapshotOrientation();
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${this.document.title}</title>
-          <style>
-            @page {
-              margin: 0;
-              size: A4 ${orientation};
-            }
-            body {
-              margin: 0;
-              padding: 0;
-              background: #fff;
-            }
-            * { box-sizing: border-box; }
-            ${this.documentRender.getDocumentPrintCss()}
-          </style>
-        </head>
-        <body>
-          <div id="sirh-print-area">
-            ${this.document.fullHtml}
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(function() { window.close(); }, 500);
-            };
-          </script>
-        </body>
-      </html>
-    `;
+    const printContainer = document.createElement("div");
+    printContainer.id = "sirh-print-container";
 
-    printWindow.document.write(html);
-    printWindow.document.close();
+    printContainer.innerHTML = `
+    <style>
+      @media print {
+        @page {
+          margin: 0;
+          size: A4 ${orientation};
+        }
+
+        body * {
+          visibility: hidden !important;
+        }
+
+        #sirh-print-container,
+        #sirh-print-container * {
+          visibility: visible !important;
+        }
+
+        #sirh-print-container {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          background: white;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        ${this.documentRender.getDocumentPrintCss()}
+      }
+    </style>
+
+    <div id="sirh-print-area">
+      ${this.document.fullHtml}
+    </div>
+  `;
+
+    document.body.appendChild(printContainer);
+
+    setTimeout(() => {
+      window.print();
+
+      setTimeout(() => {
+        document.body.removeChild(printContainer);
+      }, 500);
+    }, 100);
   }
-
   private getSnapshotOrientation(): "portrait" | "landscape" {
     return /--page-orientation\s*:\s*landscape/i.test(this.document.fullHtml)
       ? "landscape"

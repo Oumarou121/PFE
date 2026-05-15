@@ -12,14 +12,12 @@
   </div>
 
   <div class="dialog-actions">
-    <button mat-raised-button (click)="print()" color="primary">
+    <button mat-raised-button (click)="print()" class="btn-print">
       <mat-icon>print</mat-icon>
       Imprimer
     </button>
-    <button mat-raised-button (click)="download()" color="accent">
-      <mat-icon>download</mat-icon>
-      Télécharger
+    <button mat-raised-button (click)="close()" class="btn-close">
+      Fermer
     </button>
-    <button mat-raised-button (click)="close()">Fermer</button>
   </div>
 </div>
