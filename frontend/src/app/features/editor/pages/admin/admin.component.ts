@@ -2226,9 +2226,7 @@ export class AdminComponent
       person || this.currentOrganization || {},
     );
     if (saved) {
-      this.notifications.showSuccess(
-        "Document généré et ajouté à l'archive.",
-      );
+      this.notifications.showSuccess("Document généré et ajouté à l'archive.");
     }
   }
 

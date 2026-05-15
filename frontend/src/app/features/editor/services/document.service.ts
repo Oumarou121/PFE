@@ -16,7 +16,7 @@ export class DocumentService {
     payload: DocumentCreatePayload,
   ): Promise<DocumentRecord> {
     return await firstValueFrom(
-      this.api.post<DocumentRecord>("documents", payload),
+      this.api.post<DocumentRecord>("archives", payload),
     );
   }
 
@@ -29,7 +29,7 @@ export class DocumentService {
     } = {},
   ): Promise<DocumentRecord[]> {
     return await firstValueFrom(
-      this.api.get<DocumentRecord[]>("documents", params),
+      this.api.get<DocumentRecord[]>("archives", params),
     );
   }
 
@@ -45,14 +45,14 @@ export class DocumentService {
     } = {},
   ): Promise<DocumentListResponse> {
     return await firstValueFrom(
-      this.api.get<DocumentListResponse>("documents/paged", params),
+      this.api.get<DocumentListResponse>("archives/paged", params),
     );
   }
 
   async getDocumentById(id: string): Promise<DocumentRecord | null> {
     try {
       return await firstValueFrom(
-        this.api.get<DocumentRecord>(`documents/${encodeURIComponent(id)}`),
+        this.api.get<DocumentRecord>(`archives/${encodeURIComponent(id)}`),
       );
     } catch {
       return null;
@@ -61,7 +61,7 @@ export class DocumentService {
 
   async deleteDocument(id: string): Promise<void> {
     await firstValueFrom(
-      this.api.delete(`documents/${encodeURIComponent(id)}`),
+      this.api.delete(`archives/${encodeURIComponent(id)}`),
     );
   }
 }
