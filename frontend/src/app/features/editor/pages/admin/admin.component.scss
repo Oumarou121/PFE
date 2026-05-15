@@ -3561,3 +3561,167 @@ th p {
   min-height: 0; // évite des marges internes inutiles
   margin: 0;
 }
+/* Modern design alignment: shared admin-home visual language */
+:root {
+  --font: var(--app-font-sans, "DM Sans", sans-serif);
+  --mono: var(--app-font-mono, "DM Mono", monospace);
+  --bg: #f6f9fc;
+  --surface: #ffffff;
+  --surface2: #f6f9fc;
+  --surface3: #eef3f8;
+  --border: rgba(51, 122, 183, 0.14);
+  --border2: rgba(51, 122, 183, 0.26);
+  --text: #0d1b2a;
+  --text2: #445566;
+  --text3: #7a93aa;
+  --accent: #337ab7;
+  --accent2: #275f91;
+  --accent-bg: #e8f1f9;
+  --accent-bdr: #c2d9ee;
+  --r: 8px;
+  --rlg: 14px;
+  --rxl: 20px;
+  --sh: 0 4px 12px rgba(13, 27, 42, 0.07);
+  --shlg: 0 16px 40px rgba(13, 27, 42, 0.11);
+}
+
+#app {
+  background: var(--bg);
+  font-family: var(--font);
+}
+
+#loading {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.lbadge {
+  display: none;
+}
+
+.tnav {
+  height: 58px;
+  padding: 0 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(13, 27, 42, 0.05);
+}
+
+.tlogo {
+  gap: 9px;
+}
+
+.tlogo-icon {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--accent-bdr);
+  border-radius: var(--r);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(51, 122, 183, 0.16);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.tlogo-text {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tlogo-text span,
+.tchip {
+  color: var(--accent);
+}
+
+.tchip {
+  border: 1px solid var(--accent-bdr);
+  border-radius: 999px;
+  background: var(--accent-bg);
+  padding: 5px 12px;
+}
+
+.tetab {
+  color: var(--text2);
+  font-weight: 600;
+}
+
+.nlink {
+  min-height: 34px;
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--text2);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  transition: all 0.18s ease;
+}
+
+.nlink:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+  color: var(--accent);
+}
+
+.nlink svg {
+  stroke: currentColor;
+}
+
+.main-area,
+.pcanvas {
+  background: var(--bg);
+}
+
+.sidebar,
+.editor-top,
+.toolbar,
+.sec-tabs,
+.hf-section-editor,
+.filter-panel,
+.modal,
+.pm-dialog,
+.tbl-bar {
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(13, 27, 42, 0.05);
+}
+
+.tpl-item,
+.tpl-add,
+.fam-card,
+.tpl-card,
+.filter-card,
+.finput,
+.fselect,
+input,
+select,
+textarea {
+  border-color: var(--border);
+  border-radius: var(--r);
+}
+
+.tpl-item.on,
+.tpl-item:hover,
+.tpl-add:hover,
+.sec-tab.on {
+  border-color: var(--accent-bdr);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.btn.primary,
+.save-btn,
+.pm-print-btn {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.btn.primary:hover,
+.save-btn:hover,
+.pm-print-btn:hover {
+  border-color: var(--accent2);
+  background: var(--accent2);
+}
