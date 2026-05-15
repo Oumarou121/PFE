@@ -24,6 +24,7 @@ import { OrganizationService } from "../../services/organization.service";
 import { AdminAccountService } from "../../services/admin-account.service";
 import { TableViewService } from "../../services/table-view.service";
 import { ModuleService } from "../../services/module.service";
+import { AcademicYearService } from "../../services/academic-year.service";
 
 import { EditorState as AppState } from "../../models/editor-common.model";
 import { FamilyRecord as Family } from "../../models/family.model";
@@ -31,6 +32,7 @@ import { OrganizationRecord as Organization } from "../../models/organization.mo
 import { AdminAccountRecord as AdminAccount } from "../../models/admin-account.model";
 import { TableViewConfig } from "../../models/table-view.model";
 import { ModuleRecord as Module } from "../../models/module.model";
+import { AcademicYearConfig } from "../../models/academic-year.model";
 import {
   normalizeFilterDefinition,
   normalizeFilterColumnBinding,
@@ -158,6 +160,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   selectedSchemaOrganizationId: string | null = null;
   selectedSchemaDatabaseName: string | null = null;
   private schemaBuilderState: Record<string, any> = {};
+  academicYearConfig: AcademicYearConfig | null = null;
+  academicYearSelectedOrganizationId = "";
+  academicYearSelectedTableToAdd = "";
+  academicYearConfigLoading = false;
+  academicYearConfigSaving = false;
   // ── Angular state — schema preview box ──
   schemaPreviewText =
     'Cliquez sur "Tester id=1" pour voir le premier enregistrement retourné.';
@@ -225,6 +232,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     private adminService: AdminAccountService,
     private tableViewService: TableViewService,
     private moduleService: ModuleService,
+    private academicYearService: AcademicYearService,
     private notifications: NotificationService,
     private dialog: MatDialog,
     private zone: NgZone,
@@ -343,6 +351,17 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     );
   }
 
+  get academicYearAvailableTables(): Array<{ name: string; comment?: string }> {
+    const selected = new Set(
+      this.academicYearConfig?.affectedTables.map((item) => item.tableName) ||
+        [],
+    );
+    return ((this.databaseSchema?.tables || []) as Array<{
+      name: string;
+      comment?: string;
+    }>).filter((table) => !selected.has(table.name));
+  }
+
   get selectedTableView(): TableViewConfig | null {
     return this.selectedTableViewId
       ? this.tableViews.find((view) => view.id === this.selectedTableViewId) ||
@@ -376,6 +395,100 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
           console.error("Erreur lors du chargement du schéma:", err);
         },
       });
+  }
+
+  async onAcademicYearOrganizationChange(): Promise<void> {
+    await this.loadAcademicYearConfig();
+  }
+
+  async loadAcademicYearConfig(): Promise<void> {
+    if (!this.academicYearSelectedOrganizationId) return;
+    const org = this.organizations.find(
+      (item) => String(item.id) === String(this.academicYearSelectedOrganizationId),
+    );
+    if (!org?.databaseName) return;
+
+    this.academicYearConfigLoading = true;
+    this.auth.setActiveOrganizationId(this.academicYearSelectedOrganizationId);
+    try {
+      const [schemaPayload, config] = await Promise.all([
+        firstValueFrom(
+          this.api.get<any>(
+            `schema?databaseName=${encodeURIComponent(org.databaseName)}`,
+          ),
+        ),
+        this.academicYearService.getConfig(this.academicYearSelectedOrganizationId),
+      ]);
+      this.databaseSchema = schemaPayload?.schema || schemaPayload;
+      this.academicYearConfig =
+        config ||
+        {
+          organizationId: Number(this.academicYearSelectedOrganizationId),
+          affectedTables: [],
+        };
+    } catch {
+      this.toast("Configuration des annees indisponible.", "error");
+    } finally {
+      this.academicYearConfigLoading = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  academicYearColumnsFor(tableName: string | null | undefined): any[] {
+    if (!tableName) return [];
+    return ((this.databaseSchema?.columns || []) as any[]).filter(
+      (column) =>
+        String(column.table || "").toLowerCase() ===
+        String(tableName).toLowerCase(),
+    );
+  }
+
+  addAcademicYearAffectedTable(): void {
+    if (!this.academicYearConfig || !this.academicYearSelectedTableToAdd)
+      return;
+    const firstCandidate =
+      this.academicYearColumnsFor(this.academicYearSelectedTableToAdd).find(
+        (column) => this.looksLikeAcademicYearColumn(column.name),
+      ) || this.academicYearColumnsFor(this.academicYearSelectedTableToAdd)[0];
+    this.academicYearConfig.affectedTables.push({
+      tableName: this.academicYearSelectedTableToAdd,
+      yearColumn: firstCandidate?.name || "",
+    });
+    this.academicYearSelectedTableToAdd = "";
+  }
+
+  removeAcademicYearAffectedTable(index: number): void {
+    this.academicYearConfig?.affectedTables.splice(index, 1);
+  }
+
+  async saveAcademicYearConfig(): Promise<void> {
+    if (!this.academicYearConfig) return;
+    this.academicYearConfigSaving = true;
+    try {
+      this.academicYearConfig.organizationId = Number(
+        this.academicYearSelectedOrganizationId,
+      );
+      this.academicYearConfig.affectedTables =
+        this.academicYearConfig.affectedTables.filter(
+          (item) => item.tableName && item.yearColumn,
+        );
+      this.academicYearConfig = await this.academicYearService.saveConfig(
+        this.academicYearConfig,
+      );
+      this.toast("Configuration sauvegardee", "success");
+    } catch {
+      this.toast("Sauvegarde impossible.", "error");
+    } finally {
+      this.academicYearConfigSaving = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private looksLikeAcademicYearColumn(name: string): boolean {
+    const normalized = String(name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    return normalized.includes("anneeuniv") || normalized.includes("academic");
   }
 
   get selectedFamily(): Family | null {
@@ -453,6 +566,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         addLabel: "Nouveau module",
         topbar: "Configuration des modules",
       },
+      academicYears: {
+        panelTitle: "Annees universitaires",
+        addLabel: null,
+        topbar: "Configuration des annees universitaires",
+      },
     };
     return meta[section] || meta["families"];
   }
@@ -474,6 +592,15 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       if (section === "modules" && !this.modules.length) {
         await this.editorState.ensureResources("modules");
         this.syncStateFromStore();
+      }
+      if (section === "academicYears") {
+        await this.editorState.ensureResources("organizations");
+        this.syncStateFromStore();
+        if (!this.academicYearSelectedOrganizationId) {
+          this.academicYearSelectedOrganizationId =
+            this.organizations[0]?.id || "";
+        }
+        await this.loadAcademicYearConfig();
       }
     } catch {
       this.syncStateFromStore();

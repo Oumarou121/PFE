@@ -22,15 +22,6 @@ export const routes: Routes = [
     data: { page: "superAdmin", roles: ["supAdmin"] },
   },
   {
-    path: "super-admin/academic-years",
-    loadComponent: () =>
-      import("./features/editor/pages/super-admin-academic-years/super-admin-academic-years.component").then(
-        (m) => m.SuperAdminAcademicYearsComponent,
-      ),
-    canActivate: [roleGuard],
-    data: { page: "academicYearConfig", roles: ["supAdmin"] },
-  },
-  {
     path: "academic-year",
     loadComponent: () =>
       import("./features/editor/pages/academic-year-select/academic-year-select.component").then(

@@ -1,7 +1,8 @@
 .academic-year-page {
   min-height: 100vh;
-  background: #f5f7fb;
-  color: #1f2937;
+  background: #f6f9fc;
+  color: #0d1b2a;
+  font-family: "DM Sans", sans-serif;
 }
 
 .topnav {
@@ -11,7 +12,7 @@
   justify-content: space-between;
   padding: 0 28px;
   background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(51, 122, 183, 0.14);
 }
 
 .tlogo-text {
@@ -20,16 +21,17 @@
 }
 
 .tlogo-text span {
-  color: #0f766e;
+  color: #337ab7;
 }
 
 .nav-org-pill {
   display: inline-flex;
   padding: 8px 14px;
   border-radius: 999px;
-  background: #eef6f5;
-  color: #0f766e;
+  background: #e8f1f9;
+  color: #275f91;
   font-weight: 700;
+  border: 1px solid #c2d9ee;
 }
 
 .year-shell {
@@ -44,9 +46,10 @@
 .year-panel,
 .create-panel {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(51, 122, 183, 0.14);
   border-radius: 8px;
   padding: 22px;
+  box-shadow: 0 4px 12px rgba(13, 27, 42, 0.07);
 }
 
 .year-header {
@@ -98,8 +101,8 @@ p {
 }
 
 .year-row.selected {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  border-color: #337ab7;
+  box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.12);
 }
 
 .year-row strong,
@@ -122,7 +125,7 @@ p {
   padding: 5px 10px;
   border-radius: 999px;
   background: #ecfdf5;
-  color: #047857;
+  color: #38a169;
   font-size: 12px;
   font-weight: 700;
 }
@@ -143,7 +146,7 @@ p {
 .primary-btn {
   min-height: 40px;
   padding: 0 16px;
-  background: #0f766e;
+  background: #337ab7;
   color: #ffffff;
 }
 
@@ -155,8 +158,8 @@ p {
 .ghost-btn {
   min-height: 34px;
   padding: 0 12px;
-  background: #f3f4f6;
-  color: #374151;
+  background: #e8f1f9;
+  color: #275f91;
 }
 
 .full {
@@ -176,6 +179,7 @@ input {
   border: 1px solid #d1d5db;
   border-radius: 7px;
   padding: 0 10px;
+  background: #f6f9fc;
 }
 
 .loading-box,

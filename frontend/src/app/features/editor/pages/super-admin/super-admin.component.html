@@ -128,8 +128,9 @@
     </button>
     <button
       class="icon-nav-btn"
+      [class.active]="currentSection === 'academicYears'"
       id="nav-academic-years"
-      (click)="router.navigate(['/super-admin/academic-years'])"
+      (click)="showSection('academicYears')"
       title="Annees universitaires"
     >
       <svg
@@ -300,6 +301,11 @@
         >
         </app-module-list>
       </ng-container>
+      <ng-container *ngSwitchCase="'academicYears'">
+        <div class="panel-note">
+          Selectionnez une organisation puis mappez les tables metier a filtrer.
+        </div>
+      </ng-container>
     </div>
   </div>
 
@@ -420,6 +426,128 @@
             (cancel)="cancelModuleEdit()"
           >
           </app-module-form>
+        </div>
+      </div>
+      <div
+        class="content-panel"
+        [class.active]="currentSection === 'academicYears'"
+        id="panel-academic-years"
+      >
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Tables filtrees par annee universitaire</div>
+              <div class="card-subtitle">
+                La liste des annees est lue dans ANNEEUNIV de la DB organisation.
+              </div>
+            </div>
+            <button
+              class="btn primary"
+              type="button"
+              [disabled]="academicYearConfigSaving || !academicYearConfig"
+              (click)="saveAcademicYearConfig()"
+            >
+              Enregistrer
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="form-grid c2">
+              <div class="form-row" style="margin: 0">
+                <label class="form-label">Organisation</label>
+                <select
+                  class="form-input"
+                  [(ngModel)]="academicYearSelectedOrganizationId"
+                  (change)="onAcademicYearOrganizationChange()"
+                >
+                  <option *ngFor="let org of organizations" [value]="org.id">
+                    {{ org.nom || org.name || org.id }} - {{ org.databaseName }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-row" style="margin: 0">
+                <label class="form-label">Ajouter une table</label>
+                <div class="flex gap-8">
+                  <select
+                    class="form-input"
+                    style="flex: 1"
+                    [(ngModel)]="academicYearSelectedTableToAdd"
+                  >
+                    <option value="">Selectionner une table</option>
+                    <option
+                      *ngFor="let table of academicYearAvailableTables"
+                      [value]="table.name"
+                    >
+                      {{ table.name }}
+                    </option>
+                  </select>
+                  <button
+                    class="btn"
+                    type="button"
+                    [disabled]="!academicYearSelectedTableToAdd"
+                    (click)="addAcademicYearAffectedTable()"
+                  >
+                    Ajouter
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="empty" *ngIf="academicYearConfigLoading">
+              <h3>Chargement du schema...</h3>
+            </div>
+
+            <div
+              class="empty"
+              *ngIf="
+                !academicYearConfigLoading &&
+                academicYearConfig &&
+                !academicYearConfig.affectedTables.length
+              "
+            >
+              <h3>Aucune table configuree</h3>
+              <p>
+                Ajoutez ici les tables qui possedent une colonne d'annee
+                universitaire.
+              </p>
+            </div>
+
+            <div
+              class="academic-year-mapping-list"
+              *ngIf="
+                !academicYearConfigLoading &&
+                academicYearConfig?.affectedTables?.length
+              "
+            >
+              <div
+                class="academic-year-mapping-row"
+                *ngFor="
+                  let item of academicYearConfig?.affectedTables;
+                  let i = index
+                "
+              >
+                <div>
+                  <div class="mapping-title">{{ item.tableName }}</div>
+                  <div class="text-muted">Table metier filtree</div>
+                </div>
+                <select class="form-input" [(ngModel)]="item.yearColumn">
+                  <option value="">Colonne annee</option>
+                  <option
+                    *ngFor="let column of academicYearColumnsFor(item.tableName)"
+                    [value]="column.name"
+                  >
+                    {{ column.name }}
+                  </option>
+                </select>
+                <button
+                  class="btn danger"
+                  type="button"
+                  (click)="removeAcademicYearAffectedTable(i)"
+                >
+                  Retirer
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div
