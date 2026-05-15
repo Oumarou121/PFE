@@ -29,7 +29,6 @@ export class DocumentHistoryPageComponent implements OnInit {
   families: FamilyRecord[] = [];
   organizationName = "";
   loading = false;
-  totalDocuments = 0;
 
   filterForm: FormGroup;
 
@@ -83,7 +82,6 @@ export class DocumentHistoryPageComponent implements OnInit {
         sortOrder: "desc",
       });
       this.documents = this.applyClientFilters(response.data || []);
-      this.totalDocuments = this.documents.length;
       this.tableGroups = this.grouping.buildTableGroups(
         this.documents,
         this.families,
