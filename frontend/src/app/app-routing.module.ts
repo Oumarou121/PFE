@@ -27,6 +27,15 @@ export const routes: Routes = [
     data: { page: "superAdmin", roles: ["supAdmin"] },
   },
   {
+    path: "profile",
+    loadComponent: () =>
+      import("./features/profile/profile.component").then(
+        (m) => m.ProfileComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "profile", roles: ["user", "admin", "supAdmin"] },
+  },
+  {
     path: "admin",
     loadComponent: () =>
       import("./features/editor/pages/admin-home/admin-home.component").then(

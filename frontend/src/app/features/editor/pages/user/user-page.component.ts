@@ -27,6 +27,7 @@ import { TemplateService } from "../../services/template.service";
 import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
 import { DocumentService } from "../../services/document.service";
 import { TableFiltersComponent } from "../../components/table-filters/table-filters.component";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 type UserMode = "documents" | "data";
 type Step = 1 | 2 | 3;
@@ -34,7 +35,7 @@ type Step = 1 | 2 | 3;
 @Component({
   selector: "app-user-page",
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent],
+  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent, UserMenuComponent],
   templateUrl: "./user-page.component.html",
   styleUrls: ["./user-page.component.scss"],
   encapsulation: ViewEncapsulation.None,

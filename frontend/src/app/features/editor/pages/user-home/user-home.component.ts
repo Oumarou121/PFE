@@ -7,6 +7,7 @@ import { NotificationService } from "../../../../core/services/notification.serv
 import { ModuleRecord } from "../../models/module.model";
 import { EditorStateService } from "../../services/editor-state.service";
 import { OrganizationService } from "../../services/organization.service";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 type UserHomeCard = {
   id: string;
@@ -23,7 +24,7 @@ const BASE_USER_MODULES = {
 @Component({
   selector: "app-user-home",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, UserMenuComponent],
   templateUrl: "./user-home.component.html",
   styleUrls: ["./user-home.component.scss"],
   encapsulation: ViewEncapsulation.None,

@@ -24,10 +24,7 @@
       <span class="nav-org-pill">Super administrateur</span>
     </div>
     <div class="nav-right">
-      <button class="nav-logout-btn" type="button" (click)="logoutAndRedirect()">
-        <i class="fa fa-sign-out"></i>
-        Déconnexion
-      </button>
+      <app-user-menu></app-user-menu>
     </div>
   </nav>
 
@@ -307,19 +304,7 @@
       <div class="topbar-sep">/</div>
       <span class="topbar-title" id="topbarTitle">{{ topbarTitle }}</span>
       <div class="ml-auto flex gap-8">
-        <button class="nav-link" type="button" (click)="logoutAndRedirect()">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-            <polyline points="10 17 15 12 10 7" />
-            <line x1="15" y1="12" x2="3" y2="12" />
-          </svg>
-          Déconnexion
-        </button>
+        <app-user-menu></app-user-menu>
       </div>
     </div>
 

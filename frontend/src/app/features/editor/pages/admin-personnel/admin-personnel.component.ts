@@ -12,6 +12,7 @@ import { PersonnelCreateRequest, PersonnelUpdateRequest, PersonnelUser } from ".
 import { EditorStateService } from "../../services/editor-state.service";
 import { OrganizationService } from "../../services/organization.service";
 import { PersonnelService } from "../../services/personnel.service";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 type PersonnelForm = PersonnelUpdateRequest & {
   id?: number;
@@ -55,7 +56,7 @@ const BASE_MODULE_CHOICES: ModuleChoice[] = [
 @Component({
   selector: "app-admin-personnel",
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatDialogModule, UserMenuComponent],
   templateUrl: "./admin-personnel.component.html",
   styleUrls: ["./admin-personnel.component.scss"],
   encapsulation: ViewEncapsulation.None,

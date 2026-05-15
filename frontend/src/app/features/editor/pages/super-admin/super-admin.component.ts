@@ -44,6 +44,7 @@ import {
 } from "../../services/editor-normalizers";
 import { ModuleListComponent } from "./components/module-list/module-list.component";
 import { ModuleFormComponent } from "./components/module-form/module-form.component";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 @Component({
   selector: "app-super-admin",
@@ -55,6 +56,7 @@ import { ModuleFormComponent } from "./components/module-form/module-form.compon
     ModuleListComponent,
     ModuleFormComponent,
     TableViewFiltersConfigComponent,
+    UserMenuComponent,
   ],
   templateUrl: "./super-admin.component.html",
   styleUrls: ["./super-admin.component.scss"],

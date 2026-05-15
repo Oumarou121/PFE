@@ -7,6 +7,7 @@ import { NotificationService } from "../../../../core/services/notification.serv
 import { OrganizationService } from "../../services/organization.service";
 import { EditorStateService } from "../../services/editor-state.service";
 import { ModuleRecord } from "../../models/module.model";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 type AdminQuickCard = {
   title: string;
@@ -18,7 +19,7 @@ type AdminQuickCard = {
 @Component({
   selector: "app-admin-home",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, UserMenuComponent],
   templateUrl: "./admin-home.component.html",
   styleUrls: ["./admin-home.component.scss"],
   encapsulation: ViewEncapsulation.None,

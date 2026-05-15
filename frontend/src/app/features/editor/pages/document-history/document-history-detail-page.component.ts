@@ -18,11 +18,12 @@ import {
   ORGANIZATION_DOCUMENT_GROUP_KEY,
   TableDocumentGroup,
 } from "./document-history-grouping.service";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 @Component({
   selector: "app-document-history-detail-page",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, UserMenuComponent],
   templateUrl: "./document-history-detail-page.component.html",
   styleUrls: ["./document-history-detail-page.component.scss"],
 })

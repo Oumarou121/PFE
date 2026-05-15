@@ -22,11 +22,12 @@ import { TableViewService } from "../../services/table-view.service";
 import { TableFiltersComponent } from "../../components/table-filters/table-filters.component";
 import { ModuleRecord } from "../../models/module.model";
 import { TableViewConfig } from "../../models/table-view.model";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 @Component({
   selector: "app-admin-modules",
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent],
+  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent, UserMenuComponent],
   templateUrl: "./admin-modules.component.html",
   styleUrls: ["./admin-modules.component.scss"],
   encapsulation: ViewEncapsulation.None,

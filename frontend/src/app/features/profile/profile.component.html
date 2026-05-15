@@ -1,0 +1,75 @@
+<div class="profile-page">
+  <nav class="topnav">
+    <div class="nav-logo">
+      <svg
+        class="nav-logo__icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+      SIRH-<span class="nav-logo__light">Doc</span>
+    </div>
+    <div class="nav-center">
+      <button class="nav-home-btn" type="button" (click)="goHome()">
+        <i class="fa fa-home"></i>
+        Accueil
+      </button>
+    </div>
+    <div class="nav-right">
+      <app-user-menu></app-user-menu>
+    </div>
+  </nav>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement du profil...</p>
+  </div>
+
+  <main class="profile-shell" *ngIf="!loading && profile">
+    <section class="profile-card">
+      <div class="profile-head">
+        <div class="profile-avatar">
+          {{ (profile.name || profile.email).substring(0, 2).toUpperCase() }}
+        </div>
+        <div>
+          <h1>{{ profile.name }}</h1>
+          <p>{{ profile.email }}</p>
+        </div>
+        <span class="role-pill">{{ profile.role }}</span>
+      </div>
+
+      <div class="profile-grid">
+        <div class="info-item">
+          <span>Organisation</span>
+          <strong>{{ profile.organizationId || "-" }}</strong>
+        </div>
+        <div class="info-item">
+          <span>Profil</span>
+          <strong>{{ profile.profile || "-" }}</strong>
+        </div>
+        <div class="info-item">
+          <span>Detail profil</span>
+          <strong>{{ profile.profileDetail || "-" }}</strong>
+        </div>
+        <div class="info-item">
+          <span>Acces annees</span>
+          <strong>{{ accessYearsLabel }}</strong>
+        </div>
+        <div class="info-item">
+          <span>Modules autorises</span>
+          <strong>{{ profile.moduleIds.length || 0 }}</strong>
+        </div>
+        <div class="info-item">
+          <span>Etat</span>
+          <strong>{{ profile.isActive ? "Actif" : "Inactif" }}</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

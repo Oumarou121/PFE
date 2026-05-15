@@ -56,6 +56,7 @@ import {
   GraphicCharterConfig,
   GraphicCharterRecord,
 } from "../../models/graphic-charter.model";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 type AdminPanel = "document" | "headerFooter" | "filters" | "table";
 type PageOrientation = "portrait" | "landscape";
@@ -93,7 +94,7 @@ interface AdminVariableGroup {
 @Component({
   selector: "app-admin",
   standalone: true,
-  imports: [CommonModule, MatDialogModule],
+  imports: [CommonModule, MatDialogModule, UserMenuComponent],
   templateUrl: "./admin.component.html",
   styleUrls: ["./admin.component.scss"],
   encapsulation: ViewEncapsulation.None,

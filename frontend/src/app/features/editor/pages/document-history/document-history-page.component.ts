@@ -14,11 +14,12 @@ import {
   DocumentHistoryGroupingService,
   TableDocumentGroup,
 } from "./document-history-grouping.service";
+import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 @Component({
   selector: "app-document-history-page",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, UserMenuComponent],
   templateUrl: "./document-history-page.component.html",
   styleUrls: ["./document-history-page.component.scss"],
 })
