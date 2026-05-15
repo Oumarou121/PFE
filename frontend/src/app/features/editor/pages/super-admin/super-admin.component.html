@@ -1,13 +1,38 @@
-<div id="loading" [class.done]="!isLoading">
-  <div class="load-icon">&#9881;</div>
-  <div class="load-title">SIRH<span>-Doc</span></div>
-  <div class="load-sub">Interface Super Administrateur</div>
-  <div class="load-bar"><div class="load-fill"></div></div>
+﻿<div class="loading-overlay" *ngIf="isLoading">
+  <div class="spinner"></div>
+  <p>Chargement de l'interface super administrateur...</p>
 </div>
 
-<div id="app" [style.opacity]="!isLoading ? '1' : '0'">
-  <div class="icon-sidebar">
-    <div class="app-logo">📋</div>
+<div id="app" class="super-admin-app" [style.opacity]="!isLoading ? '1' : '0'">
+  <nav class="topnav super-admin-topnav">
+    <div class="nav-logo">
+      <svg
+        class="nav-logo__icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+      SIRH-<span class="nav-logo__light">Doc</span>
+    </div>
+    <div class="nav-center">
+      <span class="nav-org-pill">Super administrateur</span>
+    </div>
+    <div class="nav-right">
+      <button class="nav-logout-btn" type="button" (click)="logoutAndRedirect()">
+        <i class="fa fa-sign-out"></i>
+        Déconnexion
+      </button>
+    </div>
+  </nav>
+
+  <div class="icon-sidebar app-icon-sidebar">
+    <div class="app-logo">SA</div>
     <button
       class="icon-nav-btn"
       [class.active]="currentSection === 'families'"
@@ -112,7 +137,7 @@
     </div>
   </div>
 
-  <div class="left-panel" id="leftPanel">
+  <div class="left-panel app-side-panel" id="leftPanel">
     <div class="panel-header">
       <div class="panel-title" id="panelTitle">{{ panelTitle }}</div>
       <div class="panel-subtitle" id="panelSubtitle">
@@ -276,7 +301,7 @@
     </div>
   </div>
 
-  <div class="main">
+  <div class="main app-workspace">
     <div class="topbar">
       <span class="chip chip-purple">SUPER ADMIN</span>
       <div class="topbar-sep">/</div>
@@ -490,7 +515,7 @@
           </p>
         </div>
 
-        <!-- ── TRANCHE 1: Assistant schéma (legacy renderer target — migré en TRANCHE 3) ── -->
+        <!-- TRANCHE 1: Assistant schema (legacy renderer target - migre en TRANCHE 3) -->
         <div class="card" *ngIf="selectedFamily">
           <div class="card-header">
             <div class="card-title">
@@ -529,7 +554,7 @@
               "
             >
               <div *ngIf="!selectedSchemaDatabaseName">
-                <div style="font-size: 24px; margin-bottom: 8px">⚠️</div>
+                <div style="font-size: 24px; margin-bottom: 8px">&#9888;</div>
                 <strong>Contexte de données requis</strong><br />
                 Sélectionnez une organisation dans le panneau de gauche pour
                 charger le schéma.
@@ -630,7 +655,7 @@
                           "
                           (click)="removeSchemaSecondaryTable(sb.famId, tName)"
                         >
-                          ×
+                          &times;
                         </button>
                       </span>
                     </ng-container>
@@ -842,7 +867,7 @@
           </div>
         </div>
 
-        <!-- ── TRANCHE 1: Informations générales — Angular pur ── -->
+        <!-- TRANCHE 1: Informations generales - Angular pur -->
         <div class="card" *ngIf="selectedFamily as fam">
           <div class="card-header">
             <div class="card-title">
@@ -957,7 +982,7 @@
                 </select>
               </div>
 
-              <!-- Table bénéficiaire — Angular state-driven (replaces familyBeneficiaryTableWrap) -->
+              <!-- Table beneficiaire - Angular state-driven (replaces familyBeneficiaryTableWrap) -->
               <div class="form-row" style="margin: 0">
                 <ng-container [ngSwitch]="beneficiaryLoadState">
                   <ng-container *ngSwitchCase="'loading'">
@@ -1787,7 +1812,7 @@
           </div>
         </div>
 
-        <!-- ── TRANCHE 1: Classes & Variables (legacy renderer target — migré en TRANCHE 2) ── -->
+        <!-- TRANCHE 1: Classes & Variables (legacy renderer target - migre en TRANCHE 2) -->
         <div class="card" *ngIf="selectedFamily as fam">
           <div class="card-header">
             <div class="card-title">
@@ -1929,7 +1954,7 @@
                           getVarPillTech(v)
                         }}</span>
                         <span class="var-pill-label"
-                          >→ {{ v.label || v.tech || "" }}</span
+                          >-&gt; {{ v.label || v.tech || "" }}</span
                         >
                         <span
                           *ngIf="v.type === 'list-object'"
@@ -1959,11 +1984,11 @@
                           type="button"
                           (click)="deleteVar(famId, ci, vi)"
                         >
-                          ×
+                          &times;
                         </button>
                       </div>
 
-                      <!-- Éditeur libellé -->
+                      <!-- Editeur libelle -->
                       <label
                         class="form-label"
                         style="font-size: 10px; color: var(--text2); margin: 0"
@@ -2462,7 +2487,7 @@
                             "
                           >
                             Requête <strong>SELECT</strong> retournant plusieurs
-                            lignes — injectée dans
+                            lignes - injectée dans
                             <code>{{ getVarSqlPlaceholder(v) }}</code
                             >.
                           </div>
@@ -2649,7 +2674,7 @@
                                       removeVarColumn(famId, ci, vi, colIndex)
                                     "
                                   >
-                                    ×
+                                    &times;
                                   </button>
                                 </div>
                               </div>
@@ -3154,7 +3179,7 @@
                         "
                         class="col-pill"
                       >
-                        {{ tc.key }} → {{ tc.label }}
+                        {{ tc.key }} -&gt; {{ tc.label }}
                         <button
                           class="col-pill-btn"
                           type="button"
@@ -3178,7 +3203,7 @@
                           type="button"
                           (click)="removeTempCol(ci, tci)"
                         >
-                          ×
+                          &times;
                         </button>
                       </span>
                     </div>
@@ -3227,7 +3252,7 @@
           </div>
         </div>
 
-        <!-- ── TRANCHE 1: Requête SQL principale — Angular pur ── -->
+        <!-- TRANCHE 1: Requete SQL principale - Angular pur -->
         <div class="card" *ngIf="selectedFamily as fam">
           <div class="card-header">
             <div class="card-title">
@@ -3283,7 +3308,7 @@
           </div>
         </div>
 
-        <!-- ── TRANCHE 1: Templates associés — Angular pur ── -->
+        <!-- TRANCHE 1: Templates associes - Angular pur -->
         <div class="card" *ngIf="selectedFamily">
           <div class="card-header">
             <div class="card-title">
@@ -3310,7 +3335,7 @@
               *ngIf="selectedFamilyTemplates.length === 0"
               style="padding: 16px; text-align: center"
             >
-              Aucun template — créez-en depuis l'interface Admin Organization
+              Aucun template - créez-en depuis l'interface Admin Organization
             </div>
             <table
               class="data-table"
@@ -3473,7 +3498,7 @@
             border: 1px dashed var(--border);
           "
         >
-          <div style="font-size: 32px; margin-bottom: 12px">⚠️</div>
+          <div style="font-size: 32px; margin-bottom: 12px">&#9888;</div>
           <h3 style="margin-bottom: 8px">Contexte de données requis</h3>
           <p class="text-muted">
             Veuillez sélectionner une organisation dans le panneau de gauche
@@ -4164,7 +4189,7 @@
         type="button"
         (click)="closeModal('modalOrganization')"
       >
-        ✕
+        &times;
       </button>
     </div>
     <div class="form-grid c2">
@@ -4252,7 +4277,7 @@
         type="button"
         (click)="closeModal('modalAdmin')"
       >
-        ✕
+        &times;
       </button>
     </div>
     <div class="form-grid c2">
@@ -4279,7 +4304,7 @@
         >Organization assignée <span class="req">*</span></label
       >
       <select class="form-input" [(ngModel)]="adminDraft.organizationId">
-        <option value="">— Choisir —</option>
+        <option value="">-- Choisir --</option>
         <option *ngFor="let org of organizations" [value]="org.id">
           {{ org.nom || org.id }}
         </option>

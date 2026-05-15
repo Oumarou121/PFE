@@ -1,17 +1,53 @@
-<div class="loading" *ngIf="loading">
-  <div class="ll">SIRH-<span>Doc</span></div>
-  <div class="loading-sub">{{ appLoadingMessage }}</div>
-  <div class="lb"><div class="lbf"></div></div>
+<div class="loading-overlay" *ngIf="loading">
+  <div class="spinner"></div>
+  <p>{{ appLoadingMessage }}</p>
 </div>
 
 <div class="user-page" *ngIf="!loading">
   <nav class="topnav">
-    <div class="nav-logo">SIRH-<span>Doc</span></div>
-    <div class="nav-sep"></div>
-    <span class="nav-chip">UTILISATEUR FINAL</span>
-    <span class="nav-organization">{{ organizationName }}</span>
+    <div class="nav-logo">
+      <svg
+        class="nav-logo__icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+      SIRH-<span class="nav-logo__light">Doc</span>
+    </div>
+    <div class="nav-center">
+      <span class="nav-org-pill">{{ organizationName || "Utilisateur" }}</span>
+    </div>
     <div class="nav-right">
-      <button class="nav-link" type="button" (click)="logout()">
+      <button
+        class="nav-action-btn"
+        [class.active]="mode === 'documents'"
+        type="button"
+        (click)="switchMode('documents')"
+      >
+        <i class="fa fa-file-text-o"></i>
+        Générer
+      </button>
+      <button
+        class="nav-action-btn"
+        [class.active]="mode === 'data'"
+        type="button"
+        (click)="switchMode('data')"
+      >
+        <i class="fa fa-database"></i>
+        Données
+      </button>
+      <button class="nav-action-btn" type="button" (click)="goToHistory()">
+        <i class="fa fa-history"></i>
+        Historique
+      </button>
+      <button class="nav-logout-btn" type="button" (click)="logout()">
+        <i class="fa fa-sign-out"></i>
         Deconnexion
       </button>
     </div>

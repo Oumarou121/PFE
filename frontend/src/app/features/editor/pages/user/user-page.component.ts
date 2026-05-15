@@ -199,6 +199,10 @@ export class UserPageComponent implements OnInit {
     }
   }
 
+  goToHistory(): void {
+    this.router.navigate(["/documents"]);
+  }
+
   get modulesList(): any[] {
     const search = this.dataViewSearch.trim().toLowerCase();
     const modules = this.state.getState().modules || [];

@@ -26,10 +26,6 @@
     </div>
 
     <div class="nav-right">
-      <div class="heading-stats">
-        <strong>{{ totalDocuments }}</strong>
-        <span>documents</span>
-      </div>
       <button class="nav-action-btn" type="button" (click)="goBack()">
         <i class="fa fa-arrow-left"></i>
         Retour
@@ -89,6 +85,10 @@
       <div>
         <span class="eyebrow">Historique documentaire</span>
         <h1>Modules de documents</h1>
+      </div>
+      <div class="detail-stats">
+        <strong>{{ totalDocuments }}</strong>
+        <span>document(s)</span>
       </div>
     </section>
 

@@ -3725,3 +3725,59 @@ textarea {
   border-color: var(--accent2);
   background: var(--accent2);
 }
+
+/* Shared admin editor shell alignment */
+.admin-editor-app .editor-topnav {
+  flex-shrink: 0;
+}
+
+.admin-editor-app .nav-right {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-editor-app .main-area {
+  background:
+    linear-gradient(180deg, rgba(51, 122, 183, 0.035), transparent 240px),
+    var(--bg);
+}
+
+.admin-editor-app .sidebar {
+  width: 286px;
+  box-shadow: 1px 0 3px rgba(13, 27, 42, 0.04);
+}
+
+.admin-editor-app .editor-top,
+.admin-editor-app .toolbar {
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.admin-editor-app .pcanvas {
+  min-width: 0;
+}
+
+@media (max-width: 920px) {
+  .admin-editor-app {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .admin-editor-app .editor-topnav {
+    position: sticky;
+    height: auto;
+    min-height: 58px;
+    gap: 10px;
+    padding: 10px 16px;
+  }
+
+  .admin-editor-app .nav-center {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .admin-editor-app .main-area {
+    min-height: calc(100vh - 100px);
+  }
+}

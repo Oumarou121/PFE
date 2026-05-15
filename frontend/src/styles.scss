@@ -229,6 +229,14 @@ app-root {
   }
 }
 
+.nav-action-btn.active,
+.nav-action-btn[aria-current="page"] {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  box-shadow: inset 0 0 0 1px rgba(51, 122, 183, 0.08);
+}
+
 .bottomnav {
   position: sticky;
   top: 58px;
@@ -345,6 +353,32 @@ app-root {
   border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow-md);
+}
+
+.app-icon-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+}
+
+.app-side-panel {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+}
+
+.app-workspace {
+  min-width: 0;
+  background:
+    linear-gradient(180deg, rgba(51, 122, 183, 0.035), transparent 240px),
+    var(--surface-2);
+}
+
+.app-surface-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .card-grid {
