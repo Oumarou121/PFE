@@ -11,19 +11,19 @@ import { EditorStateService } from "../../services/editor-state.service";
 import { FamilyService } from "../../services/family.service";
 import { OrganizationService } from "../../services/organization.service";
 import {
-  DocumentHistoryGroupingService,
+  DocumentArchiveGroupingService,
   TableDocumentGroup,
-} from "./document-history-grouping.service";
+} from "./document-archive-grouping.service";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 @Component({
-  selector: "app-document-history-page",
+  selector: "app-document-archive-page",
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, UserMenuComponent],
-  templateUrl: "./document-history-page.component.html",
-  styleUrls: ["./document-history-page.component.scss"],
+  templateUrl: "./document-archive-page.component.html",
+  styleUrls: ["./document-archive-page.component.scss"],
 })
-export class DocumentHistoryPageComponent implements OnInit {
+export class DocumentArchivePageComponent implements OnInit {
   documents: DocumentListItem[] = [];
   tableGroups: TableDocumentGroup[] = [];
   families: FamilyRecord[] = [];
@@ -42,7 +42,7 @@ export class DocumentHistoryPageComponent implements OnInit {
     private authService: AuthService,
     private notificationService: NotificationService,
     private formBuilder: FormBuilder,
-    private grouping: DocumentHistoryGroupingService,
+    private grouping: DocumentArchiveGroupingService,
   ) {
     this.filterForm = this.formBuilder.group({
       familyId: [""],
@@ -61,7 +61,7 @@ export class DocumentHistoryPageComponent implements OnInit {
       this.readQueryParams();
       await this.loadDocuments();
     } catch (error) {
-      console.error("Error initializing document history page", error);
+      console.error("Error initializing document archive page", error);
       this.notificationService.showError(
         "Erreur lors du chargement des données",
       );
@@ -112,7 +112,7 @@ export class DocumentHistoryPageComponent implements OnInit {
   }
 
   openGroup(group: TableDocumentGroup): void {
-    this.router.navigate(["/documents/group", group.key], {
+    this.router.navigate(["/archives/group", group.key], {
       queryParams: this.getFilterQueryParams(),
     });
   }

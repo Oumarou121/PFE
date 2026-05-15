@@ -35,7 +35,13 @@ type Step = 1 | 2 | 3;
 @Component({
   selector: "app-user-page",
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent, UserMenuComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatDialogModule,
+    TableFiltersComponent,
+    UserMenuComponent,
+  ],
   templateUrl: "./user-page.component.html",
   styleUrls: ["./user-page.component.scss"],
   encapsulation: ViewEncapsulation.None,
@@ -127,11 +133,15 @@ export class UserPageComponent implements OnInit {
         ? this.organizationsService.getOrganization(this.organizationId)
         : null;
       this.organizationName = organization?.nom || organization?.name || "";
-      this.mode = this.route.snapshot.data["mode"] === "data" ? "data" : "documents";
+      this.mode =
+        this.route.snapshot.data["mode"] === "data" ? "data" : "documents";
       if (this.mode === "data") {
         await this.state.ensureResources(["tableViews", "modules"]);
         const moduleId = this.route.snapshot.paramMap.get("moduleId");
-        if (moduleId && this.modulesList.some((module) => module.id === moduleId)) {
+        if (
+          moduleId &&
+          this.modulesList.some((module) => module.id === moduleId)
+        ) {
           this.selectModule(moduleId);
         } else {
           this.notifications.showError("Vous n'avez pas acces a ce module.");
@@ -214,8 +224,8 @@ export class UserPageComponent implements OnInit {
     }
   }
 
-  goToHistory(): void {
-    this.router.navigate(["/documents"]);
+  goToArchive(): void {
+    this.router.navigate(["/archives"]);
   }
 
   goHome(): void {
@@ -391,7 +401,8 @@ export class UserPageComponent implements OnInit {
       );
       // Apply CSS vars to host so SCSS rules using var(--page-*) and var(--doc-*)
       // resolve correctly even before inline styles on .preview-page propagate.
-      const themeVars = this.documentRender.getDocumentThemeVars(renderTemplate);
+      const themeVars =
+        this.documentRender.getDocumentThemeVars(renderTemplate);
       Object.entries(themeVars).forEach(([key, value]) => {
         this.elementRef.nativeElement.style.setProperty(key, value as string);
       });
@@ -933,7 +944,9 @@ export class UserPageComponent implements OnInit {
     return {
       ...template,
       organizationId:
-        template.organizationId || this.organizationId || template.organizationId,
+        template.organizationId ||
+        this.organizationId ||
+        template.organizationId,
     };
   }
 }

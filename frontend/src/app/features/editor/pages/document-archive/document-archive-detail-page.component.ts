@@ -14,20 +14,25 @@ import { FamilyService } from "../../services/family.service";
 import { OrganizationService } from "../../services/organization.service";
 import {
   BeneficiaryDocumentGroup,
-  DocumentHistoryGroupingService,
+  DocumentArchiveGroupingService,
   ORGANIZATION_DOCUMENT_GROUP_KEY,
   TableDocumentGroup,
-} from "./document-history-grouping.service";
+} from "./document-archive-grouping.service";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 
 @Component({
-  selector: "app-document-history-detail-page",
+  selector: "app-document-archive-detail-page",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, UserMenuComponent],
-  templateUrl: "./document-history-detail-page.component.html",
-  styleUrls: ["./document-history-detail-page.component.scss"],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    UserMenuComponent,
+  ],
+  templateUrl: "./document-archive-detail-page.component.html",
+  styleUrls: ["./document-archive-detail-page.component.scss"],
 })
-export class DocumentHistoryDetailPageComponent implements OnInit {
+export class DocumentArchiveDetailPageComponent implements OnInit {
   documents: DocumentListItem[] = [];
   families: FamilyRecord[] = [];
   activeGroup: TableDocumentGroup | null = null;
@@ -52,7 +57,7 @@ export class DocumentHistoryDetailPageComponent implements OnInit {
     private notificationService: NotificationService,
     private dialog: MatDialog,
     private formBuilder: FormBuilder,
-    private grouping: DocumentHistoryGroupingService,
+    private grouping: DocumentArchiveGroupingService,
   ) {
     this.filterForm = this.formBuilder.group({
       familyId: [""],
@@ -72,7 +77,7 @@ export class DocumentHistoryDetailPageComponent implements OnInit {
       this.readRouteState();
       await this.loadDocuments();
     } catch (error) {
-      console.error("Error initializing document history detail page", error);
+      console.error("Error initializing document archive detail page", error);
       this.notificationService.showError(
         "Erreur lors du chargement des documents",
       );
@@ -238,8 +243,8 @@ export class DocumentHistoryDetailPageComponent implements OnInit {
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
-  goBackToModules(): void {
-    this.router.navigate(["/documents"], {
+  goBackToArchive(): void {
+    this.router.navigate(["/archives"], {
       queryParams: this.getFilterQueryParams(),
     });
   }
@@ -320,7 +325,10 @@ export class DocumentHistoryDetailPageComponent implements OnInit {
   }
 
   private rebuildActiveGroup(): void {
-    const groups = this.grouping.buildTableGroups(this.documents, this.families);
+    const groups = this.grouping.buildTableGroups(
+      this.documents,
+      this.families,
+    );
     this.activeGroup =
       groups.find((group) => group.key === this.groupKey) || null;
     this.beneficiaryGroups = this.activeGroup?.beneficiaries || [];

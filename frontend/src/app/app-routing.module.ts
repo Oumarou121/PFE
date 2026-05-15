@@ -109,22 +109,22 @@ export const routes: Routes = [
     data: { page: "userModule", roles: ["user"], mode: "data" },
   },
   {
-    path: "documents/group/:groupKey",
+    path: "archives/group/:groupKey",
     loadComponent: () =>
-      import("./features/editor/pages/document-history/document-history-detail-page.component").then(
-        (m) => m.DocumentHistoryDetailPageComponent,
+      import("./features/editor/pages/document-archive/document-archive-detail-page.component").then(
+        (m) => m.DocumentArchiveDetailPageComponent,
       ),
     canActivate: [roleGuard],
-    data: { page: "documentDetails", roles: ["user", "admin", "supAdmin"] },
+    data: { page: "archiveDetails", roles: ["user", "admin", "supAdmin"] },
   },
   {
-    path: "documents",
+    path: "archives",
     loadComponent: () =>
-      import("./features/editor/pages/document-history/document-history-page.component").then(
-        (m) => m.DocumentHistoryPageComponent,
+      import("./features/editor/pages/document-archive/document-archive-page.component").then(
+        (m) => m.DocumentArchivePageComponent,
       ),
     canActivate: [roleGuard],
-    data: { page: "documents", roles: ["user", "admin", "supAdmin"] },
+    data: { page: "archives", roles: ["user", "admin", "supAdmin"] },
   },
   {
     path: "",

@@ -24,7 +24,7 @@ export interface TableDocumentGroup {
 }
 
 @Injectable({ providedIn: "root" })
-export class DocumentHistoryGroupingService {
+export class DocumentArchiveGroupingService {
   buildTableGroups(
     rows: DocumentListItem[],
     families: FamilyRecord[],
@@ -70,9 +70,7 @@ export class DocumentHistoryGroupingService {
       );
   }
 
-  buildBeneficiaryGroups(
-    rows: DocumentListItem[],
-  ): BeneficiaryDocumentGroup[] {
+  buildBeneficiaryGroups(rows: DocumentListItem[]): BeneficiaryDocumentGroup[] {
     const map = new Map<string, BeneficiaryDocumentGroup>();
 
     for (const document of rows) {

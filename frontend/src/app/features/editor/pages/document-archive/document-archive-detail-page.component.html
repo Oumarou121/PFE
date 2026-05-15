@@ -1,4 +1,4 @@
-<div class="document-history-detail app-page">
+<div class="document-archive-detail app-page">
   <div class="loading-overlay" *ngIf="loading">
     <div class="spinner"></div>
     <p>Chargement des documents...</p>
@@ -26,7 +26,7 @@
     </div>
 
     <div class="nav-right">
-      <button class="nav-action-btn" type="button" (click)="goBackToModules()">
+      <button class="nav-action-btn" type="button" (click)="goBackToArchive()">
         <i class="fa fa-arrow-left"></i>
         Retour
       </button>
@@ -34,7 +34,7 @@
     </div>
   </nav>
 
-  <div class="bottomnav history-filters" [formGroup]="filterForm">
+  <div class="bottomnav archive-filters" [formGroup]="filterForm">
     <label class="filter-label">
       <i class="fa fa-th-large filter-icon"></i>
       <select formControlName="familyId" (change)="onFilterChange()">
@@ -60,7 +60,11 @@
 
     <label class="filter-label">
       <i class="fa fa-calendar filter-icon"></i>
-      <input type="date" formControlName="dateFrom" (change)="onFilterChange()" />
+      <input
+        type="date"
+        formControlName="dateFrom"
+        (change)="onFilterChange()"
+      />
     </label>
 
     <span class="filter-range-sep">à</span>
@@ -85,14 +89,19 @@
     </button>
   </div>
 
-  <main class="app-shell history-detail-shell" *ngIf="!loading">
+  <main class="app-shell archive-detail-shell" *ngIf="!loading">
     <section class="app-panel detail-heading">
       <div>
         <span class="eyebrow">
           {{ isOrganizationGroup ? "Organisation" : activeGroup?.tableName }}
         </span>
         <h1>{{ groupTitle }}</h1>
-        <p>{{ getFamilyNames(activeGroup?.familyIds || []) || "Toutes les familles" }}</p>
+        <p>
+          {{
+            getFamilyNames(activeGroup?.familyIds || []) ||
+              "Toutes les familles"
+          }}
+        </p>
       </div>
       <div class="detail-stats">
         <strong>{{ visibleDocuments.length }}</strong>
@@ -147,7 +156,10 @@
           </div>
 
           <div class="document-list" *ngIf="pagedDocuments.length; else noDocs">
-            <article class="document-row" *ngFor="let document of pagedDocuments">
+            <article
+              class="document-row"
+              *ngFor="let document of pagedDocuments"
+            >
               <div class="doc-info">
                 <strong>{{ document.title }}</strong>
                 <span>{{ getFamilyName(document.familyId) }}</span>
@@ -189,7 +201,11 @@
           </div>
 
           <footer class="pagination-bar" *ngIf="visibleDocuments.length">
-            <button type="button" [disabled]="page <= 1" (click)="goToPreviousPage()">
+            <button
+              type="button"
+              [disabled]="page <= 1"
+              (click)="goToPreviousPage()"
+            >
               <i class="fa fa-angle-left"></i>
               Précédent
             </button>

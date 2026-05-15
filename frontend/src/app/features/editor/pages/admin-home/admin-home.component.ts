@@ -74,7 +74,7 @@ export class AdminHomeComponent implements OnInit {
         title: "Archive des documents",
         subtitle: "Consulter les documents generes",
         icon: "fa fa-list-alt", //<i class="fa fa-list-alt" aria-hidden="true"></i>
-        action: () => this.router.navigate(["/documents"]),
+        action: () => this.router.navigate(["/archives"]),
       },
       {
         title: "Gestion du personnel",

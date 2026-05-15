@@ -76,7 +76,7 @@ export class UserHomeComponent implements OnInit {
         id: BASE_USER_MODULES.archive,
         title: "Archive des documents",
         icon: "fa fa-archive",
-        action: () => this.router.navigate(["/documents"]),
+        action: () => this.router.navigate(["/archives"]),
       });
     }
 
