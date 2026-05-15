@@ -260,8 +260,12 @@
                   <span>Modules autorises</span>
                   <small>{{ form.moduleIds.length }} selectionne(s)</small>
                 </div>
-                <div class="modules-picker__grid" *ngIf="modules.length">
-                  <label class="module-choice" *ngFor="let module of modules">
+                <div class="modules-picker__grid" *ngIf="moduleChoices.length">
+                  <label
+                    class="module-choice"
+                    [class.module-choice--base]="module.isBase"
+                    *ngFor="let module of moduleChoices"
+                  >
                     <input
                       type="checkbox"
                       [checked]="isModuleSelected(module.id)"
@@ -274,7 +278,7 @@
                     <span>{{ module.name }}</span>
                   </label>
                 </div>
-                <div class="empty-state compact" *ngIf="!modules.length">
+                <div class="empty-state compact" *ngIf="!moduleChoices.length">
                   Aucun module actif disponible.
                 </div>
               </div>

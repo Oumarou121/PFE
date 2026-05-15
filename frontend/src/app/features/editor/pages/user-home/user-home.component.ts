@@ -9,10 +9,16 @@ import { EditorStateService } from "../../services/editor-state.service";
 import { OrganizationService } from "../../services/organization.service";
 
 type UserHomeCard = {
+  id: string;
   title: string;
   icon: string;
   action: () => void;
 };
+
+const BASE_USER_MODULES = {
+  generation: "base.documentGeneration",
+  archive: "base.documentArchive",
+} as const;
 
 @Component({
   selector: "app-user-home",
@@ -51,13 +57,29 @@ export class UserHomeComponent implements OnInit {
   }
 
   get baseCards(): UserHomeCard[] {
-    return [
-      {
+    const user = this.auth.getCurrentUser();
+    const allowedIds = new Set(user?.moduleIds || []);
+    const cards: UserHomeCard[] = [];
+
+    if (allowedIds.has(BASE_USER_MODULES.generation)) {
+      cards.push({
+        id: BASE_USER_MODULES.generation,
         title: "Generation de document",
         icon: "fa fa-file-text",
         action: () => this.router.navigate(["/user/generation"]),
-      },
-    ];
+      });
+    }
+
+    if (allowedIds.has(BASE_USER_MODULES.archive)) {
+      cards.push({
+        id: BASE_USER_MODULES.archive,
+        title: "Archive des documents",
+        icon: "fa fa-archive",
+        action: () => this.router.navigate(["/documents"]),
+      });
+    }
+
+    return cards;
   }
 
   get modules(): ModuleRecord[] {

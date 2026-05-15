@@ -485,6 +485,10 @@ button:disabled {
   background: var(--primary-light);
   color: var(--primary-dark);
 }
+.module-choice--base {
+  background: #fff;
+  border-style: dashed;
+}
 .module-choice i {
   color: var(--primary);
   width: 16px;

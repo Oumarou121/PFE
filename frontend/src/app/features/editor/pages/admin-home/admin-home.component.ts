@@ -70,8 +70,8 @@ export class AdminHomeComponent implements OnInit {
         action: () => this.router.navigate(["/admin/editor"]),
       },
       {
-        title: "Historique des documents",
-        subtitle: "Consulter les documents générés",
+        title: "Archive des documents",
+        subtitle: "Consulter les documents generes",
         icon: "fa fa-list-alt", //<i class="fa fa-list-alt" aria-hidden="true"></i>
         action: () => this.router.navigate(["/documents"]),
       },

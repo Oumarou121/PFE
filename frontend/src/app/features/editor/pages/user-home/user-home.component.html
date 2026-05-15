@@ -75,4 +75,12 @@
       </div>
     </button>
   </section>
+
+  <div
+    class="empty-state"
+    *ngIf="!loading && !baseCards.length && !modules.length"
+  >
+    <i class="fa fa-cubes"></i>
+    <p>Aucun module n'est disponible pour votre compte.</p>
+  </div>
 </div>

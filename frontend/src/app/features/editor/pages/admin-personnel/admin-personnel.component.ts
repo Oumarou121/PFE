@@ -18,6 +18,40 @@ type PersonnelForm = PersonnelUpdateRequest & {
   accessYearsText: string;
 };
 
+type ModuleChoice = {
+  id: string;
+  name: string;
+  icon?: string;
+  isBase?: boolean;
+};
+
+const BASE_MODULE_CHOICES: ModuleChoice[] = [
+  {
+    id: "base.documentGeneration",
+    name: "Generation de document",
+    icon: "fa fa-file-text",
+    isBase: true,
+  },
+  {
+    id: "base.documentArchive",
+    name: "Archive des documents",
+    icon: "fa fa-archive",
+    isBase: true,
+  },
+  {
+    id: "base.templateManagement",
+    name: "Gestion des templates",
+    icon: "fa fa-pencil-square-o",
+    isBase: true,
+  },
+  {
+    id: "base.personnelManagement",
+    name: "Gestion du personnel",
+    icon: "fa fa-users",
+    isBase: true,
+  },
+];
+
 @Component({
   selector: "app-admin-personnel",
   standalone: true,
@@ -80,6 +114,17 @@ export class AdminPersonnelComponent implements OnInit {
       .filter((module) => module.isActive)
       .slice()
       .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+  }
+
+  get moduleChoices(): ModuleChoice[] {
+    return [
+      ...BASE_MODULE_CHOICES,
+      ...this.modules.map((module) => ({
+        id: module.id,
+        name: module.name,
+        icon: module.icon,
+      })),
+    ];
   }
 
   goBack(): void {
@@ -236,7 +281,7 @@ export class AdminPersonnelComponent implements OnInit {
 
   getModuleNames(user: PersonnelUser): string {
     const names = (user.moduleIds || [])
-      .map((id) => this.modules.find((module) => module.id === id)?.name || id)
+      .map((id) => this.moduleChoices.find((module) => module.id === id)?.name || id)
       .filter(Boolean);
     return names.length ? names.join(", ") : "Aucun module";
   }
