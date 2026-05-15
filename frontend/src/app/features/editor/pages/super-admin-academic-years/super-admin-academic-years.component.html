@@ -36,51 +36,6 @@
       <div class="loading-box" *ngIf="loading">Chargement...</div>
 
       <ng-container *ngIf="!loading && config">
-        <div class="grid-4">
-          <label class="field">
-            Table des annees
-            <select [(ngModel)]="config.academicYearTable">
-              <option *ngFor="let table of tables" [value]="table.name">{{ table.name }}</option>
-            </select>
-          </label>
-          <label class="field">
-            Colonne code
-            <select [(ngModel)]="config.codeColumn">
-              <option *ngFor="let column of columnsFor(config.academicYearTable)" [value]="column.name">
-                {{ column.name }}
-              </option>
-            </select>
-          </label>
-          <label class="field">
-            Date debut
-            <select [(ngModel)]="config.startDateColumn">
-              <option [ngValue]="null">Aucune</option>
-              <option *ngFor="let column of columnsFor(config.academicYearTable)" [value]="column.name">
-                {{ column.name }}
-              </option>
-            </select>
-          </label>
-          <label class="field">
-            Statut
-            <select [(ngModel)]="config.statusColumn">
-              <option [ngValue]="null">Aucune</option>
-              <option *ngFor="let column of columnsFor(config.academicYearTable)" [value]="column.name">
-                {{ column.name }}
-              </option>
-            </select>
-          </label>
-        </div>
-
-        <label class="field end-date-field">
-          Date fin
-          <select [(ngModel)]="config.endDateColumn">
-            <option [ngValue]="null">Aucune</option>
-            <option *ngFor="let column of columnsFor(config.academicYearTable)" [value]="column.name">
-              {{ column.name }}
-            </option>
-          </select>
-        </label>
-
         <div class="add-row">
           <select [(ngModel)]="selectedTableToAdd">
             <option value="">Ajouter une table a filtrer</option>

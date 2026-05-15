@@ -199,13 +199,10 @@ namespace DocApi.Services
             var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId;
             if (!organizationId.HasValue) return [];
 
-            var config = await _repository.GetAcademicYearConfigAsync(organizationId.Value)
-                ?? CreateDefaultAcademicYearConfig(organizationId.Value);
-
             AcademicYearResponse[] years;
             try
             {
-                years = (await _repository.LoadAcademicYearsAsync(config)).ToArray();
+                years = (await _repository.LoadAcademicYearsAsync()).ToArray();
             }
             catch
             {
@@ -226,11 +223,9 @@ namespace DocApi.Services
                 throw new UnauthorizedAccessException("Creation d'annee universitaire non autorisee.");
 
             await _repository.EnsureSchemaAsync();
-            var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId
+            _ = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId
                 ?? throw new InvalidOperationException("Organisation introuvable pour l'annee universitaire.");
-            var config = await _repository.GetAcademicYearConfigAsync(organizationId)
-                ?? CreateDefaultAcademicYearConfig(organizationId);
-            return await _repository.CreateAcademicYearAsync(config, request);
+            return await _repository.CreateAcademicYearAsync(request);
         }
 
         public async Task CloseAcademicYearAsync(string code, AuthUserResponse? currentUser)
@@ -240,11 +235,9 @@ namespace DocApi.Services
                 throw new UnauthorizedAccessException("Cloture d'annee universitaire non autorisee.");
 
             await _repository.EnsureSchemaAsync();
-            var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId
+            _ = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId
                 ?? throw new InvalidOperationException("Organisation introuvable pour l'annee universitaire.");
-            var config = await _repository.GetAcademicYearConfigAsync(organizationId)
-                ?? CreateDefaultAcademicYearConfig(organizationId);
-            await _repository.CloseAcademicYearAsync(config, code);
+            await _repository.CloseAcademicYearAsync(code);
         }
 
         public async Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser)
@@ -389,15 +382,5 @@ namespace DocApi.Services
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
-        private static AcademicYearConfigResponse CreateDefaultAcademicYearConfig(int organizationId) => new()
-        {
-            OrganizationId = organizationId,
-            AcademicYearTable = "ANNEEUNIV",
-            CodeColumn = "CODE",
-            StartDateColumn = "DATEDEBUT",
-            EndDateColumn = "DATEFIN",
-            StatusColumn = "ETATPLANETUDES",
-            AffectedTables = []
-        };
     }
 }

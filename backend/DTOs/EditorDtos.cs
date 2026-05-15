@@ -456,23 +456,6 @@ namespace DocApi.DTOs
         [Required]
         public int OrganizationId { get; set; }
 
-        [Required]
-        [MaxLength(128)]
-        public string AcademicYearTable { get; set; } = "ANNEEUNIV";
-
-        [Required]
-        [MaxLength(128)]
-        public string CodeColumn { get; set; } = "CODE";
-
-        [MaxLength(128)]
-        public string? StartDateColumn { get; set; } = "DATEDEBUT";
-
-        [MaxLength(128)]
-        public string? EndDateColumn { get; set; } = "DATEFIN";
-
-        [MaxLength(128)]
-        public string? StatusColumn { get; set; } = "ETATPLANETUDES";
-
         public List<AcademicYearAffectedTableConfig> AffectedTables { get; set; } = [];
     }
 

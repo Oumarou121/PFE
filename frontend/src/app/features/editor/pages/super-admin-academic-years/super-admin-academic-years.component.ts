@@ -79,11 +79,6 @@ export class SuperAdminAcademicYearsComponent implements OnInit {
         config ||
         {
           organizationId: Number(this.selectedOrganizationId),
-          academicYearTable: this.findTableName("ANNEEUNIV") || "",
-          codeColumn: "CODE",
-          startDateColumn: "DATEDEBUT",
-          endDateColumn: "DATEFIN",
-          statusColumn: "ETATPLANETUDES",
           affectedTables: [],
         };
     } catch {
@@ -132,10 +127,6 @@ export class SuperAdminAcademicYearsComponent implements OnInit {
     } finally {
       this.saving = false;
     }
-  }
-
-  private findTableName(target: string): string | null {
-    return this.tables.find((table) => table.name.toLowerCase() === target.toLowerCase())?.name || null;
   }
 
   private looksLikeAcademicYearColumn(name: string): boolean {

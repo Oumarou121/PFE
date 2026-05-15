@@ -25,9 +25,9 @@ namespace DocApi.Repositories.Interfaces
         Task<Dictionary<string, object?>> LoadSettingsAsync();
         Task<AcademicYearConfigResponse?> GetAcademicYearConfigAsync(int organizationId);
         Task<AcademicYearConfigResponse> UpsertAcademicYearConfigAsync(AcademicYearConfigRequest request);
-        Task<IEnumerable<AcademicYearResponse>> LoadAcademicYearsAsync(AcademicYearConfigResponse config);
-        Task<AcademicYearResponse> CreateAcademicYearAsync(AcademicYearConfigResponse config, AcademicYearCreateRequest request);
-        Task CloseAcademicYearAsync(AcademicYearConfigResponse config, string code);
+        Task<IEnumerable<AcademicYearResponse>> LoadAcademicYearsAsync();
+        Task<AcademicYearResponse> CreateAcademicYearAsync(AcademicYearCreateRequest request);
+        Task CloseAcademicYearAsync(string code);
         Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null);
         Task ReplaceStateAsync(EditorStateResponse state, int? scopedOrganizationId, bool isSuperAdmin);
         Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters, string? databaseName = null);

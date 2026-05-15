@@ -5,11 +5,6 @@ export interface AcademicYearAffectedTableConfig {
 
 export interface AcademicYearConfig {
   organizationId: number;
-  academicYearTable: string;
-  codeColumn: string;
-  startDateColumn?: string | null;
-  endDateColumn?: string | null;
-  statusColumn?: string | null;
   affectedTables: AcademicYearAffectedTableConfig[];
   updatedAt?: string | null;
 }
