@@ -46,7 +46,7 @@
   </nav>
 
   <div class="main-area">
-    <div class="sidebar" [class.closed]="!sidebarOpen">
+    <div class="sidebar" [class.closed]="!sidebarOpen" [style.width.px]="sidebarOpen ? 240 : 0">
       <div class="sbsec">
         <div class="sblabel">Famille de documents</div>
         <select
@@ -119,7 +119,7 @@
               <span
                 style="
                   background: #dcfce7;
-                  color: #15803d;
+                  color: #337ab7;
                   padding: 1px 5px;
                   border-radius: 2px;
                   font-size: 8px;
