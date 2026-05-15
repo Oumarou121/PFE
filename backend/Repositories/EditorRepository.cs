@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -23,6 +24,7 @@ namespace DocApi.Repositories
     {
         private readonly ILogger<EditorRepository> _logger;
         private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
+        private const string AcademicYearConfigsSettingKey = "academicYearConfigs";
 
         private readonly IConfigDbConnectionFactory _configFactory;
         private readonly ITenantConnectionFactory _tenantFactory;
@@ -506,6 +508,116 @@ namespace DocApi.Repositories
             return settings;
         }
 
+        public async Task<AcademicYearConfigResponse?> GetAcademicYearConfigAsync(int organizationId)
+        {
+            var configs = await LoadAcademicYearConfigsAsync();
+            return configs.FirstOrDefault(config => config.OrganizationId == organizationId);
+        }
+
+        public async Task<AcademicYearConfigResponse> UpsertAcademicYearConfigAsync(AcademicYearConfigRequest request)
+        {
+            if (!IsSafeIdentifier(request.AcademicYearTable) || !IsSafeIdentifier(request.CodeColumn))
+                throw new InvalidOperationException("Table ou colonne d'annee universitaire invalide.");
+
+            var configs = (await LoadAcademicYearConfigsAsync()).ToList();
+            configs.RemoveAll(config => config.OrganizationId == request.OrganizationId);
+            var next = new AcademicYearConfigResponse
+            {
+                OrganizationId = request.OrganizationId,
+                AcademicYearTable = request.AcademicYearTable,
+                CodeColumn = request.CodeColumn,
+                StartDateColumn = CleanIdentifierOrNull(request.StartDateColumn),
+                EndDateColumn = CleanIdentifierOrNull(request.EndDateColumn),
+                StatusColumn = CleanIdentifierOrNull(request.StatusColumn),
+                AffectedTables = request.AffectedTables
+                    .Where(item => IsSafeIdentifier(item.TableName) && IsSafeIdentifier(item.YearColumn))
+                    .Select(item => new AcademicYearAffectedTableConfig
+                    {
+                        TableName = item.TableName,
+                        YearColumn = item.YearColumn
+                    })
+                    .ToList(),
+                UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
+            };
+            configs.Add(next);
+            await UpsertSettingAsync(AcademicYearConfigsSettingKey, configs.OrderBy(config => config.OrganizationId).ToArray());
+            return next;
+        }
+
+        public async Task<IEnumerable<AcademicYearResponse>> LoadAcademicYearsAsync(AcademicYearConfigResponse config)
+        {
+            await EnsureAcademicYearConfigIsValidAsync(config);
+            var select = new List<string> { $"{Quote(config.CodeColumn)} AS Code" };
+            if (!string.IsNullOrWhiteSpace(config.StartDateColumn)) select.Add($"{Quote(config.StartDateColumn)} AS StartDate");
+            if (!string.IsNullOrWhiteSpace(config.EndDateColumn)) select.Add($"{Quote(config.EndDateColumn)} AS EndDate");
+            if (!string.IsNullOrWhiteSpace(config.StatusColumn)) select.Add($"{Quote(config.StatusColumn)} AS Status");
+
+            using var connection = TenantConnection();
+            var rows = await connection.QueryAsync(
+                $"SELECT TOP (500) {string.Join(", ", select)} FROM {Quote(config.AcademicYearTable)} ORDER BY {Quote(config.CodeColumn)} DESC");
+
+            return rows.Select(row =>
+            {
+                var item = Row(row);
+                var status = Str(item, "Status");
+                return new AcademicYearResponse
+                {
+                    Code = Str(item, "Code") ?? string.Empty,
+                    StartDate = DateString(item, "StartDate"),
+                    EndDate = DateString(item, "EndDate"),
+                    Status = status,
+                    IsClosed = IsClosedStatus(status)
+                };
+            }).Where(item => !string.IsNullOrWhiteSpace(item.Code)).ToArray();
+        }
+
+        public async Task<AcademicYearResponse> CreateAcademicYearAsync(AcademicYearConfigResponse config, AcademicYearCreateRequest request)
+        {
+            await EnsureAcademicYearConfigIsValidAsync(config);
+            var columns = new List<string> { config.CodeColumn };
+            var values = new List<string> { "@code" };
+            var parameters = new DynamicParameters();
+            parameters.Add("code", request.Code);
+
+            if (!string.IsNullOrWhiteSpace(config.StartDateColumn))
+            {
+                columns.Add(config.StartDateColumn);
+                values.Add("@startDate");
+                parameters.Add("startDate", NormalizeParameterValue(request.StartDate));
+            }
+            if (!string.IsNullOrWhiteSpace(config.EndDateColumn))
+            {
+                columns.Add(config.EndDateColumn);
+                values.Add("@endDate");
+                parameters.Add("endDate", NormalizeParameterValue(request.EndDate));
+            }
+            if (!string.IsNullOrWhiteSpace(config.StatusColumn))
+            {
+                columns.Add(config.StatusColumn);
+                values.Add("@status");
+                parameters.Add("status", request.Status);
+            }
+
+            using var connection = TenantConnection();
+            await connection.ExecuteAsync(
+                $"INSERT INTO {Quote(config.AcademicYearTable)} ({string.Join(", ", columns.Select(Quote))}) VALUES ({string.Join(", ", values)})",
+                parameters);
+
+            return (await LoadAcademicYearsAsync(config)).First(year => string.Equals(year.Code, request.Code, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public async Task CloseAcademicYearAsync(AcademicYearConfigResponse config, string code)
+        {
+            await EnsureAcademicYearConfigIsValidAsync(config);
+            if (string.IsNullOrWhiteSpace(config.StatusColumn))
+                throw new InvalidOperationException("Aucune colonne de statut n'est configuree pour cloturer l'annee universitaire.");
+
+            using var connection = TenantConnection();
+            await connection.ExecuteAsync(
+                $"UPDATE {Quote(config.AcademicYearTable)} SET {Quote(config.StatusColumn)} = @status WHERE {Quote(config.CodeColumn)} = @code",
+                new { status = "Cloturee", code });
+        }
+
         // ─── LoadSchema (TenantDB) ────────────────────────────────────────────────
 
         public async Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null)
@@ -609,6 +721,7 @@ namespace DocApi.Repositories
             }
             var dynamicParameters = new DynamicParameters();
             if (!parameters.ContainsKey("organizationId")) parameters["organizationId"] = null;
+            if (!parameters.ContainsKey("academicYear")) parameters["academicYear"] = _tenantProvider.GetAcademicYearCode();
             cleaned = CompileNamedParameters(cleaned, parameters, dynamicParameters);
 
             using var connection = TenantConnection(databaseName);
@@ -662,6 +775,13 @@ namespace DocApi.Repositories
                 }
             }
 
+            var academicYearFilter = await GetAcademicYearFilterAsync(tableView.TableName, databaseName);
+            if (academicYearFilter is not null)
+            {
+                parameters.Add("academicYearCode", academicYearFilter.Value.YearCode);
+                whereClauses.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
+            }
+
             var where = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
 
             using var connection = TenantConnection(databaseName);
@@ -688,10 +808,20 @@ namespace DocApi.Repositories
                 .ToArray();
             if (selectFields.Length == 0) return null;
 
+            var parameters = new DynamicParameters();
+            parameters.Add("rowId", NormalizeParameterValue(rowId));
+            var where = new List<string> { $"{Quote(pk)} = @rowId" };
+            var academicYearFilter = await GetAcademicYearFilterAsync(tableView.TableName, databaseName);
+            if (academicYearFilter is not null)
+            {
+                parameters.Add("academicYearCode", academicYearFilter.Value.YearCode);
+                where.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
+            }
+
             using var connection = TenantConnection(databaseName);
             var row = await connection.QueryFirstOrDefaultAsync(
-                $"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId",
-                new { rowId = NormalizeParameterValue(rowId) });
+                $"SELECT TOP (1) {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} WHERE {string.Join(" AND ", where)}",
+                parameters);
             return row is null ? null : CleanRow(row);
         }
 
@@ -700,6 +830,7 @@ namespace DocApi.Repositories
             var tableView = await ResolveTableViewAsync(configId, null)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
             if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName, databaseName)) return null;
+            await EnsureCurrentAcademicYearIsWritableAsync(tableView.TableName, databaseName);
 
             var editable = tableView.EditableFields.ToHashSet(StringComparer.OrdinalIgnoreCase);
             var tableColumns = await GetTenantColumnsAsync(tableView.TableName, databaseName);
@@ -716,8 +847,15 @@ namespace DocApi.Repositories
                 }
                 using var connection = TenantConnection(databaseName);
                 var pk = await GetRowKeyAsync(tableView.TableName, tableColumns, useTenant: true, databaseName: databaseName);
+                var where = new List<string> { $"{Quote(pk)} = @rowId" };
+                var academicYearFilter = await GetAcademicYearFilterAsync(tableView.TableName, databaseName);
+                if (academicYearFilter is not null)
+                {
+                    parameters.Add("academicYearCode", academicYearFilter.Value.YearCode);
+                    where.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
+                }
                 await connection.ExecuteAsync(
-                    $"UPDATE {Quote(tableView.TableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {Quote(pk)} = @rowId",
+                    $"UPDATE {Quote(tableView.TableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {string.Join(" AND ", where)}",
                     parameters);
             }
             return await GetTableViewRecordAsync(configId, normalizedRowId?.ToString(), databaseName);
@@ -728,21 +866,32 @@ namespace DocApi.Repositories
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
             if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName, databaseName)) return null;
+            await EnsureCurrentAcademicYearIsWritableAsync(tableView.TableName, databaseName);
 
             var editable = tableView.EditableFields.ToHashSet(StringComparer.OrdinalIgnoreCase);
             var tableColumns = await GetTenantColumnsAsync(tableView.TableName, databaseName);
-            var columns = tableColumns.Where(column => editable.Contains(column.Name) && !column.IsIdentity && values.ContainsKey(column.Name)).ToArray();
+            var columns = tableColumns.Where(column => editable.Contains(column.Name) && !column.IsIdentity && values.ContainsKey(column.Name)).ToList();
+            var academicYearFilter = await GetAcademicYearFilterAsync(tableView.TableName, databaseName);
+            if (academicYearFilter is not null
+                && !columns.Any(column => string.Equals(column.Name, academicYearFilter.Value.ColumnName, StringComparison.OrdinalIgnoreCase)))
+            {
+                var yearColumn = tableColumns.FirstOrDefault(column => string.Equals(column.Name, academicYearFilter.Value.ColumnName, StringComparison.OrdinalIgnoreCase));
+                if (yearColumn is not null && !yearColumn.IsIdentity) columns.Add(yearColumn);
+            }
             var pk = await GetRowKeyAsync(tableView.TableName, tableColumns, useTenant: true, databaseName: databaseName);
             var parameters = new DynamicParameters();
             var normalizedValues = new Dictionary<string, object?>();
             foreach (var column in columns)
             {
-                var raw = values.TryGetValue(column.Name, out var v) ? v : null;
+                var raw = academicYearFilter is not null
+                    && string.Equals(column.Name, academicYearFilter.Value.ColumnName, StringComparison.OrdinalIgnoreCase)
+                    ? academicYearFilter.Value.YearCode
+                    : values.TryGetValue(column.Name, out var v) ? v : null;
                 var norm = NormalizeParameterValue(raw);
                 normalizedValues[column.Name] = norm;
                 parameters.Add(column.Name, norm);
             }
-            var insertSql = columns.Length == 0
+            var insertSql = columns.Count == 0
                 ? $"INSERT INTO {Quote(tableView.TableName)} OUTPUT INSERTED.{Quote(pk)} AS inserted_id DEFAULT VALUES"
                 : $"INSERT INTO {Quote(tableView.TableName)} ({string.Join(", ", columns.Select(c => Quote(c.Name)))}) OUTPUT INSERTED.{Quote(pk)} AS inserted_id VALUES ({string.Join(", ", columns.Select(c => "@" + c.Name))})";
 
@@ -758,12 +907,22 @@ namespace DocApi.Repositories
             var tableView = await ResolveTableViewAsync(configId, null)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
             if (string.IsNullOrWhiteSpace(tableView.TableName) || !await TenantTableExistsAsync(tableView.TableName, databaseName)) return;
+            await EnsureCurrentAcademicYearIsWritableAsync(tableView.TableName, databaseName);
 
             var pk = await GetRowKeyAsync(tableView.TableName, await GetTenantColumnsAsync(tableView.TableName, databaseName), useTenant: true, databaseName: databaseName);
+            var parameters = new DynamicParameters();
+            parameters.Add("rowId", NormalizeParameterValue(rowId));
+            var where = new List<string> { $"{Quote(pk)} = @rowId" };
+            var academicYearFilter = await GetAcademicYearFilterAsync(tableView.TableName, databaseName);
+            if (academicYearFilter is not null)
+            {
+                parameters.Add("academicYearCode", academicYearFilter.Value.YearCode);
+                where.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
+            }
             using var connection = TenantConnection(databaseName);
             await connection.ExecuteAsync(
-                $"DELETE FROM {Quote(tableView.TableName)} WHERE {Quote(pk)} = @rowId",
-                new { rowId = NormalizeParameterValue(rowId) });
+                $"DELETE FROM {Quote(tableView.TableName)} WHERE {string.Join(" AND ", where)}",
+                parameters);
         }
 
         public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config, string? databaseName = null)
@@ -789,8 +948,17 @@ namespace DocApi.Repositories
             var labelExpr = string.IsNullOrWhiteSpace(labelColumn2)
                 ? $"CONVERT(NVARCHAR(4000), {Quote(labelColumn)})"
                 : $"LTRIM(RTRIM(CONCAT(CONVERT(NVARCHAR(4000), {Quote(labelColumn)}), ' ', CONVERT(NVARCHAR(4000), {Quote(labelColumn2)}))))";
+            var parameters = new DynamicParameters();
+            var where = new List<string> { $"{Quote(valueColumn)} IS NOT NULL" };
+            var academicYearFilter = await GetAcademicYearFilterAsync(table, databaseName);
+            if (academicYearFilter is not null)
+            {
+                parameters.Add("academicYearCode", academicYearFilter.Value.YearCode);
+                where.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
+            }
             var rows = await connection.QueryAsync(
-                $"SELECT CONVERT(NVARCHAR(4000), {Quote(valueColumn)}) AS value, {labelExpr} AS label FROM {Quote(table)} WHERE {Quote(valueColumn)} IS NOT NULL ORDER BY {labelExpr} ASC");
+                $"SELECT CONVERT(NVARCHAR(4000), {Quote(valueColumn)}) AS value, {labelExpr} AS label FROM {Quote(table)} WHERE {string.Join(" AND ", where)} ORDER BY {labelExpr} ASC",
+                parameters);
             return rows.Select(row =>
             {
                 var item = Row(row);
@@ -1501,6 +1669,107 @@ namespace DocApi.Repositories
         }
 
         // ─── Query helpers ────────────────────────────────────────────────────────
+
+        private async Task<List<AcademicYearConfigResponse>> LoadAcademicYearConfigsAsync()
+        {
+            if (!await ConfigTableExistsAsync("app_setting")) return [];
+            using var connection = ConfigConnection();
+            var raw = await connection.ExecuteScalarAsync<string?>(
+                "SELECT TOP (1) value_json FROM app_setting WHERE [key] = @key",
+                new { key = AcademicYearConfigsSettingKey });
+            if (string.IsNullOrWhiteSpace(raw)) return [];
+            try
+            {
+                return JsonSerializer.Deserialize<List<AcademicYearConfigResponse>>(raw, JsonOptions) ?? [];
+            }
+            catch
+            {
+                return [];
+            }
+        }
+
+        private async Task UpsertSettingAsync<T>(string key, T value)
+        {
+            using var connection = ConfigConnection();
+            await connection.ExecuteAsync("""
+                MERGE app_setting AS target
+                USING (SELECT @key AS [key]) AS src ON target.[key] = src.[key]
+                WHEN MATCHED THEN UPDATE SET value_json = @value
+                WHEN NOT MATCHED THEN INSERT ([key], value_json) VALUES (@key, @value);
+                """, new { key, value = JsonString(value, "null") });
+        }
+
+        private async Task EnsureAcademicYearConfigIsValidAsync(AcademicYearConfigResponse config)
+        {
+            if (!IsSafeIdentifier(config.AcademicYearTable) || !IsSafeIdentifier(config.CodeColumn))
+                throw new InvalidOperationException("Configuration des annees universitaires invalide.");
+            if (!await TenantTableExistsAsync(config.AcademicYearTable))
+                throw new InvalidOperationException($"Table des annees universitaires introuvable: {config.AcademicYearTable}");
+            var columns = (await GetTenantColumnsAsync(config.AcademicYearTable)).Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (!columns.Contains(config.CodeColumn))
+                throw new InvalidOperationException($"Colonne code introuvable: {config.CodeColumn}");
+
+            if (!string.IsNullOrWhiteSpace(config.StartDateColumn) && !columns.Contains(config.StartDateColumn)) config.StartDateColumn = null;
+            if (!string.IsNullOrWhiteSpace(config.EndDateColumn) && !columns.Contains(config.EndDateColumn)) config.EndDateColumn = null;
+            if (!string.IsNullOrWhiteSpace(config.StatusColumn) && !columns.Contains(config.StatusColumn)) config.StatusColumn = null;
+        }
+
+        private async Task<(string ColumnName, string YearCode)?> GetAcademicYearFilterAsync(string tableName, string? databaseName = null)
+        {
+            var yearCode = _tenantProvider.GetAcademicYearCode();
+            var organizationId = _tenantProvider.GetOrganizationId();
+            if (string.IsNullOrWhiteSpace(yearCode) || !organizationId.HasValue) return null;
+
+            var config = await GetAcademicYearConfigAsync(organizationId.Value);
+            var tableConfig = config?.AffectedTables.FirstOrDefault(item => string.Equals(item.TableName, tableName, StringComparison.OrdinalIgnoreCase));
+            if (tableConfig is null || string.IsNullOrWhiteSpace(tableConfig.YearColumn)) return null;
+
+            var columns = await GetTenantColumnsAsync(tableName, databaseName);
+            var column = columns.FirstOrDefault(item => string.Equals(item.Name, tableConfig.YearColumn, StringComparison.OrdinalIgnoreCase));
+            return column is null ? null : (column.Name, yearCode);
+        }
+
+        private async Task EnsureCurrentAcademicYearIsWritableAsync(string tableName, string? databaseName = null)
+        {
+            var filter = await GetAcademicYearFilterAsync(tableName, databaseName);
+            if (filter is null) return;
+
+            var organizationId = _tenantProvider.GetOrganizationId();
+            if (!organizationId.HasValue) return;
+
+            var config = await GetAcademicYearConfigAsync(organizationId.Value);
+            if (config is null || string.IsNullOrWhiteSpace(config.StatusColumn)) return;
+
+            var year = (await LoadAcademicYearsAsync(config))
+                .FirstOrDefault(item => string.Equals(item.Code, filter.Value.YearCode, StringComparison.OrdinalIgnoreCase));
+            if (year?.IsClosed == true)
+                throw new InvalidOperationException("Cette annee universitaire est cloturee. Les modifications sont bloquees.");
+        }
+
+        private static bool IsSafeIdentifier(string? value)
+            => !string.IsNullOrWhiteSpace(value) && Regex.IsMatch(value, @"^[A-Za-z0-9_]+$");
+
+        private static string? CleanIdentifierOrNull(string? value)
+            => IsSafeIdentifier(value) ? value : null;
+
+        private static bool IsClosedStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return false;
+            var normalized = status.Normalize(NormalizationForm.FormD);
+            normalized = Regex.Replace(normalized, @"\p{Mn}", "").ToLowerInvariant();
+            return normalized.Contains("clot") || normalized.Contains("clos") || normalized.Contains("ferme");
+        }
+
+        private static string? DateString(IDictionary<string, object?> row, string key)
+        {
+            if (!row.TryGetValue(key, out var value) || value is null) return null;
+            return value switch
+            {
+                DateTime date => date.ToString("yyyy-MM-dd"),
+                DateTimeOffset date => date.ToString("yyyy-MM-dd"),
+                _ => value.ToString()
+            };
+        }
 
         private static string CompileNamedParameters(string querySql, Dictionary<string, object?> values, DynamicParameters output)
             => Regex.Replace(querySql, @":([a-zA-Z_]\w*)", match =>

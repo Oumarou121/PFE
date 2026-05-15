@@ -109,6 +109,7 @@
   flex: 1;
   display: flex;
   justify-content: center;
+  gap: 8px;
 }
 
 .nav-org-pill {
@@ -120,6 +121,16 @@
   border-radius: 999px;
   border: 1px solid var(--primary-mid);
   letter-spacing: 0.02em;
+}
+
+button.nav-org-pill {
+  cursor: pointer;
+  font: inherit;
+}
+
+.year-pill {
+  background: #ecfdf5;
+  color: #047857;
 }
 
 .nav-right {

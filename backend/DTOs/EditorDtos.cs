@@ -440,6 +440,72 @@ namespace DocApi.DTOs
         public object? Value { get; set; }
     }
 
+    public class AcademicYearAffectedTableConfig
+    {
+        [Required]
+        [MaxLength(128)]
+        public string TableName { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(128)]
+        public string YearColumn { get; set; } = string.Empty;
+    }
+
+    public class AcademicYearConfigRequest
+    {
+        [Required]
+        public int OrganizationId { get; set; }
+
+        [Required]
+        [MaxLength(128)]
+        public string AcademicYearTable { get; set; } = "ANNEEUNIV";
+
+        [Required]
+        [MaxLength(128)]
+        public string CodeColumn { get; set; } = "CODE";
+
+        [MaxLength(128)]
+        public string? StartDateColumn { get; set; } = "DATEDEBUT";
+
+        [MaxLength(128)]
+        public string? EndDateColumn { get; set; } = "DATEFIN";
+
+        [MaxLength(128)]
+        public string? StatusColumn { get; set; } = "ETATPLANETUDES";
+
+        public List<AcademicYearAffectedTableConfig> AffectedTables { get; set; } = [];
+    }
+
+    public class AcademicYearConfigResponse : AcademicYearConfigRequest
+    {
+        public string? UpdatedAt { get; set; }
+    }
+
+    public class AcademicYearResponse
+    {
+        public string Code { get; set; } = string.Empty;
+        public string? StartDate { get; set; }
+        public string? EndDate { get; set; }
+        public string? Status { get; set; }
+        public bool IsClosed { get; set; }
+    }
+
+    public class AcademicYearCreateRequest
+    {
+        [Required]
+        [MaxLength(64)]
+        public string Code { get; set; } = string.Empty;
+
+        [MaxLength(64)]
+        public string? StartDate { get; set; }
+
+        [MaxLength(64)]
+        public string? EndDate { get; set; }
+
+        [MaxLength(128)]
+        public string Status { get; set; } = "En cours";
+    }
+
     public class OrganizationResponse
     {
         public int Id { get; set; }

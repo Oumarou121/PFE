@@ -27,6 +27,7 @@ type AdminQuickCard = {
 export class AdminHomeComponent implements OnInit {
   loading = true;
   organizationName = "";
+  activeAcademicYear = "";
 
   constructor(
     public router: Router,
@@ -45,6 +46,7 @@ export class AdminHomeComponent implements OnInit {
         ? this.organizationsService.getOrganization(organizationId)
         : this.organizationsService.getOrganizations()[0] || null;
       this.organizationName = organization?.nom || organization?.name || "";
+      this.activeAcademicYear = this.auth.getActiveAcademicYear() || "";
     } catch {
       this.notifications.showError(
         "Impossible de charger l'espace administrateur.",

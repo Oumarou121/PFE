@@ -24,7 +24,20 @@ export const loginGuard = () => {
 
   const role = authService.getCurrentUser()?.role;
   if (role === "supAdmin") router.navigate(["/super-admin"]);
-  else if (role === "admin") router.navigate(["/admin"]);
-  else router.navigate(["/user"]);
+  else if (role === "admin" || role === "user") router.navigate(["/academic-year"]);
+  else router.navigate(["/login"]);
+  return false;
+};
+
+export const academicYearGuard = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const role = authService.getCurrentUser()?.role;
+
+  if (role === "supAdmin" || authService.getActiveAcademicYear()) {
+    return true;
+  }
+
+  router.navigate(["/academic-year"]);
   return false;
 };

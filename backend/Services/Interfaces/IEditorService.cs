@@ -27,6 +27,11 @@ namespace DocApi.Services.Interfaces
         Task<IEnumerable<TableFilterOption>> GetTableFilterOptionsAsync(TableFilterSqlBuilder sqlBuilder, string? databaseName = null);
         Task<EditorStateResponse> LoadStateAsync(AuthUserResponse? currentUser);
         Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null);
+        Task<AcademicYearConfigResponse?> GetAcademicYearConfigAsync(int organizationId);
+        Task<AcademicYearConfigResponse> UpsertAcademicYearConfigAsync(AcademicYearConfigRequest request, AuthUserResponse? currentUser);
+        Task<IEnumerable<AcademicYearResponse>> GetAcademicYearsAsync(AuthUserResponse? currentUser);
+        Task<AcademicYearResponse> CreateAcademicYearAsync(AcademicYearCreateRequest request, AuthUserResponse? currentUser);
+        Task CloseAcademicYearAsync(string code, AuthUserResponse? currentUser);
         Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser);
         Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters, string? databaseName = null);
         Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request);

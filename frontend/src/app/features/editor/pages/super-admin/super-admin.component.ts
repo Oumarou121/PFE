@@ -217,7 +217,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
   constructor(
     private auth: AuthService,
-    private router: Router,
+    public router: Router,
     private api: ApiService,
     private editorState: EditorStateService,
     private familyService: FamilyService,

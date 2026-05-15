@@ -39,6 +39,9 @@ namespace DocApi.Middlewares
                         await context.Response.WriteAsJsonAsync(new { error = "Unable to resolve tenant. Please ensure your organization is properly configured." });
                         return;
                     }
+
+                    var academicYearCode = context.Request.Headers["X-Academic-Year"].FirstOrDefault();
+                    tenantProvider.SetAcademicYear(academicYearCode);
                 }
                 else
                 {

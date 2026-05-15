@@ -1,0 +1,80 @@
+<div class="academic-year-page">
+  <nav class="topnav">
+    <div class="nav-logo">
+      <div class="tlogo-text">SIRH-<span>Doc</span></div>
+    </div>
+    <div class="nav-center">
+      <span class="nav-org-pill">Annee universitaire</span>
+    </div>
+    <div class="nav-right">
+      <app-user-menu></app-user-menu>
+    </div>
+  </nav>
+
+  <main class="year-shell">
+    <section class="year-panel">
+      <header class="year-header">
+        <div>
+          <h1>Choisir l'annee universitaire</h1>
+          <p>Les donnees de travail seront filtrees selon cette selection.</p>
+        </div>
+        <button class="primary-btn" type="button" [disabled]="!selectedCode" (click)="confirmSelection()">
+          Continuer
+        </button>
+      </header>
+
+      <div class="loading-box" *ngIf="loading">Chargement...</div>
+
+      <div class="empty-box" *ngIf="!loading && !years.length">
+        Aucune annee universitaire disponible pour votre compte.
+      </div>
+
+      <div class="year-list" *ngIf="!loading && years.length">
+        <button
+          type="button"
+          class="year-row"
+          *ngFor="let year of years"
+          [class.selected]="selectedCode === year.code"
+          (click)="selectYear(year)"
+        >
+          <div>
+            <strong>{{ year.code }}</strong>
+            <span>{{ year.startDate || '-' }} - {{ year.endDate || '-' }}</span>
+          </div>
+          <div class="year-actions">
+            <span class="status" [class.closed]="year.isClosed">
+              {{ year.isClosed ? 'Cloturee' : (year.status || 'Ouverte') }}
+            </span>
+            <button
+              *ngIf="isAdmin && !year.isClosed"
+              class="ghost-btn"
+              type="button"
+              (click)="closeYear(year, $event)"
+            >
+              Cloturer
+            </button>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <aside class="create-panel" *ngIf="isAdmin">
+      <h2>Nouvelle annee</h2>
+      <label>
+        Code
+        <input [(ngModel)]="createForm.code" placeholder="2026-2027" />
+      </label>
+      <label>
+        Date debut
+        <input [(ngModel)]="createForm.startDate" type="date" />
+      </label>
+      <label>
+        Date fin
+        <input [(ngModel)]="createForm.endDate" type="date" />
+      </label>
+      <button class="primary-btn full" type="button" [disabled]="creating || !createForm.code" (click)="createYear()">
+        Creer
+      </button>
+    </aside>
+  </main>
+</div>

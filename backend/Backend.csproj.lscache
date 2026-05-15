@@ -62,6 +62,7 @@ Common/
   TenantProvider.cs
   TenantResolver.cs
 Controllers/
+ AcademicYearsController.cs
  AdminUsersController.cs
  AuthController.cs
  EditorController.cs

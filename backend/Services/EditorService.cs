@@ -1,7 +1,9 @@
 using DocApi.DTOs;
+using DocApi.Common.Tenant;
 using DocApi.Domain.ValueObjects;
 using DocApi.Repositories.Interfaces;
 using DocApi.Services.Interfaces;
+using System.Text.Json;
 
 namespace DocApi.Services
 {
@@ -9,11 +11,13 @@ namespace DocApi.Services
     {
         private readonly IEditorRepository _repository;
         private readonly IModuleRepository _moduleRepository;
+        private readonly ITenantProvider _tenantProvider;
 
-        public EditorService(IEditorRepository repository, IModuleRepository moduleRepository)
+        public EditorService(IEditorRepository repository, IModuleRepository moduleRepository, ITenantProvider tenantProvider)
         {
             _repository = repository;
             _moduleRepository = moduleRepository;
+            _tenantProvider = tenantProvider;
         }
 
         public async Task EnsureSchemaAsync()
@@ -174,6 +178,67 @@ namespace DocApi.Services
             return await _repository.LoadSchemaAsync(databaseName);
         }
 
+        public async Task<AcademicYearConfigResponse?> GetAcademicYearConfigAsync(int organizationId)
+        {
+            await _repository.EnsureSchemaAsync();
+            return await _repository.GetAcademicYearConfigAsync(organizationId);
+        }
+
+        public async Task<AcademicYearConfigResponse> UpsertAcademicYearConfigAsync(AcademicYearConfigRequest request, AuthUserResponse? currentUser)
+        {
+            if (!string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Seul le super administrateur peut configurer les annees universitaires.");
+
+            await _repository.EnsureSchemaAsync();
+            return await _repository.UpsertAcademicYearConfigAsync(request);
+        }
+
+        public async Task<IEnumerable<AcademicYearResponse>> GetAcademicYearsAsync(AuthUserResponse? currentUser)
+        {
+            await _repository.EnsureSchemaAsync();
+            var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId;
+            if (!organizationId.HasValue) return [];
+
+            var config = await _repository.GetAcademicYearConfigAsync(organizationId.Value);
+            if (config is null) return [];
+
+            var years = (await _repository.LoadAcademicYearsAsync(config)).ToArray();
+            if (!string.Equals(currentUser?.Role, "user", StringComparison.OrdinalIgnoreCase)) return years;
+            if (currentUser is null) return [];
+            if (currentUser.AccessAllYears) return years;
+
+            var allowed = ParseYearList(currentUser.AccessYearList);
+            return years.Where(year => allowed.Contains(year.Code)).ToArray();
+        }
+
+        public async Task<AcademicYearResponse> CreateAcademicYearAsync(AcademicYearCreateRequest request, AuthUserResponse? currentUser)
+        {
+            if (!string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Creation d'annee universitaire non autorisee.");
+
+            await _repository.EnsureSchemaAsync();
+            var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId
+                ?? throw new InvalidOperationException("Organisation introuvable pour l'annee universitaire.");
+            var config = await _repository.GetAcademicYearConfigAsync(organizationId)
+                ?? throw new InvalidOperationException("Configuration des annees universitaires introuvable.");
+            return await _repository.CreateAcademicYearAsync(config, request);
+        }
+
+        public async Task CloseAcademicYearAsync(string code, AuthUserResponse? currentUser)
+        {
+            if (!string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Cloture d'annee universitaire non autorisee.");
+
+            await _repository.EnsureSchemaAsync();
+            var organizationId = _tenantProvider.GetOrganizationId() ?? currentUser?.OrganizationId
+                ?? throw new InvalidOperationException("Organisation introuvable pour l'annee universitaire.");
+            var config = await _repository.GetAcademicYearConfigAsync(organizationId)
+                ?? throw new InvalidOperationException("Configuration des annees universitaires introuvable.");
+            await _repository.CloseAcademicYearAsync(config, code);
+        }
+
         public async Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser)
         {
             await _repository.EnsureSchemaAsync();
@@ -300,6 +365,20 @@ namespace DocApi.Services
             }
 
             await _repository.DeleteDocumentAsync(id, currentUser);
+        }
+
+        private static HashSet<string> ParseYearList(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                var list = JsonSerializer.Deserialize<List<string>>(raw);
+                if (list is not null) return list.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+            catch { }
+
+            return raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
     }
 }

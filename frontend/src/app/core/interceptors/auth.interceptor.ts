@@ -24,6 +24,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       headers = headers.set('X-Organization-Id', activeOrgId);
     }
 
+    const activeAcademicYear = authService.getActiveAcademicYear();
+    if (activeAcademicYear) {
+      headers = headers.set('X-Academic-Year', activeAcademicYear);
+    }
+
     const authReq = req.clone({ headers });
     return next(authReq);
   }

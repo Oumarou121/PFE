@@ -11,12 +11,16 @@ import { LoginRequest, LoginResponse, AuthUser } from '../../shared/models/auth.
 export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY = 'auth_user';
+  private readonly ACADEMIC_YEAR_KEY = 'active_academic_year';
 
   private currentUserSubject = new BehaviorSubject<AuthUser | null>(this.getUserFromStorage());
   public currentUser$ = this.currentUserSubject.asObservable();
 
   private activeOrgIdSubject = new BehaviorSubject<string | null>(localStorage.getItem('active_org_id'));
   public activeOrgId$ = this.activeOrgIdSubject.asObservable();
+
+  private activeAcademicYearSubject = new BehaviorSubject<string | null>(localStorage.getItem(this.ACADEMIC_YEAR_KEY));
+  public activeAcademicYear$ = this.activeAcademicYearSubject.asObservable();
 
   constructor(
     private apiService: ApiService,
@@ -33,6 +37,16 @@ export class AuthService {
     return this.activeOrgIdSubject.value;
   }
 
+  setActiveAcademicYear(code: string | null): void {
+    if (code) localStorage.setItem(this.ACADEMIC_YEAR_KEY, code);
+    else localStorage.removeItem(this.ACADEMIC_YEAR_KEY);
+    this.activeAcademicYearSubject.next(code);
+  }
+
+  getActiveAcademicYear(): string | null {
+    return this.activeAcademicYearSubject.value;
+  }
+
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.apiService.post<LoginResponse>('auth/login', credentials).pipe(
       tap(response => this.setSession(response))
@@ -42,7 +56,9 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem(this.ACADEMIC_YEAR_KEY);
     this.currentUserSubject.next(null);
+    this.activeAcademicYearSubject.next(null);
     this.router.navigate(['/login']);
   }
 
@@ -61,6 +77,7 @@ export class AuthService {
 
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.TOKEN_KEY, authResult.token);
+    this.setActiveAcademicYear(null);
     if (authResult.user) {
       // Normalize organizationId to string to handle int? from backend
       const user: AuthUser = {

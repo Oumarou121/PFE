@@ -32,6 +32,7 @@ const BASE_USER_MODULES = {
 export class UserHomeComponent implements OnInit {
   loading = true;
   organizationName = "";
+  activeAcademicYear = "";
 
   constructor(
     public router: Router,
@@ -50,6 +51,7 @@ export class UserHomeComponent implements OnInit {
         : this.organizationsService.getOrganizations()[0] || null;
       this.organizationName = organization?.nom || organization?.name || "";
       this.auth.setActiveOrganizationId(user?.organizationId || null);
+      this.activeAcademicYear = this.auth.getActiveAcademicYear() || "";
     } catch {
       this.notifications.showError("Impossible de charger votre espace.");
     } finally {

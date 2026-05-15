@@ -1,0 +1,177 @@
+.ay-config-page {
+  min-height: 100vh;
+  background: #f5f7fb;
+  color: #1f2937;
+}
+
+.topnav {
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tlogo-text {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.tlogo-text span {
+  color: #0f766e;
+}
+
+.nav-org-pill {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #eef6f5;
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.config-shell {
+  max-width: 1180px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+.config-panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 22px;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 26px;
+}
+
+p {
+  margin-top: 6px;
+  color: #6b7280;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  color: #374151;
+  font-weight: 700;
+}
+
+select,
+input {
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  padding: 0 10px;
+  background: #ffffff;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.end-date-field {
+  max-width: 280px;
+}
+
+.add-row {
+  display: flex;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.add-row select {
+  flex: 1;
+}
+
+.mapping-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mapping-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.primary-btn,
+.ghost-btn,
+.danger-btn {
+  min-height: 38px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-btn {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.ghost-btn {
+  background: #eef2f7;
+  color: #374151;
+}
+
+.danger-btn {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading-box {
+  padding: 24px;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+@media (max-width: 900px) {
+  .grid-4,
+  .mapping-row {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header,
+  .add-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
