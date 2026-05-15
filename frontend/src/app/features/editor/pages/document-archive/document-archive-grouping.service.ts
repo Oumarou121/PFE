@@ -41,7 +41,7 @@ export class DocumentArchiveGroupingService {
         tableName: hasTable ? String(document.beneficiaryTable) : null,
         label: hasTable
           ? this.getBeneficiaryTableLabel(document, families)
-          : "Documents liés à l'organisation",
+          : "Archives liées à l'organisation",
         isOrganization: !hasTable,
         documents: [],
         beneficiaries: [],

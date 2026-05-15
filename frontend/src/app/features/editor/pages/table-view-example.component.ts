@@ -334,7 +334,7 @@ export const EXAMPLE_FILTERS: TableViewFilter[] = [
       { value: "published", label: "Publié" },
       { value: "archived", label: "Archivé" },
     ],
-    helpText: "Filtrer les documents par statut",
+    helpText: "Filtrer les archives par statut",
     enabled: true,
   },
   {

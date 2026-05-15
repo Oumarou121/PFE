@@ -60,8 +60,6 @@ export class DocumentService {
   }
 
   async deleteDocument(id: string): Promise<void> {
-    await firstValueFrom(
-      this.api.delete(`archives/${encodeURIComponent(id)}`),
-    );
+    await firstValueFrom(this.api.delete(`archives/${encodeURIComponent(id)}`));
   }
 }

@@ -1,7 +1,7 @@
 <div class="document-archive-detail app-page">
   <div class="loading-overlay" *ngIf="loading">
     <div class="spinner"></div>
-    <p>Chargement des documents...</p>
+    <p>Chargement des archives...</p>
   </div>
 
   <nav class="topnav">
@@ -51,7 +51,7 @@
       <i class="fa fa-search filter-icon"></i>
       <input
         formControlName="query"
-        placeholder="Rechercher un document"
+        placeholder="Rechercher une archive"
         (input)="onFilterChange()"
       />
     </label>
@@ -105,7 +105,7 @@
       </div>
       <div class="detail-stats">
         <strong>{{ visibleDocuments.length }}</strong>
-        <span>document(s)</span>
+        <span>archive(s)</span>
       </div>
     </section>
 
@@ -138,14 +138,14 @@
           </button>
         </aside>
 
-        <section class="documents-panel">
+        <section class="archives-panel">
           <div class="panel-title">
             <div>
               <h2>
                 {{
                   isOrganizationGroup
-                    ? "Documents"
-                    : selectedBeneficiaryGroup?.title || "Documents"
+                    ? "Archives"
+                    : selectedBeneficiaryGroup?.title || "Archives"
                 }}
               </h2>
               <p *ngIf="!isOrganizationGroup && selectedBeneficiaryGroup">
@@ -227,14 +227,14 @@
   <ng-template #emptyState>
     <div class="empty-state">
       <i class="fa fa-folder-open"></i>
-      <p>Aucun document ne correspond aux filtres actuels.</p>
+      <p>Aucune archive ne correspond aux filtres actuels.</p>
     </div>
   </ng-template>
 
   <ng-template #noDocs>
     <div class="empty-state empty-state--compact">
       <i class="fa fa-file-o"></i>
-      <p>Aucun document pour cette sélection.</p>
+      <p>Aucune archive pour cette sélection.</p>
     </div>
   </ng-template>
 </div>

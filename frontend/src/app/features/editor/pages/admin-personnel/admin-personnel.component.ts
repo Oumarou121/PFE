@@ -8,7 +8,11 @@ import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
 import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
 import { ModuleRecord } from "../../models/module.model";
-import { PersonnelCreateRequest, PersonnelUpdateRequest, PersonnelUser } from "../../models/personnel.model";
+import {
+  PersonnelCreateRequest,
+  PersonnelUpdateRequest,
+  PersonnelUser,
+} from "../../models/personnel.model";
 import { EditorStateService } from "../../services/editor-state.service";
 import { OrganizationService } from "../../services/organization.service";
 import { PersonnelService } from "../../services/personnel.service";
@@ -35,7 +39,7 @@ const BASE_MODULE_CHOICES: ModuleChoice[] = [
   },
   {
     id: "base.documentArchive",
-    name: "Archive des documents",
+    name: "Archives",
     icon: "fa fa-archive",
     isBase: true,
   },
@@ -138,7 +142,10 @@ export class AdminPersonnelComponent implements OnInit {
 
   async reload(): Promise<void> {
     this.personnel = await this.personnelService.getAll();
-    if (this.selectedUserId && !this.personnel.some((user) => user.id === this.selectedUserId)) {
+    if (
+      this.selectedUserId &&
+      !this.personnel.some((user) => user.id === this.selectedUserId)
+    ) {
       this.resetSelection();
     }
   }
@@ -218,13 +225,18 @@ export class AdminPersonnelComponent implements OnInit {
           moduleIds: this.form.moduleIds || [],
           isActive: this.form.isActive,
         };
-        const updated = await this.personnelService.update(this.form.id, payload);
+        const updated = await this.personnelService.update(
+          this.form.id,
+          payload,
+        );
         this.notifications.showSuccess("Personnel enregistre.");
         await this.reload();
         this.selectUser(updated);
       }
     } catch (error: any) {
-      this.notifications.showError(error?.error?.message || "Impossible d'enregistrer le personnel.");
+      this.notifications.showError(
+        error?.error?.message || "Impossible d'enregistrer le personnel.",
+      );
     } finally {
       this.saving = false;
     }
@@ -259,7 +271,9 @@ export class AdminPersonnelComponent implements OnInit {
         await this.reload();
         this.resetSelection();
       } catch (error: any) {
-        this.notifications.showError(error?.error?.message || "Impossible de supprimer le personnel.");
+        this.notifications.showError(
+          error?.error?.message || "Impossible de supprimer le personnel.",
+        );
       } finally {
         this.deleting = false;
       }
@@ -282,7 +296,10 @@ export class AdminPersonnelComponent implements OnInit {
 
   getModuleNames(user: PersonnelUser): string {
     const names = (user.moduleIds || [])
-      .map((id) => this.moduleChoices.find((module) => module.id === id)?.name || id)
+      .map(
+        (id) =>
+          this.moduleChoices.find((module) => module.id === id)?.name || id,
+      )
       .filter(Boolean);
     return names.length ? names.join(", ") : "Aucun module";
   }

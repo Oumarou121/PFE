@@ -74,7 +74,7 @@ export class UserHomeComponent implements OnInit {
     if (allowedIds.has(BASE_USER_MODULES.archive)) {
       cards.push({
         id: BASE_USER_MODULES.archive,
-        title: "Archive des documents",
+        title: "Archives",
         icon: "fa fa-archive",
         action: () => this.router.navigate(["/archives"]),
       });

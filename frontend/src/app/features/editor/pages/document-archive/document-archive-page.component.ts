@@ -88,9 +88,9 @@ export class DocumentArchivePageComponent implements OnInit {
       );
       this.syncQueryParams();
     } catch (error) {
-      console.error("Error loading documents", error);
+      console.error("Error loading archives", error);
       this.notificationService.showError(
-        "Erreur lors du chargement des documents",
+        "Erreur lors du chargement des archives",
       );
     } finally {
       this.loading = false;
