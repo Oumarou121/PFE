@@ -402,7 +402,7 @@ export class UserPageComponent implements OnInit {
     this.showWait("Completez les 3 etapes pour generer votre document");
   }
 
-  async printDocument(): Promise<void> {
+  async generateFinalDocument(): Promise<void> {
     if (!this.previewTemplate || !this.previewPerson) return;
 
     await this.persistGeneratedDocument();

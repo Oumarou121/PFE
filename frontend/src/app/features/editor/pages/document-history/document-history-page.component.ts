@@ -134,7 +134,7 @@ export class DocumentHistoryPageComponent implements OnInit {
   }
 
   goBack(): void {
-    window.history.back();
+    this.router.navigate(["/admin"], {});
   }
 
   logout(): void {

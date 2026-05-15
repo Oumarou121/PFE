@@ -44,6 +44,7 @@ import { DocumentRenderService } from "../../services/document-render.service";
 import { GraphicCharterService } from "../../services/graphic-charter.service";
 import { FilterRuntimeService } from "../../services/filter-runtime.service";
 import { DocumentDataService } from "../../services/document-data.service";
+import { DocumentService } from "../../services/document.service";
 import {
   getFamilyFilterCatalog,
   normalizeTemplateSectionDisplay,
@@ -367,6 +368,7 @@ export class AdminComponent
     private graphicCharters: GraphicCharterService,
     private filterRuntime: FilterRuntimeService,
     private documentData: DocumentDataService,
+    private documentsService: DocumentService,
     private notifications: NotificationService,
     private dialog: MatDialog,
     private sanitizer: DomSanitizer,
@@ -2212,44 +2214,117 @@ export class AdminComponent
   async printPreview(): Promise<void> {
     const template = this.selectedTemplate;
     if (!template) return;
+    const renderTemplate = this.buildPreviewTemplate(template);
+    const person = await this.getPreviewPerson();
+    const saved = await this.persistAdminGeneratedDocument(renderTemplate, person);
+    this.documentRender.printDocPaginated(
+      renderTemplate,
+      person || this.currentOrganization || {},
+    );
+    if (saved) {
+      this.notifications.showSuccess(
+        "Document genere et ajoute a l'historique.",
+      );
+    }
+  }
+
+  private buildPreviewTemplate(template: TemplateRecord): TemplateRecord {
+    return {
+      ...template,
+      header: this.editorContent.header,
+      body: this.editorContent.body,
+      footer: this.editorContent.footer,
+      hasHeader: this.hasHeader,
+      hasFooter: this.hasFooter,
+      graphicCharterId: this.selectedGraphicCharterId || null,
+      organizationId: this.currentUserOrganizationId,
+      orientation: this.pageSettingsForm.orientation,
+      pageMargins: {
+        mt: this.pageSettingsForm.mt,
+        mb: this.pageSettingsForm.mb,
+        ml: this.pageSettingsForm.ml,
+        mr: this.pageSettingsForm.mr,
+      },
+      headerFooterDistances: {
+        headerTop: this.pageSettingsForm.headerTop,
+        footerBottom: this.pageSettingsForm.footerBottom,
+      },
+      watermark: this.watermarkForm,
+      sectionDirections: this.sectionDirections,
+    } as TemplateRecord;
+  }
+
+  private async getPreviewPerson(): Promise<Record<string, any>> {
     const family = this.selectedFamily;
-    const person =
+    if (
       family &&
       (this.selectedPreviewBeneficiaryId ||
         family.beneficiaryMode === "organization")
-        ? await this.documentData.getDocumentDataForFamily(
-            family.id,
-            this.selectedPreviewBeneficiaryId || null,
-            this.currentUserOrganizationId,
-            this.previewFilterValues,
-          )
-        : this.currentOrganization || {};
-    this.documentRender.printDocPaginated(
-      {
-        ...template,
-        header: this.editorContent.header,
-        body: this.editorContent.body,
-        footer: this.editorContent.footer,
-        hasHeader: this.hasHeader,
-        hasFooter: this.hasFooter,
-        graphicCharterId: this.selectedGraphicCharterId || null,
-        organizationId: this.currentUserOrganizationId,
-        orientation: this.pageSettingsForm.orientation,
-        pageMargins: {
-          mt: this.pageSettingsForm.mt,
-          mb: this.pageSettingsForm.mb,
-          ml: this.pageSettingsForm.ml,
-          mr: this.pageSettingsForm.mr,
-        },
-        headerFooterDistances: {
-          headerTop: this.pageSettingsForm.headerTop,
-          footerBottom: this.pageSettingsForm.footerBottom,
-        },
-        watermark: this.watermarkForm,
-        sectionDirections: this.sectionDirections,
-      } as TemplateRecord,
-      person || this.currentOrganization || {},
+    ) {
+      return (
+        (await this.documentData.getDocumentDataForFamily(
+          family.id,
+          this.selectedPreviewBeneficiaryId || null,
+          this.currentUserOrganizationId,
+          this.previewFilterValues,
+        )) ||
+        this.currentOrganization ||
+        {}
+      );
+    }
+    return this.currentOrganization || {};
+  }
+
+  private async persistAdminGeneratedDocument(
+    template: TemplateRecord,
+    person: Record<string, any>,
+  ): Promise<boolean> {
+    const family = this.selectedFamily;
+    if (!family || !this.selectedTemplateId) return false;
+    const pages = this.documentRender.renderDocumentPages(template, person, {
+      mode: "print",
+    });
+    const fullHtml = await this.documentRender.buildStandaloneDocumentHtml(
+      template,
+      pages,
+      "document-page",
+      { mode: "print" },
     );
+    const beneficiary = this.previewBeneficiaries.find(
+      (item) => String(item.id) === String(this.selectedPreviewBeneficiaryId),
+    );
+    const beneficiaryLabel =
+      this.getBeneficiaryLabel(beneficiary) ||
+      (family.beneficiaryMode === "organization"
+        ? this.organizationLabel
+        : "Beneficiaire");
+    try {
+      await this.documentsService.createDocument({
+        familyId: family.id,
+        templateId: this.selectedTemplateId,
+        graphicCharterId: template.graphicCharterId || null,
+        beneficiaryId: this.selectedPreviewBeneficiaryId || null,
+        beneficiaryMode: family.beneficiaryMode,
+        beneficiaryTable: family.beneficiaryTable,
+        beneficiaryTableLabel:
+          family.beneficiaryTableLabel || family.beneficiaryTable || null,
+        beneficiaryLinkColumn: family.beneficiaryLinkColumn,
+        beneficiaryDisplayColumn1: family.beneficiaryDisplayColumn1,
+        beneficiaryDisplayColumn2: family.beneficiaryDisplayColumn2,
+        beneficiaryDisplayValue1: beneficiaryLabel,
+        beneficiaryDisplayValue2: this.getBeneficiarySubtitle(beneficiary),
+        title: `${this.getTemplateTitle(template)} - ${beneficiaryLabel}`,
+        fullHtml,
+        mimeType: "text/html",
+        status: "generated",
+      });
+      return true;
+    } catch {
+      this.notifications.showWarning(
+        "Generation lancee mais la sauvegarde dans l'historique a echoue.",
+      );
+      return false;
+    }
   }
 
   getTemplateTitle(template: TemplateRecord): string {

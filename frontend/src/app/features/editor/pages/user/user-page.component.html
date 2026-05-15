@@ -339,8 +339,12 @@
         <div class="doc-ph">
           <span class="doc-pt">Apercu A4</span>
           <div class="doc-actions" *ngIf="previewHtml">
-            <button class="btn primary" type="button" (click)="printDocument()">
-              Imprimer
+            <button
+              class="btn primary"
+              type="button"
+              (click)="generateFinalDocument()"
+            >
+              Generer
             </button>
             <button
               class="btn ghost"
