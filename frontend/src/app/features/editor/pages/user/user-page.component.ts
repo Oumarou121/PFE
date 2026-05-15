@@ -361,15 +361,16 @@ export class UserPageComponent implements OnInit {
         this.filterValues,
       );
       if (!template || !person) return;
-      this.previewTemplate = template;
+      const renderTemplate = this.withActiveOrganization(template);
+      this.previewTemplate = renderTemplate;
       this.previewPerson = person;
       this.previewPlainHtml = this.documentRender.buildPreviewHtml(
-        template,
+        renderTemplate,
         person,
       );
       // Apply CSS vars to host so SCSS rules using var(--page-*) and var(--doc-*)
       // resolve correctly even before inline styles on .preview-page propagate.
-      const themeVars = this.documentRender.getDocumentThemeVars(template);
+      const themeVars = this.documentRender.getDocumentThemeVars(renderTemplate);
       Object.entries(themeVars).forEach(([key, value]) => {
         this.elementRef.nativeElement.style.setProperty(key, value as string);
       });
@@ -844,12 +845,12 @@ export class UserPageComponent implements OnInit {
     if (!family) return;
 
     const printPages = this.documentRender.renderDocumentPages(
-      this.previewTemplate,
+      this.withActiveOrganization(this.previewTemplate),
       this.previewPerson,
       { mode: "print" },
     );
     const printableHtml = await this.documentRender.buildStandaloneDocumentHtml(
-      this.previewTemplate,
+      this.withActiveOrganization(this.previewTemplate),
       printPages,
       "document-page",
       { mode: "print" },
@@ -905,5 +906,13 @@ export class UserPageComponent implements OnInit {
     return String(value || "")
       .replace(/_/g, " ")
       .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  private withActiveOrganization(template: TemplateRecord): TemplateRecord {
+    return {
+      ...template,
+      organizationId:
+        template.organizationId || this.organizationId || template.organizationId,
+    };
   }
 }

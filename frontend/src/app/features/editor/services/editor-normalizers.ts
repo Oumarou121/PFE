@@ -497,10 +497,15 @@ export function normalizeHeaderFooterDistances(
 
 export function normalizeTemplateRecord(record: unknown = {}): TemplateRecord {
   const next = cloneData((record || {}) as UnknownRecord) || {};
-  next["id"] = String(next["id"] || genId("tpl"));
-  next["organizationId"] = getScopedOrganizationId(next);
-  next["graphicCharterId"] = next["graphicCharterId"]
-    ? String(next["graphicCharterId"])
+  next["id"] = String(next["id"] || next["Id"] || genId("tpl"));
+  next["organizationId"] = normalizeOrganizationId(
+    next["organizationId"] ??
+      next["OrganizationId"] ??
+      next["etablissement_id"] ??
+      next["EtablissementId"],
+  );
+  next["graphicCharterId"] = next["graphicCharterId"] || next["GraphicCharterId"]
+    ? String(next["graphicCharterId"] || next["GraphicCharterId"])
     : null;
   next["headerFooterDistances"] = normalizeHeaderFooterDistances(
     next["headerFooterDistances"] || next["pageHeaderFooterDistances"],
@@ -576,12 +581,22 @@ function deepMerge<T>(base: T, extra: unknown): T {
   return out as T;
 }
 
+function normalizeObjectKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeObjectKeys);
+  if (!isPlainObject(value)) return value;
+  return Object.entries(value).reduce<UnknownRecord>((out, [key, entry]) => {
+    const normalizedKey = key ? key.charAt(0).toLowerCase() + key.slice(1) : key;
+    out[normalizedKey] = normalizeObjectKeys(entry);
+    return out;
+  }, {});
+}
+
 export function normalizeGraphicCharterConfig(
   config: unknown = {},
 ): GraphicCharterConfig {
   const merged = deepMerge(
     DEFAULT_GRAPHIC_CHARTER,
-    config,
+    normalizeObjectKeys(config),
   ) as GraphicCharterConfig;
   const size = String(
     merged.layout?.pageBackground?.size || "cover",
@@ -672,18 +687,23 @@ export function normalizeGraphicCharterEntry(
 ): GraphicCharterRecord {
   const raw =
     entry && typeof entry === "object" ? (entry as UnknownRecord) : {};
-  const configSource = "config" in raw ? raw["config"] : raw;
+  const configSource =
+    "config" in raw ? raw["config"] : "Config" in raw ? raw["Config"] : raw;
   return {
-    id: String(raw["id"] || genId("charter")),
+    id: String(raw["id"] || raw["Id"] || genId("charter")),
     organizationId: normalizeOrganizationId(
-      raw["organizationId"] ?? raw["etablissement_id"],
+      raw["organizationId"] ??
+        raw["OrganizationId"] ??
+        raw["etablissement_id"] ??
+        raw["EtablissementId"],
     ),
     name:
-      String(raw["name"] || raw["nom"] || "").trim() || `Charte ${index + 1}`,
-    description: String(raw["description"] || "").trim(),
-    isDefault: !!raw["isDefault"],
-    createdAt: (raw["createdAt"] as string) || null,
-    updatedAt: (raw["updatedAt"] as string) || null,
+      String(raw["name"] || raw["Name"] || raw["nom"] || raw["Nom"] || "").trim() ||
+      `Charte ${index + 1}`,
+    description: String(raw["description"] || raw["Description"] || "").trim(),
+    isDefault: !!(raw["isDefault"] ?? raw["IsDefault"]),
+    createdAt: ((raw["createdAt"] || raw["CreatedAt"]) as string) || null,
+    updatedAt: ((raw["updatedAt"] || raw["UpdatedAt"]) as string) || null,
     config: normalizeGraphicCharterConfig(configSource || {}),
   };
 }
@@ -704,9 +724,15 @@ export function normalizeOrganizationRecord(
   record: unknown = {},
 ): OrganizationRecord {
   const next = cloneData((record || {}) as UnknownRecord) || {};
-  next["id"] = String(next["id"] || next["organizationId"] || genId("org"));
+  next["id"] = String(
+    next["id"] ||
+      next["Id"] ||
+      next["organizationId"] ||
+      next["OrganizationId"] ||
+      genId("org"),
+  );
   next["organizationId"] = normalizeOrganizationId(
-    next["organizationId"],
+    next["organizationId"] ?? next["OrganizationId"] ?? next["Id"],
     next["id"],
   );
   next["databaseName"] =
@@ -718,7 +744,10 @@ export function normalizeOrganizationRecord(
         "",
     ).trim() || null;
   next["graphicCharters"] = normalizeGraphicCharterCollection(
-    next["graphicCharters"] ?? next["graphicCharter"],
+    next["graphicCharters"] ??
+      next["GraphicCharters"] ??
+      next["graphicCharter"] ??
+      next["GraphicCharter"],
   );
   delete next["graphicCharter"];
   return next as OrganizationRecord;

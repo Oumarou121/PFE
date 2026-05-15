@@ -185,7 +185,7 @@ export class DocumentRenderService {
     const area = document.createElement("div");
     area.id = "sirh-print-area";
     area.style.display = "none";
-    area.style.cssText += `;${this.getDocumentThemeStyleAttr(template)}`;
+    area.style.cssText += `;${this.getDocumentThemeStyleDeclarations(template)}`;
     area.innerHTML = this.buildDocumentPagesHtml(
       template,
       pages,
@@ -206,6 +206,10 @@ export class DocumentRenderService {
   }
 
   getDocumentThemeStyleAttr(template: TemplateRecord): string {
+    return this.escapeHtmlAttr(this.getDocumentThemeStyleDeclarations(template));
+  }
+
+  getDocumentThemeStyleDeclarations(template: TemplateRecord): string {
     return Object.entries(this.getDocumentThemeVars(template))
       .map(([key, value]) => `${key}:${value}`)
       .join(";");
@@ -224,12 +228,13 @@ export class DocumentRenderService {
     const themeStyle = Object.entries(themeVars)
       .map(([key, value]) => `${key}:${value}`)
       .join(";");
+    const themeStyleAttr = this.escapeHtmlAttr(themeStyle);
     const pagesHtml = this.buildDocumentPagesHtml(template, pages, className, {
       ...options,
-      themeStyle,
+      themeStyle: themeStyleAttr,
     });
     const inlinedPagesHtml = await this.inlineHtmlAssetUrls(pagesHtml);
-    return `<div class="document-snapshot" data-sirh-document-snapshot="true"><style data-sirh-document-snapshot-style="true">${this.getDocumentPrintCss()}</style><div class="document-pages" style="${themeStyle}">${inlinedPagesHtml}</div></div>`;
+    return `<div class="document-snapshot" data-sirh-document-snapshot="true"><style data-sirh-document-snapshot-style="true">${this.getDocumentPrintCss()}</style><div class="document-pages" style="${themeStyleAttr}">${inlinedPagesHtml}</div></div>`;
   }
 
   getDocumentPrintCss(options: { preview?: boolean } = {}): string {
@@ -596,11 +601,18 @@ export class DocumentRenderService {
 
   private getTemplateGraphicCharter(template: TemplateRecord) {
     const organizationId = getScopedOrganizationId(template);
+    const charterId = template?.graphicCharterId || null;
     if (organizationId) {
       const record = this.graphicCharters.getOrganizationGraphicCharter(
         organizationId,
-        template?.graphicCharterId || null,
+        charterId,
       );
+      if (record?.config) return normalizeGraphicCharterConfig(record.config);
+    }
+    if (charterId) {
+      const record = (this.state.getState().organizations || [])
+        .flatMap((organization) => organization.graphicCharters || [])
+        .find((item) => item.id === charterId);
       if (record?.config) return normalizeGraphicCharterConfig(record.config);
     }
     return template?.id
@@ -614,9 +626,11 @@ export class DocumentRenderService {
     ml: number;
     mr: number;
   } {
-    const fallback =
-      this.getTemplateGraphicCharter(template).layout.pageMargins;
-    const src = (template["pageMargins"] || fallback) as UnknownRecord;
+    const charter = this.getTemplateGraphicCharter(template);
+    const fallback = charter.layout.pageMargins;
+    const src = template.graphicCharterId
+      ? fallback
+      : ((template["pageMargins"] || fallback) as UnknownRecord);
     const toNum = (value: unknown, def: number) =>
       Number.isFinite(Number(value)) ? Number(value) : def;
     return {
@@ -628,17 +642,19 @@ export class DocumentRenderService {
   }
 
   private getTemplateHeaderFooterDistances(template: TemplateRecord) {
+    const charter = this.getTemplateGraphicCharter(template);
+    if (template.graphicCharterId) return charter.layout.headerFooterDistances;
     return normalizeHeaderFooterDistances(
       template.headerFooterDistances || template["pageHeaderFooterDistances"],
-      this.getTemplateGraphicCharter(template).layout.headerFooterDistances,
+      charter.layout.headerFooterDistances,
     );
   }
 
   private getTemplateOrientation(
     template: TemplateRecord,
   ): "portrait" | "landscape" {
-    const fallback =
-      this.getTemplateGraphicCharter(template).layout.orientation;
+    const fallback = this.getTemplateGraphicCharter(template).layout.orientation;
+    if (template.graphicCharterId) return fallback;
     const raw = String(
       template["orientation"] ||
         template["pageOrientation"] ||
@@ -1143,16 +1159,31 @@ export class DocumentRenderService {
   private async inlineAssetUrl(url: string): Promise<string> {
     const raw = String(url || "").trim();
     if (!raw || /^data:/i.test(raw) || /^blob:/i.test(raw)) return raw;
+    const browserSafeUrl = this.toBrowserSafeAssetUrl(raw);
     try {
-      const response = await fetch(raw, { credentials: "include" });
-      if (!response.ok) return raw;
+      if (!/^https?:/i.test(browserSafeUrl)) return browserSafeUrl;
+      const response = await fetch(browserSafeUrl, { credentials: "include" });
+      if (!response.ok) return browserSafeUrl;
       const blob = await response.blob();
       return await new Promise<string>((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || raw));
-        reader.onerror = () => resolve(raw);
+        reader.onload = () => resolve(String(reader.result || browserSafeUrl));
+        reader.onerror = () => resolve(browserSafeUrl);
         reader.readAsDataURL(blob);
       });
+    } catch {
+      return browserSafeUrl;
+    }
+  }
+
+  private toBrowserSafeAssetUrl(url: string): string {
+    const raw = String(url || "").trim();
+    if (!raw || /^data:/i.test(raw) || /^blob:/i.test(raw)) return raw;
+    if (/^file:/i.test(raw)) return "none";
+    if (/^https?:/i.test(raw)) return raw;
+    if (typeof window === "undefined" || !window.location?.origin) return raw;
+    try {
+      return new URL(raw, window.location.origin).toString();
     } catch {
       return raw;
     }
@@ -1170,6 +1201,10 @@ export class DocumentRenderService {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  private escapeHtmlAttr(value: unknown): string {
+    return this.escapeHtml(value);
   }
 }
 
