@@ -129,12 +129,6 @@
   </div>
 
   <div class="left-panel app-side-panel" id="leftPanel">
-    <div class="panel-header">
-      <div class="panel-title" id="panelTitle">{{ panelTitle }}</div>
-      <div class="panel-subtitle" id="panelSubtitle">
-        Structure globale du système
-      </div>
-    </div>
     <div class="panel-search">
       <svg
         viewBox="0 0 24 24"
@@ -293,6 +287,12 @@
   </div>
 
   <div class="main app-workspace">
+    <div class="panel-header">
+      <div class="panel-title" id="panelTitle">{{ panelTitle }}</div>
+      <div class="panel-subtitle" id="panelSubtitle">
+        Structure globale du système
+      </div>
+    </div>
     <div class="content">
       <div
         class="content-panel"
@@ -3335,7 +3335,6 @@
         [class.active]="currentSection === 'organizations'"
         id="panel-organizations"
       >
-        <div class="section-heading">Organizations</div>
         <div class="card" style="padding: 0">
           <table class="data-table">
             <thead>
@@ -3395,7 +3394,6 @@
         [class.active]="currentSection === 'admins'"
         id="panel-admins"
       >
-        <div class="section-heading">Utilisateurs rattaches</div>
         <div class="card" style="padding: 0">
           <table class="data-table">
             <thead>
@@ -3452,8 +3450,6 @@
         [class.active]="currentSection === 'tableviews'"
         id="panel-tableviews"
       >
-        <div class="section-heading">Explorateur de donnees</div>
-
         <div
           class="card"
           *ngIf="!selectedSchemaDatabaseName"

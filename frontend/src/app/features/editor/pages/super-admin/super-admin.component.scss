@@ -1158,16 +1158,6 @@ textarea.form-input {
 .fw-6 {
   font-weight: 600;
 }
-.section-heading {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
 
 @media (max-width: 1180px) {
   html,
@@ -1567,8 +1557,7 @@ textarea:focus {
   background: linear-gradient(180deg, #ffffff, #f8fbff);
 }
 
-.super-admin-app .panel-title,
-.super-admin-app .section-heading {
+.super-admin-app .panel-title {
   color: var(--accent);
 }
 
