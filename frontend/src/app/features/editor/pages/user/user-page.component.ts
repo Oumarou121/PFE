@@ -6,6 +6,7 @@ import {
   ViewEncapsulation,
 } from "@angular/core";
 import { Router } from "@angular/router";
+import { ActivatedRoute } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
@@ -88,6 +89,7 @@ export class UserPageComponent implements OnInit {
   constructor(
     private auth: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private state: EditorStateService,
     private familiesService: FamilyService,
     private templatesService: TemplateService,
@@ -110,6 +112,7 @@ export class UserPageComponent implements OnInit {
         "organizations",
         "families",
         "templates",
+        "modules",
       ]);
       const user = this.auth.getCurrentUser();
       this.organizationId =
@@ -123,6 +126,17 @@ export class UserPageComponent implements OnInit {
         ? this.organizationsService.getOrganization(this.organizationId)
         : null;
       this.organizationName = organization?.nom || organization?.name || "";
+      this.mode = this.route.snapshot.data["mode"] === "data" ? "data" : "documents";
+      if (this.mode === "data") {
+        await this.state.ensureResources(["tableViews", "modules"]);
+        const moduleId = this.route.snapshot.paramMap.get("moduleId");
+        if (moduleId && this.modulesList.some((module) => module.id === moduleId)) {
+          this.selectModule(moduleId);
+        } else {
+          this.notifications.showError("Vous n'avez pas acces a ce module.");
+          this.router.navigate(["/user"]);
+        }
+      }
     } catch {
       this.notifications.showError("Impossible de charger votre espace.");
     } finally {
@@ -203,18 +217,20 @@ export class UserPageComponent implements OnInit {
     this.router.navigate(["/documents"]);
   }
 
+  goHome(): void {
+    this.router.navigate(["/user"]);
+  }
+
   get modulesList(): any[] {
     const search = this.dataViewSearch.trim().toLowerCase();
     const modules = this.state.getState().modules || [];
     const user = this.auth.getCurrentUser();
-    const orgId = user?.organizationId;
+    const allowedIds = new Set(user?.moduleIds || []);
 
     return modules.filter(
       (m) =>
         m.isActive &&
-        (!orgId ||
-          !m.organizationIds?.length ||
-          m.organizationIds.includes(Number(orgId))) &&
+        allowedIds.has(m.id) &&
         (!search || m.name.toLowerCase().includes(search)),
     );
   }

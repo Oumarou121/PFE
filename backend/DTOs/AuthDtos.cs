@@ -54,6 +54,7 @@ namespace DocApi.DTOs
         public string? ProfileDetail { get; set; }
         public bool AccessAllYears { get; set; }
         public string? AccessYearList { get; set; }
+        public List<string> ModuleIds { get; set; } = new();
     }
 
     public class UserResponse
@@ -67,6 +68,7 @@ namespace DocApi.DTOs
         public string? ProfileDetail { get; set; }
         public bool AccessAllYears { get; set; }
         public string? AccessYearList { get; set; }
+        public List<string> ModuleIds { get; set; } = new();
         public DateTime CreatedAt { get; set; }
         public bool IsActive { get; set; }
     }

@@ -12,6 +12,7 @@ namespace DocApi.Domain.Entities
         public string? ProfileDetail { get; set; }
         public bool AccessAllYears { get; set; }
         public string? AccessYearList { get; set; }
+        public string? ModuleIds { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsActive { get; set; } = true;
     }

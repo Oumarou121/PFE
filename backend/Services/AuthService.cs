@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using BCrypt.Net;
 using DocApi.Common;
 using DocApi.Domain.Entities;
@@ -71,6 +72,7 @@ namespace DocApi.Services
                 ProfileDetail = request.ProfileDetail,
                 AccessAllYears = true,
                 AccessYearList = "[]",
+                ModuleIds = "[]",
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
@@ -113,6 +115,7 @@ namespace DocApi.Services
                 ProfileDetail = user.ProfileDetail,
                 AccessAllYears = user.AccessAllYears,
                 AccessYearList = user.AccessYearList,
+                ModuleIds = ParseModuleIds(user.ModuleIds),
                 CreatedAt = user.CreatedAt,
                 IsActive = user.IsActive
             };
@@ -168,8 +171,25 @@ namespace DocApi.Services
             Profile = user.Profile,
             ProfileDetail = user.ProfileDetail,
             AccessAllYears = user.AccessAllYears,
-            AccessYearList = user.AccessYearList
+            AccessYearList = user.AccessYearList,
+            ModuleIds = ParseModuleIds(user.ModuleIds)
         };
+
+        private static List<string> ParseModuleIds(string? moduleIds)
+        {
+            if (string.IsNullOrWhiteSpace(moduleIds)) return new List<string>();
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(moduleIds) ?? new List<string>();
+            }
+            catch (JsonException)
+            {
+                return moduleIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToList();
+            }
+        }
 
         private static bool VerifyPassword(string password, string passwordHash)
         {

@@ -21,4 +21,5 @@ export interface AuthUser {
   organizationId?: string | null;
   role: 'supAdmin' | 'admin' | 'user' | string;
   profile?: string;
+  moduleIds?: string[];
 }

@@ -1,0 +1,78 @@
+<div class="user-home">
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement de votre espace...</p>
+  </div>
+
+  <nav class="topnav">
+    <div class="nav-logo">
+      <svg
+        class="nav-logo__icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+      SIRH-<span class="nav-logo__light">Doc</span>
+    </div>
+    <div class="nav-center">
+      <span class="nav-org-pill">{{ organizationName }}</span>
+    </div>
+    <div class="nav-right">
+      <button class="nav-logout-btn" type="button" (click)="logout()">
+        <i class="fa fa-sign-out"></i> Deconnexion
+      </button>
+    </div>
+  </nav>
+
+  <section class="card-grid" *ngIf="!loading">
+    <button
+      class="launch-card"
+      type="button"
+      *ngFor="let card of baseCards"
+      (click)="card.action()"
+    >
+      <div class="launch-card__top">
+        <div class="launch-card__icon--emoji" aria-hidden="true">
+          <i class="{{ card.icon }}"></i>
+        </div>
+        <div class="launch-card__pointer" aria-hidden="true">
+          <i class="fa fa-hand-o-up fa-5x fa-pull-right"></i>
+        </div>
+      </div>
+      <div class="launch-card__footer">
+        <span class="launch-card__label">{{ card.title }}</span>
+        <span class="launch-card__chevron">
+          <i class="fa fa-arrow-circle-right"></i>
+        </span>
+      </div>
+    </button>
+
+    <button
+      class="module-card"
+      type="button"
+      *ngFor="let module of modules"
+      (click)="openModule(module)"
+    >
+      <div class="module-card__header">
+        <div class="module-card__left">
+          <i *ngIf="module.icon" class="{{ module.icon }}"></i>
+        </div>
+        <div class="module-card__right">
+          <i class="fa fa-hand-o-up fa-5x fa-pull-right"></i>
+        </div>
+      </div>
+      <div class="module-card__footer">
+        <span class="module-card__title">{{ module.name }}</span>
+        <span class="module-card__arrow">
+          <i class="fa fa-arrow-circle-right"></i>
+        </span>
+      </div>
+    </button>
+  </section>
+</div>

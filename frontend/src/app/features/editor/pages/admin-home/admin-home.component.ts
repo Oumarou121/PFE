@@ -75,6 +75,12 @@ export class AdminHomeComponent implements OnInit {
         icon: "fa fa-list-alt", //<i class="fa fa-list-alt" aria-hidden="true"></i>
         action: () => this.router.navigate(["/documents"]),
       },
+      {
+        title: "Gestion du personnel",
+        subtitle: "Gerer les comptes et les acces",
+        icon: "fa fa-users",
+        action: () => this.router.navigate(["/admin/personnel"]),
+      },
     ];
   }
 

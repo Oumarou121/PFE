@@ -62,15 +62,42 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: { page: "adminModules", roles: ["admin"] },
   },
+  {
+    path: "admin/personnel",
+    loadComponent: () =>
+      import("./features/editor/pages/admin-personnel/admin-personnel.component").then(
+        (m) => m.AdminPersonnelComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "adminPersonnel", roles: ["admin"] },
+  },
 
   {
     path: "user",
+    loadComponent: () =>
+      import("./features/editor/pages/user-home/user-home.component").then(
+        (m) => m.UserHomeComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "userHome", roles: ["user"] },
+  },
+  {
+    path: "user/generation",
     loadComponent: () =>
       import("./features/editor/pages/user/user-page.component").then(
         (m) => m.UserPageComponent,
       ),
     canActivate: [roleGuard],
-    data: { page: "user", roles: ["user"] },
+    data: { page: "userGeneration", roles: ["user"], mode: "documents" },
+  },
+  {
+    path: "user/modules/:moduleId",
+    loadComponent: () =>
+      import("./features/editor/pages/user/user-page.component").then(
+        (m) => m.UserPageComponent,
+      ),
+    canActivate: [roleGuard],
+    data: { page: "userModule", roles: ["user"], mode: "data" },
   },
   {
     path: "documents/group/:groupKey",

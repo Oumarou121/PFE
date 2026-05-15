@@ -1,0 +1,311 @@
+<div class="personnel-page">
+  <nav class="navbar">
+    <div class="topnav">
+      <div class="nav-logo">
+        <svg
+          class="nav-logo__icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+        SIRH-<span class="nav-logo__light">Doc</span>
+      </div>
+      <div class="nav-center">
+        <span class="nav-org-pill">{{ organizationName }}</span>
+      </div>
+      <div class="nav-right">
+        <button class="nav-logout-btn" type="button" (click)="logout()">
+          <i class="fa fa-sign-out"></i> Deconnexion
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement du personnel...</p>
+  </div>
+
+  <div class="shell" *ngIf="!loading">
+    <main class="content">
+      <section class="content-head">
+        <div class="header">
+          <button class="nav-link" type="button" (click)="goBack()">
+            <i class="fa fa-home" aria-hidden="true"></i>
+            Accueil
+          </button>
+          <i class="fa fa-arrow-right" aria-hidden="true"></i>
+          <h2>Personnel</h2>
+        </div>
+        <p class="description">
+          Gestion des comptes et des acces aux modules de l'organisation.
+        </p>
+      </section>
+
+      <div class="panel-actions">
+        <input
+          type="text"
+          placeholder="Rechercher un personnel..."
+          [(ngModel)]="search"
+          [disabled]="saving || deleting"
+        />
+        <button
+          class="action-btn primary"
+          type="button"
+          (click)="createUser()"
+          [disabled]="saving || deleting"
+        >
+          Ajouter
+        </button>
+        <button
+          class="action-btn"
+          type="button"
+          (click)="reload()"
+          [disabled]="saving || deleting"
+        >
+          Rafraichir
+        </button>
+      </div>
+
+      <div class="grid">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h3>Liste</h3>
+              <p>{{ filteredPersonnel.length }} compte(s)</p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <div class="empty-state" *ngIf="!filteredPersonnel.length">
+              Aucun personnel disponible.
+            </div>
+
+            <table class="data-table" *ngIf="filteredPersonnel.length">
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Annees</th>
+                  <th>Modules</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let user of filteredPersonnel"
+                  [class.active]="user.id === selectedUserId"
+                  [class.disabled]="saving || deleting"
+                  (click)="selectUser(user)"
+                >
+                  <td>
+                    <div class="user-name">
+                      {{ user.name }}
+                      <span *ngIf="!user.isActive" class="status muted">
+                        Inactif
+                      </span>
+                    </div>
+                  </td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span class="status">{{ user.role }}</span>
+                  </td>
+                  <td>{{ getAccessYearsLabel(user) }}</td>
+                  <td>{{ getModuleNames(user) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h3>{{ creating ? "Nouveau personnel" : "Detail" }}</h3>
+              <p>{{ creating ? "Creation" : form.name || "Selection" }}</p>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="empty-state" *ngIf="!creating && !selectedUserId">
+              Selectionnez un personnel pour afficher le detail.
+            </div>
+
+            <form
+              class="detail-form"
+              *ngIf="creating || selectedUserId"
+              (ngSubmit)="saveUser()"
+            >
+              <label class="field">
+                <span>Nom</span>
+                <input
+                  [(ngModel)]="form.name"
+                  name="name"
+                  [disabled]="saving || deleting"
+                />
+              </label>
+
+              <label class="field">
+                <span>Email</span>
+                <input
+                  [(ngModel)]="form.email"
+                  name="email"
+                  type="email"
+                  [disabled]="saving || deleting"
+                />
+              </label>
+
+              <div class="form-row">
+                <label class="field">
+                  <span>Role</span>
+                  <div class="readonly">Utilisateur</div>
+                </label>
+
+                <label class="field">
+                  <span>Etat</span>
+                  <select
+                    [(ngModel)]="form.isActive"
+                    name="isActive"
+                    [disabled]="saving || deleting || creating"
+                  >
+                    <option [ngValue]="true">Actif</option>
+                    <option [ngValue]="false">Inactif</option>
+                  </select>
+                </label>
+              </div>
+
+              <label class="field">
+                <span>Mot de passe</span>
+                <input
+                  [(ngModel)]="form.password"
+                  name="password"
+                  type="password"
+                  [placeholder]="
+                    creating
+                      ? ''
+                      : 'Laisser vide pour garder le mot de passe actuel'
+                  "
+                  [disabled]="saving || deleting"
+                />
+              </label>
+
+              <div class="form-row">
+                <label class="field">
+                  <span>Profil</span>
+                  <input
+                    [(ngModel)]="form.profile"
+                    name="profile"
+                    [disabled]="saving || deleting"
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Detail profil</span>
+                  <input
+                    [(ngModel)]="form.profileDetail"
+                    name="profileDetail"
+                    [disabled]="saving || deleting"
+                  />
+                </label>
+              </div>
+
+              <div class="access-years">
+                <div class="access-years__head">
+                  <span>Acces annees</span>
+                  <small>
+                    {{
+                      form.accessAllYears
+                        ? "Toutes les annees"
+                        : "Annees limitees"
+                    }}
+                  </small>
+                </div>
+                <div class="segmented-control">
+                  <button
+                    type="button"
+                    [class.active]="form.accessAllYears"
+                    (click)="setAccessAllYears(true)"
+                    [disabled]="saving || deleting"
+                  >
+                    Toutes
+                  </button>
+                  <button
+                    type="button"
+                    [class.active]="!form.accessAllYears"
+                    (click)="setAccessAllYears(false)"
+                    [disabled]="saving || deleting"
+                  >
+                    Specifiques
+                  </button>
+                </div>
+                <label class="field" *ngIf="!form.accessAllYears">
+                  <span>Annees autorisees</span>
+                  <input
+                    [(ngModel)]="form.accessYearsText"
+                    name="accessYearsText"
+                    placeholder="Ex: 2023, 2024, 2025"
+                    [disabled]="saving || deleting"
+                  />
+                </label>
+              </div>
+
+              <div class="modules-picker">
+                <div class="modules-picker__head">
+                  <span>Modules autorises</span>
+                  <small>{{ form.moduleIds.length }} selectionne(s)</small>
+                </div>
+                <div class="modules-picker__grid" *ngIf="modules.length">
+                  <label class="module-choice" *ngFor="let module of modules">
+                    <input
+                      type="checkbox"
+                      [checked]="isModuleSelected(module.id)"
+                      (change)="
+                        toggleModule(module.id, $any($event.target).checked)
+                      "
+                      [disabled]="saving || deleting"
+                    />
+                    <i *ngIf="module.icon" class="{{ module.icon }}"></i>
+                    <span>{{ module.name }}</span>
+                  </label>
+                </div>
+                <div class="empty-state compact" *ngIf="!modules.length">
+                  Aucun module actif disponible.
+                </div>
+              </div>
+
+              <div class="actions">
+                <button
+                  class="danger-btn"
+                  type="button"
+                  (click)="deleteUser()"
+                  [disabled]="saving || deleting"
+                >
+                  {{
+                    creating
+                      ? "Annuler"
+                      : deleting
+                        ? "Suppression..."
+                        : "Supprimer"
+                  }}
+                </button>
+                <button
+                  class="action-btn primary"
+                  type="submit"
+                  [disabled]="saving || deleting"
+                >
+                  {{ saving ? "Enregistrement..." : "Enregistrer" }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>

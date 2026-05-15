@@ -24,27 +24,9 @@
       <span class="nav-org-pill">{{ organizationName || "Utilisateur" }}</span>
     </div>
     <div class="nav-right">
-      <button
-        class="nav-action-btn"
-        [class.active]="mode === 'documents'"
-        type="button"
-        (click)="switchMode('documents')"
-      >
-        <i class="fa fa-file-text-o"></i>
-        Générer
-      </button>
-      <button
-        class="nav-action-btn"
-        [class.active]="mode === 'data'"
-        type="button"
-        (click)="switchMode('data')"
-      >
-        <i class="fa fa-database"></i>
-        Données
-      </button>
-      <button class="nav-action-btn" type="button" (click)="goToHistory()">
-        <i class="fa fa-history"></i>
-        Historique
+      <button class="nav-logout-btn" type="button" (click)="goHome()">
+        <i class="fa fa-home"></i>
+        Accueil
       </button>
       <button class="nav-logout-btn" type="button" (click)="logout()">
         <i class="fa fa-sign-out"></i>
@@ -55,17 +37,17 @@
 
   <div class="hero-wrap">
     <div class="hero">
-      <div class="hero-icon">{{ mode === "data" ? "🗂️" : "📄" }}</div>
+      <div class="hero-icon"><i [class]="mode === 'data' ? 'fa fa-database' : 'fa fa-file-text'"></i></div>
       <div>
         <h1>
           {{
-            mode === "data" ? "Gestion des donnees" : "Generation de documents"
+            mode === "data" ? selectedModule?.name || "Module" : "Generation de document"
           }}
         </h1>
         <p>
           {{
             mode === "data"
-              ? "Consultez et mettez a jour les donnees mises a disposition"
+              ? "Consultez et mettez a jour les donnees de ce module"
               : "Selectionnez une famille, un modele et une personne"
           }}
         </p>
@@ -762,3 +744,4 @@
     </div>
   </div>
 </div>
+

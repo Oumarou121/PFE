@@ -107,6 +107,7 @@ builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
 builder.Services.AddScoped<IEditorService, EditorService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IModuleService, ModuleService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 
 var app = builder.Build();
 
