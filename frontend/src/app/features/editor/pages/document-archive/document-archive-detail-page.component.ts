@@ -19,6 +19,7 @@ import {
   TableDocumentGroup,
 } from "./document-archive-grouping.service";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 
 @Component({
   selector: "app-document-archive-detail-page",
@@ -28,6 +29,7 @@ import { UserMenuComponent } from "../../../../shared/components/user-menu/user-
     ReactiveFormsModule,
     MatDialogModule,
     UserMenuComponent,
+    ActiveAcademicYearPillComponent,
   ],
   templateUrl: "./document-archive-detail-page.component.html",
   styleUrls: ["./document-archive-detail-page.component.scss"],

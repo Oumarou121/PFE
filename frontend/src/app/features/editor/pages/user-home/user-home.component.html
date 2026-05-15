@@ -22,9 +22,7 @@
     </div>
     <div class="nav-center">
       <span class="nav-org-pill">{{ organizationName }}</span>
-      <button class="nav-org-pill year-pill" type="button" (click)="router.navigate(['/academic-year'])">
-        {{ activeAcademicYear }}
-      </button>
+      <app-active-academic-year-pill></app-active-academic-year-pill>
     </div>
     <div class="nav-right">
       <app-user-menu></app-user-menu>

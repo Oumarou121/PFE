@@ -7,6 +7,7 @@ import { ApiService } from "../../core/services/api.service";
 import { AuthService } from "../../core/services/auth.service";
 import { NotificationService } from "../../core/services/notification.service";
 import { UserMenuComponent } from "../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 import { OrganizationService } from "../editor/services/organization.service";
 
 type ProfileResponse = {
@@ -27,7 +28,7 @@ type ProfileResponse = {
 @Component({
   selector: "app-profile",
   standalone: true,
-  imports: [CommonModule, UserMenuComponent],
+  imports: [CommonModule, UserMenuComponent, ActiveAcademicYearPillComponent],
   templateUrl: "./profile.component.html",
   styleUrls: ["./profile.component.scss"],
   encapsulation: ViewEncapsulation.None,

@@ -23,11 +23,20 @@ import { TableFiltersComponent } from "../../components/table-filters/table-filt
 import { ModuleRecord } from "../../models/module.model";
 import { TableViewConfig } from "../../models/table-view.model";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "src/app/shared/components/active-academic-year-pill/active-academic-year-pill.component";
+import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 
 @Component({
   selector: "app-admin-modules",
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent, UserMenuComponent],
+  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent, UserMenuComponent, ActiveAcademicYearPillComponent]
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatDialogModule,
+    TableFiltersComponent,
+    UserMenuComponent,
+    ActiveAcademicYearPillComponent,
+  ],
   templateUrl: "./admin-modules.component.html",
   styleUrls: ["./admin-modules.component.scss"],
   encapsulation: ViewEncapsulation.None,

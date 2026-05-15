@@ -15,11 +15,17 @@ import {
   TableDocumentGroup,
 } from "./document-archive-grouping.service";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 
 @Component({
   selector: "app-document-archive-page",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UserMenuComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    UserMenuComponent,
+    ActiveAcademicYearPillComponent,
+  ],
   templateUrl: "./document-archive-page.component.html",
   styleUrls: ["./document-archive-page.component.scss"],
 })

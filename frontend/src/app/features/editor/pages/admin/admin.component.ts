@@ -57,6 +57,7 @@ import {
   GraphicCharterRecord,
 } from "../../models/graphic-charter.model";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 
 type AdminPanel = "document" | "headerFooter" | "filters" | "table";
 type PageOrientation = "portrait" | "landscape";
@@ -94,7 +95,12 @@ interface AdminVariableGroup {
 @Component({
   selector: "app-admin",
   standalone: true,
-  imports: [CommonModule, MatDialogModule, UserMenuComponent],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    UserMenuComponent,
+    ActiveAcademicYearPillComponent,
+  ],
   templateUrl: "./admin.component.html",
   styleUrls: ["./admin.component.scss"],
   encapsulation: ViewEncapsulation.None,

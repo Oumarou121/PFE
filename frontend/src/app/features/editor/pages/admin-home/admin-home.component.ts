@@ -8,6 +8,7 @@ import { OrganizationService } from "../../services/organization.service";
 import { EditorStateService } from "../../services/editor-state.service";
 import { ModuleRecord } from "../../models/module.model";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 
 type AdminQuickCard = {
   title: string;
@@ -19,7 +20,7 @@ type AdminQuickCard = {
 @Component({
   selector: "app-admin-home",
   standalone: true,
-  imports: [CommonModule, UserMenuComponent],
+  imports: [CommonModule, UserMenuComponent, ActiveAcademicYearPillComponent],
   templateUrl: "./admin-home.component.html",
   styleUrls: ["./admin-home.component.scss"],
   encapsulation: ViewEncapsulation.None,
@@ -27,7 +28,6 @@ type AdminQuickCard = {
 export class AdminHomeComponent implements OnInit {
   loading = true;
   organizationName = "";
-  activeAcademicYear = "";
 
   constructor(
     public router: Router,
@@ -46,7 +46,6 @@ export class AdminHomeComponent implements OnInit {
         ? this.organizationsService.getOrganization(organizationId)
         : this.organizationsService.getOrganizations()[0] || null;
       this.organizationName = organization?.nom || organization?.name || "";
-      this.activeAcademicYear = this.auth.getActiveAcademicYear() || "";
     } catch {
       this.notifications.showError(
         "Impossible de charger l'espace administrateur.",

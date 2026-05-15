@@ -1743,16 +1743,17 @@ namespace DocApi.Repositories
 
             foreach (var table in config.AffectedTables)
             {
-                var tableMatch = MatchTableReference(sql, table.TableName);
-                if (!tableMatch.Success) continue;
+                var tableReference = FindTableReference(sql, table.TableName);
+                if (tableReference is null) continue;
                 if (HasExplicitAcademicYearPredicate(sql, table.YearColumn)) return sql;
 
                 var columns = await GetTenantColumnsAsync(table.TableName, databaseName);
                 var column = columns.FirstOrDefault(item => string.Equals(item.Name, table.YearColumn, StringComparison.OrdinalIgnoreCase));
                 if (column is null) continue;
 
-                var alias = tableMatch.Groups["alias"].Value;
-                var qualifier = string.IsNullOrWhiteSpace(alias) ? Quote(table.TableName) : Quote(alias);
+                var qualifier = string.IsNullOrWhiteSpace(tableReference.Value.Alias)
+                    ? Quote(table.TableName)
+                    : Quote(tableReference.Value.Alias);
                 parameters.Add("__academicYearCode", yearCode);
                 return InsertWherePredicate(sql, $"{qualifier}.{Quote(column.Name)} = @__academicYearCode");
             }
@@ -1760,17 +1761,19 @@ namespace DocApi.Repositories
             return sql;
         }
 
-        private static Match MatchTableReference(string sql, string tableName)
+        private static (string TableName, string? Alias)? FindTableReference(string sql, string tableName)
         {
             var escapedTable = Regex.Escape(tableName);
-            var match = Regex.Match(
+            var matches = Regex.Matches(
                 sql,
-                $@"\b(?:FROM|JOIN)\s+(?:\[{escapedTable}\]|{escapedTable})(?:\s+(?:AS\s+)?(?<alias>[A-Za-z_]\w*))?",
+                $@"\b(?:FROM|JOIN)\s+(?:(?:\[[^\]]+\]|[A-Za-z_]\w*)\s*\.\s*)?(?:\[{escapedTable}\]|{escapedTable})(?:\s+(?:AS\s+)?(?<alias>[A-Za-z_]\w*))?",
                 RegexOptions.IgnoreCase);
-            if (!match.Success) return match;
-
-            var alias = match.Groups["alias"].Value;
-            return IsSqlClauseKeyword(alias) ? Regex.Match(sql, "$.^") : match;
+            foreach (Match match in matches)
+            {
+                var alias = match.Groups["alias"].Value;
+                return (tableName, IsSqlClauseKeyword(alias) ? null : alias);
+            }
+            return null;
         }
 
         private static string InsertWherePredicate(string sql, string predicate)

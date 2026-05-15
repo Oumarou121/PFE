@@ -28,6 +28,7 @@ import { ConfirmDialogComponent } from "../../../../shared/components/confirm-di
 import { DocumentService } from "../../services/document.service";
 import { TableFiltersComponent } from "../../components/table-filters/table-filters.component";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 
 type UserMode = "documents" | "data";
 type Step = 1 | 2 | 3;
@@ -41,6 +42,7 @@ type Step = 1 | 2 | 3;
     MatDialogModule,
     TableFiltersComponent,
     UserMenuComponent,
+    ActiveAcademicYearPillComponent,
   ],
   templateUrl: "./user-page.component.html",
   styleUrls: ["./user-page.component.scss"],

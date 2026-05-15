@@ -1,0 +1,10 @@
+<button
+  *ngIf="visible"
+  class="academic-year-pill"
+  type="button"
+  (click)="changeYear()"
+  title="Changer l'annee universitaire"
+>
+  <i class="fa fa-calendar-o" aria-hidden="true"></i>
+  <span>{{ code }}</span>
+</button>

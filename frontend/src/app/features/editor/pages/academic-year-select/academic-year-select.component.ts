@@ -5,13 +5,19 @@ import { Router } from "@angular/router";
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 import { AcademicYear } from "../../models/academic-year.model";
 import { AcademicYearService } from "../../services/academic-year.service";
 
 @Component({
   selector: "app-academic-year-select",
   standalone: true,
-  imports: [CommonModule, FormsModule, UserMenuComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    UserMenuComponent,
+    ActiveAcademicYearPillComponent,
+  ],
   templateUrl: "./academic-year-select.component.html",
   styleUrls: ["./academic-year-select.component.scss"],
 })

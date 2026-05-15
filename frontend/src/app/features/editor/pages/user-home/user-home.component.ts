@@ -8,6 +8,7 @@ import { ModuleRecord } from "../../models/module.model";
 import { EditorStateService } from "../../services/editor-state.service";
 import { OrganizationService } from "../../services/organization.service";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
+import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 
 type UserHomeCard = {
   id: string;
@@ -24,7 +25,7 @@ const BASE_USER_MODULES = {
 @Component({
   selector: "app-user-home",
   standalone: true,
-  imports: [CommonModule, UserMenuComponent],
+  imports: [CommonModule, UserMenuComponent, ActiveAcademicYearPillComponent],
   templateUrl: "./user-home.component.html",
   styleUrls: ["./user-home.component.scss"],
   encapsulation: ViewEncapsulation.None,
@@ -32,7 +33,6 @@ const BASE_USER_MODULES = {
 export class UserHomeComponent implements OnInit {
   loading = true;
   organizationName = "";
-  activeAcademicYear = "";
 
   constructor(
     public router: Router,
@@ -51,7 +51,6 @@ export class UserHomeComponent implements OnInit {
         : this.organizationsService.getOrganizations()[0] || null;
       this.organizationName = organization?.nom || organization?.name || "";
       this.auth.setActiveOrganizationId(user?.organizationId || null);
-      this.activeAcademicYear = this.auth.getActiveAcademicYear() || "";
     } catch {
       this.notifications.showError("Impossible de charger votre espace.");
     } finally {
