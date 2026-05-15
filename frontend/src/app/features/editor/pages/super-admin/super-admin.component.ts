@@ -3261,7 +3261,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       .filter(
         ({ binding }: { binding: any }) =>
           binding &&
-          (binding.mode === "table-links" || binding.mode === "base-column") &&
           binding.tableName &&
           binding.columnName,
       );

@@ -23,12 +23,11 @@ import { TableFiltersComponent } from "../../components/table-filters/table-filt
 import { ModuleRecord } from "../../models/module.model";
 import { TableViewConfig } from "../../models/table-view.model";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
-import { ActiveAcademicYearPillComponent } from "src/app/shared/components/active-academic-year-pill/active-academic-year-pill.component";
 import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
 
 @Component({
   selector: "app-admin-modules",
-  imports: [CommonModule, FormsModule, MatDialogModule, TableFiltersComponent, UserMenuComponent, ActiveAcademicYearPillComponent]
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
@@ -345,11 +344,12 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
         view,
         this.importHeaders,
       );
-      this.importUniqueFields = view.editableFields.length > 0
-        ? [view.editableFields[0]]
-        : view.visibleFields.length > 0
-          ? [view.visibleFields[0]]
-          : [];
+      this.importUniqueFields =
+        view.editableFields.length > 0
+          ? [view.editableFields[0]]
+          : view.visibleFields.length > 0
+            ? [view.visibleFields[0]]
+            : [];
       this.importProgress = {
         total: this.importRows.length,
         processed: 0,
@@ -372,7 +372,7 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   async runImport(): Promise<void> {
     const view = this.selectedDataView;
     if (!view || !this.importRows.length) return;
-    
+
     const importableFields = view.editableFields.filter(
       (field) => this.importFieldMappings[field],
     );

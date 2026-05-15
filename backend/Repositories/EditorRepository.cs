@@ -707,7 +707,8 @@ namespace DocApi.Repositories
             if (!parameters.ContainsKey("organizationId")) parameters["organizationId"] = null;
             if (!parameters.ContainsKey("academicYear")) parameters["academicYear"] = _tenantProvider.GetAcademicYearCode();
             cleaned = CompileNamedParameters(cleaned, parameters, dynamicParameters);
-            cleaned = await ApplyAutomaticAcademicYearFilterAsync(cleaned, dynamicParameters, databaseName);
+            cleaned = await ApplyAutomaticAcademicYearFilterAsync(cleaned, dynamicParameters, parameters, databaseName);
+            _logger.LogInformation("Query final SQL after academic year injection. Sql: {Sql} Params: {Params}", cleaned, JsonSerializer.Serialize(dynamicParameters.ParameterNames.ToDictionary(name => name, name => dynamicParameters.Get<object?>(name))));
 
             using var connection = TenantConnection(databaseName);
             return (await connection.QueryAsync(cleaned, dynamicParameters))
@@ -1732,36 +1733,79 @@ namespace DocApi.Repositories
                 throw new InvalidOperationException("Cette annee universitaire est cloturee. Les modifications sont bloquees.");
         }
 
-        private async Task<string> ApplyAutomaticAcademicYearFilterAsync(string sql, DynamicParameters parameters, string? databaseName = null)
+        private async Task<string> ApplyAutomaticAcademicYearFilterAsync(
+            string sql,
+            DynamicParameters parameters,
+            IDictionary<string, object?> requestParameters,
+            string? databaseName = null)
         {
-            var yearCode = _tenantProvider.GetAcademicYearCode();
-            var organizationId = _tenantProvider.GetOrganizationId();
+            var yearCode = ResolveAcademicYearCode(requestParameters);
+            var organizationId = ResolveOrganizationId(requestParameters);
             if (string.IsNullOrWhiteSpace(yearCode) || !organizationId.HasValue) return sql;
 
             var config = await GetAcademicYearConfigAsync(organizationId.Value);
             if (config is null || config.AffectedTables.Count == 0) return sql;
 
+            parameters.Add("__academicYearCode", yearCode);
             foreach (var table in config.AffectedTables)
             {
-                var tableReference = FindTableReference(sql, table.TableName);
-                if (tableReference is null) continue;
                 if (HasExplicitAcademicYearPredicate(sql, table.YearColumn)) return sql;
 
                 var columns = await GetTenantColumnsAsync(table.TableName, databaseName);
                 var column = columns.FirstOrDefault(item => string.Equals(item.Name, table.YearColumn, StringComparison.OrdinalIgnoreCase));
                 if (column is null) continue;
 
-                var qualifier = string.IsNullOrWhiteSpace(tableReference.Value.Alias)
-                    ? Quote(table.TableName)
-                    : Quote(tableReference.Value.Alias);
-                parameters.Add("__academicYearCode", yearCode);
-                return InsertWherePredicate(sql, $"{qualifier}.{Quote(column.Name)} = @__academicYearCode");
+                sql = InsertAcademicYearPredicatesForTable(sql, table.TableName, column.Name);
             }
 
             return sql;
         }
 
-        private static (string TableName, string? Alias)? FindTableReference(string sql, string tableName)
+        private string? ResolveAcademicYearCode(IDictionary<string, object?> requestParameters)
+        {
+            if (requestParameters.TryGetValue("academicYear", out var value))
+            {
+                var text = NormalizeParameterValue(value)?.ToString();
+                if (!string.IsNullOrWhiteSpace(text)) return text.Trim();
+            }
+
+            return _tenantProvider.GetAcademicYearCode();
+        }
+
+        private int? ResolveOrganizationId(IDictionary<string, object?> requestParameters)
+        {
+            if (requestParameters.TryGetValue("organizationId", out var value))
+            {
+                var normalized = NormalizeParameterValue(value);
+                if (normalized is int intValue) return intValue;
+                if (normalized is long longValue && longValue >= int.MinValue && longValue <= int.MaxValue) return (int)longValue;
+                if (normalized is decimal decimalValue && decimalValue >= int.MinValue && decimalValue <= int.MaxValue) return (int)decimalValue;
+                if (int.TryParse(normalized?.ToString(), out var parsed)) return parsed;
+            }
+
+            return _tenantProvider.GetOrganizationId();
+        }
+
+        private static string InsertAcademicYearPredicatesForTable(string sql, string tableName, string yearColumn)
+        {
+            var references = FindTableReferences(sql, tableName).ToArray();
+            if (references.Length == 0) return sql;
+
+            for (var i = references.Length - 1; i >= 0; i--)
+            {
+                var reference = references[i];
+                var qualifier = string.IsNullOrWhiteSpace(reference.Alias)
+                    ? Quote(tableName)
+                    : Quote(reference.Alias);
+                var predicate = $"{qualifier}.{Quote(yearColumn)} = @__academicYearCode";
+                if (ContainsPredicateNearReference(sql, reference.Index, predicate)) continue;
+                sql = InsertWherePredicateNearReference(sql, reference.Index, predicate);
+            }
+
+            return sql;
+        }
+
+        private static IEnumerable<(string TableName, string? Alias, int Index)> FindTableReferences(string sql, string tableName)
         {
             var escapedTable = Regex.Escape(tableName);
             var matches = Regex.Matches(
@@ -1771,9 +1815,8 @@ namespace DocApi.Repositories
             foreach (Match match in matches)
             {
                 var alias = match.Groups["alias"].Value;
-                return (tableName, IsSqlClauseKeyword(alias) ? null : alias);
+                yield return (tableName, IsSqlClauseKeyword(alias) ? null : alias, match.Index);
             }
-            return null;
         }
 
         private static string InsertWherePredicate(string sql, string predicate)
@@ -1799,6 +1842,49 @@ namespace DocApi.Repositories
             }
 
             return $"{sql} WHERE {predicate}";
+        }
+
+        private static string InsertWherePredicateNearReference(string sql, int referenceIndex, string predicate)
+        {
+            var blockEnd = FindEndOfLocalSelect(sql, referenceIndex);
+            var localSql = sql[referenceIndex..blockEnd];
+            var whereMatch = Regex.Match(localSql, @"\bWHERE\b", RegexOptions.IgnoreCase);
+            if (!whereMatch.Success)
+            {
+                var clauseMatchWithoutWhere = Regex.Match(localSql, @"\b(GROUP\s+BY|HAVING|ORDER\s+BY|FOR\s+JSON)\b", RegexOptions.IgnoreCase);
+                var insertWhereAt = clauseMatchWithoutWhere.Success
+                    ? referenceIndex + clauseMatchWithoutWhere.Index
+                    : blockEnd;
+                var beforeWhere = sql[..insertWhereAt].TrimEnd();
+                var afterWhere = sql[insertWhereAt..].TrimStart();
+                return string.IsNullOrWhiteSpace(afterWhere)
+                    ? $"{beforeWhere} WHERE {predicate}"
+                    : $"{beforeWhere} WHERE {predicate} {afterWhere}";
+            }
+
+            var absoluteWhereIndex = referenceIndex + whereMatch.Index;
+            var localTail = sql[absoluteWhereIndex..blockEnd];
+            var clauseMatch = Regex.Match(localTail, @"\b(GROUP\s+BY|HAVING|ORDER\s+BY|FOR\s+JSON)\b", RegexOptions.IgnoreCase);
+            var insertAt = clauseMatch.Success
+                ? absoluteWhereIndex + clauseMatch.Index
+                : blockEnd;
+            var before = sql[..insertAt].TrimEnd();
+            var after = sql[insertAt..].TrimStart();
+            return string.IsNullOrWhiteSpace(after)
+                ? $"{before} AND {predicate}"
+                : $"{before} AND {predicate} {after}";
+        }
+
+        private static int FindEndOfLocalSelect(string sql, int startIndex)
+        {
+            var nextProjectedSubquery = Regex.Match(sql[startIndex..], @"\)\s+AS\s+\[", RegexOptions.IgnoreCase);
+            return nextProjectedSubquery.Success ? startIndex + nextProjectedSubquery.Index : sql.Length;
+        }
+
+        private static bool ContainsPredicateNearReference(string sql, int referenceIndex, string predicate)
+        {
+            var blockEnd = FindEndOfLocalSelect(sql, referenceIndex);
+            return sql[referenceIndex..blockEnd].Contains(predicate, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsSqlClauseKeyword(string? value)

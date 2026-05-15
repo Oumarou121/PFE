@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { UnknownRecord } from '../models/editor-common.model';
 import { FilterValueMap } from '../models/filter.model';
-import { buildDocumentFilterParams, getConfiguredBeneficiaryLinkColumn, getFamilyFilterCatalog, getFamilyListObjectVars, getSchemaColumnsForTable, isScopedOrganizationFamily, quoteSqlIdentifier } from './editor-normalizers';
+import { buildDocumentFilterParams, getConfiguredBeneficiaryLinkColumn, getFamilyFilterCatalog, getFamilyListObjectVars, getSchemaColumnsForTable, isScopedOrganizationFamily, normalizeFilterColumnBindings, normalizeFilterParamName, quoteSqlIdentifier } from './editor-normalizers';
 import { FamilyService } from './family.service';
 import { OrganizationService } from './organization.service';
 import { QueryService } from './query.service';
@@ -33,9 +33,16 @@ export class DocumentDataService {
       const schema = await this.schemaService.getSchema();
       if (getSchemaColumnsForTable(schema, tableName).length) {
         const pk = getConfiguredBeneficiaryLinkColumn(family, schema, tableName);
+        const filterClauses = this.buildFilterClausesForTable(family, tableName);
         const rows = await this.query.runSelect(
-          `SELECT TOP (1) * FROM ${quoteSqlIdentifier(tableName)} WHERE ${quoteSqlIdentifier(pk)} = :beneficiaryId`,
-          { beneficiaryId }
+          `SELECT TOP (1) * FROM ${quoteSqlIdentifier(tableName)} WHERE ${[
+            `${quoteSqlIdentifier(pk)} = :beneficiaryId`,
+            ...filterClauses,
+          ].join(' AND ')}`,
+          {
+            beneficiaryId,
+            ...buildDocumentFilterParams(filters, getFamilyFilterCatalog(family)),
+          }
         );
         baseRecord = rows?.[0] || {};
       }
@@ -83,5 +90,20 @@ export class DocumentDataService {
         : [];
     }
     return next;
+  }
+
+  private buildFilterClausesForTable(family: any, tableName: string): string[] {
+    return getFamilyFilterCatalog(family)
+      .flatMap((filter) =>
+        normalizeFilterColumnBindings(
+          filter.columnBindings || [],
+          filter.columnBinding || {}
+        ).map((binding) => ({ filter, binding }))
+      )
+      .filter(({ binding }) => binding.tableName === tableName && binding.columnName)
+      .map(({ filter, binding }) => {
+        const paramName = normalizeFilterParamName(filter.key || binding.columnName);
+        return `(:${paramName} IS NULL OR ${quoteSqlIdentifier(binding.columnName)} = :${paramName})`;
+      });
   }
 }

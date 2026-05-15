@@ -14,6 +14,8 @@ import {
   getSchemaColumn,
   getSchemaColumnsForTable,
   isScopedOrganizationFamily,
+  normalizeFilterColumnBindings,
+  normalizeFilterParamName,
   normalizeFamilyRecord,
   quoteSqlIdentifier,
   toBeneficiaryRecord,
@@ -114,6 +116,11 @@ export class FamilyService {
       tableName,
     );
     if (family.beneficiarySql) {
+      console.log("Using custom beneficiary SQL for family", family.sql);
+      console.log("Beneficiary SQL:", family.beneficiarySql, "Params:", {
+        organizationId,
+        ...filterParams,
+      });
       const rows = await this.query.runSelect(family.beneficiarySql, {
         organizationId,
         ...filterParams,
@@ -149,11 +156,22 @@ export class FamilyService {
       tableName!,
       ORGANIZATION_SCOPE_COLUMN,
     );
+    const filterClauses = this.buildFilterClausesForTable(family, tableName!);
     const labelSqlExpr = buildBeneficiaryLabelSqlExpr(displayColumns, "src");
+    const whereClauses = [
+      organizationColumn && organizationId
+        ? `src.${quoteSqlIdentifier(organizationColumn.name)} = :organizationId`
+        : "",
+      ...filterClauses,
+    ].filter(Boolean);
     const sql = `SELECT TOP (500)
              src.${quoteSqlIdentifier(pk)} AS id${labelSqlExpr ? `,\n             ${labelSqlExpr} AS libelle` : ""}
-           FROM ${quoteSqlIdentifier(tableName)} src${organizationColumn && organizationId ? `\n           WHERE src.${quoteSqlIdentifier(organizationColumn.name)} = :organizationId` : ""}
+           FROM ${quoteSqlIdentifier(tableName)} src${whereClauses.length ? `\n           WHERE ${whereClauses.join("\n             AND ")}` : ""}
            ORDER BY src.${quoteSqlIdentifier(defaultOrderColumn)} ASC`;
+    console.log("Beneficiary SQL:", sql, "Params:", {
+      organizationId,
+      ...filterParams,
+    });
     const rows = await this.query.runSelect(sql, {
       organizationId,
       ...filterParams,
@@ -161,6 +179,28 @@ export class FamilyService {
     return rows
       .filter((row) => row?.["id"] !== undefined || row?.[pk] !== undefined)
       .map((row) => toBeneficiaryRecord(row, displayColumns, tableName, pk));
+  }
+
+  private buildFilterClausesForTable(
+    family: FamilyRecord,
+    tableName: string,
+  ): string[] {
+    return getFamilyFilterCatalog(family)
+      .flatMap((filter) =>
+        normalizeFilterColumnBindings(
+          filter.columnBindings || [],
+          filter.columnBinding || {},
+        ).map((binding) => ({ filter, binding })),
+      )
+      .filter(
+        ({ binding }) => binding.tableName === tableName && binding.columnName,
+      )
+      .map(({ filter, binding }) => {
+        const paramName = normalizeFilterParamName(
+          filter.key || binding.columnName,
+        );
+        return `(:${paramName} IS NULL OR src.${quoteSqlIdentifier(binding.columnName)} = :${paramName})`;
+      });
   }
 
   getTemplatesByOrganization(
