@@ -2,23 +2,23 @@
 % CHAPITRE 4 : SPRINT 2
 %=================================================
 
-\chapter{Sprint 4 : Moteur de données RH (Dossiers et Mouvements)}
+\chapter{Sprint 2 : Moteur de données et entités métiers}
 
 \section{Introduction}
 
-Une fois les fondations techniques posées, le véritable défi métier de SIRH-Doc a commencé : comment gérer des dossiers personnels complexes sans coder un formulaire différent pour chaque type de donnée ? Un enseignant permanent n'a pas les mêmes informations qu'un vacataire, et pourtant, le système doit pouvoir les traiter avec la même fluidité.
+Une fois les fondations techniques posées, le véritable défi de SIRH-Doc a commencé : comment créer une plateforme capable de gérer n'importe quelle entité universitaire sans coder un formulaire différent à chaque fois ? Qu'il s'agisse de gérer des \textbf{enseignants permanents}, des \textbf{étudiants}, des \textbf{filières} ou même des \textbf{bâtiments}, le système doit être agnostique vis-à-vis du type de donnée.
 
-Ce sprint a été l'occasion de mettre en place le \og cœur battant \fg{} des données RH de l'établissement, en utilisant une approche dynamique pour les formulaires et les listes.
+Ce sprint a été l'occasion de mettre en place le \og moteur d'entités \fg{} de l'établissement, en utilisant une approche totalement dynamique pour la manipulation des données.
 
 \section{Objectifs et Backlog du sprint}
 
-L'objectif était de permettre aux gestionnaires RH de sortir du \og tout papier \fg{} ou des fichiers Excel éparpillés pour centraliser tout le parcours d'un collaborateur.
+L'objectif était de permettre aux utilisateurs administratifs (SG, CDD) de centraliser la gestion de toutes les ressources de l'école.
 
 \begin{itemize}
-    \item \textbf{Dossiers Individuels Dynamiques} : Création des fiches pour permanents et vacataires avec leurs données d'état civil et professionnelles.
-    \item \textbf{Numérisation des Pièces} : Gestion des diplômes et justificatifs directement rattachés au profil.
-    \item \textbf{Suivi des Positions et Mouvements} : Tracer si un agent est en activité, en congé, en mission ou en fin de carrière.
-    \item \textbf{Historique des Engagements} : Suivre les contrats successifs, particulièrement pour les vacataires, année par année.
+    \item \textbf{Gestion d'Entités Dynamiques} : Saisie et modification de fiches pour n'importe quelle table (Personnel, Étudiants, Salles...).
+    \item \textbf{Moteur de Recherche Multicritère} : Rechercher n'importe quel bénéficiaire ou ressource par nom, code ou attribut personnalisé.
+    \item \textbf{Validation des Données} : S'assurer que les informations saisies respectent les types de données SQL (dates, entiers, etc.).
+    \item \textbf{Isolation Temporelle} : Filtrer automatiquement les données (ex: Contrats ou Inscriptions) selon l'année universitaire active choisie au Sprint 1.
 \end{itemize}
 
 \section{Choix techniques et décisions de conception}
@@ -46,11 +46,21 @@ Le modèle de données s'enrichit ici avec les entités de base du SIRH. On rema
 
 \diagramplaceholder{sprint2_classes}{Diagramme de classes - Sprint 2}{Modèle de données du personnel et des parcours}
 
-\subsection{Diagramme de séquence : Création d'un mouvement}
+\subsection{Diagrammes de séquence : Flux du moteur dynamique}
 
-Ce diagramme illustre comment le système valide un changement de position (par exemple un départ en congé) en s'assurant que la donnée est bien enregistrée dans le contexte de l'année universitaire active.
+Ces schémas illustrent comment le moteur s'adapte aux différentes entités sans modification du code source.
 
-\diagramplaceholder{sprint2_sequences}{Séquence de mise à jour d'un parcours}{Enregistrement d'un mouvement administratif}
+\subsubsection{Chargement d'une vue de table dynamique}
+
+Ce diagramme montre l'intelligence du moteur. Le système charge une \texttt{TableViewConfig} qui définit la structure de la table cible. Le backend génère alors une requête SQL dynamique via Dapper pour renvoyer uniquement les colonnes et les filtres configurés.
+
+\diagramplaceholder{sprint2_sequence_read_dynamic}{Séquence de lecture dynamique}{Génération SQL à la volée selon la configuration}
+
+\subsubsection{Processus d'importation intelligente}
+
+Ce diagramme décrit le processus de mapping de données externes. L'utilisateur télécharge un fichier (CSV/Excel) et fait correspondre ses colonnes avec celles de la base de données. Le système valide la structure et exécute une insertion massive tout en garantissant l'intégrité.
+
+\diagramplaceholder{sprint2_sequence_import}{Séquence d'importation}{Mapping intelligent et insertion massive de données}
 
 \section{Réalisation technique}
 

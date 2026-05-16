@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2024-03-20T12:00:00.000Z" agent="GeminiCLI" version="21.6.6" type="device">
+  <diagram id="Sprint3UseCase" name="Sprint 3 - Studio d'Édition">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Système Boundary -->
+        <mxCell id="boundary" value="SIRH-Doc : Studio d'Édition et Intelligence Documentaire" style="shape=rect;html=1;verticalAlign=top;fontStyle=1;whiteSpace=wrap;align=center;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="240" y="40" width="480" height="660" as="geometry" />
+        </mxCell>
+
+        <!-- Acteurs -->
+        <mxCell id="admin" value="Administrateur RH" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="320" width="30" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="supadmin" value="Super Administrateur" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="30" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases : SuperAdmin -->
+        <mxCell id="uc_family" value="Définir les Familles&#xa;de documents" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="280" y="60" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Extensions de uc_family -->
+        <mxCell id="uc_ext_table" value="Mapper la table source" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="10" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_ext_sql" value="Création des requêtes&#xa;SQL personnalisées" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="75" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_ext_mode" value="Choisir le mode de&#xa;bénéficiaire" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="150" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_ext_filters" value="Configurer le catalogue&#xa;de filtres" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="225" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Liens d'extension SuperAdmin -->
+        <mxCell id="ef1" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_ext_table" target="uc_family">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ef4" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.4;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_ext_sql" target="uc_family">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ef2" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.6;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_ext_mode" target="uc_family">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ef3" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.85;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_ext_filters" target="uc_family">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases : Admin -->
+        <mxCell id="uc_charter" value="Gérer les Chartes&#xa;Graphiques (Logos, Styles)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="360" y="200" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_template" value="Concevoir les Modèles&#xa;(Templates) via le Studio" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="320" y="300" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Extensions de uc_template -->
+        <mxCell id="uc_ext_vars" value="Insérer des variables&#xa;dynamiques {{...}}" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="200" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_ext_sections" value="Configurer les sections&#xa;(Header / Footer)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="280" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_ext_layout" value="Paramétrer la mise en&#xa;page (Marges/A4)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="360" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_ext_charter" value="Appliquer une charte&#xa;graphique" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="440" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Liens d'extension -->
+        <mxCell id="e1" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_ext_vars" target="uc_template">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_ext_sections" target="uc_template">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_ext_layout" target="uc_template">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_ext_charter" target="uc_template">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_preview" value="Prévisualiser le rendu&#xa;documentaire" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="440" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_generate" value="Générer les documents&#xa;(Fusion des données)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="540" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Liaisons -->
+        <mxCell id="l1" value="" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="supadmin" target="uc_family">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="l2" value="" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="admin" target="uc_charter">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l3" value="" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="admin" target="uc_template">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l4" value="" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="admin" target="uc_preview">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l5" value="" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="admin" target="uc_generate">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Include relation : Auth & Tenant -->
+        <mxCell id="uc_auth" value="S'authentifier" style="ellipse;whiteSpace=wrap;html=1;dashed=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="360" y="630" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="i1" value="&lt;&lt;include&gt;&gt;" style="endArrow=open;dashed=1;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endSize=8;" edge="1" parent="1" source="uc_generate" target="uc_auth">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

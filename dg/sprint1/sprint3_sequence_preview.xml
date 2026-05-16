@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2024-03-20T15:15:00.000Z" agent="GeminiCLI" version="21.6.6" type="device">
+  <diagram id="S3SeqPreview" name="Sprint 3 - Prévisualisation Fusion">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <mxCell id="admin" value="Admin RH" style="shape=umlLifeline;whiteSpace=wrap;html=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="100" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="front" value="Preview Modal&#xa;(Angular)" style="shape=umlLifeline;whiteSpace=wrap;html=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="180" y="40" width="120" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="EditorController&#xa;(.NET)" style="shape=umlLifeline;whiteSpace=wrap;html=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="360" y="40" width="120" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="engine" value="Fusion Engine&#xa;(Regex Service)" style="shape=umlLifeline;whiteSpace=wrap;html=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="540" y="40" width="120" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="db" value="SQL Server" style="shape=umlLifeline;whiteSpace=wrap;html=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlEntity" vertex="1" parent="1">
+          <mxGeometry x="720" y="40" width="100" height="440" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m1" value="Cliquer sur Prévisualiser" style="verticalAlign=bottom;endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="admin" target="front">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m2" value="POST /api/editor/preview" style="verticalAlign=bottom;endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="front" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m3" value="Load Template &amp; Beneficiary Data" style="verticalAlign=bottom;endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="api" target="db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m4" value="PerformFusion(html, data)" style="verticalAlign=bottom;endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="api" target="engine">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m5" value="Remplacement des {{vars}} par les valeurs" style="verticalAlign=bottom;endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;curved=0;" edge="1" parent="1" source="engine" target="engine">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610" y="240" />
+              <mxPoint x="630" y="240" />
+              <mxPoint x="630" y="260" />
+              <mxPoint x="600" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="m6" value="FullHtml final" style="verticalAlign=bottom;endArrow=open;dashed=1;html=1;rounded=0;" edge="1" parent="1" source="engine" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m7" value="HTTP 200 (HTML Content)" style="verticalAlign=bottom;endArrow=open;dashed=1;html=1;rounded=0;" edge="1" parent="1" source="api" target="front">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m8" value="Affichage Iframe / PDF.js" style="verticalAlign=bottom;endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="front" target="admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

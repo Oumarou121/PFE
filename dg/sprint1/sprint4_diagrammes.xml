@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2024-03-20T13:15:00.000Z" agent="GeminiCLI" version="21.6.6" type="device">
+  <diagram id="Sprint4Class" name="Sprint 4 - Classes Archivage">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Classe Document (Archive) -->
+        <mxCell id="doc" value="Document" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLastChild=0;collapsible=1;marginBottom=0;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="40" width="280" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="doc_attr" value="+ Id : String&#xa;+ OrganizationId : int&#xa;+ FamilyId : String&#xa;+ TemplateId : String&#xa;+ Title : String&#xa;+ FullHtml : String&#xa;+ BeneficiaryId : String&#xa;+ BeneficiaryDisplayValue1 : String&#xa;+ GeneratedByName : String&#xa;+ GeneratedAt : DateTime&#xa;+ Status : String&#xa;+ IsDeleted : bool&#xa;+ DeletedByName : String&#xa;+ DeletedAt : DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="doc">
+          <mxGeometry y="26" width="280" height="394" as="geometry" />
+        </mxCell>
+
+        <!-- Classe Family (Référence) -->
+        <mxCell id="family" value="Family" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLastChild=0;collapsible=1;marginBottom=0;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="family_attr" value="+ Id : String&#xa;+ Nom : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="family">
+          <mxGeometry y="26" width="160" height="54" as="geometry" />
+        </mxCell>
+
+        <!-- Classe Template (Référence) -->
+        <mxCell id="template" value="Template" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLastChild=0;collapsible=1;marginBottom=0;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="160" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="template_attr" value="+ Id : String&#xa;+ Nom : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="template">
+          <mxGeometry y="26" width="160" height="54" as="geometry" />
+        </mxCell>
+
+        <!-- Classe User (Générateur) -->
+        <mxCell id="user" value="User" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLastChild=0;collapsible=1;marginBottom=0;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="280" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="user_attr" value="+ Id : int&#xa;+ Username : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="user">
+          <mxGeometry y="26" width="160" height="54" as="geometry" />
+        </mxCell>
+
+        <!-- Relations -->
+        <mxCell id="rel1" value="Généré par" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="user" target="doc">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel1_label" value="1" style="edgeLabel;html=1;align=left;verticalAlign=bottom;resizable=0;points=[];" vertex="1" connectable="0" parent="rel1">
+          <mxGeometry x="-0.8" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel1_target" value="*" style="edgeLabel;html=1;align=right;verticalAlign=bottom;resizable=0;points=[];" vertex="1" connectable="0" parent="rel1">
+          <mxGeometry x="0.8" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel2" value="Basé sur" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="template" target="doc">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel2_label" value="1" style="edgeLabel;html=1;align=left;verticalAlign=bottom;resizable=0;points=[];" vertex="1" connectable="0" parent="rel2">
+          <mxGeometry x="-0.8" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel2_target" value="*" style="edgeLabel;html=1;align=right;verticalAlign=bottom;resizable=0;points=[];" vertex="1" connectable="0" parent="rel2">
+          <mxGeometry x="0.8" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel3" value="Catégorisé par" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.1;entryDx=0;entryDy=0;" edge="1" parent="1" source="family" target="doc">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel3_label" value="1" style="edgeLabel;html=1;align=left;verticalAlign=bottom;resizable=0;points=[];" vertex="1" connectable="0" parent="rel3">
+          <mxGeometry x="-0.8" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel3_target" value="*" style="edgeLabel;html=1;align=right;verticalAlign=bottom;resizable=0;points=[];" vertex="1" connectable="0" parent="rel3">
+          <mxGeometry x="0.8" relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

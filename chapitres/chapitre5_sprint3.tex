@@ -45,11 +45,21 @@ Le cœur de ce sprint repose sur deux entités : le \texttt{Template} (le modèl
 
 \diagramplaceholder{sprint3_classes}{Diagramme de classes - Sprint 3}{Structure des modèles et des chartes graphiques}
 
-\subsection{Diagramme de séquence : Prévisualisation en temps réel}
+\subsection{Diagrammes de séquence : Flux du studio d'édition}
 
-Ce diagramme montre l'interaction complexe entre l'éditeur et le moteur de rendu. Dès que l'administrateur veut voir le résultat, le système doit fusionner le modèle avec un profil de test, calculer la pagination et appliquer les styles de la charte.
+L'interaction entre l'éditeur visuel et le moteur de fusion est détaillée dans les flux suivants.
 
-\diagramplaceholder{sprint3_sequences}{Séquence de rendu}{Processus de fusion et de pagination dynamique}
+\subsubsection{Enregistrement d'un modèle (Template)}
+
+Ce flux illustre la persistance des structures documentaires complexes. Le studio envoie au backend les blocs HTML (header, body, footer) ainsi que les métadonnées de mise en page. Le backend assure la mise à jour atomique dans le référentiel des modèles.
+
+\diagramplaceholder{sprint3_sequence_save_template}{Séquence de sauvegarde}{Persistance des structures HTML et configurations de page}
+
+\subsubsection{Prévisualisation avec fusion dynamique}
+
+Ce diagramme montre le moteur de rendu en action. Pour simuler le document final, le moteur de fusion utilise des expressions régulières (Regex) pour remplacer les balises \texttt{\{\{...\}\}} par des valeurs réelles, permettant de valider le rendu visuel avant toute production.
+
+\diagramplaceholder{sprint3_sequence_preview}{Séquence de prévisualisation}{Moteur de fusion et de rendu visuel temporaire}
 
 \section{Réalisation technique}
 

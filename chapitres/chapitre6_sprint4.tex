@@ -45,11 +45,21 @@ L'entité clé ici est le \texttt{Document}. Elle sert de lien entre l'agent, le
 
 \diagramplaceholder{sprint4_classes}{Diagramme de classes - Sprint 4}{Modèle d'archivage et de traçabilité}
 
-\subsection{Diagramme de séquence : Parcours de génération et d'archivage}
+\subsection{Diagrammes de séquence : Automatisation et Audit}
 
-Ce flux montre comment, lors d'une demande de génération, le système interroge le SIRH, fusionne le tout, affiche le résultat à l'utilisateur et crée simultanément une entrée dans l'archive.
+Ces diagrammes représentent l'aboutissement du cycle de vie documentaire de SIRH-Doc.
 
-\diagramplaceholder{sprint4_sequences}{Séquence de production}{Génération en un clic et mise en archive}
+\subsubsection{Workflow de génération et archivage en masse}
+
+Ce diagramme représente le workflow le plus complet du système. Pour une liste de bénéficiaires sélectionnés, le backend exécute une boucle de traitement : il fusionne les données, génère le document final et l'archive immédiatement en base de données pour garantir sa traçabilité.
+
+\diagramplaceholder{sprint4_sequence_mass_gen}{Séquence de production de masse}{Cycle complet de fusion et d'archivage automatique}
+
+\subsubsection{Processus d'audit et suppression (Soft-Delete)}
+
+Ce schéma détaille la rigueur administrative. Lorsqu'un administrateur annule un document, le système marque la ligne comme supprimée et enregistre le motif, l'auteur et la date. Cette approche garantit une piste d'audit complète sur l'ensemble du patrimoine documentaire.
+
+\diagramplaceholder{sprint4_sequence_audit}{Séquence d'audit}{Traçabilité lors de l'annulation d'une pièce officielle}
 
 \section{Réalisation technique}
 

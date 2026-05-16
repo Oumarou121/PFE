@@ -44,11 +44,21 @@ Conformément à mon choix d'isoler les responsabilités, les classes persistant
 
 \diagramplaceholder{sprint1_classes}{Diagramme de classes - Sprint 1}{Entités de base pour la sécurité et le contexte}
 
-\subsection{Diagramme de séquence : La connexion sécurisée}
+\subsection{Diagrammes de séquence : Flux techniques du socle}
 
-Le flux de connexion illustre bien la complexité cachée derrière un simple bouton \og Valider \fg{}. Le backend ne se contente pas de vérifier un mot de passe ; il doit construire un jeton JWT qui contient tout le \og pedigree \fg{} de l'utilisateur pour que les appels suivants soient performants.
+Les flux suivants illustrent les deux mécanismes fondamentaux de ce sprint : la sécurisation des accès et l'isolation automatique des données.
 
-\diagramplaceholder{sprint1_sequences}{Séquence d'authentification}{Processus de login et génération du périmètre utilisateur}
+\subsubsection{Authentification et génération de jeton (JWT)}
+
+Le flux de connexion illustre bien la complexité cachée derrière un simple bouton \og Valider \fg{}. Le backend ne se contente pas de vérifier un mot de passe ; il construit un jeton JWT contenant le périmètre de l'utilisateur (rôle et organisation) pour sécuriser les appels futurs.
+
+\diagramplaceholder{sprint1_sequence_auth}{Séquence d'authentification}{Processus de login et génération du périmètre utilisateur}
+
+\subsubsection{Résolution dynamique du Tenant (Middleware)}
+
+Ce diagramme détaille le fonctionnement du middleware .NET. À chaque requête, le système intercepte le jeton JWT et les en-têtes HTTP pour identifier l'établissement et l'année universitaire. Cette information est injectée dans un contexte \textit{Scoped} pour filtrer automatiquement toutes les requêtes SQL.
+
+\diagramplaceholder{sprint1_sequence_middleware}{Séquence de résolution de Tenant}{Interception et injection du contexte organisationnel}
 
 \section{Réalisation technique}
 

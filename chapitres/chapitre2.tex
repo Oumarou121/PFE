@@ -12,12 +12,12 @@ L'un des plus gros enjeux a été de définir une structure assez souple pour s'
 
 \section{Qui utilise le système ? (Les Acteurs)}
 
-J'ai identifié trois profils types, chacun ayant un périmètre d'action bien précis :
+J'ai identifié trois profils types, chacun ayant un périmètre d'action bien précis. Il est important de noter que ces acteurs sont les \textbf{utilisateurs administratifs} (ex: Secrétaire Général (SG), Chef de Département (CDD), Responsable Master) qui pilotent la plateforme pour gérer diverses entités :
 
 \begin{itemize}
-    \item \textbf{Le Super Administrateur} : C'est le \og maître d'œuvre \fg{}. Il configure les établissements (tenants), crée les modules métier et définit quelles tables de la base de données seront accessibles. C'est lui qui rend l'application générique.
-    \item \textbf{L'Administrateur RH} : C'est l'utilisateur métier. Il gère les fiches du personnel, crée les modèles de documents (templates) et définit la charte graphique de son établissement. Il ne touche pas à la technique, il prépare les outils de travail.
-    \item \textbf{L'Utilisateur Final (Agent)} : Son rôle est opérationnel. Il cherche un employé, sélectionne l'attestation dont il a besoin, vérifie la prévisualisation et l'imprime.
+    \item \textbf{Le Super Administrateur} : C'est le \og maître d'œuvre \fg{}. Il configure les établissements (tenants), crée les modules métier et définit quelles tables de la base de données (Enseignants, Étudiants, Bâtiments...) seront accessibles. C'est lui qui rend l'application générique.
+    \item \textbf{L'Administrateur d'Établissement (ex: SG)} : C'est le gestionnaire local. Il gère les accès des utilisateurs de son école, crée les modèles de documents (templates) et définit la charte graphique. Il supervise la cohérence des données de son institution.
+    \item \textbf{L'Utilisateur Métier (ex: CDD, Resp. Master, Agent RH)} : Son rôle est opérationnel. Il utilise les modules qui lui sont assignés pour saisir des données, chercher un bénéficiaire (qu'il s'agisse d'un étudiant ou d'un enseignant), vérifier la prévisualisation et générer les documents officiels.
 \end{itemize}
 
 \section{Le dictionnaire de SIRH-Doc}
