@@ -1888,7 +1888,7 @@ namespace DocApi.Repositories
             {
                 "where", "join", "inner", "left", "right", "full", "cross", "on",
                 "group", "having", "order", "union", "except", "intersect",
-                "for", "json", "path", "include_null_values", "without_array_wrapper"
+                "and", "or", "for", "json", "path", "include_null_values", "without_array_wrapper"
             }.Contains(value);
         }
 

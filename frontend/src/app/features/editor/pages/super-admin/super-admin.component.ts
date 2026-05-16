@@ -3372,17 +3372,17 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     );
     if (malformedTrailingWhere) return sqlText;
 
-    const findKeywordIndex = (pattern: RegExp) => {
-      const match = pattern.exec(sqlText);
-      return match ? match.index : -1;
-    };
-    const whereIndex = findKeywordIndex(/\bWHERE\b/i);
-    const groupIndex = findKeywordIndex(/\bGROUP\s+BY\b/i);
-    const havingIndex = findKeywordIndex(/\bHAVING\b/i);
-    const orderIndex = findKeywordIndex(/\bORDER\s+BY\b/i);
-    const cutCandidates = [groupIndex, havingIndex, orderIndex].filter(
-      (idx) => idx >= 0,
-    );
+    const whereIndex = this.findTopLevelSqlKeywordIndex(sqlText, "WHERE");
+    const groupIndex = this.findTopLevelSqlKeywordIndex(sqlText, "GROUP BY");
+    const havingIndex = this.findTopLevelSqlKeywordIndex(sqlText, "HAVING");
+    const orderIndex = this.findTopLevelSqlKeywordIndex(sqlText, "ORDER BY");
+    const forJsonIndex = this.findTopLevelSqlKeywordIndex(sqlText, "FOR JSON");
+    const cutCandidates = [
+      groupIndex,
+      havingIndex,
+      orderIndex,
+      forJsonIndex,
+    ].filter((idx) => idx >= 0);
     const insertIndex = cutCandidates.length
       ? Math.min(...cutCandidates)
       : sqlText.length;
@@ -3396,6 +3396,58 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const head = sqlText.slice(0, insertIndex).trimEnd();
     const tail = sqlText.slice(insertIndex);
     return `${head}\nWHERE ${missingClauses.join("\n  AND ")}${tail ? `\n${tail.trimStart()}` : ""}`;
+  }
+
+  private findTopLevelSqlKeywordIndex(sqlText: string, keyword: string): number {
+    const sql = String(sqlText || "");
+    const normalizedKeyword = String(keyword || "")
+      .trim()
+      .replace(/\s+/g, "\\s+");
+    if (!normalizedKeyword) return -1;
+    const keywordPattern = new RegExp(`^${normalizedKeyword}\\b`, "i");
+    let depth = 0;
+    let inSingle = false;
+    let inDouble = false;
+    let inBracket = false;
+
+    for (let i = 0; i < sql.length; i += 1) {
+      const ch = sql[i];
+      const next = sql[i + 1];
+      if (!inDouble && !inBracket && ch === "'" && next === "'") {
+        i += 1;
+        continue;
+      }
+      if (!inSingle && !inBracket && ch === '"') {
+        inDouble = !inDouble;
+        continue;
+      }
+      if (!inDouble && !inBracket && ch === "'") {
+        inSingle = !inSingle;
+        continue;
+      }
+      if (!inSingle && !inDouble && ch === "[") {
+        inBracket = true;
+        continue;
+      }
+      if (inBracket && ch === "]") {
+        inBracket = false;
+        continue;
+      }
+      if (inSingle || inDouble || inBracket) continue;
+      if (ch === "(") {
+        depth += 1;
+        continue;
+      }
+      if (ch === ")") {
+        if (depth > 0) depth -= 1;
+        continue;
+      }
+      if (depth !== 0) continue;
+      const previous = sql[i - 1] || "";
+      if (/[A-Za-z0-9_]/.test(previous)) continue;
+      if (keywordPattern.test(sql.slice(i))) return i;
+    }
+    return -1;
   }
 
   private buildAutoFilterClausesForAliases(
