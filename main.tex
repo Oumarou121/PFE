@@ -148,7 +148,17 @@ Mes vifs remerciements vont également aux membres du jury qui ont accepté d'é
 Enfin, je remercie l'ensemble du corps professoral de la Faculté des Sciences de Monastir pour la qualité de l'enseignement dispensé durant mon cursus universitaire.
 
 %==================================
-% TITRE PERSONNALISÉ
+% RÉSUMÉS ET ABREVIATIONS
+%==================================
+
+\input{chapitres/resume}
+\clearpage
+
+\input{chapitres/abreviations}
+\clearpage
+
+%==================================
+% TITRE PERSONNALISÉ (TABLE DES MATIÈRES)
 %==================================
 
 \vspace*{0.5cm}
@@ -173,6 +183,7 @@ font=\fontsize{24}{28}\bfseries
 
 \vspace{1.2cm}
 
+\renewcommand{\contentsname}{} % On vide le titre par défaut pour utiliser le nôtre
 \tableofcontents
 \clearpage
 
