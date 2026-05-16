@@ -1,0 +1,63 @@
+Sprint 1 : Architecture Multi-Tenant et Gouvernance d'Accès
+  Ce sprint pose les bases de la plateforme pour isoler les données par établissement et par année.
+   * Authentification & Sécurité : Connexion JWT et gestion des rôles (SuperAdmin, Admin, Utilisateur).
+   * Gestion Multi-Établissement : Capacité du système à isoler les données pour chaque école/faculté.
+   * Année Universitaire : Système de filtrage global pour que toutes les données RH (personnel, contrats) soient cloisonnées par année.
+
+  Sprint 2 : Module de Gestion des Données RH (Configuration Dynamique)
+  C'est ici que vous utilisez vos Modules et TableViewConfigs vus dans le code pour créer le SIRH.
+   * Configuration des Modules RH : Création des interfaces pour gérer le Personnel, les Vacataires et leurs Diplômes.
+   * Vues de Données (TableView) : Mise en place des listes filtrables et des formulaires dynamiques pour saisir les dossiers individuels.
+   * Suivi des Positions : Utilisation du système de modules pour tracer les mouvements (Activité, Congés, Missions).
+
+  Sprint 3 : Moteur d'Édition Documentaire et Chartes Graphiques
+  C'est le cœur technique de votre projet (l'éditeur Tiptap avancé).
+   * Éditeur de Modèles : Mise en place de l'éditeur avec gestion des en-têtes, pieds de page et de la pagination (votre PagePaginator).
+   * Système de Chartes Graphiques : Gestion des logos, couleurs et styles officiels par établissement.
+   * Variables de Fusion : Création du catalogue de variables (ex: {{nom}}, {{grade}}) issues des modules RH du Sprint 2.
+
+  Sprint 4 : Automatisation de la Génération et Archivage
+  L'aboutissement : transformer les données en documents officiels.
+   * Moteur de Fusion (Render) : Liaison entre les données du personnel (S2) et les modèles (S3) pour générer les attestations en un clic.
+   * Génération & Export PDF : Finalisation du rendu visuel pour impression.
+   * Archivage et Traçabilité : Historisation des documents générés pour chaque collaborateur (pour garder une trace de ce qui a été délivré).
+
+
+
+
+Sprint 1 : Socle Technique, Multi-Tenancy et Isolation Temporelle
+  L'objectif est de mettre en place l'infrastructure capable de gérer plusieurs établissements et de
+  cloisonner les données par année.
+   * Infrastructure & Sécurité : Authentification JWT et gestion des rôles (SuperAdmin, Admin,
+     Utilisateur).
+   * Gouvernance Multi-Tenant : Mise en œuvre de l'isolation des données par organisation
+     (Écoles/Facultés).
+   * Gestion des Années Universitaires : Création du filtre global permettant de suivre les parcours
+     et les contrats successifs (notamment pour les vacataires) année par année.
+
+  Sprint 2 : Moteur de Données RH (Dossiers et Mouvements)
+  L'objectif est d'utiliser votre système de "Modules" et "TableView" pour construire le SIRH
+  proprement dit.
+   * Dossiers Individuels Dynamiques : Utilisation du module de configuration pour créer les fiches du
+     personnel (permanents et vacataires) et l'archivage de leurs pièces (diplômes, justificatifs).
+   * Gestion des Positions Administratives : Paramétrage des mouvements (activité, mission, congés)
+     via vos composants de gestion de données.
+   * Suivi des Engagements : Traçabilité des contrats et des parcours RH au sein de la base de données
+     dynamique.
+
+  Sprint 3 : Studio d'Édition et Intelligence Documentaire
+  L'objectif est de mettre en valeur votre travail sur l'éditeur de texte avancé.
+   * Éditeur de Modèles RH : Intégration de l'éditeur Tiptap avec gestion de la pagination A4 complexe
+     (votre PagePaginator).
+   * Système de Chartes Graphiques : Gestion des identités visuelles (logos, signatures, filigranes)
+     par établissement.
+   * Catalogue de Variables : Création du lien entre les données saisies au Sprint 2 et les champs
+     fusionnés ({{nom}}, {{grade}}, {{service}}) dans les documents.
+
+  Sprint 4 : Automatisation de la Production et Archivage RH
+  L'objectif est d'aboutir à la dématérialisation complète et à la traçabilité.
+   * Moteur de Génération Automatique : Fusion des données RH avec les modèles pour produire des
+     attestations de travail ou certificats d'enseignement en un clic.
+   * Export et Impression : Finalisation du rendu PDF haute fidélité.
+   * Archivage & Traçabilité : Mise en place de l'historique des documents générés pour garantir que
+     chaque pièce émise est tracée dans le dossier du collaborateur.

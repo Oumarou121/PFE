@@ -1,125 +1,55 @@
 %=================================================
-% CHAPITRE 1
+% CHAPITRE 1 : Cadre général du projet
 %=================================================
 
 \chapter{Cadre général du projet}
 
 \section{Introduction}
 
-Tout projet informatique naît d'un besoin observé dans un contexte précis. Dans le cas de ce projet de fin d'études, le besoin concerne la gestion documentaire au sein d'un environnement où les documents ne sont pas de simples fichiers isolés, mais des supports administratifs construits à partir de modèles, de données métier, de règles de mise en forme et de profils utilisateurs. La production de ce type de document demande souvent un travail répétitif : reprendre une structure existante, remplacer des informations, appliquer une charte graphique, vérifier les données du bénéficiaire, puis générer une version exploitable.
+Le point de départ de ce projet est un constat assez simple, mais très concret : dans beaucoup d'administrations scolaires ou universitaires, la gestion des ressources humaines ressemble encore à un puzzle de fichiers Excel et de documents Word copiés-collés. On passe un temps fou à ressaisir les mêmes noms, les mêmes grades et les mêmes dates dans des attestations de travail ou des contrats. 
 
-Ce premier chapitre présente le cadre général du projet. Il introduit l'organisme d'accueil, le contexte métier, l'étude critique de l'existant, la problématique rencontrée, la solution proposée ainsi que la méthodologie de travail adoptée. Il expose également l'environnement technique retenu pour la réalisation de la plateforme. L'objectif de ce chapitre n'est pas seulement de décrire le projet, mais de montrer pourquoi les choix fonctionnels et techniques effectués répondent à un besoin réel de structuration, d'automatisation et de sécurisation.
+L'idée de SIRH-Doc est née de cette frustration. L'objectif n'est pas seulement de stocker des noms dans une base de données, mais de créer une plateforme intelligente capable de transformer ces données en documents officiels, tout en gardant une trace impeccable de chaque décision administrative. Ce premier chapitre pose le décor : pourquoi ce projet, pour qui, et avec quels outils j'ai décidé de le construire.
 
 \section{Présentation de l'organisme d'accueil}
 
-Le projet a été réalisé dans un contexte professionnel où la production documentaire occupe une place importante dans les activités quotidiennes. L'organisme d'accueil manipule plusieurs catégories de documents destinés à des bénéficiaires différents. Ces documents peuvent concerner des situations administratives, des données de personnel, des décisions internes, des attestations, des listes ou encore des documents personnalisés à partir d'informations extraites d'une base de données.
+Le projet s'inscrit dans le cadre d'un établissement d'enseignement supérieur. C'est un environnement où la gestion du personnel est particulièrement complexe : il faut jongler entre les enseignants permanents, les agents administratifs et une multitude de vacataires dont les contrats changent à chaque session.
 
-Dans ce type d'environnement, la qualité du document produit est aussi importante que la rapidité de génération. Un document doit respecter une structure précise, reprendre les bonnes informations, appliquer une identité visuelle cohérente et être généré par une personne autorisée. La moindre erreur dans une donnée, une mise en page ou une affectation peut provoquer une perte de temps, une correction manuelle ou une confusion dans le circuit administratif.
-
-L'organisme d'accueil dispose déjà de processus métier et de données structurées. Cependant, ces ressources ne sont pas toujours reliées à un outil documentaire unifié. Les utilisateurs doivent souvent naviguer entre plusieurs supports, récupérer manuellement des informations, modifier des modèles existants et vérifier le résultat final. Cette situation justifie la mise en place d'une plateforme capable de centraliser les modèles, les chartes graphiques, les familles de documents et les données des bénéficiaires.
+Chaque jour, le service RH doit produire des dizaines de pièces : certificats d'enseignement, états de services, attestations de présence... La moindre erreur de frappe sur un grade ou une date peut invalider un document officiel. L'établissement disposait déjà de données informatisées, mais il manquait ce \og pont \fg{} automatisé entre la donnée brute et le document final prêt à imprimer.
 
 \section{Présentation du projet}
 
-\subsection{Contexte du projet}
+\subsection{Contexte et Problématique}
 
-La transformation numérique des processus administratifs impose de repenser la manière dont les documents sont créés et exploités. Dans de nombreuses organisations, les documents sont encore préparés à partir de fichiers bureautiques copiés, modifiés et adaptés manuellement. Cette approche peut paraître suffisante lorsque le volume est faible. Elle devient toutefois fragile dès que le nombre de documents augmente, que plusieurs profils interviennent ou que les données proviennent de sources différentes.
+Aujourd'hui, quand on veut créer une attestation pour un enseignant, on cherche souvent le dernier fichier Word qui a servi de modèle, on fait un \og Enregistrer sous \fg{}, et on modifie manuellement les informations. Cette méthode artisanale pose trois problèmes majeurs :
+\begin{itemize}
+    \item \textbf{Le risque d'erreur} : On oublie souvent de changer une date ou un titre caché en bas de page.
+    \item \textbf{La perte d'historique} : Il est très difficile de savoir exactement ce qui a été délivré à qui il y a deux ans.
+    \item \textbf{L'hétérogénéité} : Selon la personne qui rédige, le logo n'est pas à la même place ou la police change.
+\end{itemize}
 
-Le projet consiste à concevoir et réaliser une plateforme web de gestion documentaire dynamique. Cette plateforme permet de gérer des familles de documents, de créer des modèles éditables, d'appliquer des chartes graphiques, de configurer des vues de tables métier, de sélectionner des bénéficiaires et de générer des documents personnalisés. Elle repose sur un backend ASP.NET Core Web API, un frontend Angular, une base de données SQL Server, un système d'authentification JWT et un contrôle d'accès basé sur les rôles.
+Ma problématique était donc la suivante : \textit{Comment centraliser la gestion du personnel et automatiser la production documentaire pour garantir à la fois un gain de temps et une fiabilité totale ?}
 
-La notion de document dynamique est centrale dans le projet. Un document n'est pas seulement un contenu statique. Il résulte de l'association entre un modèle, une famille de documents, une charte graphique, des données métier et un utilisateur autorisé. Cette vision permet de réduire les manipulations répétitives et d'améliorer la fiabilité du résultat final.
+\subsection{La solution : SIRH-Doc}
 
-\subsection{Problématique}
-
-La problématique principale peut être formulée ainsi : comment concevoir une plateforme web sécurisée, maintenable et extensible permettant de créer, administrer et générer dynamiquement des documents à partir de modèles et de données métier ?
-
-Cette problématique se décline en plusieurs questions concrètes. Comment permettre à un administrateur de créer un modèle de document sans intervenir directement dans le code ? Comment garantir qu'un utilisateur n'accède qu'aux fonctionnalités correspondant à son rôle ? Comment associer un modèle à une famille de documents et à une charte graphique ? Comment récupérer les données d'un bénéficiaire depuis une base SQL Server et les injecter dans un document ? Comment rendre l'application suffisamment configurable pour éviter de développer une page spécifique pour chaque table métier ?
-
-Ces questions montrent que le projet ne se limite pas à un éditeur de texte enrichi. Il s'agit d'un système documentaire complet où la sécurité, la structuration des données, l'administration métier et la génération dynamique doivent fonctionner ensemble.
-
-\subsection{Étude critique de l'existant}
-
-L'étude de l'existant met en évidence plusieurs limites dans les méthodes traditionnelles de production documentaire. La première limite concerne la dépendance aux fichiers bureautiques. Lorsqu'un document est créé à partir d'un ancien fichier, l'utilisateur doit remplacer manuellement les informations variables. Cette opération expose le document à des erreurs de copier-coller, à des oublis ou à la conservation involontaire d'anciennes données.
-
-La deuxième limite concerne l'absence de centralisation. Les modèles peuvent être stockés dans différents dossiers, sous différentes versions, parfois avec des noms peu explicites. Il devient alors difficile de savoir quel modèle est à jour, quelle charte graphique doit être appliquée ou quelle version correspond à un besoin précis.
-
-La troisième limite concerne le contrôle d'accès. Dans une gestion manuelle, la protection repose souvent sur les droits du système de fichiers ou sur des habitudes internes. Cette approche ne permet pas toujours de distinguer clairement les rôles : super administrateur, administrateur et utilisateur final. Or, une plateforme documentaire doit empêcher qu'un utilisateur final modifie un modèle officiel ou qu'un administrateur intervienne sur des données hors de son périmètre.
-
-Enfin, les solutions génériques de traitement de texte ne sont pas conçues pour interagir directement avec les données métier. Elles offrent une grande liberté de mise en forme, mais ne fournissent pas naturellement une couche d'administration permettant de configurer les bénéficiaires, les vues de tables, les filtres et les variables documentaires. Le projet proposé vient répondre à ces limites en introduisant une plateforme spécialisée, intégrée et sécurisée.
-
-\subsection{Solution proposée}
-
-La solution proposée est une application web composée d'un backend ASP.NET Core Web API, d'un frontend Angular et d'une base SQL Server. Elle permet de gérer l'ensemble du cycle documentaire : authentification, contrôle des rôles, administration des familles, gestion des modèles, configuration des chartes graphiques, paramétrage des vues de tables, sélection des bénéficiaires et prévisualisation des documents générés.
-
-Le backend centralise les règles métier et expose des endpoints REST. Il assure l'authentification JWT, la validation des accès, la persistance des entités et l'exécution contrôlée des requêtes nécessaires aux données métier. Le frontend Angular fournit les interfaces de connexion, d'administration, d'édition et d'utilisation documentaire. L'éditeur Tiptap est utilisé pour offrir une expérience d'édition riche adaptée à la création de modèles.
-
-La plateforme distingue plusieurs notions métier. Une famille de documents représente une catégorie documentaire et définit les données de bénéficiaires associées. Un modèle, ou template, décrit la structure du document avec son en-tête, son corps et son pied de page. Une charte graphique regroupe les paramètres visuels appliqués au document. Une configuration de vue de table permet d'exposer une table métier avec des champs visibles, modifiables et utilisés pour la prévisualisation. Enfin, une instance de document correspond au résultat généré à partir d'un modèle et des données d'un bénéficiaire.
-
-Cette solution apporte trois bénéfices principaux. Elle réduit les erreurs manuelles en automatisant l'injection des données, elle améliore la cohérence visuelle grâce aux chartes graphiques centralisées, et elle renforce la sécurité grâce à l'authentification et au contrôle d'accès par rôles.
+La solution que j'ai conçue est une plateforme web intégrée. Elle ne se contente pas d'être un éditeur de texte ; c'est un véritable hub où l'administrateur définit des \og familles de documents \fg{}, configure des modèles dynamiques avec des variables (comme \texttt{\{\{nom\}\}} ou \texttt{\{\{grade\}\}}), et laisse le système fusionner tout cela avec les données réelles du personnel.
 
 \section{Méthodologie de travail}
 
-\subsection{Méthodologie Agile Scrum}
+Même si j'ai mené ce développement seul, j'ai voulu suivre une démarche structurée en m'inspirant de la méthode **Agile Scrum**. J'ai découpé le projet en quatre sprints de trois à quatre semaines chacun. 
 
-Pour mener le projet, la méthodologie Agile Scrum a été retenue. Ce choix est adapté à un projet PFE, car il permet d'organiser le travail en incréments fonctionnels, de valider progressivement les résultats et d'ajuster les priorités en fonction des difficultés rencontrées. Même si le développement a été réalisé par un seul développeur, l'esprit Scrum reste pertinent : découper le travail, définir un objectif par sprint, produire un livrable à la fin de chaque itération et effectuer une revue régulière de l'avancement.
+Cette approche m'a permis de ne pas me laisser submerger par la complexité de l'éditeur documentaire dès le début. J'ai d'abord sécurisé les fondations (Sprint 1), puis construit le moteur de données (Sprint 2), avant de m'attaquer au studio d'édition (Sprint 3) et à la production finale (Sprint 4).
 
-Dans ce projet, chaque sprint correspond à une étape logique de construction de la plateforme. Le premier sprint pose les fondations techniques. Le deuxième introduit la gouvernance d'accès. Le troisième développe le coeur d'édition documentaire. Le quatrième regroupe l'administration métier, l'intégration finale, les tests et la préparation de la livraison.
+\section{Environnement technique : Mes choix}
 
-Cette progression évite de commencer par les écrans les plus complexes sans base technique solide. Elle permet aussi de valider rapidement les choix structurants : authentification, architecture backend, communication Angular/API, persistance SQL Server et organisation des services.
+\subsection{Backend : .NET 8 et Dapper}
+Pour le serveur, j'ai choisi **ASP.NET Core (Web API)**. C'est un framework que j'apprécie pour sa rigueur et sa performance. Pour l'accès aux données, j'ai préféré **Dapper** à Entity Framework. Pourquoi ? Parce que SIRH-Doc doit pouvoir exécuter des requêtes SQL très spécifiques et dynamiques selon les besoins des établissements, et Dapper me donne ce contrôle total sur le SQL tout en restant extrêmement rapide.
 
-\subsection{Planification globale du projet}
+\subsection{Frontend : Angular 17}
+Côté interface, **Angular** s'est imposé naturellement. Sa structure modulaire est parfaite pour une application d'administration lourde. J'ai utilisé la version 17 pour profiter des dernières optimisations de performance (comme le nouveau système de contrôle de flux).
 
-La planification du projet a été organisée sur quatre sprints. Ce découpage respecte une logique de dépendance entre les fonctionnalités tout en évitant de disperser la phase finale dans une itération isolée. Il aurait été difficile de développer la génération documentaire avant de définir les modèles et les familles, ou de sécuriser les modules métier sans système d'authentification. La planification retenue suit donc l'ordre naturel de construction d'une application professionnelle.
-
-\begin{longtable}{p{0.16\textwidth} p{0.24\textwidth} p{0.48\textwidth}}
-\caption{Planification globale des sprints}\\
-\toprule
-\textbf{Sprint} & \textbf{Orientation} & \textbf{Résultat attendu}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{Sprint} & \textbf{Orientation} & \textbf{Résultat attendu}\\
-\midrule
-\endhead
-Sprint 1 & Authentification et socle applicatif & Backend opérationnel, connexion SQL Server, JWT, Swagger et premiers services Angular.\\
-\midrule
-Sprint 2 & Rôles et gouvernance d'accès & Routes protégées, redirection selon le rôle, séparation des espaces super administrateur, administrateur et utilisateur.\\
-\midrule
-Sprint 3 & Édition documentaire & Intégration de Tiptap, gestion du contenu des modèles, prévisualisation documentaire.\\
-\midrule
-Sprint 4 & Administration métier, intégration et livraison & CRUD des familles, modèles, chartes graphiques, configurations de vues de tables et bénéficiaires, puis tests, validation des parcours, documentation et préparation de la démonstration.\\
-\bottomrule
-\end{longtable}
-
-Cette planification donne une vision claire du cheminement du projet. Elle montre également que chaque sprint produit un résultat exploitable qui sert de base au sprint suivant.
-
-\section{Environnement technique}
-
-\subsection{Technologies backend}
-
-Le backend a été développé avec ASP.NET Core Web API. Ce choix se justifie par la robustesse de l'écosystème .NET, la qualité de son intégration avec SQL Server, la prise en charge native de l'injection de dépendances et la simplicité de création d'API REST sécurisées. ASP.NET Core permet également de configurer efficacement l'authentification JWT, Swagger, CORS et les middlewares.
-
-L'architecture backend repose sur plusieurs couches. Les contrôleurs reçoivent les requêtes HTTP et exposent les endpoints. Les services contiennent la logique applicative. Les repositories assurent l'accès aux données. Les DTOs définissent les contrats d'entrée et de sortie. Cette séparation améliore la lisibilité du code, limite le couplage et facilite les tests.
-
-\subsection{Technologies frontend}
-
-Le frontend repose sur Angular. Ce framework a été choisi pour sa structure modulaire, son système de routage, ses services injectables, ses guards et ses interceptors HTTP. Ces éléments sont particulièrement adaptés à une application d'administration où plusieurs pages partagent des services communs et où les accès doivent être contrôlés selon le rôle.
-
-L'éditeur Tiptap a été intégré pour la création des modèles documentaires. Il permet de construire un éditeur riche extensible, basé sur des extensions, capable de produire un contenu HTML exploitable par le moteur de prévisualisation. Ce choix offre plus de flexibilité qu'un simple champ texte et répond mieux aux besoins de mise en forme documentaire.
-
-\subsection{Base de données et accès aux données}
-
-SQL Server a été retenu comme système de gestion de base de données. Il est adapté au stockage de données structurées, aux relations métier et aux requêtes nécessaires à la recherche de bénéficiaires. La base conserve les utilisateurs, les modèles, les familles, les chartes graphiques, les configurations de vues de tables et les données métier exploitées par les documents.
-
-L'accès aux données est organisé à travers des repositories. Cette approche évite d'écrire les requêtes directement dans les contrôleurs et centralise la persistance dans une couche dédiée. Elle facilite également l'évolution future vers des optimisations SQL, des transactions ou des mécanismes de journalisation.
-
-\subsection{Outils de développement et de test}
-
-Plusieurs outils ont été utilisés pour accompagner le développement. Swagger permet de tester rapidement les endpoints et de documenter l'API. Visual Studio Code facilite le développement frontend et backend. Git assure le suivi des versions. Les tests manuels sont effectués à partir de Swagger, de l'interface Angular et de scénarios fonctionnels construits autour des rôles utilisateurs.
-
-L'environnement technique retenu vise un équilibre entre productivité, maintenabilité et réalisme professionnel. Les technologies choisies sont largement utilisées dans les projets web d'entreprise et permettent de produire une solution évolutive.
+\subsection{L'édition : Tiptap}
+Pour la partie \og Studio \fg{}, j'ai intégré **Tiptap**. Contrairement aux éditeurs classiques qui sont parfois trop rigides, Tiptap est \og headless \fg{}. Cela m'a permis de construire une interface de création de modèles totalement personnalisée, tout en produisant un code HTML propre pour la génération des PDF.
 
 \section{Conclusion}
 
-Ce chapitre a présenté le cadre général du projet, depuis le contexte métier jusqu'aux choix techniques. L'étude de l'existant a montré les limites d'une production documentaire manuelle et dispersée. La solution proposée répond à ces limites par une plateforme web sécurisée, centralisée et configurable.
-
-La méthodologie Agile Scrum permet de structurer la réalisation en quatre sprints cohérents. Les technologies retenues, notamment ASP.NET Core, Angular, SQL Server, JWT et Tiptap, offrent une base solide pour construire une application documentaire dynamique. Le chapitre suivant approfondit l'analyse des besoins, identifie les acteurs, formalise le backlog produit et présente la modélisation globale du système.
+Ce chapitre a permis de définir le \og pourquoi \fg{} du projet. SIRH-Doc n'est pas un simple exercice technique, c'est une réponse à un besoin de modernisation administrative. Maintenant que le cadre est posé, le chapitre suivant va détailler plus finement les fonctionnalités attendues et la manière dont j'ai modélisé le système.

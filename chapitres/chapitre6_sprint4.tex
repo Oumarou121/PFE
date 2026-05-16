@@ -1,295 +1,68 @@
 %=================================================
-% CHAPITRE 6
+% CHAPITRE 6 : SPRINT 4
 %=================================================
 
-\chapter{Sprint 4 : Administration métier, intégration et livraison}
+\chapter{Sprint 4 : Automatisation de la production et archivage RH}
 
 \section{Introduction}
 
-Le quatrième sprint a pour objectif de compléter le coeur documentaire par les modules métier nécessaires à son exploitation, puis de consolider l'ensemble de la solution. Un éditeur de modèles ne suffit pas à lui seul à produire des documents fiables. Il faut également définir les familles de documents, les chartes graphiques, les configurations de vues de tables, les bénéficiaires et les filtres permettant de sélectionner les données métier utilisées dans la génération.
+Le dernier sprint a été celui de la concrétisation. Nous avions les données d'un côté et les modèles de l'autre ; il fallait maintenant créer le pont final pour permettre à un utilisateur de générer une attestation de travail ou un contrat en quelques secondes. Mais produire un document ne suffit pas : dans une administration, il faut savoir qui a généré quoi, et quand.
 
-Ce sprint représente donc une étape structurante. Il transforme l'application en une véritable plateforme d'administration documentaire. Les familles permettent de classer les modèles et de décrire les sources de données associées. Les modèles définissent la structure documentaire. Les chartes graphiques assurent l'identité visuelle. Les configurations de vues de tables, représentées par l'entité \texttt{TableViewConfig}, permettent d'exposer des données métier sous forme de vues administrables. Enfin, les bénéficiaires et les filtres permettent de sélectionner les données injectées dans les documents.
+Ce sprint s'est donc concentré sur l'automatisation totale et la traçabilité des pièces émanant du système.
 
-La complexité de ce sprint vient de l'interdépendance entre ces modules. Un modèle appartient à une famille, peut être lié à une organisation et peut utiliser une charte graphique. Une famille peut référencer une table de bénéficiaires ou une requête SQL. Une configuration de vue de table décrit les champs visibles, modifiables et utilisés pour la prévisualisation. L'enjeu est donc de proposer une administration cohérente, tout en conservant une architecture maintenable. Cette dernière itération inclut aussi la stabilisation des parcours, les tests de non-régression, la préparation des captures et la mise en cohérence du livrable PFE.
+\section{Objectifs et Backlog du sprint}
 
-\section{Objectifs du sprint}
-
-Les objectifs du sprint sont les suivants :
+Il s'agissait de boucler la boucle du projet en livrant l'interface utilisateur finale et le module d'archivage.
 
 \begin{itemize}
-    \item implémenter le CRUD des familles de documents ;
-    \item implémenter le CRUD des modèles de documents ;
-    \item implémenter le CRUD des chartes graphiques ;
-    \item implémenter le CRUD des configurations de vues de tables \texttt{TableViewConfig} ;
-    \item permettre la consultation, la création, la modification et la suppression des enregistrements métier à travers les vues de tables ;
-    \item associer les modèles aux familles et aux chartes graphiques ;
-    \item configurer les filtres et les bénéficiaires utilisés pour la génération documentaire ;
-    \item valider les données envoyées aux endpoints et normaliser les structures JSON échangées ;
-    \item vérifier les parcours complets de génération documentaire ;
-    \item préparer la documentation, les captures et la démonstration finale.
+    \item \textbf{Moteur de Génération Automatique} : Fusion en un clic des données du personnel avec les modèles de documents.
+    \item \textbf{Export PDF et Impression} : Finalisation du rendu pour une exploitation physique immédiate.
+    \item \textbf{Module d'Archivage et Traçabilité} : Historisation automatique de chaque document généré pour éviter les contestations.
+    \item \textbf{Consolidation et Tests} : Validation des parcours utilisateurs complets.
 \end{itemize}
 
-\section{Backlog du sprint}
+\section{Choix techniques et décisions de conception}
 
-\begin{longtable}{p{0.17\textwidth} p{0.38\textwidth} p{0.35\textwidth}}
-\caption{Backlog du sprint 4}\\
-\toprule
-\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
-\midrule
-\endhead
-US4.1 & En tant que super administrateur, je peux gérer les familles de documents. & Créer les endpoints \texttt{/api/families}, définir \texttt{Family}, gérer les bénéficiaires et filtres.\\
-\midrule
-US4.2 & En tant qu'administrateur, je peux gérer les modèles d'une famille. & Utiliser \texttt{/api/templates}, associer chaque modèle à une famille et une charte.\\
-\midrule
-US4.3 & En tant qu'administrateur, je peux définir des chartes graphiques. & Créer \texttt{GraphicCharter}, gérer les couleurs, polices, watermark et identité visuelle.\\
-\midrule
-US4.4 & En tant que super administrateur, je peux configurer les vues de tables métier. & Implémenter \texttt{TableViewConfig}, champs visibles, champs éditables, champs de prévisualisation et paramètres de lookup.\\
-\midrule
-US4.5 & En tant qu'utilisateur, je peux sélectionner un bénéficiaire à partir des données métier. & Implémenter \texttt{/api/search-beneficiaries}, appliquer les filtres et retourner les lignes disponibles.\\
-\midrule
-US4.6 & En tant qu'évaluateur PFE, je peux suivre un parcours complet et reproductible. & Exécuter les tests, vérifier la sécurité, préparer les captures, documenter l'installation et stabiliser la démonstration.\\
-\bottomrule
-\end{longtable}
+\subsection{L'instantanéité de la génération}
 
-\subsection{Gestion des familles de documents}
+Pour l'utilisateur final (souvent un agent administratif), le processus doit être invisible. J'ai conçu un écran de recherche ultra-simplifié. L'utilisateur sélectionne un agent, choisit le modèle d'attestation souhaité, et le document apparaît instantanément. Le défi a été de s'assurer que les filtres de l'année universitaire s'appliquent aussi ici : on ne peut générer un certificat pour 2025 que si le vacataire avait un contrat actif cette année-là.
 
-Une famille de documents définit un regroupement fonctionnel. Elle précise le nom, la description, le mode de bénéficiaire, la table source, les colonnes d'affichage, la colonne de liaison, les filtres disponibles et les classes de variables. Elle sert donc de point d'entrée entre la logique documentaire et les données métier.
+\subsection{La problématique de l'archivage}
 
-\subsection{Gestion des modèles de documents}
+Au début, je pensais simplement sauvegarder les PDF sur le serveur. Mais cela pose des problèmes de stockage et de recherche. J'ai finalement opté pour un \og archivage intelligent \fg{} : le système sauvegarde une \textit{snapshot} (instantané) des données de fusion et le contenu HTML final en base de données. Cela permet de ré-imprimer un document à l'identique, même si le modèle original a été modifié entre-temps. C'est un gage de sécurité juridique pour l'établissement.
 
-Le modèle est la structure éditable utilisée pour produire un document. Il est associé à une famille à travers \texttt{familyId}. Cette relation garantit que les variables et les bénéficiaires disponibles correspondent au type de document traité.
-
-\subsection{Gestion des chartes graphiques}
-
-La charte graphique permet de centraliser les paramètres visuels : couleurs, typographies, identité, watermark et règles d'affichage. Elle évite de dupliquer les styles dans chaque modèle et permet de faire évoluer l'identité visuelle d'une organisation de manière contrôlée.
-
-\subsection{Gestion des configurations de vues de tables}
-
-La configuration de vue de table est représentée par l'entité \texttt{TableViewConfig}. Elle décrit comment une table métier doit être présentée et éditée depuis l'application. Elle contient notamment le nom de la table, le libellé, les champs visibles, les champs éditables, les champs de prévisualisation et les paramètres de lookup.
-
-Ce module est important, car il permet d'administrer des données métier sans développer une page spécifique pour chaque table. Il apporte donc une dimension configurable à la plateforme.
-
-\subsection{Gestion des bénéficiaires et filtres métier}
-
-Les bénéficiaires représentent les enregistrements métier utilisés pour personnaliser un document. Selon la famille, ils peuvent provenir d'une table SQL, d'une organisation ou d'une requête spécifique. Les filtres permettent de réduire la liste des bénéficiaires selon des critères configurés, par exemple une année, une direction, un service ou un statut.
-
-\section{Analyse et conception}
+\section{Analyse et Conception}
 
 \subsection{Diagramme de cas d'utilisation}
 
-\diagramplaceholder{sprint4_cas_utilisation}{Diagramme de cas d'utilisation du sprint 4}{Cas d'utilisation d'administration des modules métier}
+L'utilisateur final entre en scène. Ses actions sont limitées mais à forte valeur ajoutée : recherche, génération, impression et consultation de l'historique.
 
-Le diagramme de cas d'utilisation du sprint 4 distingue principalement le super administrateur et l'administrateur. Le super administrateur gère les structures globales : familles, vues de tables et sources de données. L'administrateur gère les modèles et chartes graphiques dans son périmètre. L'utilisateur final intervient indirectement à travers la sélection des bénéficiaires et l'utilisation des données configurées.
+\diagramplaceholder{sprint4_cas_utilisation}{Cas d'utilisation du Sprint 4}{Production documentaire et archivage}
 
-Le cas d'utilisation \og Configurer une vue de table \fg{} inclut la sélection de la table, la définition des champs visibles, la définition des champs éditables et la configuration des champs de lookup. Le cas \og Gérer les bénéficiaires \fg{} dépend de la configuration des familles et des vues de tables.
+\subsection{Diagramme de classes (Entités persistantes)}
 
-\subsection{Diagramme de classes}
+L'entité clé ici est le \texttt{Document}. Elle sert de lien entre l'agent, le modèle utilisé et l'archive finale. Elle porte également les traces de l'auteur de la génération.
 
-\diagramplaceholder{sprint4_classes}{Diagramme de classes du sprint 4}{Classes métier administrées dans le sprint 4}
+\diagramplaceholder{sprint4_classes}{Diagramme de classes - Sprint 4}{Modèle d'archivage et de traçabilité}
 
-Le diagramme de classes met en évidence les entités principales : \texttt{Family}, \texttt{Template}, \texttt{GraphicCharter} et \texttt{TableViewConfig}. Une famille possède plusieurs modèles. Un modèle peut référencer une charte graphique. Une configuration de vue de table référence une table métier et décrit les champs exploitables par l'interface.
+\subsection{Diagramme de séquence : Parcours de génération et d'archivage}
 
-Les services \texttt{FamilyService}, \texttt{TemplateService}, \texttt{TableViewService} et \texttt{GraphicCharterService} côté Angular communiquent avec \texttt{ApiService}. Côté backend, les contrôleurs dédiés délèguent les opérations à \texttt{IEditorService}, qui s'appuie sur \texttt{IEditorRepository}.
+Ce flux montre comment, lors d'une demande de génération, le système interroge le SIRH, fusionne le tout, affiche le résultat à l'utilisateur et crée simultanément une entrée dans l'archive.
 
-\subsection{Diagrammes de séquence}
+\diagramplaceholder{sprint4_sequences}{Séquence de production}{Génération en un clic et mise en archive}
 
-\diagramplaceholder{sprint4_sequences}{Diagramme de séquence du sprint 4}{Séquence CRUD d'une configuration métier}
+\section{Réalisation technique}
 
-Le diagramme de séquence illustre le CRUD d'une configuration de vue de table. Le super administrateur crée une nouvelle configuration dans l'interface. Le composant Angular appelle \texttt{TableViewService.saveTableView}. Le service normalise les données, met à jour l'état local, puis envoie la requête au backend. Le contrôleur reçoit le JSON, appelle \texttt{EditorService}, puis le repository exécute l'insertion ou la mise à jour en base.
+\subsection{Export PDF haute fidélité}
 
-Un deuxième flux concerne la consultation des lignes métier. L'utilisateur choisit une vue de table. L'application appelle \texttt{/api/table-view/rows}. Le backend résout la configuration, vérifie les champs autorisés et construit une requête SQL limitée aux champs déclarés dans la configuration.
+Pour l'impression, j'ai utilisé les capacités natives des navigateurs modernes couplées à mes styles CSS spécifiques (\texttt{@media print}). Cela garantit que le PDF généré respecte au millimètre près les marges définies dans le studio, sans nécessiter de bibliothèque côté serveur qui aurait pu ralentir l'application.
 
-\subsubsection*{Description des interactions système}
+\subsection{Journal d'activité et Audit}
 
-Les interactions du sprint 4 sont principalement des interactions CRUD. Elles doivent toutefois rester cohérentes avec l'état global de l'application. Lorsqu'une famille est supprimée, les modèles associés doivent être pris en compte. Lorsqu'une charte graphique est modifiée, les modèles qui y font référence doivent afficher le nouveau rendu. Lorsqu'une vue de table est modifiée, les écrans de données métier doivent refléter les nouveaux champs visibles et éditables.
+Chaque document généré est associé à l'utilisateur qui l'a produit. Dans l'espace archive, on peut filtrer les documents par agent, par type ou par date. C'est une fonctionnalité qui a beaucoup plu lors des premiers tests, car elle permet de retrouver instantanément une attestation émise il y a six mois.
 
-\subsubsection*{Analyse technique}
+\section{Conclusion du sprint et du projet}
 
-Le backend utilise des structures JSON pour gérer certaines entités configurables. Cette approche apporte de la souplesse, car les champs comme \texttt{filterCatalog}, \texttt{classes}, \texttt{fieldSettings} ou \texttt{pageMargins} peuvent évoluer sans modifier immédiatement toutes les classes métier. En contrepartie, elle impose une normalisation rigoureuse côté service et frontend.
+Ce dernier sprint a transformé SIRH-Doc en une solution opérationnelle. Le passage d'une gestion manuelle à cette plateforme automatisée représente un gain de temps énorme pour les services RH. 
 
-Pour les vues de tables, la sécurité est particulièrement importante. Le backend ne doit pas exécuter librement des champs ou tables fournis par le client. La configuration doit être résolue, les champs doivent être comparés au schéma autorisé, et les requêtes doivent limiter les colonnes aux champs déclarés.
-
-\subsubsection*{Architecture des composants concernés}
-
-L'architecture du sprint suit une logique verticale par module. Chaque ressource dispose d'un modèle, d'un service Angular, d'un endpoint REST, d'un service backend et d'une méthode repository. Cette organisation facilite la compréhension et permet d'ajouter de nouvelles ressources métier selon le même modèle.
-
-\section{Réalisation}
-
-\subsection{CRUD des familles de documents}
-
-Le CRUD des familles est exposé par \texttt{FamiliesController}. Les endpoints couvrent la liste, la consultation par identifiant, la création, la modification et la suppression.
-
-\begin{lstlisting}[caption={Contrôleur REST pour les familles de documents}]
-[ApiController]
-[Route("api/families")]
-public class FamiliesController : ControllerBase
-{
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<object>>> GetAll()
-    {
-        return Ok(await _service.GetFamiliesAsync());
-    }
-
-    [HttpPut("{id}")]
-    public async Task<ActionResult<object>> Update(string id, [FromBody] JsonObject family)
-    {
-        family["id"] = id;
-        return Ok(await _service.UpsertFamilyAsync(family));
-    }
-}
-\end{lstlisting}
-
-\screenshotplaceholder{sprint4_families.png}{Gestion des familles de documents}{Interface de gestion des familles de documents}
-
-\subsection{CRUD des modèles de documents}
-
-Les modèles sont gérés à travers \texttt{TemplatesController}. Contrairement à certaines ressources publiques, les endpoints de templates sont protégés par \texttt{[Authorize]}. Cette protection est logique, car les modèles contiennent des contenus documentaires et des paramètres métier.
-
-\begin{lstlisting}[caption={Endpoint de mise à jour d'un modèle}]
-[HttpPut("{id}")]
-[Authorize]
-public async Task<ActionResult<object>> Update(string id, [FromBody] JsonObject template)
-{
-    template["id"] = id;
-    return Ok(await _service.UpsertTemplateAsync(template));
-}
-\end{lstlisting}
-
-\screenshotplaceholder{sprint4_templates.png}{Gestion des modèles de documents}{Interface de gestion des modèles associés aux familles}
-
-\subsection{CRUD des chartes graphiques}
-
-Les chartes graphiques sont gérées par \texttt{GraphicChartersController}. L'entité \texttt{GraphicCharter} contient un identifiant, une organisation éventuelle, un nom, une description, un indicateur de charte par défaut et un objet \texttt{Config}. Ce dernier regroupe les paramètres visuels.
-
-\begin{lstlisting}[caption={Structure de l'entité GraphicCharter}]
-public class GraphicCharter
-{
-    public string Id { get; set; } = string.Empty;
-    public string? OrganizationId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public bool IsDefault { get; set; }
-    public JsonObject Config { get; set; } = new();
-}
-\end{lstlisting}
-
-\screenshotplaceholder{sprint4_charters.png}{Gestion des chartes graphiques}{Interface de paramétrage d'une charte graphique}
-
-\subsection{CRUD des configurations de vues de tables}
-
-Le module \texttt{TableViewConfig} permet de configurer dynamiquement l'affichage et l'édition de tables métier. Il est exposé par deux familles d'endpoints : les endpoints REST classiques \texttt{/api/table-view-configs} et les endpoints opérationnels \texttt{/api/table-view-config}, \texttt{/api/table-view/rows}, \texttt{/api/table-view/record} et \texttt{/api/table-view/lookup-options}.
-
-\begin{lstlisting}[caption={Entité TableViewConfig}]
-public class TableViewConfig
-{
-    public string Id { get; set; } = string.Empty;
-    public string TableName { get; set; } = string.Empty;
-    public string Label { get; set; } = string.Empty;
-    public JsonArray VisibleFields { get; set; } = new();
-    public JsonArray EditableFields { get; set; } = new();
-    public JsonArray PreviewFields { get; set; } = new();
-    public JsonObject FieldSettings { get; set; } = new();
-}
-\end{lstlisting}
-
-Côté Angular, \texttt{TableViewService} encapsule la sauvegarde, la suppression, la consultation des lignes, la création d'un enregistrement, la modification d'un enregistrement et la récupération des options de lookup.
-
-\begin{lstlisting}[caption={Sauvegarde d'une configuration de vue de table}]
-async saveTableView(view: TableViewConfig): Promise<TableViewConfig> {
-  const normalized = normalizeTableViewRecord(view);
-  const state = this.state.getState();
-  const index = state.tableViews.findIndex(item => item.id === normalized.id);
-  index >= 0
-    ? state.tableViews.splice(index, 1, normalized)
-    : state.tableViews.push(normalized);
-  this.state.replaceState(state);
-  await firstValueFrom(this.api.post('table-view-config',
-    { tableView: normalized }));
-  return normalized;
-}
-\end{lstlisting}
-
-\screenshotplaceholder{sprint4_tableviews.png}{Gestion des configurations de vues de tables}{Interface de configuration et d'exploitation des vues de tables}
-
-\subsection{Association famille, modèle et charte graphique}
-
-L'association entre famille, modèle et charte graphique est assurée par les champs \texttt{familyId} et \texttt{graphicCharterId} du modèle. Cette association permet de déterminer les variables disponibles, les bénéficiaires pertinents et le style visuel à appliquer lors de la prévisualisation.
-
-Dans l'interface, l'administrateur sélectionne une famille, puis crée ou modifie les modèles qui lui appartiennent. Il peut ensuite choisir la charte graphique à associer au modèle. Cette organisation évite les incohérences, par exemple l'utilisation d'un modèle avec des variables incompatibles avec la famille sélectionnée.
-
-\subsection{Configuration des données métier et des filtres}
-
-La recherche des bénéficiaires est assurée par l'endpoint \texttt{/api/search-beneficiaries}. Celui-ci reçoit l'identifiant de la famille, l'organisation, les filtres, une chaîne de recherche et une limite. Le backend charge la famille, lit la configuration du bénéficiaire, construit les paramètres et exécute la requête adaptée.
-
-\begin{lstlisting}[caption={Validation minimale de la recherche de bénéficiaires}]
-if (!request.TryGetProperty("familyId", out var famIdElem) ||
-    famIdElem.ValueKind != JsonValueKind.String)
-{
-    return BadRequest(new EditorApiResponse(false,
-        Error: "familyId is required"));
-}
-\end{lstlisting}
-
-Cette fonctionnalité relie directement l'administration métier à la génération documentaire. Les bénéficiaires sélectionnés deviennent les sources de données utilisées pour remplacer les variables dans les modèles.
-
-\subsection{Administration des modules métier}
-
-Les modules métier permettent d'organiser les vues de tables (TableViewConfigs) par domaine fonctionnel (ex: Ressources Humaines, Formation, Scolarité). Un module regroupe plusieurs vues et définit une table principale.
-
-L'interface du super administrateur permet de créer ces modules, de leur associer une icône, une description et de sélectionner les organisations autorisées à les voir. Cette structure facilite la navigation pour l'utilisateur final en évitant une liste plate de toutes les tables disponibles.
-
-\screenshotplaceholder{sprint4_modules.png}{Administration des modules métier}{Interface de regroupement des vues de tables par domaine}
-
-\subsection{Intégration finale et préparation de la livraison}
-
-La fin du sprint a été consacrée à la validation globale de la plateforme. Cette étape ne consiste pas uniquement à vérifier que chaque écran fonctionne séparément. Elle consiste surtout à rejouer les parcours réels : connexion, sélection du rôle, chargement de l'état de l'éditeur, configuration d'une famille, association d'un modèle, choix d'un bénéficiaire, application des filtres d'année universitaire et prévisualisation du document généré.
-
-Cette consolidation a permis de vérifier la cohérence entre le frontend Angular, les endpoints ASP.NET Core, les services applicatifs, les repositories et les données SQL Server. Les contrôles de sécurité ont également été revus : accès par rôle, portée multi-tenant, validation des requêtes SQL de lecture, filtrage par année universitaire et protection des opérations d'écriture lorsque l'année est clôturée.
-
-Enfin, la préparation de la livraison a porté sur les éléments nécessaires à une soutenance PFE : documentation d'installation, captures d'écran, scénarios de démonstration, vérification des builds et clarification des limites connues. Cette phase donne au projet une forme présentable et exploitable, au-delà du simple fonctionnement technique.
-
-\section{Tests et validation}
-
-\begin{longtable}{p{0.25\textwidth} p{0.43\textwidth} p{0.22\textwidth}}
-\caption{Scénarios de test du sprint 4}\\
-\toprule
-\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
-\midrule
-\endhead
-Création famille & Créer une famille avec table bénéficiaire et colonnes d'affichage. & Famille enregistrée et visible dans la liste.\\
-\midrule
-Association modèle & Créer un modèle associé à une famille. & Le modèle apparaît dans la famille correspondante.\\
-\midrule
-Charte graphique & Modifier les couleurs et la typographie d'une charte. & Le rendu du document applique les paramètres.\\
-\midrule
-Configuration vue table & Définir champs visibles, éditables et preview. & La vue affiche uniquement les champs configurés.\\
-\midrule
-Regroupement en module & Créer un module et y associer plusieurs vues de tables. & Le module est visible par les organisations sélectionnées.\\
-\midrule
-CRUD enregistrement métier & Créer, modifier et supprimer une ligne via \texttt{TableViewService}. & Les opérations sont répercutées en base.\\
-\midrule
-Recherche bénéficiaire & Rechercher un bénéficiaire avec filtre. & La liste retournée respecte la famille et les filtres.\\
-\midrule
-Parcours complet & Générer un document depuis une famille, un modèle, un bénéficiaire et une année universitaire. & Le document rendu contient les données attendues et respecte la charte.\\
-\midrule
-Validation sécurité & Tester les accès selon les rôles et l'organisation active. & Les données hors périmètre ne sont pas exposées.\\
-\midrule
-Préparation livraison & Exécuter les builds, préparer les captures et rejouer la démonstration. & Le projet est stable et présentable pour l'évaluation.\\
-\bottomrule
-\end{longtable}
-
-Les tests fonctionnels ont validé les opérations CRUD principales. Les tests d'intégration ont vérifié la cohérence entre les services Angular, les endpoints REST et la base SQL Server. Les tests de sécurité ont porté sur la limitation des champs manipulés par les vues de tables et sur le refus des requêtes incomplètes, notamment l'absence de \texttt{familyId} dans la recherche des bénéficiaires.
-
-\section{Conclusion}
-
-Le sprint 4 a transformé la plateforme en un système documentaire administrable et prêt à être présenté. Les familles, modèles, chartes graphiques, configurations de vues de tables et bénéficiaires sont désormais structurés et exploitables. L'ajout explicite de \texttt{TableViewConfig} constitue un apport important, car il permet d'administrer les données métier de manière configurable sans développer une interface spécifique pour chaque table.
-
-À l'issue de ce sprint, les principales fonctionnalités métier sont présentes et les parcours essentiels ont été consolidés. Le projet dispose ainsi d'une base fonctionnelle complète : authentification, rôles, édition documentaire, administration métier, configuration des vues de tables, gestion des bénéficiaires, filtrage par année universitaire et prévisualisation dynamique.
+D'un point de vue personnel, ce projet m'a permis de toucher à tout : de l'architecture backend complexe à la manipulation fine du DOM pour la pagination, en passant par la sécurité et l'ergonomie. SIRH-Doc n'est pas qu'un projet scolaire, c'est un outil prêt à l'emploi qui répond à un vrai besoin de dématérialisation et de rigueur administrative.

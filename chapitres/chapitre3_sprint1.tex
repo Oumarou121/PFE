@@ -1,262 +1,65 @@
 %=================================================
-% CHAPITRE 3
+% CHAPITRE 3 : SPRINT 1
 %=================================================
 
-\chapter{Sprint 1 : Authentification et socle applicatif}
+\chapter{Sprint 1 : Socle technique, Multi-Tenancy et isolation temporelle}
 
 \section{Introduction}
 
-Le premier sprint constitue la fondation technique de la plateforme de gestion documentaire. Avant de traiter les modèles de documents, les chartes graphiques ou les bénéficiaires, il était indispensable de mettre en place un socle applicatif stable, sécurisé et capable de supporter les évolutions fonctionnelles prévues dans les sprints suivants. Ce sprint s'est donc concentré sur l'initialisation du backend ASP.NET Core Web API, la configuration de la base de données SQL Server, la mise en place de l'authentification JWT et la préparation des premiers points d'entrée de l'application.
+Quand j'ai commencé à poser les premières briques du projet, ma priorité n'était pas de construire de jolis écrans, mais de m'assurer que les données soient parfaitement isolées. Dans un contexte universitaire, on manipule des informations sensibles (diplômes, contrats, salaires) et il est impensable que les données d'une faculté puissent être visibles par une autre, ou que les contrats de l'année passée se mélangent avec ceux de l'année en cours.
 
-Dans une application documentaire, l'authentification n'est pas une fonctionnalité périphérique. Elle conditionne l'accès aux modèles, aux données métier, aux documents générés et aux opérations d'administration. Une mauvaise gestion de l'identité peut entraîner une exposition de données sensibles ou un accès non autorisé aux documents internes. Pour cette raison, le sprint a été conçu autour d'un principe simple : chaque utilisateur doit pouvoir être identifié de manière fiable avant toute interaction avec le système.
+Ce premier sprint a donc servi à bâtir les fondations invisibles mais indispensables de SIRH-Doc : l'architecture multi-tenant et la gestion du contexte temporel par année universitaire.
 
-Le résultat attendu de ce sprint est un backend opérationnel, documenté par Swagger, connecté à SQL Server et capable de générer des jetons JWT exploitables par l'application Angular. Cette base technique servira ensuite à appliquer la gouvernance d'accès par rôles dans le sprint suivant.
+\section{Objectifs et Backlog du sprint}
 
-\section{Objectifs du sprint}
-
-Les objectifs du sprint se répartissent en objectifs fonctionnels et objectifs techniques. Sur le plan fonctionnel, il s'agit de permettre à un utilisateur de se connecter, de récupérer son profil et d'être redirigé vers l'espace correspondant à son rôle. Sur le plan technique, il s'agit de structurer l'API, d'organiser les couches applicatives et de préparer les services communs utilisés par les modules métier.
-
-Les objectifs retenus sont les suivants :
+L'idée était d'arriver, à la fin de cette itération, à une application capable de reconnaître qui se connecte, pour quelle organisation il travaille, et sur quelle période académique il souhaite agir.
 
 \begin{itemize}
-    \item créer le projet backend ASP.NET Core Web API et organiser les dossiers \texttt{Controllers}, \texttt{Services}, \texttt{Repositories}, \texttt{DTOs}, \texttt{Domain} et \texttt{Infrastructure} ;
-    \item configurer la connexion à SQL Server à travers une fabrique de connexion dédiée ;
-    \item définir l'entité \texttt{User} ainsi que les objets de transfert associés à l'authentification ;
-    \item implémenter l'inscription, la connexion et la récupération du profil utilisateur ;
-    \item générer un jeton JWT contenant l'identifiant, le nom, l'adresse électronique, le rôle et éventuellement l'organisation de l'utilisateur ;
-    \item protéger les premiers endpoints à l'aide du middleware d'authentification ;
-    \item configurer CORS afin d'autoriser la communication entre l'interface Angular et l'API ;
-    \item intégrer Swagger pour faciliter les tests et la documentation des endpoints.
+    \item \textbf{Mise en place du Multi-Tenancy} : Capacité du backend à aiguiller les requêtes vers la bonne base de données.
+    \item \textbf{Sécurité JWT} : Authentification robuste avec des jetons qui portent l'identité et le périmètre de l'utilisateur.
+    \item \textbf{Contexte d'Année Universitaire} : Création d'un filtre global pour cloisonner les données RH par session.
 \end{itemize}
 
-Ces objectifs permettent d'obtenir une première version exécutable de l'application. Ils préparent également les éléments de sécurité nécessaires à la gestion des rôles et des autorisations.
+\section{Choix d'architecture et défis rencontrés}
 
-\section{Backlog du sprint}
+\subsection{La résolution dynamique du Tenant}
 
-Le backlog du sprint regroupe les user stories prioritaires liées à la mise en place du socle applicatif. Chaque user story est associée à des tâches techniques permettant de transformer le besoin utilisateur en fonctionnalités vérifiables.
+Au départ, j'avais envisagé une gestion classique via session utilisateur côté serveur, mais cette approche devenait vite compliquée avec les changements d'organisation. J'ai finalement opté pour un middleware de \textit{Tenant Resolution}. À chaque appel HTTP, le système regarde le jeton de l'utilisateur et configure instantanément la connexion SQL via une \texttt{ConnectionFactory}. C'est transparent pour le reste du code, ce qui m'a évité de passer l'identifiant de l'organisation dans chaque fonction.
 
-\begin{longtable}{p{0.17\textwidth} p{0.38\textwidth} p{0.35\textwidth}}
-\caption{Backlog du sprint 1}\\
-\toprule
-\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
-\midrule
-\endhead
-US1.1 & En tant qu'utilisateur, je peux me connecter avec une adresse électronique et un mot de passe valides. & Créer \texttt{LoginRequest}, exposer \texttt{POST /api/auth/login}, vérifier le mot de passe, générer le JWT, retourner les informations du profil.\\
-\midrule
-US1.2 & En tant que nouvel utilisateur, je peux créer un compte afin d'accéder à la plateforme. & Créer \texttt{RegisterRequest}, vérifier l'unicité de l'utilisateur, hacher le mot de passe avec BCrypt, enregistrer l'utilisateur en base.\\
-\midrule
-US1.3 & En tant qu'utilisateur authentifié, je peux consulter mon profil. & Protéger \texttt{GET /api/auth/profile}, lire l'identifiant depuis les claims JWT, retourner un \texttt{UserResponse}.\\
-\midrule
-US1.4 & En tant que développeur, je peux tester les endpoints à partir d'une documentation interactive. & Configurer Swagger, ajouter la définition de sécurité Bearer, tester les appels authentifiés.\\
-\midrule
-US1.5 & En tant qu'application Angular, je peux communiquer avec l'API de manière sécurisée. & Configurer CORS, mettre en place l'interceptor Angular, stocker le token côté client et l'injecter dans les requêtes.\\
-\bottomrule
-\end{longtable}
+\subsection{L'année universitaire comme contexte global}
 
-\subsection{Authentification JWT}
+C'est sans doute le point qui m'a demandé le plus de réflexion. On ne peut pas simplement mettre une date dans une table. Un vacataire peut avoir un contrat en 2024-2025 et un autre en 2025-2026. J'ai donc choisi de traiter l'année universitaire comme un \og état global \fg{} de l'application. Une fois sélectionnée côté frontend, elle est injectée dans toutes les requêtes SQL via Dapper pour filtrer les parcours et les positions administratives.
 
-La user story d'authentification JWT représente le coeur de ce sprint. L'utilisateur fournit ses identifiants à travers le formulaire de connexion. Le backend vérifie l'existence du compte, compare le mot de passe reçu avec le mot de passe haché en base, puis génère un jeton signé. Ce jeton devient la preuve d'authentification utilisée dans les appels suivants.
-
-Le JWT transporte des claims essentiels : l'identifiant technique de l'utilisateur, son nom, son rôle, son adresse électronique et son organisation si elle existe. Ces informations évitent d'interroger la base à chaque requête pour les contrôles simples, tout en laissant au backend la possibilité de vérifier les informations sensibles lorsque cela est nécessaire.
-
-\subsection{Gestion du profil utilisateur}
-
-La gestion du profil consiste à exposer un endpoint permettant de récupérer les informations de l'utilisateur connecté. Cette fonctionnalité est utile pour l'affichage de l'espace personnel, la redirection selon le rôle et la personnalisation des pages Angular. Elle permet également de vérifier que le jeton envoyé par le frontend est bien valide.
-
-\subsection{Configuration du backend}
-
-Le backend est structuré selon une séparation claire des responsabilités. Les contrôleurs reçoivent les requêtes HTTP, les services portent la logique applicative, les repositories gèrent l'accès aux données, et les DTOs définissent les contrats d'entrée et de sortie. Cette organisation prépare l'application à accueillir progressivement les modules métier des sprints suivants.
-
-\subsection{Connexion à la base de données}
-
-La connexion SQL Server est centralisée dans une fabrique dédiée. Cette approche évite de disperser les chaînes de connexion dans le code et facilite la maintenance. Elle prépare également l'utilisation de Dapper pour exécuter les requêtes SQL de manière performante et contrôlée.
-
-\section{Analyse et conception}
-
-L'analyse de ce sprint porte sur le cycle d'authentification et sur les composants nécessaires au démarrage sécurisé de l'application. L'objectif est de concevoir une chaîne complète allant de la saisie des identifiants dans Angular jusqu'à la validation du token par ASP.NET Core.
+\section{Analyse et Conception}
 
 \subsection{Diagramme de cas d'utilisation}
 
-\diagramplaceholder{sprint1_cas_utilisation}{Diagramme de cas d'utilisation du sprint 1}{Cas d'utilisation liés à l'authentification et au socle applicatif}
+Le diagramme suivant montre comment le point d'entrée du système est verrouillé. Avant de pouvoir faire quoi que ce soit, l'utilisateur doit franchir l'étape de l'authentification et du choix de son contexte de travail (organisation et année).
 
-Le diagramme de cas d'utilisation du sprint 1 présente deux acteurs principaux : l'utilisateur non authentifié et l'utilisateur authentifié. L'utilisateur non authentifié peut s'inscrire, se connecter et consulter la documentation Swagger dans le cadre des tests techniques. Après authentification, l'utilisateur peut consulter son profil et accéder aux fonctionnalités protégées.
+\diagramplaceholder{sprint1_cas_utilisation}{Cas d'utilisation du Sprint 1}{Initialisation du contexte et sécurité}
 
-Le cas d'utilisation \og Se connecter \fg{} inclut la vérification des identifiants et la génération du jeton JWT. Le cas d'utilisation \og Consulter le profil \fg{} nécessite une authentification préalable, car le backend doit extraire l'identité de l'utilisateur depuis les claims du token.
+\subsection{Diagramme de classes (Entités persistantes)}
 
-Cette modélisation montre que le sprint ne se limite pas à un simple formulaire de connexion. Il définit le point d'entrée sécurisé de toute la plateforme et conditionne l'accès à l'ensemble des modules à venir.
+Conformément à mon choix d'isoler les responsabilités, les classes persistantes de ce sprint se concentrent sur la gestion des accès et des structures de base. On y retrouve l'utilisateur, son organisation de rattachement et le référentiel des années académiques.
 
-\subsection{Diagramme de classes}
+\diagramplaceholder{sprint1_classes}{Diagramme de classes - Sprint 1}{Entités de base pour la sécurité et le contexte}
 
-\diagramplaceholder{sprint1_classes}{Diagramme de classes du sprint 1}{Classes principales du socle d'authentification}
+\subsection{Diagramme de séquence : La connexion sécurisée}
 
-Le diagramme de classes met en évidence la collaboration entre \texttt{AuthController}, \texttt{AuthService}, \texttt{IUserRepository}, \texttt{User}, \texttt{LoginRequest}, \texttt{RegisterRequest}, \texttt{AuthResponse} et \texttt{UserResponse}. Le contrôleur dépend d'une abstraction de service, ce qui réduit le couplage entre la couche HTTP et la logique métier.
+Le flux de connexion illustre bien la complexité cachée derrière un simple bouton \og Valider \fg{}. Le backend ne se contente pas de vérifier un mot de passe ; il doit construire un jeton JWT qui contient tout le \og pedigree \fg{} de l'utilisateur pour que les appels suivants soient performants.
 
-L'entité \texttt{User} contient les informations persistées : identifiant, nom d'utilisateur, adresse électronique, mot de passe haché, rôle, organisation, profil, date de création et état du compte. Les DTOs évitent d'exposer directement l'entité de domaine dans les réponses HTTP. Ainsi, le champ \texttt{PasswordHash} reste interne au backend et n'est jamais transmis au frontend.
+\diagramplaceholder{sprint1_sequences}{Séquence d'authentification}{Processus de login et génération du périmètre utilisateur}
 
-L'utilisation de l'interface \texttt{IAuthService} permet également d'isoler la logique d'authentification. Cette séparation facilite les tests unitaires et rend possible une évolution future vers un autre mécanisme d'identité sans modifier les contrôleurs.
+\section{Réalisation technique}
 
-\subsection{Diagrammes de séquence}
+\subsection{Backend : Sécurisation et Dapper}
 
-\diagramplaceholder{sprint1_sequences}{Diagramme de séquence du sprint 1}{Séquence de connexion et récupération du profil}
+Pour le stockage des mots de passe, je n'ai pris aucun risque : j'ai utilisé \textbf{BCrypt}. Côté accès aux données, \textbf{Dapper} s'est avéré être un excellent choix pour sa rapidité, surtout quand il s'agit d'injecter dynamiquement des clauses \texttt{WHERE} liées au TenantId ou à l'année universitaire.
 
-Le diagramme de séquence décrit le scénario principal de connexion. L'utilisateur saisit ses identifiants dans le composant Angular de connexion. Le composant appelle \texttt{AuthService}, qui transmet la requête à \texttt{ApiService}. L'API reçoit la requête dans \texttt{AuthController}, puis délègue le traitement à \texttt{AuthService} côté backend. Ce service consulte \texttt{UserRepository}, vérifie le mot de passe et génère le token.
+\subsection{Frontend : Le Guard de sélection}
 
-Lorsque la réponse revient au frontend, le jeton et les informations utilisateur sont stockés localement. Les requêtes suivantes passent par un interceptor HTTP qui ajoute l'en-tête \texttt{Authorization: Bearer}. Lorsqu'un endpoint protégé est appelé, le middleware ASP.NET Core valide automatiquement la signature, l'émetteur, l'audience et la durée de validité du token.
+Côté Angular, j'ai mis en place un \textit{Guard} spécifique. Si un administrateur tente d'accéder à la gestion du personnel sans avoir choisi une année universitaire active, il est automatiquement renvoyé vers un écran de sélection. Cela garantit qu'aucune donnée n'est créée \og dans le vide \fg{}.
 
-\subsubsection*{Description des interactions système}
+\section{Conclusion du sprint}
 
-Le système met en jeu deux chaînes d'interaction. La première est synchrone et concerne l'authentification : formulaire, service Angular, API, repository et base de données. La seconde est transversale : elle concerne tous les appels ultérieurs et passe par l'interceptor Angular et le middleware d'authentification ASP.NET Core.
-
-Cette conception réduit la duplication. Le frontend n'a pas à ajouter manuellement le token dans chaque service métier. De la même manière, chaque contrôleur backend n'a pas à réimplémenter la validation du token, car cette responsabilité est prise en charge par le middleware.
-
-\subsubsection*{Analyse technique}
-
-La sécurité repose sur une signature symétrique HMAC SHA-256 configurée dans \texttt{JwtSettings}. Le paramètre \texttt{ClockSkew} est fixé à zéro afin d'éviter une tolérance excessive après expiration du jeton. Les mots de passe sont hachés avec BCrypt lors de l'inscription, ce qui permet de stocker une représentation non réversible du secret utilisateur.
-
-Le backend utilise l'injection de dépendances d'ASP.NET Core pour enregistrer les services et repositories. Cette approche permet de créer des instances par requête et d'éviter le couplage direct entre les composants.
-
-\subsubsection*{Architecture des composants concernés}
-
-L'architecture du sprint peut être résumée en quatre niveaux. Le niveau présentation est représenté par le composant Angular de connexion. Le niveau communication est assuré par \texttt{ApiService} et l'interceptor HTTP. Le niveau applicatif backend est constitué par \texttt{AuthController} et \texttt{AuthService}. Enfin, le niveau persistance regroupe \texttt{UserRepository}, la fabrique de connexion et SQL Server.
-
-\section{Réalisation}
-
-La réalisation a été menée en commençant par le backend afin de disposer d'une API testable avec Swagger, puis en intégrant progressivement l'interface Angular. Cette démarche a permis de valider les contrats HTTP avant de connecter le frontend.
-
-\subsection{Mise en place du backend ASP.NET Core}
-
-Le backend a été initialisé sous forme d'une Web API ASP.NET Core. Le fichier \texttt{Program.cs} centralise la configuration des services, du CORS, de l'authentification, de Swagger et de l'injection de dépendances. Les contrôleurs sont activés par \texttt{AddControllers()}, tandis que les services métier et repositories sont enregistrés en portée \texttt{Scoped}.
-
-\begin{lstlisting}[caption={Configuration JWT et injection des services dans ASP.NET Core}]
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings?.Issuer,
-        ValidAudience = jwtSettings?.Audience,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings?.SecretKey ?? "")),
-        ClockSkew = TimeSpan.Zero
-    };
-});
-\end{lstlisting}
-
-Cette configuration impose la validation de l'émetteur, de l'audience, de la durée de vie et de la clé de signature. Elle garantit que seuls les jetons générés par l'application et encore valides permettent d'accéder aux endpoints protégés.
-
-\subsection{Implémentation de l'authentification}
-
-L'authentification est exposée à travers \texttt{AuthController}. Le endpoint \texttt{POST /api/auth/login} reçoit un \texttt{LoginRequest}, délègue la vérification à \texttt{AuthService}, puis retourne un \texttt{AuthResponse}. Le endpoint \texttt{GET /api/auth/profile} est protégé par \texttt{[Authorize]} et récupère l'identifiant utilisateur à partir des claims.
-
-\begin{lstlisting}[caption={Endpoint de récupération du profil utilisateur}]
-[HttpGet("profile")]
-[Authorize]
-public async Task<ActionResult<UserResponse>> GetProfile()
-{
-    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userIdClaim) ||
-        !int.TryParse(userIdClaim, out var userId))
-    {
-        return Unauthorized();
-    }
-
-    var profile = await _authService.GetUserProfileAsync(userId);
-    return Ok(profile);
-}
-\end{lstlisting}
-
-La génération du token est centralisée dans le service d'authentification. Les claims insérés permettent au backend et au frontend de connaître le rôle et l'organisation de l'utilisateur sans exposer de données sensibles.
-
-\begin{lstlisting}[caption={Claims principaux intégrés au jeton JWT}]
-var claims = new List<Claim>
-{
-    new(ClaimTypes.NameIdentifier, userId.ToString()),
-    new(ClaimTypes.Name, username),
-    new(ClaimTypes.Role, role),
-    new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-    new(JwtRegisteredClaimNames.Iat,
-        DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-        ClaimValueTypes.Integer64)
-};
-\end{lstlisting}
-
-Côté Angular, \texttt{AuthService} encapsule la connexion, la déconnexion, le stockage du token et la récupération de l'utilisateur courant. Le token est stocké dans le \texttt{localStorage}, puis lu par l'interceptor HTTP.
-
-\begin{lstlisting}[caption={Ajout automatique du token dans les requêtes Angular}]
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
-  const token = authService.getToken();
-
-  if (token && !req.url.includes('/auth')) {
-    const authReq = req.clone({
-      headers: req.headers.set('Authorization', `Bearer ${token}`)
-    });
-    return next(authReq);
-  }
-
-  return next(req);
-};
-\end{lstlisting}
-
-\screenshotplaceholder{sprint1_login.png}{Interface de connexion}{Interface de connexion de la plateforme}
-\screenshotplaceholder{sprint1_profile.png}{Profil utilisateur authentifié}{Consultation du profil après authentification}
-
-\subsection{Configuration CORS, Swagger et middlewares}
-
-La politique CORS nommée \texttt{EditorCors} permet au frontend Angular de communiquer avec l'API. Elle autorise les méthodes et en-têtes nécessaires aux appels REST et active la transmission des informations d'authentification.
-
-Swagger est configuré avec une définition de sécurité Bearer. Cette configuration permet de tester les endpoints protégés directement depuis l'interface Swagger UI en renseignant le jeton JWT obtenu après connexion.
-
-L'ordre des middlewares est également important. La redirection HTTPS est appliquée avant CORS, puis viennent l'authentification et l'autorisation. Les contrôleurs sont ensuite mappés par \texttt{MapControllers()}.
-
-\subsection{Configuration de la base SQL Server}
-
-La persistance repose sur SQL Server. Le backend utilise une fabrique de connexion afin de créer les connexions au moment de l'exécution des requêtes. Cette fabrique permet d'isoler les paramètres de connexion dans la configuration et de faciliter les changements d'environnement.
-
-Les données d'authentification sont stockées dans la table des utilisateurs. Le mot de passe n'est jamais stocké en clair. La colonne \texttt{PasswordHash} contient le résultat du hachage BCrypt. Les champs \texttt{Role}, \texttt{OrganizationId}, \texttt{Profile} et \texttt{ProfileDetail} préparent la personnalisation des accès dans les sprints suivants.
-
-\section{Tests et validation}
-
-Les tests du sprint ont porté sur les scénarios fonctionnels, la sécurité et l'intégration Angular/API.
-
-\begin{longtable}{p{0.24\textwidth} p{0.42\textwidth} p{0.24\textwidth}}
-\caption{Scénarios de test du sprint 1}\\
-\toprule
-\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
-\midrule
-\endhead
-Connexion valide & Saisir une adresse électronique et un mot de passe corrects. & Token retourné, utilisateur stocké, redirection correcte.\\
-\midrule
-Connexion invalide & Saisir un mauvais mot de passe. & Réponse d'erreur, aucun token stocké.\\
-\midrule
-Profil sans token & Appeler \texttt{/api/auth/profile} sans en-tête Authorization. & Réponse \texttt{401 Unauthorized}.\\
-\midrule
-Profil avec token & Appeler \texttt{/api/auth/profile} avec un token valide. & Informations du profil retournées.\\
-\midrule
-Expiration du token & Utiliser un token expiré. & Rejet de la requête par le middleware JWT.\\
-\bottomrule
-\end{longtable}
-
-Les validations techniques ont confirmé que le token était ajouté automatiquement par l'interceptor Angular, que Swagger acceptait l'authentification Bearer et que les endpoints protégés refusaient les appels anonymes. Les tests de sécurité ont également vérifié que le mot de passe haché n'était jamais présent dans les réponses HTTP.
-
-\section{Conclusion}
-
-Ce premier sprint a permis de mettre en place le socle technique de la plateforme. L'application dispose désormais d'une API ASP.NET Core structurée, d'une connexion SQL Server, d'un système d'authentification JWT, d'une documentation Swagger et d'une intégration Angular capable de stocker et transmettre le jeton d'accès.
-
-Cette base est essentielle pour la suite du projet. Elle permet d'aborder le sprint suivant dans de bonnes conditions, en construisant la gouvernance d'accès sur une identité utilisateur déjà fiable. Le prochain sprint sera donc consacré à la gestion des rôles, à la protection des routes Angular et à la sécurisation des endpoints selon les profils \texttt{supAdmin}, \texttt{admin} et \texttt{user}.
+À la fin de ce sprint, j'avais un socle solide. L'application savait qui était connecté et dans quel cadre temporel il travaillait. C'était l'étape nécessaire avant de pouvoir attaquer la gestion réelle des dossiers RH dans le sprint suivant.

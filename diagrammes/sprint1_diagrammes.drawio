@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Sprint1-Combined">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- USE CASE SECTION -->
+        <mxCell id="box1" value="SIRH-Doc : Socle et Sécurité" style="shape=rect;html=1;verticalAlign=top;fontStyle=1;whiteSpace=wrap;align=center;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="140" y="40" width="300" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="uc1" value="S'authentifier (JWT)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="210" y="80" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc2" value="Sélectionner l'année universitaire" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="210" y="160" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc3" value="Gérer les organisations" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="210" y="240" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="actor1" value="Utilisateur" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l1" edge="1" parent="1" source="actor1" target="uc1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="l2" edge="1" parent="1" source="actor1" target="uc2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- CLASS SECTION -->
+        <mxCell id="cls1" value="Utilisateur" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="100" y="380" width="180" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="u1" value="+ Email : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="cls1"><mxGeometry y="30" width="180" height="26" as="geometry" /></mxCell>
+        <mxCell id="u2" value="+ Role : Role" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="cls1"><mxGeometry y="56" width="180" height="26" as="geometry" /></mxCell>
+        <mxCell id="u3" value="+ IsActive : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="cls1"><mxGeometry y="82" width="180" height="26" as="geometry" /></mxCell>
+        
+        <mxCell id="cls2" value="Organisation" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="400" y="380" width="180" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="o1" value="+ Nom : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="cls2"><mxGeometry y="30" width="180" height="26" as="geometry" /></mxCell>
+        <mxCell id="o2" value="+ Acronym : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="cls2"><mxGeometry y="56" width="180" height="26" as="geometry" /></mxCell>
+
+        <mxCell id="rel1" value="rattaché à" style="endArrow=none;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="cls1" target="cls2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="cls3" value="AnneeUniversitaire" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="400" y="500" width="180" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="y1" value="+ Code : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="cls3"><mxGeometry y="30" width="180" height="26" as="geometry" /></mxCell>
+        <mxCell id="y2" value="+ IsClosed : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="cls3"><mxGeometry y="56" width="180" height="26" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

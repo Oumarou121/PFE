@@ -1,216 +1,66 @@
 %=================================================
-% CHAPITRE 5
+% CHAPITRE 5 : SPRINT 3
 %=================================================
 
-\chapter{Sprint 3 : Module coeur d'édition documentaire}
+\chapter{Sprint 3 : Studio d'édition et intelligence documentaire}
 
 \section{Introduction}
 
-Le troisième sprint représente le coeur fonctionnel du projet. Après avoir sécurisé l'accès à l'application et mis en place la gouvernance par rôles, il devient possible de développer le module d'édition documentaire. Ce module permet de créer, modifier, sauvegarder et prévisualiser des modèles de documents qui seront ensuite utilisés pour produire des documents personnalisés à partir des données métier.
+C'est sans doute la partie la plus \og spectaculaire \fg{} du projet, mais aussi la plus technique. L'objectif était de donner aux administrateurs un outil de création de modèles aussi simple qu'un traitement de texte, tout en étant capable de fusionner intelligemment les données RH saisies au sprint précédent. 
 
-La plateforme ne se limite pas à stocker des fichiers statiques. Elle propose une logique documentaire dynamique fondée sur des modèles composés d'un en-tête, d'un corps et d'un pied de page. Ces modèles peuvent contenir du texte riche, des tableaux, des images, des variables et des paramètres de mise en page. Le choix de l'éditeur Tiptap répond à ce besoin, car il offre une base extensible pour construire un éditeur WYSIWYG moderne au sein d'une application Angular.
+Je ne voulais pas que SIRH-Doc génère des documents \og rigides \fg{}. Il fallait que l'en-tête soit celui de l'établissement, que le logo soit au bon endroit, et surtout, que la pagination soit gérée automatiquement, même si une attestation de services fait trois pages à cause d'une longue liste de cours.
 
-Ce sprint a donc pour objectif de livrer une première version exploitable de l'éditeur documentaire. L'utilisateur doit pouvoir saisir un contenu structuré, l'enregistrer dans un modèle, le recharger ultérieurement et obtenir une prévisualisation cohérente avec les paramètres de mise en page.
+\section{Objectifs et Backlog du sprint}
 
-\section{Objectifs du sprint}
-
-Les objectifs du sprint couvrent à la fois l'expérience utilisateur et la robustesse technique de la gestion du contenu documentaire :
+Ce sprint s'est focalisé sur la création du \og Studio \fg{} : l'espace où l'on définit comment les documents doivent se présenter.
 
 \begin{itemize}
-    \item intégrer Tiptap comme éditeur de texte riche dans l'application Angular ;
-    \item organiser le modèle documentaire en zones distinctes : en-tête, corps et pied de page ;
-    \item permettre la création et la modification du contenu HTML associé à un modèle ;
-    \item sauvegarder les modèles via les services Angular et les endpoints REST ;
-    \item charger les modèles depuis l'état applicatif et les afficher dans l'éditeur ;
-    \item appliquer les paramètres de mise en page tels que l'orientation, les marges et les distances d'en-tête et de pied de page ;
-    \item produire une prévisualisation documentaire à partir d'un modèle et d'un bénéficiaire ;
-    \item préparer l'intégration des chartes graphiques et des variables métier.
+    \item \textbf{Éditeur de Modèles (Tiptap)} : Intégration d'un éditeur WYSIWYG supportant les variables dynamiques.
+    \item \textbf{Moteur de Pagination A4} : Développement d'une logique capable de calculer les sauts de page en temps réel.
+    \item \textbf{Gestion des Chartes Graphiques} : Centralisation des logos, polices et couleurs officielles de l'établissement.
+    \item \textbf{Catalogue de Variables} : Création du lien entre les tables RH (Sprint 2) et les champs de fusion (\texttt{\{\{nom\}\}}, \texttt{\{\{grade\}\}}, etc.).
 \end{itemize}
 
-\section{Backlog du sprint}
+\section{Choix techniques et défis rencontrés}
 
-\begin{longtable}{p{0.17\textwidth} p{0.38\textwidth} p{0.35\textwidth}}
-\caption{Backlog du sprint 3}\\
-\toprule
-\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{User story} & \textbf{Description} & \textbf{Tâches principales}\\
-\midrule
-\endhead
-US3.1 & En tant qu'administrateur, je peux éditer le contenu d'un modèle de document. & Intégrer Tiptap, créer les zones d'édition, gérer le contenu HTML.\\
-\midrule
-US3.2 & En tant qu'administrateur, je peux sauvegarder les modifications d'un modèle. & Normaliser le modèle, appeler \texttt{TemplateService}, persister via \texttt{PUT /api/templates/\{id\}}.\\
-\midrule
-US3.3 & En tant qu'utilisateur, je peux prévisualiser le document généré. & Implémenter \texttt{DocumentRenderService}, appeler l'endpoint \texttt{/api/preview}, remplacer les variables.\\
-\midrule
-US3.4 & En tant qu'administrateur, je peux gérer l'en-tête et le pied de page du modèle. & Ajouter les attributs \texttt{hasHeader}, \texttt{hasFooter}, \texttt{headerDisplay}, \texttt{footerDisplay}.\\
-\midrule
-US3.5 & En tant que système, je dois conserver une structure cohérente du modèle. & Définir \texttt{TemplateRecord}, normaliser les données, valider les champs essentiels.\\
-\bottomrule
-\end{longtable}
+\subsection{Pourquoi Tiptap ?}
 
-\subsection{Intégration de l'éditeur riche}
+J'ai passé beaucoup de temps à comparer les éditeurs de texte (CKEditor, TinyMCE, etc.). Mon choix s'est porté sur \textbf{Tiptap} parce qu'il est \og headless \fg{}. Cela m'a permis de construire une interface de studio totalement sur mesure, sans être bridé par le design par défaut de l'éditeur. Surtout, Tiptap facilite l'insertion de \textit{Nodes} personnalisés, ce qui est parfait pour manipuler nos variables documentaires.
 
-L'intégration de l'éditeur riche s'appuie sur Tiptap, un éditeur basé sur ProseMirror. Ce choix se justifie par sa modularité, son support des extensions et sa capacité à produire un contenu HTML structuré. L'objectif n'est pas seulement de disposer d'une zone de texte, mais de fournir un environnement d'édition compatible avec les besoins documentaires : mise en forme, tableaux, images, styles, alignements et variables.
+\subsection{Le casse-tête de la pagination web}
 
-\subsection{Création et modification du contenu documentaire}
+C'est là que j'ai rencontré ma plus grosse difficulté technique. Les navigateurs web ne sont pas faits pour gérer des pages A4. Au début, mes documents étaient une longue bande continue. Pour une application de gestion, c'était inacceptable. J'ai dû développer le service \texttt{PagePaginator}. Il mesure la hauteur de chaque paragraphe et, dès qu'il dépasse 297mm (moins les marges), il crée une nouvelle page, clone l'en-tête et continue le texte. C'était un travail de précision sur le DOM qui m'a demandé de nombreuses itérations.
 
-La création du contenu documentaire se fait au niveau du modèle. Le modèle contient les champs \texttt{header}, \texttt{body} et \texttt{footer}, qui correspondent respectivement à l'en-tête, au corps et au pied de page. Cette séparation rend la génération plus maîtrisable, car chaque zone peut avoir ses propres règles d'affichage.
-
-\subsection{Sauvegarde et chargement des contenus}
-
-La sauvegarde est assurée par \texttt{TemplateService}. Le service normalise le modèle, met à jour l'état local, puis transmet les modifications au backend. Cette stratégie améliore la réactivité de l'interface tout en conservant une persistance côté serveur.
-
-\subsection{Prévisualisation du document}
-
-La prévisualisation permet à l'utilisateur de vérifier le rendu avant l'utilisation finale du document. Elle combine le contenu du modèle, les données du bénéficiaire, les paramètres de mise en page et les éventuelles chartes graphiques. Elle constitue une étape essentielle pour garantir la qualité documentaire.
-
-\section{Analyse et conception}
+\section{Analyse et Conception}
 
 \subsection{Diagramme de cas d'utilisation}
 
-\diagramplaceholder{sprint3_cas_utilisation}{Diagramme de cas d'utilisation du sprint 3}{Cas d'utilisation du module d'édition documentaire}
+Ici, l'administrateur prépare les outils. Il dessine le modèle, configure le filigrane (watermark) et définit quelles données l'utilisateur pourra injecter.
 
-Le diagramme de cas d'utilisation présente deux acteurs principaux : l'administrateur et l'utilisateur final. L'administrateur gère les modèles, édite leur contenu et sauvegarde les modifications. L'utilisateur final sélectionne un modèle disponible, choisit un bénéficiaire et prévisualise le document généré.
+\diagramplaceholder{sprint3_cas_utilisation}{Cas d'utilisation du Sprint 3}{Studio de création de modèles}
 
-Le cas d'utilisation \og Prévisualiser un document \fg{} inclut la récupération du modèle, la récupération des données du bénéficiaire et le rendu HTML final. Le cas \og Sauvegarder un modèle \fg{} inclut la validation du contenu et la persistance via l'API.
+\subsection{Diagramme de classes (Entités persistantes)}
 
-\subsection{Diagramme de classes}
+Le cœur de ce sprint repose sur deux entités : le \texttt{Template} (le modèle) et la \texttt{GraphicCharter} (la charte). On remarque comment la charte est liée à l'organisation pour garantir l'identité visuelle.
 
-\diagramplaceholder{sprint3_classes}{Diagramme de classes du sprint 3}{Classes du module d'édition et de rendu documentaire}
+\diagramplaceholder{sprint3_classes}{Diagramme de classes - Sprint 3}{Structure des modèles et des chartes graphiques}
 
-Le diagramme de classes montre les relations entre \texttt{TemplateRecord}, \texttt{TemplateService}, \texttt{DocumentRenderService}, \texttt{DocumentDataService}, \texttt{GraphicCharterService} et les composants Angular d'administration et d'utilisation. Le modèle documentaire est l'entité centrale. Il référence une famille, une organisation éventuelle et une charte graphique.
+\subsection{Diagramme de séquence : Prévisualisation en temps réel}
 
-La classe backend \texttt{Template} contient des champs proches du modèle frontend : identifiant, famille, organisation, charte graphique, nom, en-tête, corps, pied de page, marges et orientation. Cette correspondance facilite la sérialisation et limite les transformations inutiles.
+Ce diagramme montre l'interaction complexe entre l'éditeur et le moteur de rendu. Dès que l'administrateur veut voir le résultat, le système doit fusionner le modèle avec un profil de test, calculer la pagination et appliquer les styles de la charte.
 
-\subsection{Diagrammes de séquence}
+\diagramplaceholder{sprint3_sequences}{Séquence de rendu}{Processus de fusion et de pagination dynamique}
 
-\diagramplaceholder{sprint3_sequences}{Diagramme de séquence du sprint 3}{Séquence d'édition, sauvegarde et prévisualisation}
+\section{Réalisation technique}
 
-Le diagramme de séquence du sprint décrit deux scénarios complémentaires. Dans le premier, l'administrateur sélectionne un modèle, modifie son contenu dans Tiptap, puis déclenche la sauvegarde. Le composant Angular appelle \texttt{TemplateService}, qui met à jour l'état local et envoie une requête \texttt{PUT} à l'API. Le backend transmet la demande à \texttt{EditorService}, puis au repository.
+\subsection{Variables simples et itératives}
 
-Dans le deuxième scénario, l'utilisateur demande une prévisualisation. Le frontend récupère le modèle et les données du bénéficiaire, puis demande au service de rendu de construire le HTML final. Lorsque le rendu nécessite des données serveur, l'endpoint \texttt{/api/preview} remplace les variables simples du modèle par les valeurs du bénéficiaire.
+J'ai implémenté deux types de variables. Les variables \og simples \fg{} pour les noms ou dates, et les variables \og de table \fg{}. Par exemple, pour un certificat d'enseignement, le système doit pouvoir itérer sur la liste des modules enseignés par le vacataire. J'ai utilisé une syntaxe spécifique pour que Tiptap reconnaisse ces blocs et les affiche proprement.
 
-\subsubsection*{Description des interactions système}
+\subsection{Centralisation de l'identité visuelle}
 
-L'interaction d'édition est centrée sur le modèle. L'éditeur modifie le contenu, le composant prépare un objet \texttt{TemplateRecord}, puis le service garantit sa normalisation. L'interaction de prévisualisation est plus riche : elle combine modèle, bénéficiaire, données métier, charte graphique et règles de pagination.
+La charte graphique est stockée sous forme de configuration JSON. Elle pilote tout le CSS du document : de la couleur des titres à la police du corps de texte. Cela permet de changer le logo de toute l'université en un seul clic sur tous les modèles existants.
 
-\subsubsection*{Analyse technique}
+\section{Conclusion du sprint}
 
-Le contenu documentaire est stocké sous forme HTML. Cette décision facilite l'intégration avec Tiptap et permet une restitution directe dans le navigateur. Elle exige toutefois des précautions : le contenu doit être maîtrisé, les champs variables doivent suivre une convention claire, et les traitements serveur doivent éviter l'exécution de SQL ou de HTML non contrôlé.
-
-Le backend expose un endpoint \texttt{/api/preview}. Celui-ci récupère le modèle, assemble l'en-tête, le corps et le pied de page, puis remplace les variables de type \texttt{\{\{champ\}\}} ou \texttt{\{champ\}} lorsque les données du bénéficiaire sont disponibles.
-
-\subsubsection*{Architecture des composants concernés}
-
-Le module s'appuie sur une architecture frontend orientée services. Le composant d'administration gère l'interaction utilisateur. \texttt{TemplateService} persiste les modèles. \texttt{DocumentDataService} récupère les données liées aux familles. \texttt{DocumentRenderService} produit le HTML final. \texttt{GraphicCharterService} fournit les variables visuelles de la charte.
-
-\section{Réalisation}
-
-\subsection{Intégration de l'éditeur Tiptap}
-
-L'intégration de Tiptap a consisté à installer les extensions nécessaires et à créer une interface d'édition riche. Les extensions utilisées couvrent les besoins classiques d'un document professionnel : paragraphes, titres, listes, tableaux, images, couleurs, polices et alignements. L'éditeur est intégré dans les pages d'administration afin de modifier les modèles.
-
-\screenshotplaceholder{sprint3_tiptap.png}{Éditeur Tiptap intégré}{Interface d'édition riche d'un modèle documentaire}
-
-Le contenu de chaque zone est synchronisé avec le modèle sélectionné. Lorsqu'un modèle change, l'éditeur recharge les valeurs \texttt{header}, \texttt{body} et \texttt{footer}. Lors de la sauvegarde, ces contenus sont réintégrés dans l'objet \texttt{TemplateRecord}.
-
-\subsection{Gestion du contenu des modèles de documents}
-
-Le modèle frontend est représenté par l'interface \texttt{TemplateRecord}. Il contient l'identifiant, la famille, l'organisation, la charte graphique, les zones HTML et les paramètres de rendu.
-
-\begin{lstlisting}[caption={Structure simplifiée d'un modèle documentaire côté Angular}]
-export interface TemplateRecord {
-  id: string;
-  familyId?: string;
-  organizationId?: string | null;
-  graphicCharterId?: string | null;
-  header?: string;
-  body?: string;
-  footer?: string;
-  hasHeader?: boolean;
-  hasFooter?: boolean;
-  filterProfile: TemplateFilterProfileEntry[];
-  sectionDirections: TemplateSectionDirections;
-}
-\end{lstlisting}
-
-Le service de sauvegarde met à jour l'état local avant d'appeler l'API. Cela permet à l'interface de rester réactive tout en garantissant la persistance.
-
-\begin{lstlisting}[caption={Sauvegarde d'un modèle par TemplateService}]
-async saveTemplate(template: TemplateRecord): Promise<TemplateRecord> {
-  const normalized = normalizeTemplateRecord(template);
-  const state = this.state.getState();
-  const index = state.templates.findIndex(item => item.id === normalized.id);
-  index >= 0
-    ? state.templates.splice(index, 1, normalized)
-    : state.templates.push(normalized);
-  this.state.replaceState(state);
-  await firstValueFrom(
-    this.api.put(`templates/${encodeURIComponent(normalized.id)}`, normalized)
-  );
-  return normalized;
-}
-\end{lstlisting}
-
-\subsection{Application des en-têtes, corps et pieds de page}
-
-Le découpage du document en trois zones permet de répondre à des besoins professionnels : logo ou informations institutionnelles en en-tête, contenu principal dans le corps, signatures ou références en pied de page. Les champs \texttt{hasHeader} et \texttt{hasFooter} permettent d'activer ou de désactiver ces zones selon le type de document.
-
-L'application prend également en compte les directions de section. Cette fonctionnalité est utile dans un contexte multilingue, par exemple pour gérer des contenus en français et en arabe dans un même système documentaire.
-
-\subsection{Prévisualisation et rendu des documents}
-
-La prévisualisation est prise en charge par \texttt{DocumentRenderService}. Ce service construit un rendu HTML à partir du modèle et des données du bénéficiaire. Il applique les variables CSS issues de la charte graphique, les marges de page, les distances d'en-tête et de pied de page, ainsi que les règles de pagination.
-
-\begin{lstlisting}[caption={Principe de remplacement des variables dans l'endpoint de prévisualisation}]
-html = Regex.Replace(html,
-    "\\{\\{\\s*(\\w+)\\s*\\}\\}|\\{\\s*(\\w+)\\s*\\}",
-    match =>
-    {
-        var key = match.Groups[1].Success
-            ? match.Groups[1].Value
-            : match.Groups[2].Value;
-        return rowValues.TryGetValue(key, out var val) && val != null
-            ? System.Net.WebUtility.HtmlEncode(val)
-            : match.Value;
-    });
-\end{lstlisting}
-
-\screenshotplaceholder{sprint3_preview.png}{Prévisualisation documentaire}{Prévisualisation d'un document généré à partir d'un modèle}
-
-Cette implémentation donne une première base de génération dynamique. Elle pourra ensuite être enrichie avec l'export PDF, la gestion avancée des blocs conditionnels et l'intégration de variables complexes.
-
-\section{Tests et validation}
-
-\begin{longtable}{p{0.25\textwidth} p{0.43\textwidth} p{0.22\textwidth}}
-\caption{Scénarios de test du sprint 3}\\
-\toprule
-\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{Scénario} & \textbf{Description} & \textbf{Résultat attendu}\\
-\midrule
-\endhead
-Chargement d'un modèle & Sélectionner un modèle existant depuis l'interface admin. & Les zones d'édition affichent le contenu enregistré.\\
-\midrule
-Modification du contenu & Modifier le corps du document puis sauvegarder. & Le contenu est persisté et reste disponible après rechargement.\\
-\midrule
-Gestion de l'en-tête & Activer ou désactiver l'en-tête. & Le rendu reflète l'état du champ \texttt{hasHeader}.\\
-\midrule
-Prévisualisation & Sélectionner un bénéficiaire et lancer la prévisualisation. & Les variables du modèle sont remplacées par les données disponibles.\\
-\midrule
-Validation API & Appeler \texttt{PUT /api/templates/\{id\}} avec un token valide. & Réponse positive et modèle mis à jour.\\
-\bottomrule
-\end{longtable}
-
-Les tests fonctionnels ont confirmé que l'édition, la sauvegarde et le rechargement du contenu fonctionnent de manière cohérente. Les tests d'intégration ont vérifié que le frontend et le backend manipulent une structure compatible du modèle. Les validations techniques ont porté sur la conservation des champs structurants et sur le rendu des zones HTML dans la prévisualisation.
-
-\section{Conclusion}
-
-Le troisième sprint a permis de livrer le coeur métier de la plateforme : l'édition documentaire dynamique. Grâce à Tiptap, aux services Angular et aux endpoints de templates, l'application peut désormais gérer des modèles de documents riches et prévisualiser un rendu personnalisé.
-
-Ce sprint prépare directement l'administration métier du sprint suivant. Les modèles ne prennent tout leur sens que lorsqu'ils sont reliés à des familles de documents, à des chartes graphiques, à des configurations de vues de tables et à des bénéficiaires. Le sprint 4 sera donc consacré à la structuration de ces modules d'administration.
+À la fin du sprint 3, le moteur était prêt. SIRH-Doc disposait d'un studio d'édition puissant capable de transformer n'importe quelle donnée RH en un document élégant et paginé proprement. Le dernier sprint allait maintenant se concentrer sur l'utilisation finale : la génération en un clic et l'archivage sécurisé.

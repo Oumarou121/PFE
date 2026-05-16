@@ -1,26 +1,115 @@
-<mxfile host="app.diagrams.net" modified="2026-05-11T17:05:00.000Z" agent="Codex" version="24.7.17" type="device">
-  <diagram id="global-classes" name="Classes globales">
-    <mxGraphModel dx="1500" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+<mxfile host="app.diagrams.net">
+  <diagram name="Global-Classes-Master">
+    <mxGraphModel dx="2400" dy="1500" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2339" pageHeight="1654" math="0" shadow="0">
       <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
-        <mxCell id="title" value="Diagramme global de classes - Architecture documentaire" style="text;html=1;strokeColor=none;fillColor=none;fontSize=18;fontStyle=1" vertex="1" parent="1"><mxGeometry x="300" y="20" width="580" height="40" as="geometry"/></mxCell>
-        <mxCell id="user" value="&lt;b&gt;User&lt;/b&gt;&lt;hr&gt;Id:int&lt;br&gt;Username:string&lt;br&gt;Email:string&lt;br&gt;PasswordHash:string&lt;br&gt;Role:string&lt;br&gt;OrganizationId:string&lt;br&gt;Profile:string&lt;br&gt;IsActive:bool" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="40" y="110" width="230" height="190" as="geometry"/></mxCell>
-        <mxCell id="family" value="&lt;b&gt;Family&lt;/b&gt;&lt;hr&gt;Id:string&lt;br&gt;Nom:string&lt;br&gt;Description:string&lt;br&gt;BeneficiaryMode:string&lt;br&gt;BeneficiaryTable:string&lt;br&gt;FilterCatalog:JsonArray&lt;br&gt;Classes:JsonArray" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="330" y="110" width="250" height="190" as="geometry"/></mxCell>
-        <mxCell id="template" value="&lt;b&gt;Template&lt;/b&gt;&lt;hr&gt;Id:string&lt;br&gt;FamilyId:string&lt;br&gt;GraphicCharterId:string&lt;br&gt;Nom:string&lt;br&gt;Header:string&lt;br&gt;Body:string&lt;br&gt;Footer:string&lt;br&gt;PageMargins:JsonObject" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="660" y="110" width="250" height="200" as="geometry"/></mxCell>
-        <mxCell id="charter" value="&lt;b&gt;GraphicCharter&lt;/b&gt;&lt;hr&gt;Id:string&lt;br&gt;OrganizationId:string&lt;br&gt;Name:string&lt;br&gt;Description:string&lt;br&gt;IsDefault:bool&lt;br&gt;Config:JsonObject" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="950" y="110" width="230" height="170" as="geometry"/></mxCell>
-        <mxCell id="tv" value="&lt;b&gt;TableViewConfig&lt;/b&gt;&lt;hr&gt;Id:string&lt;br&gt;TableName:string&lt;br&gt;Label:string&lt;br&gt;VisibleFields:JsonArray&lt;br&gt;EditableFields:JsonArray&lt;br&gt;PreviewFields:JsonArray&lt;br&gt;FieldSettings:JsonObject" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="40" y="420" width="260" height="190" as="geometry"/></mxCell>
-        <mxCell id="authdto" value="&lt;b&gt;Auth DTOs&lt;/b&gt;&lt;hr&gt;LoginRequest&lt;br&gt;RegisterRequest&lt;br&gt;AuthResponse&lt;br&gt;UserResponse" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="360" y="430" width="220" height="120" as="geometry"/></mxCell>
-        <mxCell id="editordto" value="&lt;b&gt;Editor DTOs&lt;/b&gt;&lt;hr&gt;EditorApiResponse&lt;br&gt;TableViewRowsRequest&lt;br&gt;TableViewRecordRequest&lt;br&gt;PreviewRequest" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="660" y="430" width="240" height="130" as="geometry"/></mxCell>
-        <mxCell id="services" value="&lt;b&gt;Services&lt;/b&gt;&lt;hr&gt;AuthService&lt;br&gt;EditorService&lt;br&gt;TemplateService&lt;br&gt;FamilyService&lt;br&gt;TableViewService&lt;br&gt;DocumentRenderService" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="950" y="410" width="230" height="170" as="geometry"/></mxCell>
-        <mxCell id="repos" value="&lt;b&gt;Repositories&lt;/b&gt;&lt;hr&gt;IUserRepository&lt;br&gt;UserRepository&lt;br&gt;IEditorRepository&lt;br&gt;EditorRepository" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="440" y="660" width="250" height="130" as="geometry"/></mxCell>
-        <mxCell id="e1" value="1..*" style="endArrow=open;html=1;" edge="1" parent="1" source="family" target="template"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e2" value="0..1" style="endArrow=open;html=1;" edge="1" parent="1" source="template" target="charter"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e3" value="dépend" style="endArrow=open;dashed=1;html=1;" edge="1" parent="1" source="services" target="repos"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e4" value="utilise" style="endArrow=open;dashed=1;html=1;" edge="1" parent="1" source="services" target="authdto"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e5" value="utilise" style="endArrow=open;dashed=1;html=1;" edge="1" parent="1" source="services" target="editordto"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e6" value="administre" style="endArrow=open;dashed=1;html=1;" edge="1" parent="1" source="services" target="tv"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e7" value="authentifie" style="endArrow=open;dashed=1;html=1;" edge="1" parent="1" source="services" target="user"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- ENTITIES -->
+
+        <!-- User -->
+        <mxCell id="ent-user" value="User" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="50" y="50" width="240" height="342" as="geometry" />
+        </mxCell>
+        <mxCell id="u1" value="+ Id : int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="30" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u2" value="+ Username : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="56" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u3" value="+ Email : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="82" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u4" value="+ PasswordHash : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="108" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u5" value="+ Role : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="134" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u6" value="+ OrganizationId : int?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="160" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u7" value="+ Profile : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="186" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u8" value="+ AccessAllYears : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="212" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u9" value="+ AccessYearList : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="238" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u10" value="+ ModuleIds : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="264" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u11" value="+ CreatedAt : DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="290" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="u12" value="+ IsActive : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-user"><mxGeometry y="316" width="240" height="26" as="geometry" /></mxCell>
+
+        <!-- Organization -->
+        <mxCell id="ent-org" value="Organization" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="400" y="50" width="260" height="188" as="geometry" />
+        </mxCell>
+        <mxCell id="o1" value="+ Id : int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-org"><mxGeometry y="30" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="o2" value="+ NameFr : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-org"><mxGeometry y="56" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="o3" value="+ Acronym : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-org"><mxGeometry y="82" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="o4" value="+ DatabaseName : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-org"><mxGeometry y="108" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="o5" value="+ OrganizationSystemPrefix : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-org"><mxGeometry y="134" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="o6" value="+ Email : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-org"><mxGeometry y="160" width="260" height="26" as="geometry" /></mxCell>
+
+        <!-- Module -->
+        <mxCell id="ent-module" value="Module" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="400" y="300" width="260" height="212" as="geometry" />
+        </mxCell>
+        <mxCell id="m1" value="+ Id : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-module"><mxGeometry y="30" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="m2" value="+ OrganizationIds : List&lt;int&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-module"><mxGeometry y="56" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="m3" value="+ Name : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-module"><mxGeometry y="82" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="m4" value="+ MainTableViewId : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-module"><mxGeometry y="108" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="m5" value="+ IsActive : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-module"><mxGeometry y="134" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="m6" value="+ TableViews : List&lt;ModuleTableView&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-module"><mxGeometry y="160" width="260" height="26" as="geometry" /></mxCell>
+        <mxCell id="m7" value="+ CreatedAt / UpdatedAt : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-module"><mxGeometry y="186" width="260" height="26" as="geometry" /></mxCell>
+
+        <!-- TableViewConfig -->
+        <mxCell id="ent-tvc" value="TableViewConfig" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="400" y="550" width="350" height="264" as="geometry" />
+        </mxCell>
+        <mxCell id="tv1" value="+ Id : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-tvc"><mxGeometry y="30" width="350" height="26" as="geometry" /></mxCell>
+        <mxCell id="tv2" value="+ TableName : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-tvc"><mxGeometry y="56" width="350" height="26" as="geometry" /></mxCell>
+        <mxCell id="tv3" value="+ Label : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-tvc"><mxGeometry y="82" width="350" height="26" as="geometry" /></mxCell>
+        <mxCell id="tv4" value="+ Visible / Editable / PreviewFields : List&lt;string&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-tvc"><mxGeometry y="108" width="350" height="26" as="geometry" /></mxCell>
+        <mxCell id="tv5" value="+ FieldSettings : Dictionary&lt;string, TableViewFieldSetting&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-tvc"><mxGeometry y="134" width="350" height="26" as="geometry" /></mxCell>
+        <mxCell id="tv6" value="+ Filters : List&lt;TableViewFilter&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-tvc"><mxGeometry y="160" width="350" height="26" as="geometry" /></mxCell>
+
+        <!-- Family -->
+        <mxCell id="ent-family" value="Family" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="800" y="50" width="300" height="238" as="geometry" />
+        </mxCell>
+        <mxCell id="f1" value="+ Id : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-family"><mxGeometry y="30" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="f2" value="+ Nom : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-family"><mxGeometry y="56" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="f3" value="+ BeneficiaryMode : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-family"><mxGeometry y="82" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="f4" value="+ FilterCatalog : List&lt;FilterDefinition&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-family"><mxGeometry y="108" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="f5" value="+ Classes : List&lt;FamilyClass&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-family"><mxGeometry y="134" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="f6" value="+ Sql : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-family"><mxGeometry y="160" width="300" height="26" as="geometry" /></mxCell>
+
+        <!-- Template -->
+        <mxCell id="ent-template" value="Template" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="800" y="320" width="300" height="342" as="geometry" />
+        </mxCell>
+        <mxCell id="t1" value="+ Id / FamilyId : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="30" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="t2" value="+ Nom : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="56" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="t3" value="+ Header / Body / Footer : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="82" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="t4" value="+ HasHeader / HasFooter : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="108" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="t5" value="+ Orientation : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="134" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="t6" value="+ FilterProfile : List&lt;TemplateFilterProfileEntry&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="160" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="t7" value="+ SectionDirections : SectionDirections" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="186" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="t8" value="+ PageMargins : PageMargins" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="212" width="300" height="26" as="geometry" /></mxCell>
+        <mxCell id="t9" value="+ GraphicCharterId : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-template"><mxGeometry y="238" width="300" height="26" as="geometry" /></mxCell>
+
+        <!-- GraphicCharter -->
+        <mxCell id="ent-gc" value="GraphicCharter" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="800" y="700" width="280" height="136" as="geometry" />
+        </mxCell>
+        <mxCell id="gc1" value="+ Id : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-gc"><mxGeometry y="30" width="280" height="26" as="geometry" /></mxCell>
+        <mxCell id="gc2" value="+ Name : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-gc"><mxGeometry y="56" width="280" height="26" as="geometry" /></mxCell>
+        <mxCell id="gc3" value="+ Config : GraphicCharterConfig" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-gc"><mxGeometry y="82" width="280" height="26" as="geometry" /></mxCell>
+
+        <!-- Document -->
+        <mxCell id="ent-doc" value="Document (Archive)" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="320" width="320" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" value="+ Id : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-doc"><mxGeometry y="30" width="320" height="26" as="geometry" /></mxCell>
+        <mxCell id="d2" value="+ FullHtml : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-doc"><mxGeometry y="56" width="320" height="26" as="geometry" /></mxCell>
+        <mxCell id="d3" value="+ GeneratedAt : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-doc"><mxGeometry y="82" width="320" height="26" as="geometry" /></mxCell>
+        <mxCell id="d4" value="+ GeneratedById / Name : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-doc"><mxGeometry y="108" width="320" height="26" as="geometry" /></mxCell>
+        <mxCell id="d5" value="+ BeneficiaryId / Table : String?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;whiteSpace=wrap;html=1;" vertex="1" parent="ent-doc"><mxGeometry y="134" width="320" height="26" as="geometry" /></mxCell>
+
+        <!-- RELATIONS -->
+        <mxCell id="rel1" value="appartient à" style="endArrow=none;html=1;exitX=1;exitY=0.25;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent-user" target="ent-org"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel2" value="configuré pour" style="endArrow=none;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent-org" target="ent-module"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel3" value="contient" style="endArrow=diamondThin;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;endFill=1;" edge="1" parent="1" source="ent-module" target="ent-tvc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel4" value="définit" style="endArrow=none;html=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="ent-family" target="ent-org"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel5" value="possède" style="endArrow=diamondThin;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;endFill=1;" edge="1" parent="1" source="ent-family" target="ent-template"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel6" value="utilise" style="endArrow=none;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent-template" target="ent-gc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel7" value="historise" style="endArrow=diamondThin;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;endFill=1;" edge="1" parent="1" source="ent-template" target="ent-doc"><mxGeometry relative="1" as="geometry" /></mxCell>
+
       </root>
     </mxGraphModel>
   </diagram>

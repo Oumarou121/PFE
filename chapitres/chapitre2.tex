@@ -1,269 +1,63 @@
 %=================================================
-% CHAPITRE 2
+% CHAPITRE 2 : Analyse et spécification des besoins
 %=================================================
 
 \chapter{Analyse et spécification des besoins}
 
 \section{Introduction}
 
-Après avoir présenté le contexte général du projet, ce chapitre se concentre sur l'analyse des besoins et la spécification fonctionnelle de la plateforme. Cette étape est essentielle, car elle permet de transformer une idée générale, à savoir automatiser et sécuriser la gestion documentaire, en exigences claires et exploitables par le développement.
-
-L'analyse ne se limite pas à lister les fonctionnalités attendues. Elle cherche à comprendre les acteurs, leurs responsabilités, les informations manipulées, les contraintes de sécurité, les règles de gestion et les priorités du produit. Dans un système documentaire dynamique, une mauvaise compréhension des besoins peut rapidement provoquer des incohérences : un modèle mal relié à une famille, une charte appliquée au mauvais document, des bénéficiaires mal filtrés ou des droits accordés à un utilisateur non autorisé.
-
-Ce chapitre présente donc les acteurs du système, clarifie le vocabulaire métier, détaille les besoins fonctionnels et non fonctionnels, expose le backlog produit et introduit la modélisation UML globale. Il constitue le lien entre le cadrage du chapitre précédent et la réalisation progressive décrite dans les sprints suivants.
-
-\section{Identification des acteurs}
-
-La plateforme distingue trois acteurs principaux. Cette séparation correspond à des responsabilités métier différentes et constitue la base du contrôle d'accès par rôles.
-
-\subsection{Super administrateur}
-
-Le super administrateur possède le niveau de responsabilité le plus élevé. Il intervient sur la configuration globale de la plateforme. Son rôle consiste à préparer les structures qui permettront ensuite aux administrateurs et aux utilisateurs de travailler dans un environnement cohérent.
-
-Il peut gérer les familles de documents, configurer les vues de tables métier, vérifier les données disponibles, administrer les ressources structurantes et contrôler les paramètres partagés. Il est également responsable de la cohérence globale du référentiel documentaire. Par exemple, lorsqu'une nouvelle catégorie de documents doit être ajoutée, le super administrateur définit la famille correspondante, précise la source des bénéficiaires et configure les champs utiles.
-
-\subsection{Administrateur}
-
-L'administrateur est un utilisateur métier avancé. Il ne gère pas nécessairement toute la structure globale, mais il intervient sur les modèles et les ressources documentaires utilisées dans son périmètre. Il peut créer ou modifier des modèles, associer une charte graphique, organiser le contenu en en-tête, corps et pied de page, puis vérifier le rendu.
-
-Son rôle demande une compréhension fonctionnelle du document attendu, mais ne doit pas nécessiter une intervention dans le code source. La plateforme doit donc lui fournir des interfaces suffisamment claires pour créer et maintenir des modèles sans dépendre d'un développeur.
-
-\subsection{Utilisateur final}
-
-L'utilisateur final exploite les modèles et les données disponibles pour produire ou prévisualiser un document. Il sélectionne une famille, choisit un modèle, recherche un bénéficiaire, applique éventuellement des filtres, puis consulte le rendu généré. Son périmètre doit être limité aux opérations nécessaires à son travail quotidien.
-
-Cet acteur représente la finalité de la plateforme. Si l'administration prépare les ressources, l'utilisateur final valide la valeur réelle du système : produire rapidement un document fiable, correctement mis en forme et alimenté par les bonnes données.
-
-\section{Clarification du vocabulaire métier}
-
-La clarification du vocabulaire est importante, car plusieurs termes peuvent paraître proches alors qu'ils désignent des concepts différents. Cette distinction évite les ambiguïtés dans la conception et dans la rédaction des chapitres de réalisation.
-
-\subsection{Famille de documents}
-
-Une famille de documents représente une catégorie fonctionnelle. Elle regroupe des modèles qui partagent une logique métier commune. Elle peut définir la table des bénéficiaires, les colonnes d'identification, les champs d'affichage, les filtres disponibles et les variables exploitables dans les modèles.
-
-Par exemple, une famille peut correspondre à un ensemble d'attestations, de décisions ou de documents administratifs destinés à un même type de bénéficiaire. Elle joue le rôle de pont entre le monde documentaire et les données métier.
-
-\subsection{Modèle de document ou template}
-
-Le modèle de document, également appelé template, décrit la structure d'un document. Il contient le contenu éditable, généralement divisé en en-tête, corps et pied de page. Il peut contenir du texte, des tableaux, des images, des variables et des paramètres de mise en page.
-
-Le modèle n'est pas le document final. Il constitue une matrice réutilisable. Le document final est produit lorsque le modèle est combiné avec les données d'un bénéficiaire et une charte graphique.
-
-\subsection{Charte graphique}
-
-La charte graphique regroupe les règles visuelles appliquées aux documents : couleurs, typographies, identité de l'organisation, watermark, styles de titres et paramètres d'affichage. Elle permet de garantir une cohérence visuelle entre plusieurs modèles.
-
-Centraliser la charte graphique évite de dupliquer les mêmes paramètres dans chaque modèle. Une modification visuelle peut ainsi être répercutée sur plusieurs documents sans reprendre individuellement tous les contenus.
-
-\subsection{Configuration de vue de table}
-
-La configuration de vue de table, représentée dans le code par \texttt{TableViewConfig}, décrit la manière dont une table métier est affichée et manipulée dans l'application. Elle précise le nom de la table, son libellé, les champs visibles, les champs éditables, les champs utilisés pour la prévisualisation et les éventuels paramètres de lookup.
-
-Ce concept apporte une dimension configurable très importante. Au lieu de développer une interface spécifique pour chaque table métier, le système peut générer une vue exploitable à partir d'une configuration. Cela rend la plateforme plus souple et plus adaptée à des données évolutives.
-
-\subsection{Instance de document}
-
-Une instance de document correspond au résultat produit à partir d'un modèle, d'une charte graphique et des données d'un bénéficiaire. Elle représente le document personnalisé que l'utilisateur peut prévisualiser, imprimer ou exporter selon les fonctionnalités disponibles.
-
-Cette distinction entre modèle et instance est essentielle. Le modèle est stable et réutilisable, tandis que l'instance dépend du bénéficiaire sélectionné et du contexte de génération.
-
-\section{Analyse des besoins fonctionnels}
-
-\subsection{Gestion des utilisateurs}
-
-La plateforme doit permettre l'identification des utilisateurs à travers un mécanisme de connexion sécurisé. Chaque utilisateur possède un compte, une adresse électronique, un mot de passe haché, un rôle, éventuellement une organisation et des informations de profil. Le système doit permettre la connexion, l'inscription selon les règles prévues et la récupération du profil authentifié.
-
-La gestion des utilisateurs constitue la première condition de sécurité. Sans identification fiable, il devient impossible de contrôler l'accès aux modèles, aux données métier et aux documents générés.
-
-\subsection{Gestion des rôles et permissions}
-
-Le système doit distinguer les rôles \texttt{supAdmin}, \texttt{admin} et \texttt{user}. Chaque rôle donne accès à un espace différent. Le super administrateur accède aux configurations globales, l'administrateur gère les ressources documentaires et l'utilisateur final exploite les modèles disponibles.
-
-Le contrôle d'accès doit être appliqué côté frontend et côté backend. Les guards Angular empêchent l'accès aux routes non autorisées, tandis que les attributs d'autorisation et le middleware JWT protègent les endpoints. Cette double protection évite de dépendre uniquement de l'interface utilisateur.
-
-\subsection{Gestion des familles de documents}
-
-La plateforme doit permettre de créer, modifier, consulter et supprimer des familles de documents. Une famille doit pouvoir contenir des informations sur les bénéficiaires, les filtres, les colonnes d'affichage et les variables disponibles. Elle doit également servir de critère de regroupement pour les modèles.
-
-Cette fonctionnalité est indispensable pour structurer le système documentaire. Sans famille, les modèles seraient isolés et difficiles à relier aux données métier.
-
-\subsection{Gestion des modèles de documents}
-
-Le système doit permettre la création et la modification de modèles de documents. Un modèle doit être associé à une famille et peut être associé à une charte graphique. Il doit contenir un en-tête, un corps et un pied de page. Il doit également conserver les paramètres de mise en page comme les marges, l'orientation et les règles d'affichage.
-
-L'administrateur doit pouvoir éditer le contenu à travers un éditeur riche, sauvegarder le résultat et le prévisualiser. Cette fonctionnalité représente le coeur de la plateforme.
-
-\subsection{Gestion des chartes graphiques}
-
-La plateforme doit permettre de gérer des chartes graphiques. Une charte peut être liée à une organisation ou être définie comme charte par défaut. Elle contient une configuration visuelle au format structuré. Elle doit pouvoir être appliquée aux modèles afin de garantir une identité homogène.
-
-\subsection{Gestion des configurations de vues de tables}
-
-Le système doit permettre de gérer les configurations de vues de tables. Chaque configuration doit décrire une table métier, les champs affichables, les champs modifiables, les champs de prévisualisation et les réglages de lookup. L'utilisateur autorisé doit pouvoir consulter les lignes, créer un enregistrement, modifier un enregistrement ou supprimer une ligne selon les droits et la configuration.
-
-Cette fonctionnalité rend l'application plus générique. Elle permet d'exploiter des données métier sans développer systématiquement un nouveau module.
-
-\subsection{Édition et génération des documents}
-
-La plateforme doit permettre d'éditer un modèle, d'y insérer du contenu riche et de générer une prévisualisation à partir d'un bénéficiaire. Les variables du modèle doivent être remplacées par les données disponibles. Le rendu doit appliquer les paramètres du modèle et de la charte graphique.
-
-Cette fonctionnalité donne sa valeur principale au projet : transformer des données structurées en documents personnalisés et exploitables.
-
-\subsection{Gestion des bénéficiaires et des données métier}
-
-Le système doit permettre la recherche des bénéficiaires selon une famille. La recherche peut utiliser une table, une requête SQL configurée ou des filtres métier. Les données retournées doivent être limitées et adaptées au contexte de l'utilisateur.
-
-La gestion des bénéficiaires est directement liée à la génération documentaire. Un document généré sans données fiables perd son intérêt ; il est donc essentiel que cette étape soit correctement conçue.
-
-\section{Analyse des besoins non fonctionnels}
-
-\subsection{Sécurité}
-
-La sécurité constitue une exigence majeure. Les mots de passe doivent être hachés, les sessions doivent être représentées par des tokens JWT signés, les routes doivent être protégées et les endpoints sensibles doivent refuser les appels anonymes. Le système doit également éviter d'exposer des informations sensibles dans les réponses HTTP.
-
-Les requêtes liées aux données métier doivent être contrôlées. Les configurations de vues de tables ne doivent pas devenir un moyen d'exécuter librement des requêtes dangereuses. Les champs manipulés doivent être limités aux champs configurés et autorisés.
-
-\subsection{Performance}
-
-L'application doit rester réactive même lorsque les données métier deviennent volumineuses. Les listes doivent être limitées, les ressources doivent être chargées progressivement et les appels API doivent éviter les transferts inutiles. Côté Angular, le chargement paresseux des composants contribue à réduire le poids initial de l'application.
-
-\subsection{Ergonomie et expérience utilisateur}
-
-L'ergonomie est importante, car la plateforme est destinée à des utilisateurs qui ne sont pas nécessairement développeurs. Les interfaces doivent guider l'utilisateur, réduire les manipulations inutiles et afficher des messages compréhensibles en cas d'erreur. L'éditeur documentaire doit offrir une expérience proche d'un outil bureautique tout en respectant les contraintes du système.
-
-\subsection{Maintenabilité}
-
-La maintenabilité repose sur la séparation des responsabilités. Le backend est organisé en contrôleurs, services, repositories, DTOs et entités. Le frontend est organisé en composants, services, guards, interceptors et modèles. Cette structure permet d'ajouter de nouvelles fonctionnalités sans modifier toute l'application.
-
-Les configurations JSON, comme les chartes graphiques ou les vues de tables, apportent de la flexibilité. Elles doivent toutefois être normalisées pour éviter l'apparition de données incohérentes.
-
-\section{Backlog du produit}
-
-\subsection{User stories principales}
-
-Le backlog produit rassemble les besoins exprimés sous forme de user stories. Il représente une vision globale du produit avant son découpage en sprints.
-
-\begin{longtable}{p{0.16\textwidth} p{0.42\textwidth} p{0.30\textwidth}}
-\caption{Backlog produit global}\\
-\toprule
-\textbf{ID} & \textbf{User story} & \textbf{Valeur attendue}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{ID} & \textbf{User story} & \textbf{Valeur attendue}\\
-\midrule
-\endhead
-US-01 & En tant qu'utilisateur, je peux me connecter de manière sécurisée. & Protéger l'accès à la plateforme.\\
-\midrule
-US-02 & En tant qu'utilisateur connecté, je suis redirigé vers l'espace correspondant à mon rôle. & Améliorer l'expérience et appliquer la gouvernance d'accès.\\
-\midrule
-US-03 & En tant que super administrateur, je peux gérer les familles de documents. & Structurer les catégories documentaires.\\
-\midrule
-US-04 & En tant qu'administrateur, je peux créer et modifier des modèles. & Produire des matrices documentaires réutilisables.\\
-\midrule
-US-05 & En tant qu'administrateur, je peux définir une charte graphique. & Garantir une identité visuelle homogène.\\
-\midrule
-US-06 & En tant que super administrateur, je peux configurer les vues de tables. & Administrer les données métier de manière configurable.\\
-\midrule
-US-07 & En tant qu'utilisateur, je peux rechercher un bénéficiaire. & Personnaliser le document avec les bonnes données.\\
-\midrule
-US-08 & En tant qu'utilisateur, je peux prévisualiser le document généré. & Vérifier le résultat avant exploitation.\\
-\midrule
-US-09 & En tant que système, je dois refuser les accès non autorisés. & Assurer la confidentialité et l'intégrité.\\
-\bottomrule
-\end{longtable}
-
-\subsection{Priorisation des besoins}
-
-La priorisation suit une logique de dépendance. L'authentification et les rôles sont prioritaires, car ils conditionnent l'accès au reste de l'application. L'édition documentaire vient ensuite, car elle représente la valeur centrale du produit. Les modules d'administration métier complètent le système en rendant les modèles exploitables dans un contexte réel. Enfin, l'intégration et les tests consolident la solution.
-
-\subsection{Critères d'acceptation}
-
-Les critères d'acceptation permettent de vérifier objectivement si une fonctionnalité est terminée. Ils sont formulés de manière observable.
-
-\begin{longtable}{p{0.28\textwidth} p{0.58\textwidth}}
-\caption{Critères d'acceptation principaux}\\
-\toprule
-\textbf{Fonctionnalité} & \textbf{Critères d'acceptation}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{Fonctionnalité} & \textbf{Critères d'acceptation}\\
-\midrule
-\endhead
-Authentification & Un utilisateur valide reçoit un JWT ; un utilisateur invalide reçoit une erreur ; le mot de passe n'est jamais retourné.\\
-\midrule
-RBAC & Chaque rôle accède uniquement à son espace ; une route interdite provoque une redirection ; un endpoint protégé refuse les appels anonymes.\\
-\midrule
-Modèles & Un modèle peut être créé, modifié, sauvegardé et rechargé sans perte de contenu.\\
-\midrule
-Chartes graphiques & Une charte peut être sauvegardée et appliquée au rendu documentaire.\\
-\midrule
-TableViewConfig & Une vue de table peut être configurée ; seuls les champs visibles et éditables déclarés sont utilisés.\\
-\midrule
-Génération & Un document peut être prévisualisé à partir d'un modèle et d'un bénéficiaire.\\
-\bottomrule
-\end{longtable}
-
-\section{Planification des sprints}
-
-\subsection{Découpage temporel}
-
-Le projet est découpé en quatre sprints. Ce découpage permet de passer progressivement de l'infrastructure vers la valeur métier, puis de regrouper la consolidation finale avec l'administration opérationnelle. Chaque sprint produit un livrable vérifiable et prépare le sprint suivant.
-
-\subsection{Objectifs par sprint}
-
-Le premier sprint concerne l'authentification et le socle applicatif. Le deuxième sprint met en place la gestion des rôles. Le troisième sprint développe l'édition documentaire. Le quatrième sprint ajoute l'administration des modules métier et prend en charge l'intégration, les tests et la livraison.
-
-\subsection{Livrables attendus}
-
-Les livrables attendus sont les fichiers sources backend et frontend, les interfaces fonctionnelles, les endpoints testables, les diagrammes UML, les captures d'écran, la documentation technique et le présent rapport.
-
-\section{Diagrammes UML globaux}
-
-\subsection{Diagramme de cas d'utilisation général}
-
-\diagramplaceholder{global_cas_utilisation}{Diagramme de cas d'utilisation global}{Vue globale des acteurs et fonctionnalités du système}
-
-Le diagramme global de cas d'utilisation présente les fonctionnalités principales accessibles selon les acteurs. Il montre que l'authentification est un point d'entrée commun, puis que les responsabilités se séparent selon les rôles. Le super administrateur se concentre sur la configuration, l'administrateur sur les ressources documentaires et l'utilisateur final sur l'exploitation des documents.
-
-\subsection{Diagramme de classes global}
-
-\diagramplaceholder{global_classes}{Diagramme de classes global}{Vue globale des entités, services, DTOs et repositories}
-
-Le diagramme de classes global donne une vue d'ensemble de l'architecture. Il relie les entités \texttt{User}, \texttt{Family}, \texttt{Template}, \texttt{GraphicCharter} et \texttt{TableViewConfig} aux services et repositories. Il montre également le rôle des DTOs dans les échanges entre frontend et backend.
-
-\subsection{Diagramme de séquence global}
-
-\diagramplaceholder{global_sequences}{Diagramme de séquence global}{Flux global Angular, API, services, repository et SQL Server}
-
-Le diagramme de séquence global décrit un parcours complet : authentification, chargement de l'état, sélection d'un modèle, recherche d'un bénéficiaire, génération de la prévisualisation et retour du document rendu. Il permet de visualiser la collaboration entre Angular, l'API ASP.NET Core, les services backend, les repositories et SQL Server.
-
-\section{Architecture globale du système}
-
-L'architecture globale repose sur une séparation claire entre le frontend, le backend et la base de données. Angular prend en charge les interfaces, la navigation, les guards, les interceptors et les services clients. ASP.NET Core expose les endpoints REST, applique les règles de sécurité, orchestre la logique métier et interagit avec SQL Server. La base de données conserve les données persistantes et les informations métier.
-
-Cette architecture présente plusieurs avantages. Elle sépare l'expérience utilisateur de la logique serveur, facilite les tests, permet l'évolution indépendante des couches et offre une base solide pour de futures extensions, comme l'export PDF avancé, la signature électronique ou l'historisation des documents générés.
-
-\section{Analyse technique globale du projet}
-
-L'analyse du projet SIRH-Doc montre une architecture organisée autour de trois responsabilités principales. Le backend ASP.NET Core expose les contrats REST, applique les règles de sécurité et centralise l'accès aux données. Le frontend Angular porte l'expérience utilisateur, les écrans d'administration, l'éditeur documentaire et les services clients. La base SQL Server conserve à la fois les données de configuration documentaire et les données métier utilisées pour alimenter les documents.
-
-Côté backend, la séparation entre contrôleurs, services, repositories et DTOs rend le code lisible et maintenable. Les contrôleurs restent proches du protocole HTTP, tandis que les services portent l'orchestration applicative. Les repositories isolent les requêtes SQL et facilitent l'évolution des accès aux données. Cette organisation n'est pas un DDD strict au sens tactique complet, mais elle reprend une logique de séparation par responsabilités qui convient au périmètre du projet.
-
-La gestion multi-tenant constitue un point structurant. Le tenant courant permet d'associer les traitements à une organisation et à une base de données cible. L'ajout de l'année universitaire active renforce cette logique, car plusieurs tables métier doivent être filtrées selon la période académique. Ce mécanisme améliore la traçabilité des dossiers du personnel et évite de mélanger des données appartenant à des exercices universitaires différents.
-
-Le système de génération documentaire repose sur les familles, les modèles, les chartes graphiques, les variables simples, les listes et les tableaux dynamiques. Cette conception rend le moteur documentaire configurable : un administrateur peut faire évoluer un modèle sans modifier le code source. Les modules dynamiques, notamment les vues de tables, complètent cette logique en permettant d'exposer des données métier sans créer une interface spécifique pour chaque table.
-
-La sécurité repose sur l'authentification JWT, le contrôle des rôles, les guards Angular, les middlewares backend et la validation des requêtes. Les points sensibles concernent surtout l'exécution de requêtes SQL configurables et l'accès aux données multi-tenant. Ces risques sont limités par l'autorisation des requêtes de lecture uniquement, la normalisation des paramètres, le filtrage par organisation et l'ajout de contrôles liés à l'année universitaire.
-
-Sur le plan UX/UI, l'application adopte une organisation par espaces : super administrateur, administrateur et utilisateur. Cette séparation clarifie les responsabilités, mais impose de garder une cohérence forte dans les formulaires, les messages d'erreur et les écrans de configuration. Les améliorations appliquées pendant la consolidation ont principalement visé la fiabilité de l'éditeur, la génération des tableaux dynamiques, la gestion des images et le chargement complet des données nécessaires.
-
-En matière de maintenabilité, le projet présente une base saine : services spécialisés, modèles typés côté frontend, repositories centralisés côté backend et composants dédiés pour les fonctions principales. Les axes d'amélioration à poursuivre concernent l'augmentation des tests automatisés, la documentation des conventions SQL configurables, la surveillance des performances sur les gros volumes et la mise en place progressive d'un audit plus détaillé des actions sensibles.
+Avant de taper la moindre ligne de code, il a fallu traduire les besoins métier en spécifications techniques. Dans un projet comme SIRH-Doc, l'analyse est l'étape où l'on décide comment l'application va \og penser \fg{}. 
+
+L'un des plus gros enjeux a été de définir une structure assez souple pour s'adapter à n'importe quelle table de données RH, tout en restant assez simple pour un utilisateur qui n'est pas informaticien. Ce chapitre détaille les acteurs du système, les fonctionnalités indispensables et les choix de modélisation qui ont guidé mon développement.
+
+\section{Qui utilise le système ? (Les Acteurs)}
+
+J'ai identifié trois profils types, chacun ayant un périmètre d'action bien précis :
+
+\begin{itemize}
+    \item \textbf{Le Super Administrateur} : C'est le \og maître d'œuvre \fg{}. Il configure les établissements (tenants), crée les modules métier et définit quelles tables de la base de données seront accessibles. C'est lui qui rend l'application générique.
+    \item \textbf{L'Administrateur RH} : C'est l'utilisateur métier. Il gère les fiches du personnel, crée les modèles de documents (templates) et définit la charte graphique de son établissement. Il ne touche pas à la technique, il prépare les outils de travail.
+    \item \textbf{L'Utilisateur Final (Agent)} : Son rôle est opérationnel. Il cherche un employé, sélectionne l'attestation dont il a besoin, vérifie la prévisualisation et l'imprime.
+\end{itemize}
+
+\section{Le dictionnaire de SIRH-Doc}
+
+Pour qu'on se comprenne bien, j'ai dû clarifier quelques concepts clés que j'ai utilisés tout au long du projet :
+\begin{itemize}
+    \item \textbf{Famille de documents} : C'est une catégorie (ex: \og Scolarité \fg{} ou \og RH \fg{}). Elle définit d'où proviennent les données des bénéficiaires.
+    \item \textbf{Template (Modèle)} : C'est la matrice du document avec ses zones (en-tête, corps, pied de page) et ses variables.
+    \item \textbf{TableViewConfig} : C'est sans doute le concept le plus important. C'est une configuration qui dit au système : \og Pour la table Personnel, affiche seulement le Nom, le Grade et le Service, et rends le Grade modifiable \fg{}. Cela m'a évité de créer des pages en dur pour chaque table.
+\end{itemize}
+
+\section{Besoins fonctionnels : Ce que l'app doit faire}
+
+L'application doit couvrir tout le cycle de vie, de la saisie à l'impression :
+\begin{enumerate}
+    \item \textbf{Sécurité} : Authentification JWT obligatoire et séparation stricte des données par établissement.
+    \item \textbf{Gestion RH} : Création et modification des dossiers individuels, suivi des positions (activité, congé) et archivage des pièces (diplômes).
+    \item \textbf{Studio d'Édition} : Un éditeur visuel pour dessiner les modèles avec insertion facile de variables et gestion automatique de la pagination A4.
+    \item \textbf{Moteur de Fusion} : Remplacement instantané des variables par les vraies valeurs au moment de la génération.
+    \item \textbf{Archivage} : Garder un historique de chaque document émis (qui, quand, pour qui).
+\end{enumerate}
+
+\section{Besoins non fonctionnels : La qualité derrière le code}
+
+Au-delà des fonctionnalités, j'avais trois exigences personnelles pour ce projet :
+\begin{itemize}
+    \item \textbf{Ergonomie} : L'interface doit être sobre et efficace. Un agent RH ne doit pas chercher le bouton \og Générer \fg{} pendant dix minutes.
+    \item \textbf{Généricité} : Si l'établissement veut ajouter une table \og Véhicules de service \fg{}, le SuperAdmin doit pouvoir le faire en configuration, sans que je n'aie à modifier le code Angular.
+    \item \textbf{Maintenabilité} : Le code doit être découpé proprement (Services, Repositories, DTOs) pour que le projet puisse évoluer après ma soutenance.
+\end{itemize}
+
+\section{Modélisation globale}
+
+Pour visualiser comment tout cela s'articule, j'ai conçu trois diagrammes structurants que vous retrouverez en détail dans les annexes et au fil des chapitres :
+\begin{itemize}
+    \item \textbf{Le Diagramme de Cas d'Utilisation Global} : Qui résume les interactions entre les rôles.
+    \item \textbf{Le Diagramme de Classes Global} : Qui montre comment les entités (Utilisateurs, Organisations, Modèles, Personnel) sont reliées entre elles.
+    \item \textbf{L'Architecture du Système} : Une vue d'ensemble du flux de données entre Angular, l'API .NET et SQL Server.
+\end{itemize}
 
 \section{Conclusion}
 
-Ce chapitre a permis de formaliser les besoins de la plateforme. Les acteurs ont été identifiés, les concepts métier clarifiés, les fonctionnalités décrites et les contraintes non fonctionnelles précisées. Le backlog produit et les critères d'acceptation donnent une base de suivi pour la réalisation.
-
-La modélisation UML globale complète cette analyse en offrant une vision structurée du système. Les chapitres suivants décrivent maintenant la réalisation progressive de la plateforme à travers les quatre sprints définis.
+Ce travail d'analyse m'a permis de voir SIRH-Doc non pas comme un simple éditeur, mais comme un système d'information complet. Avec ces besoins clairs, j'ai pu attaquer le développement sereinement. Le chapitre suivant détaille le premier grand défi technique : la mise en place du socle multi-tenant et de la sécurité.

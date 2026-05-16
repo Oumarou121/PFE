@@ -1,0 +1,66 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Global-UC-Detailed">
+    <mxGraphModel dx="1200" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- System Boundary -->
+        <mxCell id="system" value="SIRH-Doc : Plateforme de Gestion Documentaire Dynamique" style="shape=rect;html=1;verticalAlign=top;fontStyle=1;whiteSpace=wrap;align=center;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="250" y="40" width="600" height="600" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases -->
+        <mxCell id="uc1" value="S'authentifier" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="650" y="80" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc2" value="Gérer les organisations" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="350" y="80" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc3" value="Gérer les modules &amp; vues" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="350" y="160" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc4" value="Gérer le personnel et mouvements" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="350" y="260" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc5" value="Concevoir les modèles documentaires" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="350" y="360" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc6" value="Générer &amp; Archiver documents" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="350" y="480" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc7" value="Exporter en PDF" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="630" y="480" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Actors -->
+        <mxCell id="a1" value="Super Admin" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="100" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" value="Admin RH" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="300" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a3" value="Agent RH" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="500" width="30" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Associations -->
+        <mxCell id="l1" edge="1" parent="1" source="a1" target="uc2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="l2" edge="1" parent="1" source="a1" target="uc3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="l3" edge="1" parent="1" source="a2" target="uc4"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="l4" edge="1" parent="1" source="a2" target="uc5"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="l5" edge="1" parent="1" source="a3" target="uc6"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Relationships -->
+        <mxCell id="i1" value="&lt;&lt;includes&gt;&gt;" style="edgeStyle=none;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;endArrow=open;endSize=12;" edge="1" parent="1" source="uc2" target="uc1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="i2" value="&lt;&lt;includes&gt;&gt;" style="edgeStyle=none;html=1;exitX=1;exitY=0.5;entryX=0;entryY=1;dashed=1;endArrow=open;endSize=12;" edge="1" parent="1" source="uc4" target="uc1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e1" value="&lt;&lt;extends&gt;&gt;" style="edgeStyle=none;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;endArrow=open;endSize=12;" edge="1" parent="1" source="uc6" target="uc7"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Actor Generalization -->
+        <mxCell id="g1" edge="1" parent="1" source="a1" target="a2" style="endArrow=block;endFill=0;endSize=12;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="g2" edge="1" parent="1" source="a2" target="a3" style="endArrow=block;endFill=0;endSize=12;"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
