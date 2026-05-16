@@ -2280,7 +2280,7 @@
 
           <div class="pm-sb-section">
             <div class="pm-sb-label">Bénéficiaire</div>
-            <div class="pm-search-wrap">
+            <div class="pm-search-wrap" *ngIf="previewBeneficiaries.length > 1">
               <i class="ti ti-search"></i>
               <input
                 class="pm-search-input"
@@ -2304,7 +2304,7 @@
                 {{ getBeneficiaryLabel(b) }}
               </option>
             </select>
-            <div class="pm-bene-count">
+            <div class="pm-bene-count" *ngIf="previewBeneficiaries.length > 1">
               <span class="pm-bene-dot"></span>
               {{ previewBeneficiaries.length }} bénéficiaire(s)
             </div>

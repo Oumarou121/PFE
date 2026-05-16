@@ -1887,7 +1887,8 @@ namespace DocApi.Repositories
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "where", "join", "inner", "left", "right", "full", "cross", "on",
-                "group", "having", "order", "union", "except", "intersect"
+                "group", "having", "order", "union", "except", "intersect",
+                "for", "json", "path", "include_null_values", "without_array_wrapper"
             }.Contains(value);
         }
 

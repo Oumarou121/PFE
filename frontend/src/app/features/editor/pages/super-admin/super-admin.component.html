@@ -2610,9 +2610,14 @@
                             class="sql-input"
                             rows="8"
                             style="min-height: 150px"
-                            [ngModel]="v.sqlQuery || ''"
-                            (ngModelChange)="
-                              updateListObjectSqlQuery(famId, ci, vi, $event)
+                            [value]="v.sqlQuery || ''"
+                            (change)="
+                              updateListObjectSqlQuery(
+                                famId,
+                                ci,
+                                vi,
+                                $any($event.target).value
+                              )
                             "
                             placeholder="SELECT ... FROM ..."
                           ></textarea>

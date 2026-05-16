@@ -356,10 +356,12 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       this.academicYearConfig?.affectedTables.map((item) => item.tableName) ||
         [],
     );
-    return ((this.databaseSchema?.tables || []) as Array<{
-      name: string;
-      comment?: string;
-    }>).filter((table) => !selected.has(table.name));
+    return (
+      (this.databaseSchema?.tables || []) as Array<{
+        name: string;
+        comment?: string;
+      }>
+    ).filter((table) => !selected.has(table.name));
   }
 
   get selectedTableView(): TableViewConfig | null {
@@ -404,7 +406,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   async loadAcademicYearConfig(): Promise<void> {
     if (!this.academicYearSelectedOrganizationId) return;
     const org = this.organizations.find(
-      (item) => String(item.id) === String(this.academicYearSelectedOrganizationId),
+      (item) =>
+        String(item.id) === String(this.academicYearSelectedOrganizationId),
     );
     if (!org?.databaseName) return;
 
@@ -417,15 +420,15 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
             `schema?databaseName=${encodeURIComponent(org.databaseName)}`,
           ),
         ),
-        this.academicYearService.getConfig(this.academicYearSelectedOrganizationId),
+        this.academicYearService.getConfig(
+          this.academicYearSelectedOrganizationId,
+        ),
       ]);
       this.databaseSchema = schemaPayload?.schema || schemaPayload;
-      this.academicYearConfig =
-        config ||
-        {
-          organizationId: Number(this.academicYearSelectedOrganizationId),
-          affectedTables: [],
-        };
+      this.academicYearConfig = config || {
+        organizationId: Number(this.academicYearSelectedOrganizationId),
+        affectedTables: [],
+      };
     } catch {
       this.toast("Configuration des annees indisponible.", "error");
     } finally {
@@ -1264,7 +1267,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.isCreatingTableViewRow = false;
     this.tableViewDebugLogKeys.clear();
     try {
-      await this.useSchemaForOrganizationIds(this.selectedTableView?.organizationIds);
+      await this.useSchemaForOrganizationIds(
+        this.selectedTableView?.organizationIds,
+      );
       await this.ensureTableViewSchema();
     } catch (e) {
       // Continue rendering even if schema fails
@@ -1529,8 +1534,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   logoutAndRedirect(): void {
     this.zone.run(() => this.auth.logout());
   }
-
-
 
   // Phase 4 Tranche 5: openModal/closeModal simplifiées — fallback DOM supprimé.
   // Seules les modales Organization et Admin existent; elles sont 100% Angular state.
@@ -1834,14 +1837,19 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
   private async ensureSchemaContext(): Promise<void> {
     if (this.currentSection === "families" && this.selectedFamily) {
-      await this.useSchemaForOrganizationIds(this.selectedFamily.organizationIds);
+      await this.useSchemaForOrganizationIds(
+        this.selectedFamily.organizationIds,
+      );
       return;
     }
     if (this.currentSection === "tableviews" && this.selectedTableView) {
-      await this.useSchemaForOrganizationIds(this.selectedTableView.organizationIds);
+      await this.useSchemaForOrganizationIds(
+        this.selectedTableView.organizationIds,
+      );
       return;
     }
-    if (!this.selectedSchemaDatabaseName) await this.useSchemaForOrganizationIds([]);
+    if (!this.selectedSchemaDatabaseName)
+      await this.useSchemaForOrganizationIds([]);
   }
 
   private async ensureSchemaMeta(): Promise<any> {
@@ -2929,7 +2937,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       this.buildDefaultListObjectSqlQuery(famId, nextVar) ||
       this.buildSimpleListObjectSqlQuery(tableName, nextVar);
     nextVar.customSqlQuery = false;
-    this.syncListObjectColumnsFromSql(nextVar);
     this.upsertGeneratedVar(famId, tableName, nextVar);
   }
 
@@ -3116,13 +3123,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     );
 
     const selectEntries = validColumns
-      .map((col: any) => {
-        const sourceColumn = String(col?.column || "").trim();
-        const key = String(col?.key || sourceColumn).trim();
-        if (!sourceColumn || !key) return null;
-        return `  ${alias}.${this.sqlId(sourceColumn)} AS ${this.sqlId(key)}`;
-      })
-      .filter(Boolean);
+      .map((col: any) => this.buildListObjectColumnSelectExpr(col, alias))
+      .filter((entry: string | null): entry is string => !!entry)
+      .map((entry: string) => `  ${entry}`);
 
     if (!selectEntries.length) return "";
 
@@ -3165,7 +3168,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       .join("\n");
   }
 
-  private buildSimpleListObjectSqlQuery(tableName: string, varDef: any): string {
+  private buildSimpleListObjectSqlQuery(
+    tableName: string,
+    varDef: any,
+  ): string {
     const selectedColumns =
       Array.isArray(varDef?.sourceColumns) && varDef.sourceColumns.length
         ? varDef.sourceColumns
@@ -3177,13 +3183,16 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         const sourceColumn = String(col?.column || col?.key || "").trim();
         const key = String(col?.key || sourceColumn).trim();
         if (!sourceColumn || !key) return null;
-        return `  ${this.sqlId(sourceColumn)} AS ${this.sqlId(key)}`;
+        const normalizedCol = { ...col, column: sourceColumn, key };
+        return `  ${this.buildListObjectColumnSelectExpr(normalizedCol, "")}`;
       })
       .filter(Boolean);
     if (!tableName || !selectEntries.length) return "";
-    return ["SELECT", selectEntries.join(",\n"), `FROM ${this.sqlId(tableName)}`].join(
-      "\n",
-    );
+    return [
+      "SELECT",
+      selectEntries.join(",\n"),
+      `FROM ${this.sqlId(tableName)}`,
+    ].join("\n");
   }
 
   private refreshGeneratedListObjectQueries(
@@ -3203,7 +3212,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         ) {
           return;
         }
-        const generatedSql = this.buildDefaultListObjectSqlQuery(famId, varDef);
+        const generatedSql =
+          this.buildDefaultListObjectSqlQuery(famId, varDef) ||
+          this.buildSimpleListObjectSqlQuery(varDef.sourceTable, varDef);
         const normalizedCurrent = String(varDef.sqlQuery || "").trim();
         const normalizedNext = String(generatedSql || "").trim();
         if (normalizedCurrent !== normalizedNext) {
@@ -3255,15 +3266,68 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
           filter?.columnBinding || {},
         ).map((binding: any) => ({
           filter,
-          binding,
+          binding: this.resolveLookupBackedFilterBinding(fam, filter, binding),
         })),
       )
       .filter(
         ({ binding }: { binding: any }) =>
-          binding &&
-          binding.tableName &&
-          binding.columnName,
+          binding && binding.tableName && binding.columnName,
       );
+  }
+
+  private resolveLookupBackedFilterBinding(
+    fam: any,
+    filter: any,
+    binding: any,
+  ): any {
+    if (!binding?.tableName || !this.schemaMetaCache) return binding;
+    const builder = normalizeFilterSqlBuilder(filter?.sqlBuilder || {});
+    const lookupTable = this.normalizeSchemaIdentifier(builder.tableName);
+    if (!lookupTable) return binding;
+    const lookupValueColumn = this.normalizeSchemaIdentifier(
+      builder.valueColumn,
+    );
+    const boundTable = this.normalizeSchemaIdentifier(binding.tableName);
+    const vars = (fam?.classes || []).flatMap((cls: any) => cls?.vars || []);
+
+    for (const varDef of vars) {
+      if (this.normalizeSchemaIdentifier(varDef?.sourceTable) !== boundTable) {
+        continue;
+      }
+
+      const lookupColumns =
+        varDef?.type === "list-object"
+          ? Array.isArray(varDef.sourceColumns)
+            ? varDef.sourceColumns
+            : []
+          : [varDef];
+
+      const match = lookupColumns.find((col: any) => {
+        if (String(col?.displayMode || "raw") !== "lookup") return false;
+        if (this.normalizeSchemaIdentifier(col?.lookupTable) !== lookupTable) {
+          return false;
+        }
+        if (!lookupValueColumn) return true;
+        return (
+          this.normalizeSchemaIdentifier(col?.lookupValueColumn) ===
+          lookupValueColumn
+        );
+      });
+      const sourceColumn = String(
+        match?.column || match?.sourceColumn || "",
+      ).trim();
+      if (sourceColumn) {
+        return {
+          ...binding,
+          columnName: this.resolveSchemaColumnName(
+            binding.tableName,
+            sourceColumn,
+          ),
+        };
+      }
+    }
+
+    return binding;
   }
 
   private buildListObjectApplicableFilterClauses(
@@ -3530,14 +3594,11 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     selectEntries: string[],
     fromLines: string[],
   ): string {
-    return `(\n${this.indentSql(
-      [
-        "SELECT",
-        `  ${selectEntries.join(",\n  ")}`,
-        ...fromLines,
-        "FOR JSON PATH, INCLUDE_NULL_VALUES",
-      ].join("\n"),
-    )}\n)`;
+    return this.buildJsonArrayExpression([
+      "SELECT",
+      `  ${selectEntries.join(",\n  ")}`,
+      ...fromLines,
+    ]);
   }
 
   private buildAggregateSubquery(
@@ -3557,7 +3618,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const sourceColumn = String(sourceCol?.column || "").trim();
     const key = String(sourceCol?.key || sourceColumn).trim();
     if (!sourceColumn || !key) return null;
-    const rawExpr = `${valueAlias}.${this.sqlId(sourceColumn)}`;
+    const rawExpr = valueAlias
+      ? `${valueAlias}.${this.sqlId(sourceColumn)}`
+      : this.sqlId(sourceColumn);
     if (String(sourceCol?.displayMode || "raw") !== "lookup") {
       return `${rawExpr} AS ${this.sqlId(key)}`;
     }
@@ -3776,14 +3839,35 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  private buildCustomObjectArraySubquery(querySql: string): string | null {
-    const cleaned = this.sanitizeUnsafeManualJoinSql(querySql)
+  private stripTrailingForJsonClause(querySql: string): string {
+    return String(querySql || "")
       .trim()
-      .replace(/;+\s*$/, "");
+      .replace(/;+\s*$/, "")
+      .replace(
+        /\s+FOR\s+JSON\s+PATH(?:\s*,\s*INCLUDE_NULL_VALUES)?(?:\s*,\s*WITHOUT_ARRAY_WRAPPER)?\s*$/i,
+        "",
+      )
+      .trim();
+  }
+
+  private buildJsonArrayExpression(selectLines: string[]): string {
+    const selectSql = this.stripTrailingForJsonClause(selectLines.join("\n"));
+    if (!selectSql) return "N'[]'";
+    return [
+      "ISNULL((",
+      this.indentSql(`${selectSql}\nFOR JSON PATH, INCLUDE_NULL_VALUES`, 2),
+      "),",
+      "  N'[]'",
+      ")",
+    ].join("\n");
+  }
+
+  private buildCustomObjectArraySubquery(querySql: string): string | null {
+    const cleaned = this.stripTrailingForJsonClause(
+      this.sanitizeUnsafeManualJoinSql(querySql),
+    );
     if (!cleaned || !/^select\b/i.test(cleaned)) return null;
-    return `(\n${this.indentSql(
-      `${cleaned}\nFOR JSON PATH, INCLUDE_NULL_VALUES`,
-    )}\n)`;
+    return this.buildJsonArrayExpression([cleaned]);
   }
 
   private buildVarSelectExpr(
@@ -4136,7 +4220,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const fam = this.getFamily(famId);
     const varDef = fam?.classes?.[ci]?.vars?.[vi];
     if (!varDef || varDef.type !== "list-object") return;
-    const generatedSql = this.buildDefaultListObjectSqlQuery(famId, varDef);
+    const generatedSql =
+      this.buildDefaultListObjectSqlQuery(famId, varDef) ||
+      this.buildSimpleListObjectSqlQuery(varDef.sourceTable, varDef);
     if (!generatedSql) {
       this.toast(
         "Impossible de générer la requête SQL. Vérifiez la table principale, la table source et la liaison.",
@@ -4146,7 +4232,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     }
     varDef.sqlQuery = generatedSql;
     varDef.customSqlQuery = false;
-    this.syncListObjectColumnsFromSql(varDef);
     this.saveFamilyLocal(fam);
     this.cdr.markForCheck();
     this.regenerateFamilySql(famId, true);
@@ -4227,8 +4312,10 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.listObjectSqlLoading[k] = true;
     this.cdr.markForCheck();
     try {
-      this.syncListObjectColumnsFromSql(varDef);
-      this.saveFamilyLocal(fam);
+      if (varDef.customSqlQuery) {
+        this.syncListObjectColumnsFromSql(varDef);
+        this.saveFamilyLocal(fam);
+      }
       const rows = await this.runSelect(sqlQuery, {
         id: 1,
         beneficiaryId: 1,
