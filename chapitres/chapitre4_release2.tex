@@ -19,47 +19,31 @@ Le sprint 3 avait pour objectif de permettre aux administrateurs de concevoir de
 \renewcommand{\arraystretch}{1.4}
 
 \begin{longtable}{|>{\centering\arraybackslash}p{1cm}|
-                  >{\raggedright\arraybackslash}p{2.7cm}|
-                  >{\raggedright\arraybackslash}p{8.2cm}|
+                  >{\raggedright\arraybackslash}p{10.4cm}|
                   >{\centering\arraybackslash}p{1.7cm}|}
 \hline
-\textbf{Id} & \textbf{Features} & \textbf{User stories} & \textbf{Priority} \\
+\textbf{ID} & \textbf{User story} & \textbf{Priorité} \\
 \hline
 \endfirsthead
 
 \hline
-\textbf{Id} & \textbf{Features} & \textbf{User stories} & \textbf{Priority} \\
+\textbf{ID} & \textbf{User story} & \textbf{Priorité} \\
 \hline
 \endhead
 
-S3-01 & Familles documentaires &
-En tant qu'administrateur, je veux définir les familles et leurs sources de données afin de préparer des documents adaptés à chaque besoin RH.
-& Haute \\
+9 & En tant que super administrateur, je dois pouvoir définir les sources de données et les variables disponibles pour chaque famille documentaire. & Haute \\
 \hline
 
-S3-02 & Templates structurés &
-En tant qu'administrateur, je veux composer un modèle avec en-tête, corps, pied de page et paramètres de page afin de respecter la forme officielle.
-& Haute \\
+10 & En tant qu'administrateur d'organisation, je veux gérer la charte graphique de mon établissement afin de personnaliser les documents produits. & Moyenne \\
 \hline
 
-S3-03 & Chartes graphiques &
-En tant qu'administrateur, je veux réutiliser une charte par organisation afin de garder une identité visuelle homogène.
-& Moyenne \\
+11 & En tant qu'administrateur d'organisation, je dois pouvoir créer, modifier et consulter les modèles documentaires de mon établissement. & Haute \\
 \hline
 
-S3-04 & Variables simples et tableaux &
-En tant qu'administrateur, je veux insérer des variables et des tableaux dynamiques afin de relier le modèle aux données réelles.
-& Haute \\
+12 & En tant qu'administrateur d'organisation, je veux insérer des variables simples et des tableaux dynamiques dans un template. & Haute \\
 \hline
 
-S3-05 & Prévisualisation avec fusion &
-En tant qu'utilisateur, je veux voir le document fusionné avant génération afin de vérifier le résultat final.
-& Haute \\
-\hline
-
-S3-06 & Images et pagination &
-En tant qu'utilisateur, je veux que les logos, images et sauts de page restent fidèles entre l'éditeur, l'aperçu et l'impression.
-& Moyenne \\
+13 & En tant qu'utilisateur, je veux prévisualiser un document fusionné afin de vérifier le contenu avant génération. & Haute \\
 \hline
 
 \caption{Backlog du Sprint 3}
@@ -125,9 +109,31 @@ Une autre difficulté concerne les variables de type tableau. Elles ne représen
 
 \subsection{Réalisation du sprint}
 
-La sauvegarde des modèles s'appuie sur \texttt{TemplatesController} et \texttt{TemplateService} côté Angular. Le backend normalise les templates, puis les persiste dans la base de configuration. Les chartes graphiques sont gérées séparément afin de pouvoir appliquer une identité visuelle à plusieurs modèles.
+La réalisation du Sprint 3 s'est concentrée sur le studio documentaire. Les interfaces développées permettent de configurer les familles documentaires, de construire les templates, de gérer la charte graphique et de vérifier le rendu final avant la génération.
 
-La prévisualisation repose sur \texttt{document-data.service.ts} et \texttt{document-render.service.ts}. Le moteur récupère les données de la famille, remplace les variables, génère les tableaux, applique les styles et prépare une structure de pages. Le service de rendu prend également en charge les images afin que leur alignement reste cohérent dans l'éditeur, la prévisualisation et l'impression.
+\screenshotplaceholder{sprint3/config-family1.png}{Configuration des familles documentaires}{Interface de configuration d'une famille documentaire}
+
+\screenshotplaceholder{sprint3/config-family2.png}{Sources de données d'une famille}{Paramétrage des données utilisées par une famille documentaire}
+
+\screenshotplaceholder{sprint3/config-family3.png}{Variables documentaires}{Préparation des variables simples et des variables tableau}
+
+La configuration des familles documentaires permet de relier les modèles aux données réelles. Ces écrans servent à définir les sources SQL, les variables disponibles et les informations nécessaires pour alimenter les templates lors de la fusion.
+
+\screenshotplaceholder{sprint3/editor-vue.png}{Éditeur de template}{Interface principale de conception du document}
+
+\screenshotplaceholder{sprint3/header-footer-section-editor.png}{Sections d'en-tête et de pied de page}{Configuration des zones fixes du document}
+
+\screenshotplaceholder{sprint3/config-filter-section-editor.png}{Filtres de l'éditeur}{Paramétrage des filtres utilisés pendant la préparation du document}
+
+L'éditeur de template permet de construire la structure du document à partir de sections modifiables. L'administrateur peut préparer le contenu, organiser l'en-tête et le pied de page, puis utiliser les filtres disponibles pour tester le modèle dans un contexte proche de l'utilisation réelle.
+
+\screenshotplaceholder{sprint3/edit-graphic-charte.png}{Configuration de la charte graphique}{Interface de personnalisation de l'identité visuelle}
+
+La charte graphique regroupe les éléments visuels de l'établissement, notamment le logo et les informations institutionnelles. Elle permet d'appliquer une identité cohérente aux différents modèles sans répéter la même configuration dans chaque template.
+
+\screenshotplaceholder{sprint3/preview-document.png}{Prévisualisation du document}{Aperçu du document après fusion des données}
+
+La prévisualisation permet de contrôler le résultat avant la génération définitive. Elle vérifie la fusion des variables, l'affichage des tableaux, la disposition des images et la cohérence générale de la mise en page.
 
 \section{Sprint 4 : Automatisation de la production et archivage RH}
 
@@ -140,47 +146,34 @@ Le sprint 4 clôt le cycle documentaire. L'objectif était de permettre à l'uti
 \renewcommand{\arraystretch}{1.4}
 
 \begin{longtable}{|>{\centering\arraybackslash}p{1cm}|
-                  >{\raggedright\arraybackslash}p{2.7cm}|
-                  >{\raggedright\arraybackslash}p{8.2cm}|
+                  >{\raggedright\arraybackslash}p{10.4cm}|
                   >{\centering\arraybackslash}p{1.7cm}|}
 \hline
-\textbf{Id} & \textbf{Features} & \textbf{User stories} & \textbf{Priority} \\
+\textbf{ID} & \textbf{User story} & \textbf{Priorité} \\
 \hline
 \endfirsthead
 
 \hline
-\textbf{Id} & \textbf{Features} & \textbf{User stories} & \textbf{Priority} \\
+\textbf{ID} & \textbf{User story} & \textbf{Priorité} \\
 \hline
 \endhead
 
-S4-01 & Génération individuelle et en masse &
-En tant qu'utilisateur, je veux générer un ou plusieurs documents à partir d'un modèle afin de traiter les demandes courantes plus rapidement.
-& Haute \\
+14 & En tant qu'utilisateur métier, je dois pouvoir générer un document pour un bénéficiaire sélectionné. & Haute \\
 \hline
 
-S4-02 & Archivage du rendu final &
-En tant qu'utilisateur, je veux conserver le document généré avec ses métadonnées afin de pouvoir le retrouver plus tard.
-& Haute \\
+15 & En tant qu'utilisateur métier, je veux générer un même document pour plusieurs bénéficiaires afin de réduire les traitements répétitifs. & Moyenne \\
 \hline
 
-S4-03 & Filtres d'archives &
-En tant qu'administrateur, je veux filtrer les archives par famille, bénéficiaire, date et générateur afin de contrôler la production documentaire.
-& Haute \\
+16 & En tant qu'utilisateur métier, je veux que chaque document généré soit archivé afin de conserver son rendu final et ses informations de génération. & Haute \\
 \hline
 
-S4-04 & Visibilité par rôle &
-En tant qu'utilisateur métier, je veux voir uniquement mes documents générés afin de respecter la confidentialité des productions.
-& Haute \\
+17 & En tant qu'utilisateur métier, je veux consulter uniquement les documents que j'ai générés afin de retrouver mes productions. & Haute \\
 \hline
 
-S4-05 & Soft-delete et audit &
-En tant qu'administrateur, je veux supprimer logiquement un document afin de masquer une pièce sans perdre la trace de l'action.
-& Haute \\
+18 & En tant qu'administrateur d'organisation, je veux consulter les archives de mon établissement et les filtrer par bénéficiaire ou générateur. & Moyenne \\
 \hline
 
-S4-06 & Impression et export &
-En tant qu'utilisateur, je veux imprimer ou exporter un document fidèle à la prévisualisation afin de l'utiliser dans le circuit administratif.
-& Moyenne \\
+19 & En tant qu'administrateur, je dois pouvoir supprimer logiquement une archive afin de masquer un document sans perdre sa trace. & Moyenne \\
 \hline
 
 \caption{Backlog du Sprint 4}
@@ -246,9 +239,29 @@ Le filtrage des archives est également un point sensible. Un administrateur peu
 
 \subsection{Réalisation du sprint}
 
-La production documentaire utilise les services Angular de rendu et de données, puis \texttt{DocumentService} pour l'archivage. Côté backend, les endpoints d'archives sont exposés par \texttt{EditorController}, tandis que \texttt{EditorService} applique les restrictions liées au rôle et au générateur. \texttt{EditorRepository} gère la pagination, les filtres, la création et le soft-delete des documents.
+La réalisation du Sprint 4 correspond au passage du modèle documentaire vers un usage administratif complet. Les interfaces développées permettent de générer un document à partir d'un bénéficiaire, de contrôler son rendu, puis de conserver une trace exploitable dans les archives.
 
-La table \texttt{document} contient les informations nécessaires à la consultation : titre, contenu HTML, identifiants de famille et de template, bénéficiaire, générateur, date de génération et statut. Pour les listes volumineuses, le backend retourne une réponse paginée afin de garder l'interface fluide.
+\screenshotplaceholder{sprint4/generation-select-template.png}{Sélection du modèle documentaire}{Choix du template à utiliser pour la génération}
+
+\screenshotplaceholder{sprint4/generation-select-beneficiary.png}{Sélection du bénéficiaire}{Choix du bénéficiaire concerné par le document}
+
+\screenshotplaceholder{sprint4/generation-preview.png}{Prévisualisation avant génération}{Aperçu du document après fusion des données}
+
+\screenshotplaceholder{sprint4/generation-vue.png}{Génération du document}{Interface de production documentaire}
+
+La génération documentaire regroupe le choix du modèle, la sélection du bénéficiaire et la prévisualisation du résultat. Ces interfaces permettent à l'utilisateur de vérifier le document avant son impression ou son archivage. Le document produit repose sur les données du bénéficiaire, le template sélectionné et la charte graphique associée.
+
+\screenshotplaceholder{sprint4/archive-list.png}{Liste des archives}{Consultation des documents générés}
+
+\screenshotplaceholder{sprint4/archive-filters.png}{Filtres des archives}{Recherche des documents archivés}
+
+\screenshotplaceholder{sprint4/archive-detail.png}{Détail d'une archive}{Informations de génération du document archivé}
+
+\screenshotplaceholder{sprint4/archive-preview-document.png}{Aperçu d'une archive}{Consultation du rendu conservé}
+
+\screenshotplaceholder{sprint4/archive-soft-delete.png}{Suppression logique d'une archive}{Masquage d'un document archivé avec conservation de sa trace}
+
+La gestion des archives permet de retrouver les documents produits, de les filtrer et de consulter leur détail. L'administrateur dispose d'une vision plus large sur les documents de son organisation, tandis que l'utilisateur métier retrouve principalement ses propres productions. La suppression logique permet de masquer une archive sans effacer définitivement les informations nécessaires à la traçabilité.
 
 \section{Conclusion Release 2}
 

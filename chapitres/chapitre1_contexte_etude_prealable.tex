@@ -256,8 +256,6 @@ Le développement de SIRH-Doc s'est appuyé sur un ensemble d'outils simples mai
 
 Les technologies retenues pour SIRH-Doc ont été choisies en fonction de la nature du projet : une application web administrative, multi-tenant, fortement liée aux données SQL Server et à la génération documentaire. Le choix ne s'est donc pas limité à la popularité des outils ; il fallait surtout disposer d'un socle stable, maintenable et suffisamment souple pour supporter les modules dynamiques.
 
-% Taille uniforme des logos
-\newcommand{\logoSize}{1.8cm}
 
 \begin{table}[H]
 \centering
@@ -273,7 +271,7 @@ Les technologies retenues pour SIRH-Doc ont été choisies en fonction de la nat
 {\includegraphics[width=\logoSize,height=\logoSize,keepaspectratio]{images/logos/dotnet.png}}
 {\fbox{\parbox[c][\logoSize][c]{2cm}{\centering .NET}}}
 &
-\textbf{ASP.NET Core 8 :} ASP.NET Core a été utilisé pour développer l'API backend. Il offre une structure claire pour organiser les contrôleurs, les services, l'injection de dépendances, l'authentification JWT et les middlewares, notamment celui chargé de la résolution du tenant.
+\textbf{ASP.NET Core 8 :} ASP.NET Core a été retenu pour le backend, car il s'intègre naturellement à une organisation en couches : contrôleurs, services, domaine et infrastructure. Cette structure a facilité l'application des principes de la Clean Architecture dans le projet.
 \\
 \hline
 
@@ -291,7 +289,7 @@ Les technologies retenues pour SIRH-Doc ont été choisies en fonction de la nat
 {\includegraphics[width=\logoSize,height=\logoSize,keepaspectratio]{images/logos/angular.png}}
 {\fbox{\parbox[c][\logoSize][c]{2cm}{\centering Angular}}}
 &
-\textbf{Angular 17 :} Angular a été choisi pour construire l'interface web. Il convient bien à une application de gestion composée de plusieurs pages, formulaires, services partagés et composants réutilisables, comme le studio documentaire, les modules dynamiques et les archives.
+\textbf{Angular 17 :} Angular a été choisi pour construire le frontend, car il permet d'organiser l'application autour de composants, de services et de modèles TypeScript. Cette structure facilite la séparation entre l'affichage, la gestion des interactions utilisateur et les appels vers l'API, tout en gardant le code frontend plus maintenable.
 \\
 \hline
 

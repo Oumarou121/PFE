@@ -248,7 +248,7 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
   getFamilyName(familyId: string | undefined): string {
     if (!familyId) return "-";
     const family = this.families.find((f) => f.id === familyId);
-    return family?.nom || family?.name || familyId || "-";
+    return family?.nom || family?.name || "-";
   }
 
   getFamilyNames(familyIds: string[]): string {

@@ -1,26 +1,20 @@
 \documentclass[12pt,a4paper]{report}
 
+%==================================
+% ENCODAGE ET LANGUE
+%==================================
+
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[french]{babel}
+\usepackage{lmodern}
+
+%==================================
+% MISE EN PAGE
+%==================================
+
 \usepackage{geometry}
 \usepackage{setspace}
-\usepackage{lmodern}
-\usepackage{tikz}
-\usepackage{xcolor}
-\usepackage{graphicx}
-\usepackage{float}
-\usepackage{array}
-\usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{caption}
-\usepackage{listings}
-\usepackage{hyperref}
-\usepackage{array}
-\usepackage{longtable}
-\usepackage{booktabs}
-\usepackage{makecell}
-\usepackage{colortbl}
 
 \geometry{
     top=2.5cm,
@@ -30,12 +24,32 @@
 }
 
 \setstretch{1.15}
-\hypersetup{
-    colorlinks=true,
-    linkcolor=black,
-    urlcolor=blue,
-    citecolor=black
-}
+
+%==================================
+% COULEURS ET GRAPHISMES
+%==================================
+
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{float}
+
+%==================================
+% TABLEAUX
+%==================================
+
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{makecell}
+\usepackage{colortbl}
+\usepackage{caption}
+
+%==================================
+% CODE SOURCE
+%==================================
+
+\usepackage{listings}
 
 \definecolor{codebg}{RGB}{248,248,248}
 \definecolor{codeframe}{RGB}{210,210,210}
@@ -56,11 +70,26 @@
     showstringspaces=false,
     captionpos=b
 }
+
 \lstset{style=pfeCode}
 
-% Figure utilisée pour les captures d'écran.
-% Si le fichier image existe dans images/, il sera affiché.
-% Sinon, un emplacement explicite reste visible dans le PDF.
+%==================================
+% HYPERLIENS
+%==================================
+
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    citecolor=black
+}
+
+%==================================
+% PLACEHOLDER CAPTURES D'ÉCRAN
+%==================================
+
 \newcommand{\screenshotplaceholder}[3]{
 \begin{figure}[H]
     \centering
@@ -79,8 +108,10 @@
 \end{figure}
 }
 
-% Figure utilisée pour les diagrammes Draw.io.
-% Exporter le fichier .drawio en PNG dans diagrammes/ pour l'affichage final.
+%==================================
+% PLACEHOLDER DIAGRAMMES
+%==================================
+
 \newcommand{\diagramplaceholder}[3]{
 \begin{figure}[H]
     \centering
@@ -100,70 +131,48 @@
 \end{figure}
 }
 
+%==================================
+% DÉBUT DOCUMENT
+%==================================
+
 \begin{document}
 
 %==================================
 % PAGE DE GARDE
 %==================================
 
-\begin{titlepage}
-    \centering
-    \vspace*{1cm}
-    {\Large Ministère de l'Enseignement Supérieur et de la Recherche Scientifique}\\[0.3cm]
-    {\Large Faculté des Sciences de Monastir}\\[1.5cm]
-    {\Huge \textbf{Rapport de Projet de Fin d'Études}}\\[1.2cm]
-    {\LARGE \textbf{Conception et réalisation d'une plateforme de gestion documentaire dynamique}}\\[1.5cm]
-    \begin{flushleft}
-        \large
-        \textbf{Réalisé par :} \hspace{0.3cm} Oumar \\
-        \textbf{Encadrant académique :} \hspace{0.3cm} Mme./M. [Nom de l'encadrant] \\
-        \textbf{Encadrant professionnel :} \hspace{0.3cm} Mme./M. [Nom de l'encadrant professionnel] \\
-        \textbf{Organisme d'accueil :} \hspace{0.3cm} [Nom de l'organisme d'accueil]
-    \end{flushleft}
-    \vfill
-    {\large Année universitaire 2025--2026}
-\end{titlepage}
+% \input{page_garde}
+% \clearpage
+
+%==================================
+% NUMÉROTATION ROMAINE
+%==================================
 
 \pagenumbering{roman}
 
-\chapter*{Dédicaces}
-\addcontentsline{toc}{chapter}{Dédicaces}
-
-\begin{itshape}
-    \begin{flushright}
-        Je dédie ce travail... \\
-        À mes chers parents, pour leur amour inconditionnel, leur soutien et leurs sacrifices. \\
-        À mes frères et sœurs, pour leur présence et leurs encouragements. \\
-        À tous mes amis, qui m'ont soutenu tout au long de ce parcours. \\
-        À tous ceux qui ont contribué de près ou de loin à la réalisation de ce projet.
-    \end{flushright}
-\end{itshape}
-
-\chapter*{Remerciements}
-\addcontentsline{toc}{chapter}{Remerciements}
-
-Je tiens à exprimer ma profonde gratitude à toutes les personnes qui ont contribué au succès de ce projet de fin d'études.
-
-Mes remerciements s'adressent tout d'abord à mon encadrant académique, \textbf{[Nom de l'encadrant]}, pour ses précieux conseils, sa disponibilité et son suivi rigoureux tout au long de la réalisation de ce travail.
-
-Je remercie également mon encadrant professionnel, \textbf{[Nom de l'encadrant professionnel]}, pour m'avoir accueilli au sein de \textbf{[Nom de l'organisme d'accueil]} et pour m'avoir guidé avec bienveillance dans le milieu professionnel.
-
-Mes vifs remerciements vont également aux membres du jury qui ont accepté d'évaluer ce travail et de me faire part de leurs remarques constructives.
-
-Enfin, je remercie l'ensemble du corps professoral de la Faculté des Sciences de Monastir pour la qualité de l'enseignement dispensé durant mon cursus universitaire.
-
 %==================================
-% RÉSUMÉS ET ABREVIATIONS
+% DÉDICACE
 %==================================
 
-\input{chapitres/resume}
+\input{dedication}
 \clearpage
+
+%==================================
+% REMERCIEMENTS
+%==================================
+
+\input{remerciement}
+\clearpage
+
+%==================================
+% ABRÉVIATIONS
+%==================================
 
 \input{chapitres/abreviations}
 \clearpage
 
 %==================================
-% TITRE PERSONNALISÉ (TABLE DES MATIÈRES)
+% TITRE PERSONNALISÉ TABLE DES MATIÈRES
 %==================================
 
 \vspace*{0.5cm}
@@ -188,40 +197,58 @@ font=\fontsize{24}{28}\bfseries
 
 \vspace{1.2cm}
 
-\renewcommand{\contentsname}{} % On vide le titre par défaut pour utiliser le nôtre
+\renewcommand{\contentsname}{}
+
 \tableofcontents
 \clearpage
+
+%==================================
+% LISTE DES FIGURES
+%==================================
 
 \listoffigures
 \addcontentsline{toc}{chapter}{Liste des figures}
 \clearpage
 
+%==================================
+% LISTE DES TABLEAUX
+%==================================
+
 \listoftables
 \addcontentsline{toc}{chapter}{Liste des tableaux}
 \clearpage
 
+%==================================
+% NUMÉROTATION ARABE
+%==================================
+
 \pagenumbering{arabic}
 
-%=================================================
-% INTRODUCTION GENERALE
-%=================================================
+%==================================
+% INTRODUCTION GÉNÉRALE
+%==================================
 
 \input{chapitres/introduction_generale}
 
-%=================================================
-% CHAPITRES DU RAPPORT
-%=================================================
+%==================================
+% CHAPITRES
+%==================================
 
 \input{chapitres/chapitre1_contexte_etude_prealable}
-\input{chapitres/chapitre2_analyse_specification_besoins}
-\input{chapitres/chapitre3_release1}
-\input{chapitres/chapitre4_release2}
-\input{chapitres/chapitre5_conclusion_perspectives}
-\input{chapitres/chapitre6_webographie}
 
-%=================================================
+\input{chapitres/chapitre2_analyse_specification_besoins}
+
+\input{chapitres/chapitre3_release1}
+
+\input{chapitres/chapitre4_release2}
+
+\input{chapitres/conclusion_generale}
+
+\input{chapitres/webographie}
+
+%==================================
 % ANNEXES
-%=================================================
+%==================================
 
 % \input{annexes/annexes}
 

@@ -59,20 +59,11 @@ Les besoins fonctionnels décrivent les actions que la plateforme doit permettre
 \textbf{Utilisateur métier :}
 \begin{itemize}
     \item L'utilisateur métier doit pouvoir s'authentifier et accéder uniquement aux modules autorisés.
-    \item L'utilisateur métier doit pouvoir choisir l'année universitaire active avant de consulter les données.
+ \item L'utilisateur métier doit pouvoir choisir l'année universitaire active avant de consulter les données auxquelles il a accès.
     \item L'utilisateur métier doit pouvoir consulter les données des modules à travers des tableaux paginés et filtrables.
     \item L'utilisateur métier doit pouvoir sélectionner un bénéficiaire et générer un document à partir d'un template autorisé.
-    \item L'utilisateur métier doit pouvoir prévisualiser le document généré afin de vérifier son contenu avant l'édition finale.
+    \item L'utilisateur métier doit pouvoir prévisualiser le document généré afin de vérifier son contenu avant l'impression.
     \item L'utilisateur métier doit pouvoir retrouver dans les archives les documents qu'il a lui-même générés.
-\end{itemize}
-
-\textbf{Système :}
-\begin{itemize}
-    \item Le système doit résoudre automatiquement l'organisation active de l'utilisateur afin d'appliquer le bon contexte tenant.
-    \item Le système doit appliquer les règles de sécurité et de rôle avant l'accès aux modules, aux templates et aux archives.
-    \item Le système doit fusionner les données métier avec les variables présentes dans les templates.
-    \item Le système doit conserver une trace des documents générés : modèle utilisé, bénéficiaire, générateur, organisation et date de production.
-    \item Le système doit permettre la suppression logique d'une archive sans effacer définitivement l'historique de génération.
 \end{itemize}
 
 \subsection{Besoins non fonctionnels}
@@ -89,63 +80,120 @@ Les besoins non fonctionnels concernent la qualité attendue du système. Dans u
     \item \textbf{Extensibilité :} la plateforme doit pouvoir accueillir de nouveaux modules, de nouvelles vues et de nouveaux types de documents sans imposer une réécriture complète de l'application.
 \end{itemize}
 
-\section{Vue globale du projet}
-
 \subsection{Backlog du produit}
 
-Le backlog du produit regroupe les grandes fonctionnalités attendues de SIRH-Doc. Il a été construit à partir des dépendances fonctionnelles : sécuriser l'accès, configurer les données, produire les documents, puis archiver les résultats.
+Le backlog du produit regroupe les user stories qui décrivent les fonctionnalités attendues de SIRH-Doc. Il sert de référence pendant la planification des sprints : les éléments les plus prioritaires sont traités en premier, en tenant compte de leur complexité technique et de leur dépendance avec les autres fonctionnalités. Le tableau \ref{tab:product-backlog} présente l’ensemble des user stories identifiées pour le projet.
 
-\begin{longtable}{p{1cm} p{2.7cm} p{6.2cm} p{1.5cm} p{1.6cm}}
-\toprule
-\textbf{Id} & \textbf{Features} & \textbf{User stories} & \textbf{Priority} & \textbf{Complexity} \\
-\midrule
-PB-01 & Authentification et rôles & En tant qu'utilisateur, je veux accéder à la plateforme avec un compte sécurisé afin de travailler uniquement dans mon périmètre. & Haute & Moyenne \\
-PB-02 & Multi-tenant & En tant qu'organisation, je veux que mes données soient isolées afin d'éviter toute confusion avec celles d'un autre établissement. & Haute & Élevée \\
-PB-03 & Année universitaire & En tant qu'utilisateur, je veux choisir l'année active afin que les données historiques soient consultées dans le bon contexte. & Haute & Moyenne \\
-PB-04 & Modules et TableViews & En tant que super administrateur, je veux configurer les modules et les vues afin d'adapter l'application aux tables métier. & Haute & Élevée \\
-PB-05 & Filtres et lookups & En tant qu'utilisateur, je veux filtrer les données avec des libellés lisibles afin de retrouver rapidement les informations utiles. & Haute & Moyenne \\
-PB-06 & Familles documentaires & En tant qu'administrateur, je veux définir les sources de données d'un type de document afin de préparer la fusion documentaire. & Haute & Élevée \\
-PB-07 & Templates et chartes & En tant qu'administrateur, je veux créer des modèles et appliquer une charte afin de produire des documents conformes à l'identité de l'organisation. & Haute & Élevée \\
-PB-08 & Prévisualisation & En tant qu'utilisateur, je veux visualiser le document fusionné avant génération afin de vérifier le contenu et la mise en page. & Haute & Élevée \\
-PB-09 & Génération et archivage & En tant qu'utilisateur, je veux générer et archiver les documents afin de retrouver les pièces produites après leur émission. & Haute & Moyenne \\
-PB-10 & Traçabilité documentaire & En tant qu'administrateur, je veux conserver l'origine de chaque document généré afin d'identifier son modèle, son bénéficiaire, son générateur et sa date de production. & Haute & Moyenne \\
-PB-11 & Audit et soft-delete & En tant qu'administrateur, je veux supprimer logiquement un document afin de préserver la traçabilité des actions. & Moyenne & Moyenne \\
-\bottomrule
+\renewcommand{\arraystretch}{1.4}
+
+\begin{longtable}{|c|m{11cm}|c|}
+\caption{Backlog du produit}
+\label{tab:product-backlog}
+\\
+
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Priorité} \\
+\hline
+\endfirsthead
+
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Priorité} \\
+\hline
+\endhead
+
+1 & En tant qu'utilisateur, je dois pouvoir me connecter et me déconnecter de la plateforme afin d'accéder à mon espace de travail. & Haute \\
+\hline
+
+2 & En tant qu'administrateur, je souhaite que les droits d’accès soient restreints en fonction du profil de chaque utilisateur afin de garantir la sécurité des fonctionnalités de la plateforme. & Haute \\
+\hline
+
+3 & En tant qu'organisation, je veux que mes données soient isolées afin qu'aucun autre établissement ne puisse y accéder. & Haute \\
+\hline
+
+4 & En tant qu'utilisateur, je veux choisir l'année universitaire active afin de consulter et générer les documents dans le bon contexte. & Haute \\
+\hline
+
+5 & En tant que super administrateur, je dois pouvoir créer, modifier et consulter les organisations utilisant la plateforme. & Haute \\
+\hline
+
+6 & En tant que super administrateur, je dois pouvoir configurer les modules visibles dans l'application afin d'adapter la plateforme à chaque établissement. & Haute \\
+\hline
+
+7 & En tant que super administrateur, je dois pouvoir définir les colonnes, libellés, filtres et listes de valeurs d'une vue dynamique. & Haute \\
+\hline
+
+8 & En tant qu'utilisateur métier, je veux consulter les données des modules sous forme de tableaux paginés et filtrables. & Haute \\
+\hline
+
+9 & En tant que super administrateur, je dois pouvoir définir les sources de données et les variables disponibles pour chaque famille documentaire. & Haute \\
+\hline
+
+10 & En tant qu'administrateur d'organisation, je veux gérer la charte graphique de mon établissement afin de personnaliser les documents produits. & Moyenne \\
+\hline
+
+11 & En tant qu'administrateur d'organisation, je dois pouvoir créer, modifier et consulter les modèles documentaires de mon établissement. & Haute \\
+\hline
+
+12 & En tant qu'administrateur d'organisation, je veux insérer des variables simples et des tableaux dynamiques dans un template. & Haute \\
+\hline
+
+13 & En tant qu'utilisateur, je veux prévisualiser un document fusionné afin de vérifier le contenu avant génération. & Haute \\
+\hline
+
+14 & En tant qu'utilisateur métier, je dois pouvoir générer un document pour un bénéficiaire sélectionné. & Haute \\
+\hline
+
+15 & En tant qu'utilisateur métier, je veux générer un même document pour plusieurs bénéficiaires afin de réduire les traitements répétitifs. & Moyenne \\
+\hline
+
+16 & En tant qu'utilisateur métier, je veux que chaque document généré soit archivé afin de conserver son rendu final et ses informations de génération. & Haute \\
+\hline
+
+17 & En tant qu'utilisateur métier, je veux consulter uniquement les documents que j'ai générés afin de retrouver mes productions. & Haute \\
+\hline
+
+18 & En tant qu'administrateur d'organisation, je veux consulter les archives de mon établissement et les filtrer par bénéficiaire ou générateur. & Moyenne \\
+\hline
+
+19 & En tant qu'administrateur, je dois pouvoir supprimer logiquement une archive afin de masquer un document sans perdre sa trace. & Moyenne \\
+\hline
+
 \end{longtable}
 
 \subsection{Diagramme de cas d'utilisation global}
 
-Le diagramme de cas d'utilisation global présente la répartition des responsabilités entre les acteurs. Il met en évidence une séparation importante : le super administrateur configure la structure du système, l'administrateur d'organisation prépare les modèles et les chartes, tandis que l'utilisateur métier exploite les modules et génère les documents.
+Pour mieux appréhender les interactions entre les différents profils et le système, le diagramme de cas d’utilisation global présenté ci-dessous illustre la répartition des responsabilités entre les acteurs. Il met notamment en évidence la séparation des rôles : le super administrateur configure la structure du système, l’administrateur d’organisation prépare les modèles et les chartes, tandis que l’utilisateur métier exploite les modules et génère les documents. Cette représentation permet ainsi de visualiser les principales fonctionnalités accessibles à chaque acteur de la plateforme, ainsi que les différences de visibilité sur les objets, comme les documents archivés, en fonction du profil connecté.
 
-Cette lecture permet de comprendre pourquoi les contrôles d'accès sont présents à plusieurs niveaux. Un même objet, comme un document archivé, n'a pas la même visibilité selon le profil connecté. L'administrateur peut suivre l'ensemble des productions de son organisation, alors que l'utilisateur métier consulte principalement ses propres documents.
-
-\diagramplaceholder{classe_global}{Cas d'utilisation global}{Interactions principales entre les acteurs et la plateforme SIRH-Doc}
+\begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/global-use_case_global.png}
+        \caption{Diagramme de cas d'utilisation global}
+        \label{fig:use-case-global}
+    \end{figure}
 
 \subsection{Diagramme de classes global}
 
-Le diagramme de classes global donne la structure métier de la plateforme. Les classes liées à la sécurité, comme \texttt{User}, \texttt{Role} et \texttt{Organisation}, forment le socle de l'accès. Les classes \texttt{Module}, \texttt{TableViewConfig} et \texttt{TableViewFiltre} portent le moteur de données configurable. Les classes \texttt{Family}, \texttt{Template} et \texttt{GraphicCharter} structurent le studio documentaire. La classe \texttt{Document} relie enfin le rendu généré à son contexte : organisation, famille, template, bénéficiaire et utilisateur générateur.
+Le diagramme de classes global donne une vue d’ensemble de la structure métier de la plateforme. Il met en évidence les principales entités du système, leurs responsabilités et les liens qui les unissent.
 
-Cette modélisation traduit un choix important : le document final n'est pas isolé du reste du système. Il garde des références vers les éléments qui ont permis sa création. Cela permet de consulter une archive même si le template a évolué par la suite, tout en conservant les informations nécessaires pour comprendre l'origine du document.
 
-\diagramplaceholder{classe_global}{Classes globales}{Relations principales entre les entités métier de SIRH-Doc}
+\begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/classe_global-classes_global.png}
+        \caption{Diagramme de classes global}
+        \label{fig:classe-global}
+    \end{figure}
 
 \subsection{Planification des sprints}
 
-Le projet a été planifié en quatre sprints regroupés en deux releases. Cette organisation suit la logique de construction de l'application : poser le socle, rendre les données exploitables, construire le studio documentaire, puis finaliser la production.
+La planification de notre projet découle de notre product backlog et se structure en quatre sprints successifs, regroupés en deux releases. Chacun de ces sprints vise à réaliser un ensemble cohérent de fonctionnalités, suivant la logique de construction de l’application. Cette organisation, conçue en collaboration avec l’équipe Scrum, est présentée dans la figure ci-dessous.
 
-\begin{longtable}{p{2cm} p{4.2cm} p{6.8cm}}
-\toprule
-\textbf{Sprint} & \textbf{Thème} & \textbf{Objectif principal} \\
-\midrule
-Sprint 1 & Socle technique, multi-tenancy et isolation temporelle & Mettre en place l'authentification JWT, la résolution tenant, les rôles et la sélection de l'année universitaire. \\
-Sprint 2 & Moteur de données et entités métiers & Configurer les modules, les TableViews, les filtres, les lookups et les lectures dynamiques sur SQL Server. \\
-Sprint 3 & Studio d'édition et intelligence documentaire & Créer les familles, templates, chartes graphiques, variables et prévisualisations avec fusion de données. \\
-Sprint 4 & Automatisation de la production et archivage RH & Générer les documents, gérer les archives, appliquer les restrictions de visibilité et assurer le soft-delete. \\
-\bottomrule
-\end{longtable}
-
-Chaque sprint possède son propre fichier Draw.io dans le dossier \texttt{diagrammes}. Ces fichiers contiennent une page de classes, une page de cas d'utilisation et deux pages de séquence. Les chapitres suivants reprennent cette organisation pour détailler la conception et la réalisation de chaque release.
+\begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/sprints-planification.png}
+        \caption{Planification des sprints}
+        \label{fig:sprints-planification}
+    \end{figure}
 
 \section{Conclusion}
 
-Ce chapitre a clarifié les besoins de SIRH-Doc et les responsabilités des différents acteurs. L'analyse montre que la plateforme doit être à la fois sécurisée, configurable, performante et adaptée à la production documentaire RH. Les diagrammes globaux confirment cette orientation : le système repose sur un noyau d'identité et d'organisation, un moteur de données dynamique, un studio documentaire et un module d'archivage. Les deux chapitres suivants détaillent la réalisation progressive de cette architecture à travers les quatre sprints du projet.
+Ce chapitre a précisé les besoins de SIRH-Doc ainsi que les rôles et responsabilités de chaque acteur. L’analyse met en évidence qu’il est nécessaire que la plateforme soit simultanément sécurisée, configurable, performante et spécifiquement adaptée à la production de documents RH. Les diagrammes d’ensemble confirment cette orientation : le système s’appuie sur un socle d’identité et d’organisation, un moteur de données flexible, un studio de conception documentaire et un module dédié à l’archivage. Les deux prochains chapitres décrivent en détail la mise en œuvre progressive de cette architecture au fil des quatre sprints du projet.

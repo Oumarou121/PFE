@@ -107,17 +107,6 @@
   </div>
 
   <main class="app-shell" *ngIf="!loading">
-    <!-- <section class="archive-heading">
-      <div>
-        <span class="eyebrow">Archive documentaire</span>
-        <h1>Archive des documents</h1>
-      </div>
-      <div class="detail-stats">
-        <strong>{{ totalDocuments }}</strong>
-        <span>document(s)</span>
-      </div>
-    </section> -->
-
     <section
       class="card-grid archive-card-grid"
       *ngIf="tableGroups.length; else emptyState"
