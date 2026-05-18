@@ -94,10 +94,10 @@
 \begin{figure}[H]
     \centering
     \IfFileExists{images/#1}{
-        \includegraphics[width=0.92\textwidth]{images/#1}
+        \includegraphics[width=0.78\textwidth,height=0.42\textheight,keepaspectratio]{images/#1}
     }{
         \fbox{
-            \begin{minipage}[c][5cm][c]{0.86\textwidth}
+            \begin{minipage}[c][3.6cm][c]{0.74\textwidth}
                 \centering
                 \textbf{[Insérer ici la capture d'écran : #2]}\\[0.25cm]
                 Fichier attendu : \texttt{images/\detokenize{#1}}
