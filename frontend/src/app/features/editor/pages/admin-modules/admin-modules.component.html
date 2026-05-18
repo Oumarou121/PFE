@@ -382,9 +382,28 @@
                 {{
                   dataRowsLoading
                     ? "Chargement..."
-                    : dataRows.length + " ligne(s)"
+                    : dataRows.length + " ligne(s) sur cette page"
                 }}
               </p>
+            </div>
+            <div class="pagination-controls">
+              <button
+                class="page-btn"
+                type="button"
+                [disabled]="dataPage <= 1 || dataRowsLoading"
+                (click)="goToPreviousDataPage()"
+              >
+                Précédent
+              </button>
+              <span>Page {{ dataPage }}</span>
+              <button
+                class="page-btn"
+                type="button"
+                [disabled]="!dataHasNextPage || dataRowsLoading"
+                (click)="goToNextDataPage()"
+              >
+                Suivant
+              </button>
             </div>
           </div>
 

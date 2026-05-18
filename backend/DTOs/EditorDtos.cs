@@ -75,6 +75,10 @@ namespace DocApi.DTOs
         public string? DatabaseName { get; set; }
 
         public Dictionary<string, List<string>>? SelectedFilters { get; set; }
+
+        public int Page { get; set; } = 1;
+
+        public int PageSize { get; set; } = 50;
     }
 
     public class TableViewRecordRequest
@@ -148,6 +152,9 @@ namespace DocApi.DTOs
         public string? BeneficiaryTable { get; set; }
 
         public string? BeneficiaryId { get; set; }
+
+        [MaxLength(64)]
+        public string? GeneratedById { get; set; }
 
         // Pagination
         public int Page { get; set; } = 1;

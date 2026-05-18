@@ -313,6 +313,7 @@
                 type="text"
                 placeholder="Rechercher un beneficiaire..."
                 [(ngModel)]="beneficiarySearch"
+                (ngModelChange)="onBeneficiarySearchChange()"
               />
             </div>
             <div class="person-list">
@@ -329,7 +330,7 @@
               <button
                 class="person-item"
                 type="button"
-                *ngFor="let beneficiary of filteredBeneficiaries"
+                *ngFor="let beneficiary of pagedBeneficiaries"
                 [class.sel]="selectedBeneficiaryId === beneficiary.id"
                 [disabled]="documentBusy"
                 (click)="selectBeneficiary(beneficiary.id)"
@@ -345,6 +346,28 @@
                     {{ getBeneficiarySubtitle(beneficiary) }}
                   </div>
                 </div>
+              </button>
+            </div>
+            <div
+              class="pager beneficiary-pager"
+              *ngIf="!beneficiariesLoading && filteredBeneficiaries.length > beneficiaryPageSize"
+            >
+              <button
+                class="pager-btn"
+                type="button"
+                [disabled]="beneficiaryPage <= 1"
+                (click)="goToPreviousBeneficiaryPage()"
+              >
+                Precedent
+              </button>
+              <span>Page {{ beneficiaryPage }} / {{ beneficiaryTotalPages }}</span>
+              <button
+                class="pager-btn"
+                type="button"
+                [disabled]="beneficiaryPage >= beneficiaryTotalPages"
+                (click)="goToNextBeneficiaryPage()"
+              >
+                Suivant
               </button>
             </div>
           </div>
@@ -609,8 +632,27 @@
         <div>
           <div class="data-main-title">{{ view.label }}</div>
           <div class="data-main-sub">
-            {{ dataRows.length }} ligne(s) trouvée(s)
+            {{ dataRows.length }} ligne(s) sur cette page
           </div>
+        </div>
+        <div class="pager data-pager">
+          <button
+            class="pager-btn"
+            type="button"
+            [disabled]="dataRowsLoading || dataPage <= 1"
+            (click)="goToPreviousDataPage()"
+          >
+            Precedent
+          </button>
+          <span>Page {{ dataPage }}</span>
+          <button
+            class="pager-btn"
+            type="button"
+            [disabled]="dataRowsLoading || !dataHasNextPage"
+            (click)="goToNextDataPage()"
+          >
+            Suivant
+          </button>
         </div>
         <div style="display: flex; gap: 8px">
           <button
@@ -646,7 +688,7 @@
           type="text"
           placeholder="Rechercher dans cette vue..."
           [(ngModel)]="dataRowSearch"
-          (keyup.enter)="reloadDataRows()"
+          (keyup.enter)="updateDataSearch()"
         />
       </div>
 

@@ -255,7 +255,7 @@ namespace DocApi.Services
         public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Search, request.Config, request.DatabaseName, request.SelectedFilters);
+            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Search, request.Config, request.DatabaseName, request.SelectedFilters, request.Page, request.PageSize);
         }
 
         public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request)
@@ -304,15 +304,23 @@ namespace DocApi.Services
         {
             await _repository.EnsureSchemaAsync();
             var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            var isAdmin = string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase);
             var organizationId = isSuperAdmin ? request.OrganizationId : currentUser?.OrganizationId;
-            return await _repository.LoadDocumentsAsync(organizationId, request.FamilyId, request.BeneficiaryTable, request.BeneficiaryId);
+            var generatedById = isSuperAdmin || isAdmin
+                ? request.GeneratedById
+                : currentUser?.Id;
+            return await _repository.LoadDocumentsAsync(organizationId, request.FamilyId, request.BeneficiaryTable, request.BeneficiaryId, generatedById);
         }
 
         public async Task<DocumentListResponse> GetDocumentsPagedAsync(DocumentListRequest request, AuthUserResponse? currentUser)
         {
             await _repository.EnsureSchemaAsync();
             var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            var isAdmin = string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase);
             var organizationId = isSuperAdmin ? request.OrganizationId : currentUser?.OrganizationId;
+            var generatedById = isSuperAdmin || isAdmin
+                ? request.GeneratedById
+                : currentUser?.Id;
             
             // Apply org-scoping to request
             var scopedRequest = new DocumentListRequest
@@ -321,6 +329,7 @@ namespace DocApi.Services
                 FamilyId = request.FamilyId,
                 BeneficiaryTable = request.BeneficiaryTable,
                 BeneficiaryId = request.BeneficiaryId,
+                GeneratedById = generatedById,
                 Page = request.Page > 0 ? request.Page : 1,
                 SortBy = request.SortBy,
                 SortOrder = request.SortOrder
@@ -336,7 +345,9 @@ namespace DocApi.Services
             if (document is null) return null;
 
             var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            var isAdmin = string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase);
             if (!isSuperAdmin && currentUser?.OrganizationId != document.OrganizationId) return null;
+            if (!isSuperAdmin && !isAdmin && document.GeneratedById != currentUser?.Id) return null;
             return document;
         }
 
@@ -359,7 +370,12 @@ namespace DocApi.Services
             if (document is null) return;
 
             var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
+            var isAdmin = string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase);
             if (!isSuperAdmin && currentUser?.OrganizationId != document.OrganizationId)
+            {
+                throw new UnauthorizedAccessException("Suppression non autorisee pour ce document.");
+            }
+            if (!isSuperAdmin && !isAdmin && document.GeneratedById != currentUser?.Id)
             {
                 throw new UnauthorizedAccessException("Suppression non autorisee pour ce document.");
             }

@@ -108,6 +108,10 @@ export class TableFiltersComponent implements OnInit {
     return (this.filters || []).find((f) => f.id === filterId);
   }
 
+  trackByFilterId(_index: number, filter: TableViewFilter): string {
+    return filter.id;
+  }
+
   /**
    * Réinitialise tous les filtres
    */

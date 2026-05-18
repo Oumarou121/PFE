@@ -1,19 +1,23 @@
 \chapter*{Résumé}
 \addcontentsline{toc}{chapter}{Résumé}
 
-Ce projet de fin d'études porte sur la conception et la réalisation de \textbf{SIRH-Doc}, une plateforme de gestion documentaire dynamique intégrée à un Système d'Information des Ressources Humaines (SIRH). L'objectif principal est de dématérialiser et d'automatiser la production des documents administratifs (attestations, contrats, certificats) au sein d'un établissement d'enseignement supérieur. 
+Ce projet de fin d'études porte sur la conception et la réalisation de \textbf{SIRH-Doc}, une plateforme web destinée à moderniser la gestion documentaire et les processus RH d'un établissement d'enseignement supérieur. Le travail répond à une difficulté concrète observée dans les services administratifs : la production de contrats, attestations et justificatifs reste souvent dépendante de modèles bureautiques copiés manuellement, avec des risques d'erreurs, de doublons et de perte de traçabilité.
 
-La solution développée permet de s'affranchir des manipulations manuelles en proposant un moteur de fusion intelligent. Ce moteur associe des modèles de documents éditables via un studio riche (Tiptap), des chartes graphiques personnalisables par établissement, et des données métier extraites dynamiquement. L'architecture repose sur une approche multi-tenant garantissant l'isolation des données par organisation et par année universitaire. Sur le plan technique, l'application utilise \textbf{ASP.NET Core} pour le backend, \textbf{Angular} pour le frontend et \textbf{SQL Server} pour la gestion des données.
+La solution proposée repose sur une architecture multi-tenant construite avec ASP.NET Core, Angular et SQL Server. Elle isole les données par organisation et par année universitaire, tout en permettant une configuration dynamique des modules métier. Le système s'appuie sur des métadonnées pour décrire les vues de tables, les familles de documents, les filtres, les modèles et les chartes graphiques. Cette approche permet d'adapter l'application à plusieurs contextes administratifs sans réécrire les écrans ni figer les règles métier dans le code.
 
-\textbf{Mots-clés :} SIRH, Gestion Documentaire, Automatisation, Multi-Tenancy, ASP.NET Core, Angular, Édition de texte.
+Le résultat obtenu est un système capable de centraliser les dossiers du personnel, de configurer des modèles documentaires, de fusionner automatiquement les données métier dans des documents structurés et d'archiver les pièces générées avec leurs informations d'audit. Au-delà de la réalisation technique, le projet met en évidence les choix d'architecture, les compromis de conception et les contraintes liées à la sécurité, à la maintenabilité et à l'exploitation réelle d'un outil RH.
+
+\textbf{Mots-clés :} SIRH, gestion documentaire, multi-tenancy, métadonnées, Angular, ASP.NET Core, SQL Server, génération documentaire.
 
 \strut \vfill
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-This graduation project focuses on the design and implementation of \textbf{SIRH-Doc}, a dynamic document management platform integrated into a Human Resources Information System (HRIS). The primary objective is to digitize and automate the production of administrative documents (certificates, contracts, attestations) within a higher education institution.
+This graduation project presents the design and implementation of \textbf{SIRH-Doc}, a web platform built to improve HR document management within a higher education institution. The project addresses a concrete administrative issue: contracts, certificates and official documents are often produced manually from office templates, which leads to repeated data entry, formatting inconsistencies and weak traceability.
 
-The developed solution eliminates manual processing by providing an intelligent merging engine. This engine combines editable document templates via a rich studio (Tiptap), customizable graphic charters per institution, and dynamically extracted business data. The architecture is based on a multi-tenant approach, ensuring data isolation by organization and academic year. Technically, the application uses \textbf{ASP.NET Core} for the backend, \textbf{Angular} for the frontend, and \textbf{SQL Server} for data management.
+The proposed solution is based on a multi-tenant architecture using ASP.NET Core, Angular and SQL Server. It separates data by organization and academic year while relying on metadata to configure business modules, table views, filters, document families, templates and visual charters. This design makes the application adaptable to different administrative contexts without hard-coding each business screen.
 
-\textbf{Keywords:} HRIS, Document Management, Automation, Multi-Tenancy, ASP.NET Core, Angular, Text Editing.
+The final system centralizes HR records, supports dynamic document templates, merges business data into official documents and archives generated files with audit information. Beyond implementation, the project highlights architectural decisions, technical trade-offs and the operational constraints of building a maintainable and secure HR information system.
+
+\textbf{Keywords:} HRIS, document management, multi-tenancy, metadata-driven system, Angular, ASP.NET Core, SQL Server, document generation.

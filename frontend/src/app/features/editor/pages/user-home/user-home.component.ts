@@ -61,9 +61,11 @@ export class UserHomeComponent implements OnInit {
   get baseCards(): UserHomeCard[] {
     const user = this.auth.getCurrentUser();
     const allowedIds = new Set(user?.moduleIds || []);
+    const hasGeneration = allowedIds.has(BASE_USER_MODULES.generation);
+    const hasArchive = allowedIds.has(BASE_USER_MODULES.archive) || hasGeneration;
     const cards: UserHomeCard[] = [];
 
-    if (allowedIds.has(BASE_USER_MODULES.generation)) {
+    if (hasGeneration) {
       cards.push({
         id: BASE_USER_MODULES.generation,
         title: "Generation de document",
@@ -72,7 +74,7 @@ export class UserHomeComponent implements OnInit {
       });
     }
 
-    if (allowedIds.has(BASE_USER_MODULES.archive)) {
+    if (hasArchive) {
       cards.push({
         id: BASE_USER_MODULES.archive,
         title: "Archives",

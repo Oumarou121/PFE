@@ -7,7 +7,7 @@
     </div>
 
     <div class="filters-grid">
-      <ng-container *ngFor="let filter of filters">
+      <ng-container *ngFor="let filter of filters; trackBy: trackByFilterId">
         <ng-container *ngIf="filter.enabled">
           <div class="filter-group">
             <label class="filter-label">
@@ -24,24 +24,21 @@
               *ngIf="filter.sourceType === TableFilterSourceType.Table"
             >
               <div class="filter-dynamic">
-                <div *ngIf="isLoading(filter.id)" class="field-status">
-                  Chargement...
-                </div>
-
-                <ng-container *ngIf="!isLoading(filter.id)">
-                  <select
-                    class="filter-select"
-                    [formControl]="getControl(filter.id)"
+                <select
+                  class="filter-select"
+                  [formControl]="getControl(filter.id)"
+                  [disabled]="isLoading(filter.id)"
+                >
+                  <option value="">
+                    {{ isLoading(filter.id) ? "Chargement..." : "Tous" }}
+                  </option>
+                  <option
+                    *ngFor="let option of getFilterOptions(filter.id)"
+                    [value]="option.value"
                   >
-                    <option value="">Tous</option>
-                    <option
-                      *ngFor="let option of getFilterOptions(filter.id)"
-                      [value]="option.value"
-                    >
-                      {{ option.label }}
-                    </option>
-                  </select>
-                </ng-container>
+                    {{ option.label }}
+                  </option>
+                </select>
 
                 <div *ngIf="getErrorMessage(filter.id)" class="field-error">
                   {{ getErrorMessage(filter.id) }}
@@ -105,24 +102,21 @@
               *ngIf="filter.sourceType === TableFilterSourceType.Table"
             >
               <div class="filter-dynamic">
-                <div *ngIf="isLoading(filter.id)" class="field-status">
-                  Chargement...
-                </div>
-
-                <ng-container *ngIf="!isLoading(filter.id)">
-                  <select
-                    class="filter-select"
-                    [formControl]="getControl(filter.id)"
+                <select
+                  class="filter-select"
+                  [formControl]="getControl(filter.id)"
+                  [disabled]="isLoading(filter.id)"
+                >
+                  <option value="">
+                    {{ isLoading(filter.id) ? "Chargement..." : "Tous" }}
+                  </option>
+                  <option
+                    *ngFor="let option of getFilterOptions(filter.id)"
+                    [value]="option.value"
                   >
-                    <option value="">Tous</option>
-                    <option
-                      *ngFor="let option of getFilterOptions(filter.id)"
-                      [value]="option.value"
-                    >
-                      {{ option.label }}
-                    </option>
-                  </select>
-                </ng-container>
+                    {{ option.label }}
+                  </option>
+                </select>
 
                 <div *ngIf="getErrorMessage(filter.id)" class="field-error">
                   {{ getErrorMessage(filter.id) }}

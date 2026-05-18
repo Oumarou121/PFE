@@ -31,7 +31,7 @@ namespace DocApi.Repositories.Interfaces
         Task<DatabaseSchemaResponse> LoadSchemaAsync(string? databaseName = null);
         Task ReplaceStateAsync(EditorStateResponse state, int? scopedOrganizationId, bool isSuperAdmin);
         Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters, string? databaseName = null);
-        Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null);
+        Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null, int page = 1, int pageSize = 50);
         Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null);
         Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values, string? databaseName = null);
         Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config, string? databaseName = null);
@@ -40,7 +40,7 @@ namespace DocApi.Repositories.Interfaces
         Task<TableViewConfigResponse> UpsertTableViewConfigAsync(TableViewConfigRequest request);
         Task DeleteTableViewConfigAsync(string? id);
         Task<IEnumerable<TableFilterOption>> GetTableFilterOptionsAsync(TableFilterSqlBuilder sqlBuilder, string? databaseName = null);
-        Task<IEnumerable<DocumentResponse>> LoadDocumentsAsync(int? organizationId = null, string? familyId = null, string? beneficiaryTable = null, string? beneficiaryId = null);
+        Task<IEnumerable<DocumentResponse>> LoadDocumentsAsync(int? organizationId = null, string? familyId = null, string? beneficiaryTable = null, string? beneficiaryId = null, string? generatedById = null);
         Task<DocumentListResponse> LoadDocumentsPagedAsync(DocumentListRequest request);
         Task<DocumentResponse?> GetDocumentByIdAsync(string id);
         Task<DocumentResponse> CreateDocumentAsync(DocumentCreateRequest request);

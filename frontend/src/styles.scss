@@ -157,9 +157,10 @@ app-root {
 }
 
 .nav-center {
-  display: flex;
   flex: 1;
+  display: flex;
   justify-content: center;
+  gap: 8px;
 }
 
 .nav-org-pill {

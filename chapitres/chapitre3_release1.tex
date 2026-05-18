@@ -1,0 +1,238 @@
+%=================================================
+% CHAPITRE 3 : Release 1
+%=================================================
+
+\chapter{Release 1 : Socle technique et moteur de données}
+
+\section{Introduction}
+
+La première release a été consacrée aux fondations de SIRH-Doc. Avant de travailler sur les documents eux-mêmes, il fallait résoudre deux problèmes plus profonds : sécuriser l'accès aux données et rendre ces données exploitables par une interface générique. Cette release regroupe donc le sprint 1, consacré au socle technique, et le sprint 2, consacré au moteur de données et aux entités métier.
+
+\section{Sprint 1 : Socle technique, Multi-Tenancy et isolation temporelle}
+
+\subsection{Objectif du sprint}
+
+L'objectif du sprint 1 était de construire un socle fiable : authentification JWT, résolution du tenant, séparation des organisations et prise en compte de l'année universitaire. Ce travail était indispensable, car la plupart des fonctionnalités de SIRH-Doc dépendent du contexte de l'utilisateur connecté. Un document n'a pas la même signification selon l'établissement, l'année universitaire et les droits de l'utilisateur.
+
+\subsection{Backlog du sprint}
+
+% Tableau backlog sprint
+\renewcommand{\arraystretch}{1.4}
+
+\begin{longtable}{|>{\centering\arraybackslash}p{1cm}|
+                  >{\raggedright\arraybackslash}p{3cm}|
+                  >{\raggedright\arraybackslash}p{7.2cm}|
+                  >{\centering\arraybackslash}p{1.5cm}|}
+\hline
+\textbf{Id} & \textbf{Features} & \textbf{User stories} & \textbf{Priority}\hline
+S1-01 & Authentification JWT &
+En tant qu'utilisateur, je veux me connecter avec mes identifiants afin d'accéder uniquement aux espaces qui me sont autorisés.
+& Haute\\
+\hline
+
+S1-02 & Gestion des rôles &
+En tant qu'administrateur, je veux distinguer les accès super administrateur, administrateur et utilisateur métier afin de limiter les actions sensibles.
+& Haute\\
+\hline
+
+S1-03 & Résolution du tenant &
+En tant qu'utilisateur rattaché à une organisation, je veux que mes requêtes soient exécutées sur le bon périmètre de données.
+& Haute\\
+\hline
+
+S1-04 & Contexte académique &
+En tant qu'utilisateur, je veux sélectionner l'année universitaire active afin de consulter des informations cohérentes avec la période demandée.
+& Haute\\
+\hline
+
+S1-05 & Connexions multi-bases &
+En tant que développeur du système, je veux centraliser les factories de connexion afin de réduire les erreurs de routage vers les bases SQL.
+& Moyenne\\
+\hline
+
+\caption{Backlog du Sprint 1}
+\label{tab:backlog_sprint1}
+
+\end{longtable}
+
+\subsection{Analyse du sprint}
+
+Le premier enjeu a été d'éviter une architecture où chaque méthode reçoit explicitement l'identifiant de l'organisation. Sur le papier, cette solution paraît simple ; dans le code, elle finit souvent par produire des oublis, surtout lorsque les appels passent par plusieurs services. J'ai donc préféré placer la résolution du tenant au début du pipeline HTTP, dans un middleware, puis conserver le contexte dans un service scoped. Les couches métier manipulent ainsi une information déjà stabilisée, sans répéter la même vérification à chaque méthode.
+
+L'autre difficulté concerne l'année universitaire. Dans le domaine RH, certaines tables sont naturellement historiques. Une ligne d'engagement, de charge horaire ou de parcours ne doit pas être interprétée sans son année. Le système a donc introduit une configuration \texttt{AcademicYearConfig} décrivant les tables concernées et la colonne à filtrer. Cette décision évite d'ajouter un filtre d'année à toutes les tables sans discernement.
+
+
+\subsection{Conception du sprint}
+
+\begin{itemize}
+
+    \item \textbf{Diagramme de classes}
+
+    Ce diagramme présente les principales entités persistantes du Sprint 1 ainsi que les relations qui structurent le socle technique de SIRH-Doc. Il met notamment en évidence la gestion des utilisateurs, des rôles, des organisations et du contexte académique nécessaires à l’isolation des accès et des données.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/sprint1/class-diagram.png}
+        \caption{Diagramme de classes du Sprint 1}
+        \label{fig:class-diagram-s1}
+    \end{figure}
+
+    \item \textbf{Diagramme de cas d'utilisation}
+
+    Le diagramme suivant illustre les principales interactions entre les utilisateurs et le système durant ce sprint. Il se concentre principalement sur l’authentification, la gestion des accès et la sélection du contexte de travail avant l’accès aux fonctionnalités métier.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\textwidth]{images/sprint1/usecase-diagram.png}
+        \caption{Diagramme de cas d'utilisation du Sprint 1}
+        \label{fig:usecase-diagram-s1}
+    \end{figure}
+
+    \item \textbf{Diagramme de séquence : Authentification JWT}
+
+    Ce diagramme décrit le processus d’authentification de l’utilisateur depuis la saisie des identifiants jusqu’à la génération du jeton JWT. Le backend vérifie les informations d’accès puis construit un jeton contenant le rôle et le périmètre de l’utilisateur afin de sécuriser les requêtes futures.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/sprint1/sequence-diagram1.png}
+        \caption{Diagramme de séquence d’authentification JWT}
+        \label{fig:jwt-sequence-s1}
+    \end{figure}
+
+    \item \textbf{Diagramme de séquence : Résolution dynamique du tenant}
+
+    Ce diagramme présente le fonctionnement du mécanisme de résolution du tenant mis en place dans le middleware .NET. À chaque requête, le système identifie automatiquement l’organisation et l’année universitaire actives afin d’appliquer l’isolation des données et de garantir un filtrage cohérent des accès.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/sprint1/sequence-diagram2.png}
+        \caption{Diagramme de séquence de résolution dynamique du tenant}
+        \label{fig:tenant-sequence-s1}
+    \end{figure}
+
+\end{itemize}
+
+
+\subsection{Réalisation du sprint}
+
+Côté backend, les composants clés sont \texttt{AuthController}, \texttt{AuthService}, \texttt{UserRepository}, \texttt{TenantResolutionMiddleware}, \texttt{TenantResolver} et les factories de connexion. Le choix de Dapper se justifie dès ce sprint : le système doit interroger des bases différentes et garder un contrôle précis sur les requêtes.
+
+Côté frontend, le service \texttt{AuthService} stocke le token, l'utilisateur courant et l'année universitaire active. Les guards empêchent l'accès aux pages protégées lorsque l'utilisateur n'est pas authentifié ou lorsque le contexte académique requis n'est pas sélectionné. Cette logique améliore la cohérence des parcours et évite les créations de données hors contexte.
+
+\section{Sprint 2 : Moteur de données et entités métiers}
+
+\subsection{Objectif du sprint}
+
+Le sprint 2 avait pour objectif de rendre l'application capable de gérer des données métier sans créer un écran spécifique pour chaque table. Dans un système RH universitaire, les entités peuvent être nombreuses : enseignants, vacataires, modules, grades, statuts, charges horaires, positions administratives. L'approche retenue est donc metadata-driven : la structure d'affichage et de filtrage est décrite par configuration.
+
+\subsection{Backlog du sprint}
+
+\renewcommand{\arraystretch}{1.4}
+
+\begin{longtable}{|>{\centering\arraybackslash}p{1cm}|
+                  >{\raggedright\arraybackslash}p{2.7cm}|
+                  >{\raggedright\arraybackslash}p{8.2cm}|
+                  >{\centering\arraybackslash}p{1.7cm}|}
+\hline
+\textbf{Id} & \textbf{Features} & \textbf{User stories} & \textbf{Priority} \\
+\hline
+\endfirsthead
+
+\hline
+\textbf{Id} & \textbf{Features} & \textbf{User stories} & \textbf{Priority} \\
+\hline
+\endhead
+
+S2-01 & Modules métier &
+En tant que super administrateur, je veux associer des modules aux organisations afin d'adapter l'application à chaque établissement.
+& Haute \\
+\hline
+
+S2-02 & TableViewConfig &
+En tant qu'administrateur, je veux choisir les colonnes visibles et éditables afin de construire une vue utile sans développer un nouvel écran.
+& Haute \\
+\hline
+
+S2-03 & Filtres et lookups &
+En tant qu'utilisateur, je veux filtrer les listes avec des libellés compréhensibles afin de retrouver rapidement les données nécessaires.
+& Haute \\
+\hline
+
+S2-04 & Requêtes paginées &
+En tant qu'utilisateur, je veux parcourir les données page par page afin d'éviter les chargements trop lourds.
+& Haute \\
+\hline
+
+S2-05 & Filtre année universitaire &
+En tant qu'administrateur, je veux que les tables historiques soient filtrées par année uniquement lorsqu'elles sont configurées pour cela.
+& Haute \\
+\hline
+
+S2-06 & Importation intelligente &
+En tant qu'administrateur, je veux importer des fichiers de données avec validation afin de réduire la saisie manuelle et les erreurs.
+& Moyenne \\
+\hline
+
+\caption{Backlog du Sprint 2}
+\label{tab:backlog_sprint2}
+
+\end{longtable}
+
+\subsection{Analyse du sprint}
+
+La décision structurante de ce sprint a été de déplacer une partie de l'intelligence vers la configuration. Ce choix n'a pas été pris pour rendre l'architecture plus abstraite, mais parce que le domaine s'y prête : les services RH manipulent beaucoup de tables proches dans leur logique, mais différentes dans leurs colonnes. Une \texttt{TableViewConfig} décrit alors comment une table doit être présentée : colonnes visibles, libellés, filtres, colonnes éditables, mode d'affichage brut ou lookup. Cette abstraction réduit le nombre de composants Angular spécialisés et laisse au super administrateur une vraie marge d'adaptation.
+
+Le principal compromis concerne la génération SQL. Un moteur dynamique doit rester flexible sans devenir dangereux. Les requêtes sont donc construites à partir de métadonnées contrôlées, avec des paramètres Dapper pour les valeurs variables. L'injection du filtre d'année universitaire est appliquée seulement lorsque la configuration indique que la table est affectée par une année.
+
+\subsection{Conception du sprint}
+
+\begin{itemize}
+
+    \item \textbf{Diagramme de classes}
+
+    Ce diagramme présente les principales entités introduites dans le Sprint 2 pour la gestion dynamique des données métier. Il met en évidence les configurations des modules, les vues dynamiques, les filtres ainsi que les structures utilisées pour l’importation et la consultation des données.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/sprint2/class-diagram.png}
+        \caption{Diagramme de classes du Sprint 2}
+        \label{fig:class-diagram-s2}
+    \end{figure}
+
+    \item \textbf{Diagramme de cas d'utilisation}
+
+    Le diagramme suivant illustre les interactions de l’administrateur avec les différents modules du système. Il décrit notamment les opérations de consultation, de filtrage, d’importation et de gestion des données métier.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\textwidth]{images/sprint2/usecase-diagram.png}
+        \caption{Diagramme de cas d'utilisation du Sprint 2}
+        \label{fig:usecase-diagram-s2}
+    \end{figure}
+
+    \item \textbf{Diagramme de séquence : Chargement d'une vue dynamique}
+
+    Ce diagramme décrit le fonctionnement du moteur de lecture dynamique. Le système charge une configuration de vue afin de construire automatiquement les colonnes, les filtres et les requêtes SQL nécessaires à l’affichage des données demandées.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/sprint2/sequence-diagram2.png}
+        \caption{Diagramme de séquence de chargement d'une vue dynamique}
+        \label{fig:dynamic-view-sequence-s2}
+    \end{figure}
+
+    \item \textbf{Diagramme de séquence : Importation intelligente}
+
+    Ce diagramme présente le processus d’importation des données depuis un fichier externe. Le système vérifie la structure du fichier, effectue le mapping des colonnes puis exécute l’insertion des données tout en garantissant l’intégrité des informations importées.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{images/sprint2/sequence-diagram1.png}
+        \caption{Diagramme de séquence d’importation intelligente}
+        \label{fig:import-sequence-s2}
+    \end{figure}
+
+\end{itemize}
+\section{Conclusion Release 1}
+
+À l'issue de la première release, SIRH-Doc dispose d'un socle sécurisé et d'un moteur de données configurable. Les décisions prises dans ces deux sprints conditionnent la suite du projet : le studio documentaire pourra s'appuyer sur des familles et des variables fiables, et la génération finale pourra exploiter des données déjà isolées par tenant et par année universitaire.

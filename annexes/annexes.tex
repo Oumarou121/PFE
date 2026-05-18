@@ -1,27 +1,48 @@
 \chapter*{Annexes}
 \addcontentsline{toc}{chapter}{Annexes}
 
-\section*{Annexe A : Liste indicative des captures à produire}
+\section*{Annexe A : Organisation des diagrammes UML}
+
+Les diagrammes UML du projet sont regroupés dans le dossier \texttt{diagrammes/}. Chaque fichier de sprint contient plusieurs pages Draw.io afin de garder dans un même livrable les vues de conception d'une même itération.
+
+\begin{longtable}{p{4cm} p{9cm}}
+\toprule
+\textbf{Fichier} & \textbf{Contenu} \\
+\midrule
+\texttt{classe\_global.drawio} & Diagramme de classes global et diagramme de cas d'utilisation global. \\
+\texttt{sprint1.drawio} & Classes, cas d'utilisation, séquence d'authentification JWT et séquence de résolution tenant. \\
+\texttt{sprint2.drawio} & Classes, cas d'utilisation, séquence de lecture dynamique et séquence d'importation intelligente. \\
+\texttt{sprint3.drawio} & Classes, cas d'utilisation, séquence de sauvegarde de template et séquence de prévisualisation avec fusion. \\
+\texttt{sprint4.drawio} & Classes, cas d'utilisation, séquence de génération en masse et séquence d'audit soft-delete. \\
+\bottomrule
+\end{longtable}
+
+\section*{Annexe B : Captures d'écran à intégrer}
+
+Les captures suivantes peuvent être ajoutées dans le dossier \texttt{images/} au moment de la préparation de la version finale imprimable :
+
 \begin{itemize}
-    \item Interface de connexion : \texttt{images/sprint1\_login.png}
-    \item Profil utilisateur authentifié : \texttt{images/sprint1\_profile.png}
-    \item Redirection selon le rôle : \texttt{images/sprint2\_routes.png}
-    \item Interface administrateur : \texttt{images/sprint2\_admin.png}
-    \item Éditeur Tiptap : \texttt{images/sprint3\_tiptap.png}
-    \item Prévisualisation documentaire : \texttt{images/sprint3\_preview.png}
-    \item Gestion des familles : \texttt{images/sprint4\_families.png}
-    \item Gestion des modèles : \texttt{images/sprint4\_templates.png}
-    \item Gestion des chartes graphiques : \texttt{images/sprint4\_charters.png}
-    \item Gestion des vues de tables : \texttt{images/sprint4\_tableviews.png}
-    \item Résultat des tests ou build : \texttt{images/sprint4\_tests.png}
-    \item Démonstration finale : \texttt{images/sprint4\_demo.png}
+    \item interface de connexion et redirection selon le rôle ;
+    \item écran de sélection de l'année universitaire ;
+    \item tableau de bord administrateur ;
+    \item configuration d'un module métier et d'une TableView ;
+    \item configuration d'une famille documentaire ;
+    \item studio d'édition d'un template ;
+    \item prévisualisation d'un document fusionné ;
+    \item écran de génération documentaire ;
+    \item liste des archives avec filtres ;
+    \item détail d'une archive et affichage du document généré.
 \end{itemize}
 
-\section*{Annexe B : Fichiers Draw.io fournis}
+\section*{Annexe C : Exemples de composants techniques}
+
+Les éléments suivants constituent des points d'entrée utiles pour relier le rapport au code source :
+
 \begin{itemize}
-    \item \texttt{diagrammes/sprint1\_classes.drawio}, \texttt{diagrammes/sprint1\_sequences.drawio}, \texttt{diagrammes/sprint1\_cas\_utilisation.drawio}
-    \item \texttt{diagrammes/sprint2\_classes.drawio}, \texttt{diagrammes/sprint2\_sequences.drawio}, \texttt{diagrammes/sprint2\_cas\_utilisation.drawio}
-    \item \texttt{diagrammes/sprint3\_classes.drawio}, \texttt{diagrammes/sprint3\_sequences.drawio}, \texttt{diagrammes/sprint3\_cas\_utilisation.drawio}
-    \item \texttt{diagrammes/sprint4\_classes.drawio}, \texttt{diagrammes/sprint4\_sequences.drawio}, \texttt{diagrammes/sprint4\_cas\_utilisation.drawio}
-    \item \texttt{diagrammes/global\_classes.drawio}, \texttt{diagrammes/global\_sequences.drawio}, \texttt{diagrammes/global\_cas\_utilisation.drawio}
+    \item \texttt{backend/Middlewares/TenantResolutionMiddleware.cs} pour la résolution du tenant ;
+    \item \texttt{backend/Common/Tenant/TenantResolver.cs} pour la lecture de l'organisation ;
+    \item \texttt{backend/Repositories/EditorRepository.cs} pour l'accès SQL dynamique ;
+    \item \texttt{frontend/src/app/features/editor/services/document-render.service.ts} pour le rendu documentaire ;
+    \item \texttt{frontend/src/app/features/editor/services/table-view.service.ts} pour la gestion des vues dynamiques ;
+    \item \texttt{frontend/src/app/features/editor/pages/document-archive/} pour la consultation des archives.
 \end{itemize}

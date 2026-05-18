@@ -49,6 +49,9 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   dataViewSearch = "";
   dataRowSearch = "";
   dataRows: Record<string, any>[] = [];
+  dataPage = 1;
+  readonly dataPageSize = 50;
+  dataHasNextPage = false;
   selectedDataRowId: string | null = null;
   selectedDataRecord: Record<string, any> | null = null;
   creatingDataRow = false;
@@ -180,6 +183,8 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
     }
     this.activeModuleTableViewId = null;
     this.dataRows = [];
+    this.dataPage = 1;
+    this.dataHasNextPage = false;
     this.selectedDataRowId = null;
     this.selectedDataRecord = null;
   }
@@ -235,9 +240,12 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
         config: view,
         search: this.dataRowSearch,
         selectedFilters: this.selectedFilters,
+        page: this.dataPage,
+        pageSize: this.dataPageSize,
       });
       if (requestId !== this.dataRowsRequestId) return;
       this.dataRows = rows;
+      this.dataHasNextPage = rows.length === this.dataPageSize;
       if (this.exportMode) {
         this.syncExportSelections(view);
       }
@@ -269,11 +277,25 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
   }
 
   async updateDataSearch(): Promise<void> {
+    this.dataPage = 1;
     await this.reloadDataRows();
   }
 
   async onFiltersChanged(filters: Record<string, string[]>): Promise<void> {
     this.selectedFilters = filters || {};
+    this.dataPage = 1;
+    await this.reloadDataRows();
+  }
+
+  async goToPreviousDataPage(): Promise<void> {
+    if (this.dataPage <= 1 || this.dataRowsLoading) return;
+    this.dataPage -= 1;
+    await this.reloadDataRows();
+  }
+
+  async goToNextDataPage(): Promise<void> {
+    if (!this.dataHasNextPage || this.dataRowsLoading) return;
+    this.dataPage += 1;
     await this.reloadDataRows();
   }
 

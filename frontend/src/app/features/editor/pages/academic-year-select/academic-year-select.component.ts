@@ -26,6 +26,7 @@ export class AcademicYearSelectComponent implements OnInit {
   selectedCode = "";
   loading = true;
   creating = false;
+  showCreateForm = false;
   createForm = { code: "", startDate: "", endDate: "" };
 
   constructor(
@@ -66,6 +67,10 @@ export class AcademicYearSelectComponent implements OnInit {
     this.router.navigate([role === "admin" ? "/admin" : "/user"]);
   }
 
+  toggleCreateForm(): void {
+    this.showCreateForm = !this.showCreateForm;
+  }
+
   async createYear(): Promise<void> {
     if (!this.createForm.code.trim()) return;
     this.creating = true;
@@ -79,6 +84,7 @@ export class AcademicYearSelectComponent implements OnInit {
       this.createForm = { code: "", startDate: "", endDate: "" };
       await this.loadYears();
       this.selectedCode = created.code;
+      this.showCreateForm = false;
       this.notifications.showSuccess("Annee universitaire creee.");
     } catch {
       this.notifications.showError("Creation de l'annee universitaire impossible.");

@@ -718,7 +718,7 @@ namespace DocApi.Repositories
 
         // ─── GetTableViewRows (TenantDB — données métier) ────────────────────────
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null, int page = 1, int pageSize = 50)
         {
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -768,10 +768,14 @@ namespace DocApi.Repositories
             }
 
             var where = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 200);
+            parameters.Add("offset", (page - 1) * pageSize);
+            parameters.Add("pageSize", pageSize);
 
             using var connection = TenantConnection(databaseName);
             var rows = await connection.QueryAsync(
-                $"SELECT {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} {where} ORDER BY {Quote(pk)} DESC",
+                $"SELECT {string.Join(", ", selectFields.Select(Quote))} FROM {Quote(tableView.TableName)} {where} ORDER BY {Quote(pk)} DESC OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY",
                 parameters);
             return rows.Select(row => (IDictionary<string, object?>)CleanRow(row)).ToArray();
         }
@@ -953,7 +957,7 @@ namespace DocApi.Repositories
 
         // ─── Documents (TenantDB - Organization Database) ─────────────────────────
 
-        public async Task<IEnumerable<DocumentResponse>> LoadDocumentsAsync(int? organizationId = null, string? familyId = null, string? beneficiaryTable = null, string? beneficiaryId = null)
+        public async Task<IEnumerable<DocumentResponse>> LoadDocumentsAsync(int? organizationId = null, string? familyId = null, string? beneficiaryTable = null, string? beneficiaryId = null, string? generatedById = null)
         {
             if (!await TenantTableExistsAsync("document")) return [];
 
@@ -984,6 +988,12 @@ namespace DocApi.Repositories
             {
                 where.Add("beneficiary_id = @beneficiaryId");
                 parameters.Add("beneficiaryId", beneficiaryId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(generatedById))
+            {
+                where.Add("generated_by_id = @generatedById");
+                parameters.Add("generatedById", generatedById);
             }
 
             using var connection = TenantConnection();
@@ -1035,6 +1045,12 @@ namespace DocApi.Repositories
             {
                 where.Add("beneficiary_id = @beneficiaryId");
                 parameters.Add("beneficiaryId", request.BeneficiaryId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.GeneratedById))
+            {
+                where.Add("generated_by_id = @generatedById");
+                parameters.Add("generatedById", request.GeneratedById);
             }
 
             // Normalize sort column to valid SQL column name

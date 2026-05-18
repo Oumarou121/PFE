@@ -26,6 +26,7 @@ export class DocumentService {
       familyId?: string;
       beneficiaryTable?: string;
       beneficiaryId?: string;
+      generatedById?: string;
     } = {},
   ): Promise<DocumentRecord[]> {
     return await firstValueFrom(
@@ -39,6 +40,7 @@ export class DocumentService {
       familyId?: string;
       beneficiaryTable?: string;
       beneficiaryId?: string;
+      generatedById?: string;
       sortBy?: string;
       sortOrder?: "asc" | "desc";
     } = {},

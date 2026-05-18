@@ -241,14 +241,16 @@ namespace DocApi.Controllers
             [FromQuery] int? organizationId = null,
             [FromQuery] string? familyId = null,
             [FromQuery] string? beneficiaryTable = null,
-            [FromQuery] string? beneficiaryId = null)
+            [FromQuery] string? beneficiaryId = null,
+            [FromQuery] string? generatedById = null)
         {
             var rows = await _service.GetDocumentsAsync(new DocumentListRequest
             {
                 OrganizationId = organizationId,
                 FamilyId = familyId,
                 BeneficiaryTable = beneficiaryTable,
-                BeneficiaryId = beneficiaryId
+                BeneficiaryId = beneficiaryId,
+                GeneratedById = generatedById
             }, CurrentUser());
             return Ok(rows);
         }
@@ -260,6 +262,7 @@ namespace DocApi.Controllers
             [FromQuery] string? familyId = null,
             [FromQuery] string? beneficiaryTable = null,
             [FromQuery] string? beneficiaryId = null,
+            [FromQuery] string? generatedById = null,
             [FromQuery] string sortBy = "generatedAt",
             [FromQuery] string sortOrder = "desc")
         {
@@ -269,6 +272,7 @@ namespace DocApi.Controllers
                 FamilyId = familyId,
                 BeneficiaryTable = beneficiaryTable,
                 BeneficiaryId = beneficiaryId,
+                GeneratedById = generatedById,
                 SortBy = sortBy,
                 SortOrder = sortOrder
             }, CurrentUser());

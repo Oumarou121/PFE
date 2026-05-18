@@ -29,6 +29,12 @@
         <i class="fa fa-arrow-left"></i>
         Retour
       </button>
+      <app-user-menu></app-user-menu>
+    </div>
+  </nav>
+
+  <div class="editor-subnav">
+    <div class="editor-subnav__group">
       <button class="nav-action-btn" type="button" (click)="toggleSidebar()">
         <i class="fa fa-bars"></i>
         Panneau
@@ -42,9 +48,12 @@
         <i class="fa fa-columns"></i>
         Variables
       </button>
-      <app-user-menu></app-user-menu>
     </div>
-  </nav>
+    <div class="editor-subnav__context">
+      {{ selectedFamily ? (selectedFamily.nom || selectedFamily.name || selectedFamily.id) : "Aucune famille" }}
+      <span *ngIf="selectedTemplate">/ {{ selectedTemplate.nom || selectedTemplate['name'] || selectedTemplate.id }}</span>
+    </div>
+  </div>
 
   <div class="main-area">
     <div

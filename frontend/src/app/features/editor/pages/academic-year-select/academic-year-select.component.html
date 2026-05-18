@@ -1,6 +1,31 @@
 <div class="academic-year-page">
+  <!-- <nav class="topnav">
+    <div class="nav-logo">
+      <div class="tlogo-text">SIRH-<span>Doc</span></div>
+    </div>
+    <div class="nav-center">
+      <span class="nav-org-pill">Annee universitaire</span>
+      <app-active-academic-year-pill></app-active-academic-year-pill>
+    </div>
+    <div class="nav-right">
+      <app-user-menu></app-user-menu>
+    </div>
+  </nav> -->
+
   <nav class="topnav">
     <div class="nav-logo">
+      <svg
+        class="nav-logo__icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
       <div class="tlogo-text">SIRH-<span>Doc</span></div>
     </div>
     <div class="nav-center">
@@ -19,10 +44,53 @@
           <h1>Choisir l'annee universitaire</h1>
           <p>Les donnees de travail seront filtrees selon cette selection.</p>
         </div>
-        <button class="primary-btn" type="button" [disabled]="!selectedCode" (click)="confirmSelection()">
-          Continuer
-        </button>
+        <div class="year-header-actions">
+          <button
+            class="primary-btn"
+            type="button"
+            [disabled]="!selectedCode"
+            (click)="confirmSelection()"
+          >
+            Continuer
+          </button>
+          <button
+            class="ghost-btn"
+            type="button"
+            *ngIf="isAdmin"
+            (click)="toggleCreateForm()"
+          >
+            Ajouter
+          </button>
+        </div>
       </header>
+
+      <div class="create-inline" *ngIf="isAdmin && showCreateForm">
+        <label>
+          Code
+          <input [(ngModel)]="createForm.code" placeholder="2026-2027" />
+        </label>
+        <label>
+          Date debut
+          <input [(ngModel)]="createForm.startDate" type="date" />
+        </label>
+        <label>
+          Date fin
+          <input [(ngModel)]="createForm.endDate" type="date" />
+        </label>
+        <div class="create-inline-actions">
+          <button class="ghost-btn" type="button" (click)="toggleCreateForm()">
+            Annuler
+          </button>
+          <button
+            class="primary-btn"
+            type="button"
+            [disabled]="creating || !createForm.code"
+            (click)="createYear()"
+          >
+            Creer
+          </button>
+        </div>
+      </div>
 
       <div class="loading-box" *ngIf="loading">Chargement...</div>
 
@@ -40,11 +108,11 @@
         >
           <div>
             <strong>{{ year.code }}</strong>
-            <span>{{ year.startDate || '-' }} - {{ year.endDate || '-' }}</span>
+            <span>{{ year.startDate || "-" }} - {{ year.endDate || "-" }}</span>
           </div>
           <div class="year-actions">
             <span class="status" [class.closed]="year.isClosed">
-              {{ year.isClosed ? 'Cloturee' : (year.status || 'Ouverte') }}
+              {{ year.isClosed ? "Cloturee" : year.status || "Ouverte" }}
             </span>
             <button
               *ngIf="isAdmin && !year.isClosed"
@@ -58,24 +126,5 @@
         </button>
       </div>
     </section>
-
-    <aside class="create-panel" *ngIf="isAdmin">
-      <h2>Nouvelle annee</h2>
-      <label>
-        Code
-        <input [(ngModel)]="createForm.code" placeholder="2026-2027" />
-      </label>
-      <label>
-        Date debut
-        <input [(ngModel)]="createForm.startDate" type="date" />
-      </label>
-      <label>
-        Date fin
-        <input [(ngModel)]="createForm.endDate" type="date" />
-      </label>
-      <button class="primary-btn full" type="button" [disabled]="creating || !createForm.code" (click)="createYear()">
-        Creer
-      </button>
-    </aside>
   </main>
 </div>

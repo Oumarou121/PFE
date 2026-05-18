@@ -733,6 +733,10 @@
 }
 
 .card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 14px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
@@ -749,6 +753,33 @@
     font-size: 0.75rem;
     color: var(--text-400);
     font-family: "DM Mono", monospace;
+  }
+}
+
+.pagination-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-600);
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.page-btn {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-600);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 }
 

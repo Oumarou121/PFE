@@ -28,6 +28,8 @@ export interface TableViewRowsOptions {
   config?: TableViewConfig | null;
   search?: string;
   selectedFilters?: { [key: string]: string[] } | null;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface TableViewRowsResponse {

@@ -37,6 +37,8 @@ import { ActiveAcademicYearPillComponent } from "../../../../shared/components/a
 export class DocumentArchiveDetailPageComponent implements OnInit {
   documents: DocumentListItem[] = [];
   families: FamilyRecord[] = [];
+  generatorOptions: Array<{ id: string; label: string }> = [];
+  beneficiaryOptions: Array<{ key: string; label: string }> = [];
   activeGroup: TableDocumentGroup | null = null;
   beneficiaryGroups: BeneficiaryDocumentGroup[] = [];
   selectedBeneficiaryKey: string | null = null;
@@ -63,6 +65,8 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
   ) {
     this.filterForm = this.formBuilder.group({
       familyId: [""],
+      generatedById: [""],
+      beneficiaryKey: [""],
       query: [""],
       dateFrom: [""],
       dateTo: [""],
@@ -124,6 +128,11 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
       : this.groupKey;
   }
 
+  get isAdminArchive(): boolean {
+    const role = this.authService.getCurrentUser()?.role;
+    return role === "admin" || role === "supAdmin";
+  }
+
   async loadDocuments(): Promise<void> {
     this.loading = true;
     try {
@@ -132,9 +141,15 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
         page: 1,
         familyId: filters.familyId || undefined,
         beneficiaryTable: this.isOrganizationGroup ? undefined : this.groupKey,
+        generatedById:
+          this.isAdminArchive && filters.generatedById
+            ? filters.generatedById
+            : undefined,
         sortBy: "generatedAt",
         sortOrder: "desc",
       });
+      this.updateGeneratorOptions(response.data || []);
+      this.updateBeneficiaryOptions(response.data || []);
       this.documents = this.applyClientFilters(
         this.applyGroupScope(response.data || []),
       );
@@ -159,6 +174,8 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
   resetFilters(): void {
     this.filterForm.reset({
       familyId: "",
+      generatedById: "",
+      beneficiaryKey: "",
       query: "",
       dateFrom: "",
       dateTo: "",
@@ -261,6 +278,8 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
     const params = this.route.snapshot.queryParamMap;
     this.filterForm.patchValue({
       familyId: params.get("familyId") || "",
+      generatedById: params.get("generatedById") || "",
+      beneficiaryKey: params.get("beneficiaryKey") || "",
       query: params.get("query") || "",
       dateFrom: params.get("dateFrom") || "",
       dateTo: params.get("dateTo") || "",
@@ -295,7 +314,7 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
   }
 
   private applyClientFilters(rows: DocumentListItem[]): DocumentListItem[] {
-    const { query, dateFrom, dateTo } = this.filterForm.value;
+    const { query, dateFrom, dateTo, beneficiaryKey } = this.filterForm.value;
     const search = String(query || "")
       .trim()
       .toLowerCase();
@@ -307,6 +326,9 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
       const generatedAt = this.getDocumentDate(doc.generatedAt);
       if (from && generatedAt && generatedAt < from) return false;
       if (to && generatedAt && generatedAt > to) return false;
+      if (beneficiaryKey && this.getBeneficiaryKey(doc) !== beneficiaryKey) {
+        return false;
+      }
       if (!search) return true;
       return [
         doc.title,
@@ -323,6 +345,55 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
         .toLowerCase()
         .includes(search);
     });
+  }
+
+  private updateGeneratorOptions(rows: DocumentListItem[]): void {
+    const options = new Map<string, string>();
+    for (const row of rows) {
+      if (!row.generatedById) continue;
+      options.set(
+        row.generatedById,
+        row.generatedByName || row.generatedByEmail || row.generatedById,
+      );
+    }
+    const selected = this.filterForm.value.generatedById;
+    if (selected && !options.has(selected)) {
+      options.set(selected, selected);
+    }
+    this.generatorOptions = Array.from(options.entries())
+      .map(([id, label]) => ({ id, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  private updateBeneficiaryOptions(rows: DocumentListItem[]): void {
+    const scopedRows = this.applyGroupScope(rows);
+    const options = new Map<string, string>();
+    for (const row of scopedRows) {
+      const key = this.getBeneficiaryKey(row);
+      if (!key) continue;
+      options.set(key, this.getBeneficiaryLabel(row));
+    }
+    const selected = this.filterForm.value.beneficiaryKey;
+    if (selected && !options.has(selected)) {
+      options.set(selected, selected);
+    }
+    this.beneficiaryOptions = Array.from(options.entries())
+      .map(([key, label]) => ({ key, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  private getBeneficiaryKey(row: DocumentListItem): string {
+    return String(row.beneficiaryId || "__without_beneficiary__");
+  }
+
+  private getBeneficiaryLabel(row: DocumentListItem): string {
+    return (
+      [row.beneficiaryDisplayValue1, row.beneficiaryDisplayValue2]
+        .filter((value) => !!String(value || "").trim())
+        .join(" - ") ||
+      row.beneficiaryId ||
+      "Beneficiaire non renseigne"
+    );
   }
 
   private rebuildActiveGroup(): void {
@@ -363,6 +434,11 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
     const filters = this.filterForm.value;
     return {
       familyId: filters.familyId || null,
+      generatedById:
+        this.isAdminArchive && filters.generatedById
+          ? filters.generatedById
+          : null,
+      beneficiaryKey: filters.beneficiaryKey || null,
       query: filters.query || null,
       dateFrom: filters.dateFrom || null,
       dateTo: filters.dateTo || null,

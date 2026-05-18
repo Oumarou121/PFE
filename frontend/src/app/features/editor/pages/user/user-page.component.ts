@@ -59,6 +59,8 @@ export class UserPageComponent implements OnInit {
   selectedTemplateId: string | null = null;
   selectedBeneficiaryId: string | null = null;
   beneficiaries: BeneficiaryRecord[] = [];
+  beneficiaryPage = 1;
+  readonly beneficiaryPageSize = 50;
   runtimeFilters: RuntimeFilterEntry[] = [];
   filterValues: FilterValueMap = {};
   openSteps: Record<Step, boolean> = { 1: true, 2: false, 3: false };
@@ -82,6 +84,9 @@ export class UserPageComponent implements OnInit {
   dataViewSearch = "";
   dataRowSearch = "";
   dataRows: Record<string, any>[] = [];
+  dataPage = 1;
+  readonly dataPageSize = 50;
+  dataHasNextPage = false;
   selectedDataRowId: string | null = null;
   editingDataRowId: string | null = null;
   selectedDataRecord: Record<string, any> | null = null;
@@ -197,6 +202,25 @@ export class UserPageComponent implements OnInit {
     });
   }
 
+  get pagedBeneficiaries(): BeneficiaryRecord[] {
+    const start = (this.beneficiaryPage - 1) * this.beneficiaryPageSize;
+    return this.filteredBeneficiaries.slice(
+      start,
+      start + this.beneficiaryPageSize,
+    );
+  }
+
+  get beneficiaryTotalPages(): number {
+    return Math.max(
+      1,
+      Math.ceil(this.filteredBeneficiaries.length / this.beneficiaryPageSize),
+    );
+  }
+
+  onBeneficiarySearchChange(): void {
+    this.beneficiaryPage = 1;
+  }
+
   get selectedDataView(): TableViewConfig | null {
     return this.selectedDataViewId
       ? this.tableViews.getTableView(this.selectedDataViewId)
@@ -286,6 +310,7 @@ export class UserPageComponent implements OnInit {
     this.selectedTemplateId = null;
     this.selectedBeneficiaryId = null;
     this.beneficiaries = [];
+    this.beneficiaryPage = 1;
     this.runtimeFilters = [];
     this.filterValues = {};
     this.templateSearch = "";
@@ -299,6 +324,7 @@ export class UserPageComponent implements OnInit {
     this.selectedTemplateId = templateId;
     this.selectedBeneficiaryId = null;
     this.beneficiaries = [];
+    this.beneficiaryPage = 1;
     this.beneficiarySearch = "";
     this.documentBusy = true;
     this.beneficiariesLoading = true;
@@ -335,6 +361,7 @@ export class UserPageComponent implements OnInit {
     if (this.documentBusy) return;
     this.filterValues = { ...this.filterValues, [filterId]: value || null };
     this.selectedBeneficiaryId = null;
+    this.beneficiaryPage = 1;
     this.documentBusy = true;
     this.beneficiariesLoading = true;
     this.documentBusyMessage = "Mise a jour des beneficiaires...";
@@ -466,6 +493,8 @@ export class UserPageComponent implements OnInit {
     this.creatingDataRow = false;
     this.dataRows = [];
     this.dataRowSearch = "";
+    this.dataPage = 1;
+    this.dataHasNextPage = false;
     await this.renderDataContent();
   }
 
@@ -498,9 +527,12 @@ export class UserPageComponent implements OnInit {
         config: view,
         search: this.dataRowSearch,
         selectedFilters: this.selectedFilters,
+        page: this.dataPage,
+        pageSize: this.dataPageSize,
       });
       if (requestId !== this.dataRowsRequestId) return;
       this.dataRows = rows;
+      this.dataHasNextPage = rows.length === this.dataPageSize;
       if (
         this.selectedDataRowId &&
         !this.dataRows.some(
@@ -530,11 +562,35 @@ export class UserPageComponent implements OnInit {
 
   onFilterParamsChange(filters: { [key: string]: string[] }): void {
     this.selectedFilters = filters;
+    this.dataPage = 1;
     void this.reloadDataRows();
   }
 
   async updateDataSearch(): Promise<void> {
+    this.dataPage = 1;
     await this.reloadDataRows();
+  }
+
+  async goToPreviousDataPage(): Promise<void> {
+    if (this.dataPage <= 1 || this.dataRowsLoading) return;
+    this.dataPage -= 1;
+    await this.reloadDataRows();
+  }
+
+  async goToNextDataPage(): Promise<void> {
+    if (!this.dataHasNextPage || this.dataRowsLoading) return;
+    this.dataPage += 1;
+    await this.reloadDataRows();
+  }
+
+  goToPreviousBeneficiaryPage(): void {
+    if (this.beneficiaryPage <= 1) return;
+    this.beneficiaryPage -= 1;
+  }
+
+  goToNextBeneficiaryPage(): void {
+    if (this.beneficiaryPage >= this.beneficiaryTotalPages) return;
+    this.beneficiaryPage += 1;
   }
 
   createDataRow(): void {
@@ -844,6 +900,7 @@ export class UserPageComponent implements OnInit {
       this.organizationId,
       this.filterValues,
     );
+    this.beneficiaryPage = 1;
   }
 
   private hasMissingRequiredFilters(): boolean {

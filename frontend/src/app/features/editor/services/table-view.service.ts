@@ -75,6 +75,8 @@ export class TableViewService {
         search: String(options.search || "").trim(),
         databaseName,
         selectedFilters: options.selectedFilters || null,
+        page: options.page || 1,
+        pageSize: options.pageSize || 50,
       }),
     );
     return payload.rows || [];
