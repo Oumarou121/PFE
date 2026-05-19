@@ -88,9 +88,9 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
 
   constructor(
     public router: Router,
-    private auth: AuthService,
+    protected auth: AuthService,
     private route: ActivatedRoute,
-    private state: EditorStateService,
+    protected state: EditorStateService,
     private tableViews: TableViewService,
     private organizationsService: OrganizationService,
     private notifications: NotificationService,

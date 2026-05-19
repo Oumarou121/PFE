@@ -106,11 +106,11 @@ export const routes: Routes = [
   {
     path: "user/modules/:moduleId",
     loadComponent: () =>
-      import("./features/editor/pages/user/user-page.component").then(
-        (m) => m.UserPageComponent,
+      import("./features/editor/pages/user-modules/user-modules.component").then(
+        (m) => m.UserModulesComponent,
       ),
     canActivate: [roleGuard, academicYearGuard],
-    data: { page: "userModule", roles: ["user"], mode: "data" },
+    data: { page: "userModule", roles: ["user"] },
   },
   {
     path: "archives/group/:groupKey",
