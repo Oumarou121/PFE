@@ -48,6 +48,7 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
   page = 1;
   pageSize = 10;
 
+  private lastFamilyId: string | null = null;
   filterForm: FormGroup;
 
   constructor(
@@ -137,6 +138,14 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
     this.loading = true;
     try {
       const filters = this.filterForm.value;
+
+      // If family changes, reset accumulated options
+      if (this.lastFamilyId !== filters.familyId) {
+        this.generatorOptions = [];
+        this.beneficiaryOptions = [];
+        this.lastFamilyId = filters.familyId;
+      }
+
       const response = await this.documentService.getDocumentsPaged({
         page: 1,
         familyId: filters.familyId || undefined,
@@ -349,6 +358,12 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
 
   private updateGeneratorOptions(rows: DocumentListItem[]): void {
     const options = new Map<string, string>();
+
+    // Preserve existing options
+    for (const opt of this.generatorOptions) {
+      options.set(opt.id, opt.label);
+    }
+
     for (const row of rows) {
       if (!row.generatedById) continue;
       options.set(
@@ -368,6 +383,12 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
   private updateBeneficiaryOptions(rows: DocumentListItem[]): void {
     const scopedRows = this.applyGroupScope(rows);
     const options = new Map<string, string>();
+
+    // Preserve existing options
+    for (const opt of this.beneficiaryOptions) {
+      options.set(opt.key, opt.label);
+    }
+
     for (const row of scopedRows) {
       const key = this.getBeneficiaryKey(row);
       if (!key) continue;

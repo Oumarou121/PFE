@@ -57,7 +57,10 @@
         <select formControlName="beneficiaryKey">
           <option value="">Tous les beneficiaires</option>
           <option
-            *ngFor="let beneficiary of beneficiaryOptions; trackBy: trackByBeneficiaryKey"
+            *ngFor="
+              let beneficiary of beneficiaryOptions;
+              trackBy: trackByBeneficiaryKey
+            "
             [value]="beneficiary.key"
           >
             {{ beneficiary.label }}
@@ -73,7 +76,10 @@
       <select formControlName="generatedById">
         <option value="">Tous les generateurs</option>
         <option
-          *ngFor="let generator of generatorOptions; trackBy: trackByGeneratorId"
+          *ngFor="
+            let generator of generatorOptions;
+            trackBy: trackByGeneratorId
+          "
           [value]="generator.id"
         >
           {{ generator.label }}
