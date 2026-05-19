@@ -1487,8 +1487,16 @@
 
 
 @media (max-width: 1180px) {
+  .main-wrap {
+    grid-template-columns: 1fr;
+  }
+
   .stepper {
     position: static;
+  }
+
+  .doc-panel {
+    min-width: 0;
   }
 }
 
@@ -1511,10 +1519,30 @@
   .doc-actions {
     width: 100%;
     margin-left: 0;
+    flex-wrap: wrap;
   }
 
   .doc-actions .btn {
     flex: 1;
+    min-width: 130px;
     justify-content: center;
+  }
+
+  .stepper,
+  .doc-panel,
+  .preview-filters-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .doc-ph,
+  .zoom-bar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .a4-canvas {
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
