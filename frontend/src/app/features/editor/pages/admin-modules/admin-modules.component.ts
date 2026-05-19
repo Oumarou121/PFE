@@ -287,6 +287,12 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
     await this.reloadDataRows();
   }
 
+  getFilterOptionRestrictions(
+    _view: TableViewConfig,
+  ): Record<string, string[]> | null {
+    return null;
+  }
+
   async goToPreviousDataPage(): Promise<void> {
     if (this.dataPage <= 1 || this.dataRowsLoading) return;
     this.dataPage -= 1;

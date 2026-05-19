@@ -1,4 +1,12 @@
-import { Component, OnInit, Input, Output, EventEmitter } from "@angular/core";
+import {
+  Component,
+  OnInit,
+  OnChanges,
+  Input,
+  Output,
+  EventEmitter,
+  SimpleChanges,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import {
   ReactiveFormsModule,
@@ -21,15 +29,18 @@ import {
   templateUrl: "./table-filters.component.html",
   styleUrls: ["./table-filters.component.scss"],
 })
-export class TableFiltersComponent implements OnInit {
-  @Input() filters: TableViewFilter[] = [];
+export class TableFiltersComponent implements OnInit, OnChanges {
+  @Input() filters: TableViewFilter[] | null | undefined = [];
   @Input() databaseName?: string;
+  @Input() optionRestrictions: Record<string, string[]> | null = null;
   @Output() filterChange = new EventEmitter<{ [key: string]: string[] }>();
 
   filterForm: FormGroup;
   filterOptions: Map<string, TableFilterOption[]> = new Map();
   loadingFilters: Set<string> = new Set();
   errorMessages: Map<string, string> = new Map();
+  private lastFiltersSignature = "";
+  private lastRestrictionSignature = "";
 
   // Enums pour le template
   TableFilterSourceType = TableFilterSourceType;
@@ -50,10 +61,38 @@ export class TableFiltersComponent implements OnInit {
     this.loadDynamicFilterOptions();
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes["filters"] && !changes["filters"].firstChange) {
+      const signature = this.getFiltersSignature();
+      if (signature === this.lastFiltersSignature) return;
+      this.lastFiltersSignature = signature;
+      this.initializeFilterForm();
+      this.loadDynamicFilterOptions();
+      return;
+    }
+
+    if (
+      changes["optionRestrictions"] &&
+      !changes["optionRestrictions"].firstChange
+    ) {
+      const signature = this.getRestrictionSignature();
+      if (signature === this.lastRestrictionSignature) return;
+      this.lastRestrictionSignature = signature;
+      this.applyRestrictionsToLoadedOptions();
+    }
+  }
+
   /**
    * Initialise le formulaire avec les filtres
    */
   private initializeFilterForm(): void {
+    this.filterForm = this.fb.group({});
+    this.filterOptions.clear();
+    this.loadingFilters.clear();
+    this.errorMessages.clear();
+    this.lastFiltersSignature = this.getFiltersSignature();
+    this.lastRestrictionSignature = this.getRestrictionSignature();
+
     const enabledFilters = (this.filters || []).filter((f) => f.enabled);
 
     enabledFilters.forEach((filter) => {
@@ -64,7 +103,10 @@ export class TableFiltersComponent implements OnInit {
         filter.sourceType === TableFilterSourceType.Static &&
         filter.staticOptions
       ) {
-        this.filterOptions.set(filter.id, filter.staticOptions);
+        this.filterOptions.set(
+          filter.id,
+          this.applyOptionRestriction(filter, filter.staticOptions),
+        );
       }
     });
 
@@ -173,7 +215,10 @@ export class TableFiltersComponent implements OnInit {
             response?.Data;
 
           if (response?.ok && Array.isArray(options)) {
-            this.filterOptions.set(filterId, options);
+            this.filterOptions.set(
+              filterId,
+              this.applyOptionRestriction(filter, options),
+            );
             this.errorMessages.delete(filterId);
           } else {
             this.errorMessages.set(
@@ -188,5 +233,51 @@ export class TableFiltersComponent implements OnInit {
           this.loadingFilters.delete(filterId);
         },
       });
+  }
+
+  private applyRestrictionsToLoadedOptions(): void {
+    (this.filters || []).forEach((filter) => {
+      const currentOptions = this.filterOptions.get(filter.id);
+      if (!currentOptions) return;
+      this.filterOptions.set(
+        filter.id,
+        this.applyOptionRestriction(filter, currentOptions),
+      );
+    });
+  }
+
+  private applyOptionRestriction(
+    filter: TableViewFilter,
+    options: TableFilterOption[] = [],
+  ): TableFilterOption[] {
+    const allowedValues =
+      this.optionRestrictions?.[filter.id] ||
+      this.optionRestrictions?.[filter.linkColumn] ||
+      [];
+    if (!allowedValues.length) return options;
+
+    const allowed = new Set(allowedValues.map((value) => String(value)));
+    return options.filter((option) => allowed.has(String(option.value)));
+  }
+
+  private getRestrictionSignature(): string {
+    const restrictions = this.optionRestrictions || {};
+    return Object.keys(restrictions)
+      .sort()
+      .map((key) => `${key}:${(restrictions[key] || []).join(",")}`)
+      .join("|");
+  }
+
+  private getFiltersSignature(): string {
+    return (this.filters || [])
+      .map((filter) =>
+        [
+          filter.id || "",
+          filter.linkColumn || "",
+          filter.sourceType || "",
+          filter.enabled ? "1" : "0",
+        ].join(":"),
+      )
+      .join("|");
   }
 }

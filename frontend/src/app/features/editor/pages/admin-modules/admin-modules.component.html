@@ -67,8 +67,9 @@
       <ng-container *ngIf="selectedDataView as view">
         <div class="filters-panel">
           <app-table-filters
-            [filters]="view.filters || []"
+            [filters]="view.filters"
             [databaseName]="organizationDatabaseName || undefined"
+            [optionRestrictions]="getFilterOptionRestrictions(view)"
             (filterChange)="onFiltersChanged($event)"
           ></app-table-filters>
         </div>

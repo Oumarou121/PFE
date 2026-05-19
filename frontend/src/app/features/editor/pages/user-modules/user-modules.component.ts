@@ -32,6 +32,11 @@ import { AdminModulesComponent } from "../admin-modules/admin-modules.component"
   encapsulation: ViewEncapsulation.None,
 })
 export class UserModulesComponent extends AdminModulesComponent {
+  private filterRestrictionCache = new Map<
+    string,
+    Record<string, string[]> | null
+  >();
+
   constructor(
     router: Router,
     auth: AuthService,
@@ -77,6 +82,41 @@ export class UserModulesComponent extends AdminModulesComponent {
     this.router.navigate(["/user"]);
   }
 
+  override getFilterOptionRestrictions(
+    view: TableViewConfig,
+  ): Record<string, string[]> | null {
+    const cacheKey = this.buildFilterRestrictionCacheKey(view);
+    if (this.filterRestrictionCache.has(cacheKey)) {
+      return this.filterRestrictionCache.get(cacheKey) || null;
+    }
+
+    const rules = this.getApplicableAccessRules(view);
+    if (!rules.length) {
+      this.filterRestrictionCache.set(cacheKey, null);
+      return null;
+    }
+
+    const restrictions: Record<string, string[]> = {};
+    (view.filters || []).forEach((filter) => {
+      if (!filter.id || !filter.linkColumn) return;
+
+      const matchingRules = rules.filter(
+        (item) =>
+          String(item.field || "").toLowerCase() ===
+          String(filter.linkColumn).toLowerCase(),
+      );
+      const values = this.intersectRuleValues(matchingRules);
+      if (!values.length) return;
+
+      restrictions[filter.id] = values;
+      restrictions[filter.linkColumn] = values;
+    });
+
+    const result = Object.keys(restrictions).length ? restrictions : null;
+    this.filterRestrictionCache.set(cacheKey, result);
+    return result;
+  }
+
   protected override async ensureLookupOptions(
     view: TableViewConfig,
   ): Promise<void> {
@@ -85,23 +125,67 @@ export class UserModulesComponent extends AdminModulesComponent {
   }
 
   private applyLookupRestrictions(view: TableViewConfig): void {
-    const rules = this.auth.getCurrentUser()?.dataAccessRules || [];
-    const applicableRules = rules.filter((rule) => {
-      const sameTableView = rule.tableViewId === view.id;
-      const sameTable =
-        !!rule.tableName &&
-        rule.tableName.toLowerCase() === view.tableName.toLowerCase();
-      return (sameTableView || sameTable) && rule.values?.length;
-    });
+    this.getApplicableAccessRules(view).forEach((rule) => {
+      if (!rule.field) return;
 
-    applicableRules.forEach((rule) => {
       const key = `${view.id}::${rule.field}`;
       const options = this.lookupOptions[key];
       if (!options) return;
-      const allowedValues = new Set(rule.values.map((value) => String(value)));
+      const allowedValues = new Set(
+        (rule.values || []).map((value) => String(value)),
+      );
       this.lookupOptions[key] = options.filter((option) =>
         allowedValues.has(String(option.value)),
       );
     });
+  }
+
+  private getApplicableAccessRules(view: TableViewConfig) {
+    const rules = this.auth.getCurrentUser()?.dataAccessRules || [];
+    return rules.filter((rule) => {
+      if (!rule.field || !rule.values?.length) return false;
+
+      const sameTableView = rule.tableViewId === view.id;
+      const sameTable =
+        !!rule.tableName &&
+        rule.tableName.toLowerCase() === view.tableName.toLowerCase();
+      return sameTableView || sameTable;
+    });
+  }
+
+  private buildFilterRestrictionCacheKey(view: TableViewConfig): string {
+    const rules = this.auth.getCurrentUser()?.dataAccessRules || [];
+    const ruleSignature = rules
+      .map((rule) =>
+        [
+          rule.tableViewId || "",
+          rule.tableName || "",
+          rule.field || "",
+          ...(rule.values || []),
+        ].join(":"),
+      )
+      .join("|");
+
+    return `${view.id}:${view.tableName}:${ruleSignature}`;
+  }
+
+  private intersectRuleValues(
+    rules: Array<{ values?: string[] | null }>,
+  ): string[] {
+    if (!rules.length) return [];
+
+    const [firstRule, ...otherRules] = rules;
+    let allowedValues = new Set(
+      (firstRule.values || []).map((value) => String(value)),
+    );
+
+    otherRules.forEach((rule) => {
+      const nextValues = new Set((rule.values || []).map(String));
+      allowedValues = new Set(
+        [...allowedValues].filter((value) => nextValues.has(value)),
+      );
+    });
+
+    return [...allowedValues];
   }
 }
