@@ -57,7 +57,7 @@ export class UserPageComponent implements OnInit {
   readonly beneficiaryPageSize = 50;
   runtimeFilters: RuntimeFilterEntry[] = [];
   filterValues: FilterValueMap = {};
-  openSteps: Record<Step, boolean> = { 1: true, 2: false, 3: false };
+  currentStep: number = 1;
 
   familySearch = "";
   templateSearch = "";
@@ -184,8 +184,12 @@ export class UserPageComponent implements OnInit {
     this.router.navigate(["/user"]);
   }
 
-  toggleStep(step: Step): void {
-    this.openSteps[step] = !this.openSteps[step];
+  goToStep(step: number): void {
+    if (step === 2 && !this.selectedFamilyId) return;
+    if (step === 3 && !this.selectedTemplateId) return;
+    if (step === 4 && !this.selectedBeneficiaryId && !this.selectedBulkCount)
+      return;
+    this.currentStep = step;
   }
 
   templateCountForFamily(familyId: string): number {
@@ -204,7 +208,7 @@ export class UserPageComponent implements OnInit {
     this.filterValues = {};
     this.templateSearch = "";
     this.beneficiarySearch = "";
-    this.openSteps = { 1: false, 2: true, 3: false };
+    this.currentStep = 2;
     this.showWait("Selectionnez un modele de document");
   }
 
@@ -222,7 +226,7 @@ export class UserPageComponent implements OnInit {
     try {
       await this.refreshRuntimeFilters(false);
       await this.buildBeneficiaryList();
-      this.openSteps = { 1: false, 2: false, 3: true };
+      this.currentStep = 3;
       const family = this.selectedFamily;
       if (
         family?.beneficiaryMode === "organization" &&
@@ -288,12 +292,14 @@ export class UserPageComponent implements OnInit {
   async selectBeneficiary(beneficiaryId: string): Promise<void> {
     if (this.documentBusy && !this.beneficiariesLoading) return;
     this.selectedBeneficiaryId = beneficiaryId;
-    this.openSteps[3] = false;
+    this.currentStep = 4;
     await this.generateDocument();
   }
 
   isBeneficiarySelected(beneficiaryId: string | null | undefined): boolean {
-    return !!beneficiaryId && this.selectedBeneficiaryIds.has(String(beneficiaryId));
+    return (
+      !!beneficiaryId && this.selectedBeneficiaryIds.has(String(beneficiaryId))
+    );
   }
 
   toggleBeneficiarySelection(
@@ -315,7 +321,9 @@ export class UserPageComponent implements OnInit {
     const pageIds = this.pagedBeneficiaries
       .map((beneficiary) => String(beneficiary.id || ""))
       .filter(Boolean);
-    const allSelected = pageIds.every((id) => this.selectedBeneficiaryIds.has(id));
+    const allSelected = pageIds.every((id) =>
+      this.selectedBeneficiaryIds.has(id),
+    );
     pageIds.forEach((id) => {
       if (allSelected) {
         this.selectedBeneficiaryIds.delete(id);
@@ -404,7 +412,7 @@ export class UserPageComponent implements OnInit {
     this.beneficiaries = [];
     this.runtimeFilters = [];
     this.filterValues = {};
-    this.openSteps = { 1: true, 2: false, 3: false };
+    this.currentStep = 1;
     this.previewHtml = null;
     this.previewPlainHtml = "";
     this.previewTemplate = null;
@@ -676,9 +684,13 @@ export class UserPageComponent implements OnInit {
     const family = this.selectedFamily;
     if (!family) return;
 
-    const printPages = this.documentRender.renderDocumentPages(template, person, {
-      mode: "print",
-    });
+    const printPages = this.documentRender.renderDocumentPages(
+      template,
+      person,
+      {
+        mode: "print",
+      },
+    );
     const printableHtml = await this.documentRender.buildStandaloneDocumentHtml(
       template,
       printPages,

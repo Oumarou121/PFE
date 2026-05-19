@@ -1,4 +1,4 @@
-<div class="loading-overlay" *ngIf="loading">
+﻿<div class="loading-overlay" *ngIf="loading">
   <div class="spinner"></div>
   <p>{{ appLoadingMessage }}</p>
 </div>
@@ -26,478 +26,165 @@
     </div>
     <div class="nav-right">
       <button class="nav-logout-btn" type="button" (click)="goHome()">
-        <i class="fa fa-home"></i>
-        Accueil
+        <i class="fa fa-home"></i> Accueil
       </button>
       <app-user-menu></app-user-menu>
     </div>
   </nav>
 
-  <div class="hero-wrap">
-    <div class="hero">
-      <div class="hero-icon"><i class="fa fa-file-text"></i></div>
-      <div>
-        <h1>
-          {{ "Generation de document" }}
-        </h1>
-        <p>
-          {{ "Selectionnez une famille, un modele et une personne" }}
-        </p>
+  <div class="wizard-wrapper">
+    <div class="wizard-stepper">
+      <div
+        class="wizard-step-indicator"
+        [class.active]="currentStep === 1"
+        [class.completed]="currentStep > 1"
+        (click)="goToStep(1)"
+      >
+        <div class="step-circle"><i class="fa fa-folder-open"></i></div>
+        <span class="step-label">Famille</span>
       </div>
-      <div class="hero-badge">{{ organizationName || "-" }}</div>
+      <div class="step-line" [class.completed]="currentStep > 1"></div>
+
+      <div
+        class="wizard-step-indicator"
+        [class.active]="currentStep === 2"
+        [class.completed]="currentStep > 2"
+        (click)="goToStep(2)"
+      >
+        <div class="step-circle"><i class="fa fa-file-text-o"></i></div>
+        <span class="step-label">ModÃ¨le</span>
+      </div>
+      <div class="step-line" [class.completed]="currentStep > 2"></div>
+
+      <div
+        class="wizard-step-indicator"
+        [class.active]="currentStep === 3"
+        [class.completed]="currentStep > 3"
+        (click)="goToStep(3)"
+      >
+        <div class="step-circle"><i class="fa fa-users"></i></div>
+        <span class="step-label">BÃ©nÃ©ficiaires</span>
+      </div>
+      <div class="step-line" [class.completed]="currentStep > 3"></div>
+
+      <div
+        class="wizard-step-indicator"
+        [class.active]="currentStep === 4"
+        [class.completed]="currentStep > 4"
+        (click)="goToStep(4)"
+      >
+        <div class="step-circle"><i class="fa fa-print"></i></div>
+        <span class="step-label">GÃ©nÃ©ration</span>
+      </div>
     </div>
-  </div>
 
-  <div class="view-shell active">
-    <div class="main-wrap">
-      <div class="stepper">
-        <div class="stepper-hdr">
-          <span class="stepper-title">Etapes de generation</span>
-          <div class="step-dots">
-            <div
-              class="step-dot"
-              [class.done]="selectedFamilyId"
-              [class.cur]="!selectedFamilyId"
-            ></div>
-            <div
-              class="step-dot"
-              [class.done]="selectedTemplateId"
-              [class.cur]="selectedFamilyId && !selectedTemplateId"
-            ></div>
-            <div
-              class="step-dot"
-              [class.done]="selectedBeneficiaryId"
-              [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
-            ></div>
-          </div>
+    <div class="wizard-content">
+      <!-- ETAPE 1 : Famille -->
+      <div class="wizard-panel" *ngIf="currentStep === 1">
+        <div class="panel-header">
+          <h2>1. Choisissez une famille de documents</h2>
+          <p>
+            SÃ©lectionnez la catÃ©gorie du document que vous souhaitez
+            gÃ©nÃ©rer.
+          </p>
         </div>
-
-        <div class="step-block">
-          <button class="step-hdr" type="button" (click)="toggleStep(1)">
-            <div
-              class="step-num"
-              [class.done]="selectedFamilyId"
-              [class.cur]="!selectedFamilyId"
-            >
-              {{ selectedFamilyId ? "✓" : "1" }}
-            </div>
-            <span class="step-lbl" [class.cur]="!selectedFamilyId"
-              >Famille de documents</span
-            >
-            <span class="step-val" [class.ok]="selectedFamilyId">{{
-              selectedFamily ? getFamilyName() : "Non selectionne"
-            }}</span>
-            <svg
-              class="step-chev"
-              [style.transform]="openSteps[1] ? 'rotate(180deg)' : ''"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-          <div class="step-body" [class.open]="openSteps[1]">
-            <div class="data-search" style="margin-bottom: 10px">
-              <input
-                type="text"
-                placeholder="Rechercher une famille..."
-                [(ngModel)]="familySearch"
-              />
-            </div>
-            <div class="fam-grid">
-              <button
-                class="fam-card"
-                type="button"
-                *ngFor="let family of families"
-                [class.sel]="selectedFamilyId === family.id"
-                [disabled]="documentBusy || !templateCountForFamily(family.id)"
-                (click)="selectFamily(family.id)"
-              >
-                <div class="fam-name">{{ getFamilyName(family) }}</div>
-                <div class="fam-meta">
-                  {{ templateCountForFamily(family.id) }} modele(s)
-                </div>
-              </button>
-            </div>
-          </div>
+        <div class="data-search">
+          <i class="fa fa-search"></i>
+          <input
+            type="text"
+            placeholder="Rechercher une famille..."
+            [(ngModel)]="familySearch"
+          />
         </div>
-
-        <div class="step-block">
-          <button class="step-hdr" type="button" (click)="toggleStep(2)">
-            <div
-              class="step-num"
-              [class.done]="selectedTemplateId"
-              [class.cur]="selectedFamilyId && !selectedTemplateId"
-            >
-              {{ selectedTemplateId ? "✓" : "2" }}
+        <div class="fam-grid">
+          <button
+            class="fam-card"
+            type="button"
+            *ngFor="let family of families"
+            [class.sel]="selectedFamilyId === family.id"
+            [disabled]="documentBusy || !templateCountForFamily(family.id)"
+            (click)="selectFamily(family.id)"
+          >
+            <div class="fam-icon"><i class="fa fa-folder"></i></div>
+            <div class="fam-details">
+              <div class="fam-name">{{ getFamilyName(family) }}</div>
+              <div class="fam-meta">
+                {{ templateCountForFamily(family.id) }} modÃ¨le(s)
+              </div>
             </div>
-            <span
-              class="step-lbl"
-              [class.cur]="selectedFamilyId && !selectedTemplateId"
-              >Modele de document</span
-            >
-            <span class="step-val" [class.ok]="selectedTemplateId">{{
-              selectedTemplate ? getTemplateName() : "En attente"
-            }}</span>
-            <svg
-              class="step-chev"
-              [style.transform]="openSteps[2] ? 'rotate(180deg)' : ''"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
           </button>
-          <div class="step-body" [class.open]="openSteps[2]">
-            <div class="data-search" style="margin-bottom: 10px">
-              <input
-                type="text"
-                placeholder="Rechercher un modele..."
-                [(ngModel)]="templateSearch"
-              />
-            </div>
-            <div class="tpl-list">
-              <div class="empty-inline" *ngIf="!templates.length">
-                Aucun modele
-              </div>
-              <button
-                class="tpl-card"
-                type="button"
-                *ngFor="let template of templates"
-                [class.sel]="selectedTemplateId === template.id"
-                [disabled]="documentBusy"
-                (click)="selectTemplate(template.id)"
-              >
-                <span class="tpl-icon" style="font-size: 16px">📄</span>
-                <div class="tpl-copy">
-                  <div class="tpl-name">{{ getTemplateName(template) }}</div>
-                  <div class="tpl-meta">
-                    {{
-                      getTemplateUpdatedAt(template)
-                        ? (getTemplateUpdatedAt(template) | date: "dd/MM/yyyy")
-                        : "-"
-                    }}
-                  </div>
-                </div>
-                <div class="tpl-chk">
-                  {{ selectedTemplateId === template.id ? "✓" : "" }}
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="step-block">
-          <button class="step-hdr" type="button" (click)="toggleStep(3)">
-            <div
-              class="step-num"
-              [class.done]="selectedBeneficiaryId"
-              [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
-            >
-              {{ selectedBeneficiaryId ? "✓" : "3" }}
-            </div>
-            <span
-              class="step-lbl"
-              [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
-              >{{
-                runtimeFilters.length
-                  ? "Filtres & beneficiaire"
-                  : getBeneficiaryTypeLabel()
-              }}</span
-            >
-            <span class="step-val" [class.ok]="selectedBeneficiaryId">{{
-              getBeneficiaryLabel(getSelectedBeneficiary()).substring(0, 14) ||
-                "En attente"
-            }}</span>
-            <svg
-              class="step-chev"
-              [style.transform]="openSteps[3] ? 'rotate(180deg)' : ''"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-          <div class="step-body" [class.open]="openSteps[3]">
-            <div
-              class="filter-panel"
-              *ngIf="runtimeFilters.length"
-              style="margin-bottom: 12px"
-            >
-              <label
-                class="filter-field"
-                *ngFor="let filter of runtimeFilters"
-                style="
-                  display: block;
-                  font-size: 11px;
-                  color: var(--text2);
-                  font-weight: 600;
-                  margin-bottom: 8px;
-                "
-              >
-                <span
-                  >{{ filter.label
-                  }}{{ filter.profile.required ? " *" : "" }}</span
-                >
-                <select
-                  *ngIf="filter.type === 'select'"
-                  [(ngModel)]="filterValues[filter.id]"
-                  [disabled]="filter.profile.locked || documentBusy"
-                  (ngModelChange)="onFilterChange(filter.id, $event)"
-                  style="
-                    display: block;
-                    width: 100%;
-                    margin-top: 6px;
-                    font-size: 12px;
-                    border: 1px solid var(--border);
-                    border-radius: var(--r);
-                    padding: 6px 10px;
-                    background: var(--surface2);
-                    color: var(--text);
-                  "
-                >
-                  <option [ngValue]="null">-- Toutes / vide --</option>
-                  <option
-                    *ngFor="let option of filter.options || []"
-                    [ngValue]="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </select>
-                <input
-                  *ngIf="filter.type !== 'select'"
-                  [type]="
-                    filter.type === 'number'
-                      ? 'number'
-                      : filter.type === 'date'
-                        ? 'date'
-                        : 'text'
-                  "
-                  [(ngModel)]="filterValues[filter.id]"
-                  [readonly]="filter.profile.locked || documentBusy"
-                  (ngModelChange)="onFilterChange(filter.id, $event)"
-                  style="
-                    display: block;
-                    width: 100%;
-                    margin-top: 6px;
-                    font-size: 12px;
-                    border: 1px solid var(--border);
-                    border-radius: var(--r);
-                    padding: 6px 10px;
-                    background: var(--surface2);
-                    color: var(--text);
-                  "
-                />
-              </label>
-            </div>
-            <div class="data-search" style="margin-bottom: 10px">
-              <input
-                type="text"
-                placeholder="Rechercher un beneficiaire..."
-                [(ngModel)]="beneficiarySearch"
-                (ngModelChange)="onBeneficiarySearchChange()"
-              />
-            </div>
-            <div
-              class="bulk-toolbar"
-              *ngIf="!beneficiariesLoading && filteredBeneficiaries.length"
-            >
-              <button
-                class="bulk-link"
-                type="button"
-                [disabled]="documentBusy"
-                (click)="toggleCurrentPageSelection()"
-              >
-                {{
-                  allPagedBeneficiariesSelected
-                    ? "Deselectionner la page"
-                    : "Selectionner la page"
-                }}
-              </button>
-              <span class="bulk-count">
-                {{ selectedBulkCount }} selectionne(s)
-              </span>
-              <button
-                class="bulk-link"
-                type="button"
-                [disabled]="documentBusy || !selectedBulkCount"
-                (click)="clearBulkSelection()"
-              >
-                Effacer
-              </button>
-              <button
-                class="bulk-primary"
-                type="button"
-                [disabled]="documentBusy || !selectedBulkCount"
-                (click)="generateBulkDocuments()"
-              >
-                Generer la selection
-              </button>
-            </div>
-            <div class="person-list">
-              <div class="inline-loading" *ngIf="beneficiariesLoading">
-                <span class="mini-spinner"></span>
-                Chargement des beneficiaires...
-              </div>
-              <div
-                class="empty-inline"
-                *ngIf="!beneficiariesLoading && !filteredBeneficiaries.length"
-              >
-                Aucun beneficiaire disponible
-              </div>
-              <div
-                class="person-row"
-                *ngFor="let beneficiary of pagedBeneficiaries"
-              >
-                <button
-                  class="bulk-check"
-                  type="button"
-                  [class.checked]="isBeneficiarySelected(beneficiary.id)"
-                  [disabled]="documentBusy"
-                  (click)="toggleBeneficiarySelection($event, beneficiary.id)"
-                  title="Selectionner pour generation en masse"
-                >
-                  {{ isBeneficiarySelected(beneficiary.id) ? "✓" : "" }}
-                </button>
-                <button
-                  class="person-item"
-                  type="button"
-                  [class.sel]="selectedBeneficiaryId === beneficiary.id"
-                  [disabled]="documentBusy"
-                  (click)="selectBeneficiary(beneficiary.id)"
-                >
-                  <div class="p-av">
-                    {{ getInitials(getBeneficiaryLabel(beneficiary)) }}
-                  </div>
-                  <div>
-                    <div class="p-name">
-                      {{ getBeneficiaryLabel(beneficiary) }}
-                    </div>
-                    <div class="p-meta">
-                      {{ getBeneficiarySubtitle(beneficiary) }}
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </div>
-            <div
-              class="pager beneficiary-pager"
-              *ngIf="
-                !beneficiariesLoading &&
-                filteredBeneficiaries.length > beneficiaryPageSize
-              "
-            >
-              <button
-                class="pager-btn"
-                type="button"
-                [disabled]="beneficiaryPage <= 1"
-                (click)="goToPreviousBeneficiaryPage()"
-              >
-                Precedent
-              </button>
-              <span
-                >Page {{ beneficiaryPage }} / {{ beneficiaryTotalPages }}</span
-              >
-              <button
-                class="pager-btn"
-                type="button"
-                [disabled]="beneficiaryPage >= beneficiaryTotalPages"
-                (click)="goToNextBeneficiaryPage()"
-              >
-                Suivant
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
-      <div class="doc-panel">
-        <div class="doc-ph">
-          <span class="doc-pt">Apercu A4</span>
-          <div class="doc-actions" *ngIf="previewHtml">
-            <button
-              class="btn ghost"
-              type="button"
-              [disabled]="documentBusy || !selectedBulkCount"
-              (click)="generateBulkDocuments()"
-              title="Generer un document pour chaque beneficiaire selectionne"
-            >
-              Generer en masse
-            </button>
-            <button
-              class="btn primary"
-              type="button"
-              (click)="generateFinalDocument()"
-            >
-              Generer
-            </button>
-            <button
-              class="btn ghost"
-              type="button"
-              (click)="resetDocumentFlow()"
-            >
-              Nouveau
-            </button>
+      <!-- ETAPE 2 : ModÃ¨le -->
+      <div class="wizard-panel" *ngIf="currentStep === 2">
+        <div class="panel-header">
+          <h2>2. Choisissez un modÃ¨le</h2>
+          <p>
+            SÃ©lectionnez le modÃ¨le spÃ©cifique parmi la famille
+            <strong>{{ getFamilyName() }}</strong
+            >.
+          </p>
+        </div>
+        <div class="data-search">
+          <i class="fa fa-search"></i>
+          <input
+            type="text"
+            placeholder="Rechercher un modÃ¨le..."
+            [(ngModel)]="templateSearch"
+          />
+        </div>
+        <div class="tpl-list">
+          <div class="empty-message" *ngIf="!templates.length">
+            Aucun modÃ¨le trouvÃ©
           </div>
+          <button
+            class="tpl-card"
+            type="button"
+            *ngFor="let template of templates"
+            [class.sel]="selectedTemplateId === template.id"
+            [disabled]="documentBusy"
+            (click)="selectTemplate(template.id)"
+          >
+            <div class="tpl-icon"><i class="fa fa-file-text"></i></div>
+            <div class="tpl-copy">
+              <div class="tpl-name">{{ getTemplateName(template) }}</div>
+              <div class="tpl-meta">
+                Mis Ã  jour le
+                {{
+                  getTemplateUpdatedAt(template)
+                    ? (getTemplateUpdatedAt(template) | date: "dd/MM/yyyy")
+                    : "-"
+                }}
+              </div>
+            </div>
+            <div class="tpl-chk"><i class="fa fa-check"></i></div>
+          </button>
+        </div>
+        <div class="panel-actions">
+          <button class="btn ghost" (click)="goToStep(1)">Retour</button>
+        </div>
+      </div>
+
+      <!-- ETAPE 3 : BÃ©nÃ©ficiaires & Filtres -->
+      <div class="wizard-panel" *ngIf="currentStep === 3">
+        <div class="panel-header">
+          <h2>3. Distinctions et BÃ©nÃ©ficiaires</h2>
+          <p>Affinez par filtres et choisissez la personne concernÃ©e.</p>
         </div>
 
-        <div
-          class="preview-filters-wrap"
-          *ngIf="previewHtml && runtimeFilters.length"
-        >
-          <div
-            style="
-              font-size: 12px;
-              font-weight: 700;
-              color: var(--text);
-              margin-bottom: 8px;
-            "
-          >
-            Filtres du document
-          </div>
-          <div
-            style="
-              display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-              gap: 10px;
-              width: 100%;
-              margin-bottom: 6px;
-            "
-          >
-            <label
-              class="filter-field"
-              *ngFor="let filter of runtimeFilters"
-              style="font-size: 11px; color: var(--text2); font-weight: 600"
-            >
-              {{ filter.label }}{{ filter.profile.required ? " *" : "" }}
+        <div class="filter-panel" *ngIf="runtimeFilters.length">
+          <div class="filter-grid">
+            <label class="filter-field" *ngFor="let filter of runtimeFilters">
+              <span
+                >{{ filter.label
+                }}{{ filter.profile.required ? " *" : "" }}</span
+              >
               <select
                 *ngIf="filter.type === 'select'"
                 [(ngModel)]="filterValues[filter.id]"
                 [disabled]="filter.profile.locked || documentBusy"
                 (ngModelChange)="onFilterChange(filter.id, $event)"
-                style="
-                  display: block;
-                  width: 100%;
-                  margin-top: 6px;
-                  font-size: 12px;
-                  border: 1px solid var(--border);
-                  border-radius: var(--r);
-                  padding: 6px 10px;
-                  background: var(--surface2);
-                  color: var(--text);
-                "
               >
                 <option [ngValue]="null">-- Toutes / vide --</option>
                 <option
@@ -519,81 +206,166 @@
                 [(ngModel)]="filterValues[filter.id]"
                 [readonly]="filter.profile.locked || documentBusy"
                 (ngModelChange)="onFilterChange(filter.id, $event)"
-                style="
-                  display: block;
-                  width: 100%;
-                  margin-top: 6px;
-                  font-size: 12px;
-                  border: 1px solid var(--border);
-                  border-radius: var(--r);
-                  padding: 6px 10px;
-                  background: var(--surface2);
-                  color: var(--text);
-                "
               />
             </label>
           </div>
-          <div style="font-size: 11px; color: var(--text2); margin-top: 2px">
-            Organisation :
-            <strong>{{ organizationName || "Organisation principale" }}</strong>
+        </div>
+
+        <div class="data-search mt-4">
+          <i class="fa fa-search"></i>
+          <input
+            type="text"
+            placeholder="Rechercher un bÃ©nÃ©ficiaire..."
+            [(ngModel)]="beneficiarySearch"
+            (ngModelChange)="onBeneficiarySearchChange()"
+          />
+        </div>
+
+        <div
+          class="bulk-toolbar"
+          *ngIf="!beneficiariesLoading && filteredBeneficiaries.length"
+        >
+          <button
+            class="bulk-link"
+            type="button"
+            [disabled]="documentBusy"
+            (click)="toggleCurrentPageSelection()"
+          >
+            {{
+              allPagedBeneficiariesSelected
+                ? "DÃ©sÃ©lectionner la page"
+                : "SÃ©lectionner la page"
+            }}
+          </button>
+          <span class="bulk-count"
+            >{{ selectedBulkCount }} sÃ©lectionnÃ©(s)</span
+          >
+          <button
+            class="bulk-link"
+            type="button"
+            [disabled]="documentBusy || !selectedBulkCount"
+            (click)="clearBulkSelection()"
+          >
+            Effacer
+          </button>
+        </div>
+
+        <div class="person-list">
+          <div class="loading-state" *ngIf="beneficiariesLoading">
+            <div class="spinner"></div>
+            Chargement des bÃ©nÃ©ficiaires...
+          </div>
+          <div
+            class="empty-message"
+            *ngIf="!beneficiariesLoading && !filteredBeneficiaries.length"
+          >
+            Aucun bÃ©nÃ©ficiaire correspondant
+          </div>
+
+          <div class="person-grid">
+            <div
+              class="person-card-wrap"
+              *ngFor="let beneficiary of pagedBeneficiaries"
+            >
+              <button
+                class="bulk-check"
+                type="button"
+                [class.checked]="isBeneficiarySelected(beneficiary.id)"
+                [disabled]="documentBusy"
+                (click)="toggleBeneficiarySelection($event, beneficiary.id)"
+                title="SÃ©lectionner pour gÃ©nÃ©ration en masse"
+              >
+                <i
+                  class="fa fa-check"
+                  *ngIf="isBeneficiarySelected(beneficiary.id)"
+                ></i>
+              </button>
+              <button
+                class="person-item"
+                type="button"
+                [class.sel]="selectedBeneficiaryId === beneficiary.id"
+                [disabled]="documentBusy"
+                (click)="selectBeneficiary(beneficiary.id)"
+              >
+                <div class="p-av">
+                  {{ getInitials(getBeneficiaryLabel(beneficiary)) }}
+                </div>
+                <div class="p-details">
+                  <div class="p-name">
+                    {{ getBeneficiaryLabel(beneficiary) }}
+                  </div>
+                  <div class="p-meta">
+                    {{ getBeneficiarySubtitle(beneficiary) }}
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="zoom-bar" *ngIf="previewHtml">
-          <span>ZOOM</span>
+        <div
+          class="pager"
+          *ngIf="
+            !beneficiariesLoading &&
+            filteredBeneficiaries.length > beneficiaryPageSize
+          "
+        >
           <button
-            class="btn xs ghost"
-            type="button"
-            (click)="setZoom(-10)"
-            style="font-size: 14px; width: 22px; padding: 0"
+            class="btn ghost"
+            [disabled]="beneficiaryPage <= 1"
+            (click)="goToPreviousBeneficiaryPage()"
           >
-            -
+            PrÃ©cÃ©dent
           </button>
-          <span class="zoom-lbl">{{ zoom }}%</span>
+          <span>Page {{ beneficiaryPage }} / {{ beneficiaryTotalPages }}</span>
           <button
-            class="btn xs ghost"
-            type="button"
-            (click)="setZoom(10)"
-            style="font-size: 14px; width: 22px; padding: 0"
+            class="btn ghost"
+            [disabled]="beneficiaryPage >= beneficiaryTotalPages"
+            (click)="goToNextBeneficiaryPage()"
           >
-            +
-          </button>
-          <button class="btn xs ghost" type="button" (click)="setZoom(0)">
-            ↺
+            Suivant
           </button>
         </div>
 
-        <div class="pbar" *ngIf="previewHtml">
-          <div
-            class="pb-step"
-            [class.done]="selectedFamilyId"
-            [class.cur]="!selectedFamilyId"
+        <div class="panel-actions mt-4">
+          <button class="btn ghost" (click)="goToStep(2)">Retour</button>
+          <button
+            class="btn primary"
+            *ngIf="selectedBulkCount > 0"
+            [disabled]="documentBusy"
+            (click)="generateBulkDocuments()"
           >
-            {{ selectedFamily ? getFamilyName().substring(0, 16) : "Famille" }}
+            GÃ©nÃ©rer la sÃ©lection ({{ selectedBulkCount }})
+          </button>
+        </div>
+      </div>
+
+      <!-- ETAPE 4 : AperÃ§u & GÃ©nÃ©ration -->
+      <div class="wizard-panel" *ngIf="currentStep === 4">
+        <div
+          class="panel-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+          "
+        >
+          <div>
+            <h2>4. AperÃ§u & GÃ©nÃ©ration</h2>
+            <p *ngIf="!documentBusy">
+              VÃ©rifiez un aperÃ§u avant impression ou Ã©dition.
+            </p>
           </div>
-          <div class="pb-arr">›</div>
-          <div
-            class="pb-step"
-            [class.done]="selectedTemplateId"
-            [class.cur]="selectedFamilyId && !selectedTemplateId"
-          >
-            {{
-              selectedTemplate ? getTemplateName().substring(0, 16) : "Template"
-            }}
-          </div>
-          <div class="pb-arr">›</div>
-          <div
-            class="pb-step"
-            [class.done]="selectedBeneficiaryId"
-            [class.cur]="selectedTemplateId && !selectedBeneficiaryId"
-          >
-            {{
-              selectedBeneficiaryId
-                ? getBeneficiaryLabel(getSelectedBeneficiary()).substring(0, 14)
-                : selectedFamily?.beneficiaryMode === "organization"
-                  ? "Organisation"
-                  : "Bénéficiaire"
-            }}
+          <div class="doc-actions" *ngIf="previewHtml">
+            <button class="btn ghost" (click)="goToStep(3)">
+              Changer bÃ©nÃ©ficiaire
+            </button>
+            <button class="btn ghost" (click)="resetDocumentFlow()">
+              Nouvelle demande
+            </button>
+            <button class="btn primary" (click)="generateFinalDocument()">
+              GÃ©nÃ©rer Format Word/PDF
+            </button>
           </div>
         </div>
 
@@ -604,18 +376,34 @@
               bulkGenerationProgress || documentBusyMessage || "Chargement..."
             }}
           </div>
-          <div class="doc-wait" *ngIf="!previewHtml">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-            >
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-            <h3>{{ waitMessage }}</h3>
+          <div class="doc-wait" *ngIf="!previewHtml && !documentBusy">
+            <i class="fa fa-spinner fa-spin fa-2x"></i>
           </div>
+
+          <div class="zoom-bar" *ngIf="previewHtml">
+            <span>ZOOM</span>
+            <button
+              class="btn xs ghost"
+              type="button"
+              (click)="setZoom(-10)"
+              style="font-size: 14px; width: 22px; padding: 0"
+            >
+              -
+            </button>
+            <span class="zoom-lbl">{{ zoom }}%</span>
+            <button
+              class="btn xs ghost"
+              type="button"
+              (click)="setZoom(10)"
+              style="font-size: 14px; width: 22px; padding: 0"
+            >
+              +
+            </button>
+            <button class="btn xs ghost" type="button" (click)="setZoom(0)">
+              ↺
+            </button>
+          </div>
+
           <div class="a4-canvas" *ngIf="previewHtml">
             <div
               class="zoom-scaler"
