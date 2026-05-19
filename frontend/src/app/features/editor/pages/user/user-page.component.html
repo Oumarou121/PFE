@@ -52,7 +52,7 @@
         (click)="goToStep(2)"
       >
         <div class="step-circle"><i class="fa fa-file-text-o"></i></div>
-        <span class="step-label">ModÃ¨le</span>
+        <span class="step-label">Modèle</span>
       </div>
       <div class="step-line" [class.completed]="currentStep > 2"></div>
 
@@ -63,7 +63,7 @@
         (click)="goToStep(3)"
       >
         <div class="step-circle"><i class="fa fa-users"></i></div>
-        <span class="step-label">BÃ©nÃ©ficiaires</span>
+        <span class="step-label">Bénéficiaires</span>
       </div>
       <div class="step-line" [class.completed]="currentStep > 3"></div>
 
@@ -74,7 +74,7 @@
         (click)="goToStep(4)"
       >
         <div class="step-circle"><i class="fa fa-print"></i></div>
-        <span class="step-label">GÃ©nÃ©ration</span>
+        <span class="step-label">Génération</span>
       </div>
     </div>
 
@@ -84,8 +84,8 @@
         <div class="panel-header">
           <h2>1. Choisissez une famille de documents</h2>
           <p>
-            SÃ©lectionnez la catÃ©gorie du document que vous souhaitez
-            gÃ©nÃ©rer.
+            Sélectionnez la catégorie du document que vous souhaitez
+            générer.
           </p>
         </div>
         <div class="data-search">
@@ -109,19 +109,19 @@
             <div class="fam-details">
               <div class="fam-name">{{ getFamilyName(family) }}</div>
               <div class="fam-meta">
-                {{ templateCountForFamily(family.id) }} modÃ¨le(s)
+                {{ templateCountForFamily(family.id) }} modèle(s)
               </div>
             </div>
           </button>
         </div>
       </div>
 
-      <!-- ETAPE 2 : ModÃ¨le -->
+      <!-- ETAPE 2 : Modèle -->
       <div class="wizard-panel" *ngIf="currentStep === 2">
         <div class="panel-header">
-          <h2>2. Choisissez un modÃ¨le</h2>
+          <h2>2. Choisissez un modèle</h2>
           <p>
-            SÃ©lectionnez le modÃ¨le spÃ©cifique parmi la famille
+            Sélectionnez le modèle spécifique parmi la famille
             <strong>{{ getFamilyName() }}</strong
             >.
           </p>
@@ -130,13 +130,13 @@
           <i class="fa fa-search"></i>
           <input
             type="text"
-            placeholder="Rechercher un modÃ¨le..."
+            placeholder="Rechercher un modèle..."
             [(ngModel)]="templateSearch"
           />
         </div>
         <div class="tpl-list">
           <div class="empty-message" *ngIf="!templates.length">
-            Aucun modÃ¨le trouvÃ©
+            Aucun modèle trouvé
           </div>
           <button
             class="tpl-card"
@@ -150,7 +150,7 @@
             <div class="tpl-copy">
               <div class="tpl-name">{{ getTemplateName(template) }}</div>
               <div class="tpl-meta">
-                Mis Ã  jour le
+                Mis à jour le
                 {{
                   getTemplateUpdatedAt(template)
                     ? (getTemplateUpdatedAt(template) | date: "dd/MM/yyyy")
@@ -166,11 +166,11 @@
         </div>
       </div>
 
-      <!-- ETAPE 3 : BÃ©nÃ©ficiaires & Filtres -->
+      <!-- ETAPE 3 : Bénéficiaires & Filtres -->
       <div class="wizard-panel" *ngIf="currentStep === 3">
         <div class="panel-header">
-          <h2>3. Distinctions et BÃ©nÃ©ficiaires</h2>
-          <p>Affinez par filtres et choisissez la personne concernÃ©e.</p>
+          <h2>3. Distinctions et Bénéficiaires</h2>
+          <p>Affinez par filtres et choisissez la personne concernée.</p>
         </div>
 
         <div class="filter-panel" *ngIf="runtimeFilters.length">
@@ -215,7 +215,7 @@
           <i class="fa fa-search"></i>
           <input
             type="text"
-            placeholder="Rechercher un bÃ©nÃ©ficiaire..."
+            placeholder="Rechercher un bénéficiaire..."
             [(ngModel)]="beneficiarySearch"
             (ngModelChange)="onBeneficiarySearchChange()"
           />
@@ -233,12 +233,12 @@
           >
             {{
               allPagedBeneficiariesSelected
-                ? "DÃ©sÃ©lectionner la page"
-                : "SÃ©lectionner la page"
+                ? "Désélectionner la page"
+                : "Sélectionner la page"
             }}
           </button>
           <span class="bulk-count"
-            >{{ selectedBulkCount }} sÃ©lectionnÃ©(s)</span
+            >{{ selectedBulkCount }} sélectionné(s)</span
           >
           <button
             class="bulk-link"
@@ -253,13 +253,13 @@
         <div class="person-list">
           <div class="loading-state" *ngIf="beneficiariesLoading">
             <div class="spinner"></div>
-            Chargement des bÃ©nÃ©ficiaires...
+            Chargement des bénéficiaires...
           </div>
           <div
             class="empty-message"
             *ngIf="!beneficiariesLoading && !filteredBeneficiaries.length"
           >
-            Aucun bÃ©nÃ©ficiaire correspondant
+            Aucun bénéficiaire correspondant
           </div>
 
           <div class="person-grid">
@@ -273,7 +273,7 @@
                 [class.checked]="isBeneficiarySelected(beneficiary.id)"
                 [disabled]="documentBusy"
                 (click)="toggleBeneficiarySelection($event, beneficiary.id)"
-                title="SÃ©lectionner pour gÃ©nÃ©ration en masse"
+                title="Sélectionner pour génération en masse"
               >
                 <i
                   class="fa fa-check"
@@ -315,7 +315,7 @@
             [disabled]="beneficiaryPage <= 1"
             (click)="goToPreviousBeneficiaryPage()"
           >
-            PrÃ©cÃ©dent
+            Précédent
           </button>
           <span>Page {{ beneficiaryPage }} / {{ beneficiaryTotalPages }}</span>
           <button
@@ -335,12 +335,12 @@
             [disabled]="documentBusy"
             (click)="generateBulkDocuments()"
           >
-            GÃ©nÃ©rer la sÃ©lection ({{ selectedBulkCount }})
+            Générer la sélection ({{ selectedBulkCount }})
           </button>
         </div>
       </div>
 
-      <!-- ETAPE 4 : AperÃ§u & GÃ©nÃ©ration -->
+      <!-- ETAPE 4 : Aperçu & Génération -->
       <div class="wizard-panel" *ngIf="currentStep === 4">
         <div
           class="panel-header"
@@ -351,20 +351,20 @@
           "
         >
           <div>
-            <h2>4. AperÃ§u & GÃ©nÃ©ration</h2>
+            <h2>4. Aperçu & Génération</h2>
             <p *ngIf="!documentBusy">
-              VÃ©rifiez un aperÃ§u avant impression ou Ã©dition.
+              Vérifiez un aperçu avant impression ou édition.
             </p>
           </div>
           <div class="doc-actions" *ngIf="previewHtml">
             <button class="btn ghost" (click)="goToStep(3)">
-              Changer bÃ©nÃ©ficiaire
+              Changer bénéficiaire
             </button>
             <button class="btn ghost" (click)="resetDocumentFlow()">
               Nouvelle demande
             </button>
             <button class="btn primary" (click)="generateFinalDocument()">
-              GÃ©nÃ©rer Format Word/PDF
+              Générer Format Word/PDF
             </button>
           </div>
         </div>

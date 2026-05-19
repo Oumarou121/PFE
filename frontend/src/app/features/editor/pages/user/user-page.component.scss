@@ -15,8 +15,8 @@
   --text: #111827;
   --text2: #4b5563;
   --text3: #9ca3af;
-  --accent: #2563eb;
-  --accent-bg: #eff6ff;
+  --primary: #2563eb;
+  --primary-bg: #eff6ff;
   --green: #10b981;
   --green-bg: #ecfdf5;
   --amber: #f59e0b;
@@ -49,7 +49,7 @@
 .spinner {
   width: 40px; height: 40px;
   border-radius: 50%; border: 4px solid var(--border);
-  border-top-color: var(--accent);
+  border-top-color: var(--primary);
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -64,7 +64,7 @@
 }
 .nav-logo { font-size: 1.2rem; font-weight: 700; color: #0f172a; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
 .nav-center { flex: 1; display: flex; justify-content: center; gap: 10px; }
-.nav-org-pill { background: var(--accent-bg); color: var(--accent); padding: 6px 16px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+.nav-org-pill { background: var(--primary-bg); color: var(--primary); padding: 6px 16px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
 .nav-right { margin-left: auto; display: flex; align-items: center; gap: 15px; }
 
 .btn {
@@ -74,7 +74,7 @@
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn.ghost { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
 .btn.ghost:hover { background: var(--surface2); }
-.btn.primary { background: var(--accent); color: white; }
+.btn.primary { background: var(--primary); color: white; }
 .btn.primary:hover { background: #1d4ed8; }
 
 .mt-4 { margin-top: 1rem; }
@@ -85,7 +85,7 @@
 .wizard-step-indicator:hover { opacity: 0.8; }
 .wizard-step-indicator.active { opacity: 1; }
 .wizard-step-indicator.completed { opacity: 1; }
-.wizard-step-indicator.active .step-circle { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-bg); }
+.wizard-step-indicator.active .step-circle { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-bg); }
 .wizard-step-indicator.completed .step-circle { background: var(--green); color: white; border-color: var(--green); }
 .step-circle { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border2); background: white; display: flex; justify-content: center; align-items: center; font-size: 18px; transition: all 0.3s; }
 .step-label { font-size: 0.85rem; font-weight: 600; color: var(--text2); }
@@ -100,14 +100,14 @@
 .data-search { position: relative; margin-bottom: 20px; }
 .data-search i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text3); }
 .data-search input { width: 100%; border: 1px solid var(--border2); padding: 12px 16px 12px 42px; border-radius: var(--r); font-size: 0.95rem; background: var(--surface2); }
-.data-search input:focus { border-color: var(--accent); outline: none; background: white; }
+.data-search input:focus { border-color: var(--primary); outline: none; background: white; }
 
 .fam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; }
 .fam-card { display: flex; align-items: center; gap: 15px; padding: 16px; border: 1px solid var(--border); border-radius: var(--r); background: white; cursor: pointer; text-align: left; }
 .fam-card:hover { border-color: var(--border2); }
-.fam-card.sel { border-color: var(--accent); background: var(--accent-bg); }
+.fam-card.sel { border-color: var(--primary); background: var(--primary-bg); }
 .fam-icon { width: 48px; height: 48px; border-radius: 10px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--text2); }
-.fam-card.sel .fam-icon { background: white; color: var(--accent); }
+.fam-card.sel .fam-icon { background: white; color: var(--primary); }
 .fam-details { flex: 1; }
 .fam-name { font-weight: 600; color: var(--text); font-size: 1rem; margin-bottom: 4px; }
 .fam-meta { font-size: 0.8rem; color: var(--text3); }
@@ -127,10 +127,10 @@
 .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
 .filter-field span { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
 .filter-field input, .filter-field select { width: 100%; border: 1px solid var(--border2); background: var(--surface2); padding: 10px 12px; border-radius: var(--r); }
-.filter-field input:focus, .filter-field select:focus { border-color: var(--accent); outline: none; background: white; }
+.filter-field input:focus, .filter-field select:focus { border-color: var(--primary); outline: none; background: white; }
 
 .bulk-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; padding: 10px 15px; background: var(--surface2); border-radius: var(--r); }
-.bulk-link { background: none; border: none; color: var(--accent); font-weight: 600; cursor: pointer; }
+.bulk-link { background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; }
 .bulk-link:hover { text-decoration: underline; }
 .bulk-count { color: var(--text3); font-weight: 500; font-size: 0.9rem; }
 
@@ -141,7 +141,7 @@
 .bulk-check.checked { background: var(--green); color: white; border-color: var(--green); }
 .person-item { flex: 1; padding: 12px 15px; display: flex; align-items: center; gap: 12px; background: transparent; border: none; cursor: pointer; text-align: left; }
 .person-item.sel { background: var(--amber-bg); box-shadow: inset 4px 0 0 var(--amber); }
-.p-av { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; }
+.p-av { width: 40px; height: 40px; border-radius: 50%; background: var(--primary-bg); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; }
 .p-details { flex: 1; }
 .p-name { font-weight: 600; color: var(--text); font-size: 0.95rem; margin-bottom: 2px; }
 .p-meta { font-size: 0.8rem; color: var(--text3); }
