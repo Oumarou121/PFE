@@ -156,6 +156,18 @@ export class DocumentArchivePageComponent implements OnInit {
     return group.tableName || "Table bénéficiaire";
   }
 
+  trackByFamilyId(_index: number, family: FamilyRecord): string {
+    return family.id;
+  }
+
+  trackByBeneficiaryKey(_index: number, beneficiary: { key: string }): string {
+    return beneficiary.key;
+  }
+
+  trackByGeneratorId(_index: number, generator: { id: string }): string {
+    return generator.id;
+  }
+
   goBack(): void {
     this.router.navigate(["/admin"], {});
   }

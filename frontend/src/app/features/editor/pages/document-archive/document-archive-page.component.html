@@ -40,7 +40,10 @@
       <i class="fa fa-th-large filter-icon"></i>
       <select formControlName="familyId">
         <option value="">Toutes les familles</option>
-        <option *ngFor="let family of families" [value]="family.id">
+        <option
+          *ngFor="let family of families; trackBy: trackByFamilyId"
+          [value]="family.id"
+        >
           {{ family.nom || family.name || family.id }}
         </option>
       </select>
@@ -54,7 +57,7 @@
         <select formControlName="beneficiaryKey">
           <option value="">Tous les beneficiaires</option>
           <option
-            *ngFor="let beneficiary of beneficiaryOptions"
+            *ngFor="let beneficiary of beneficiaryOptions; trackBy: trackByBeneficiaryKey"
             [value]="beneficiary.key"
           >
             {{ beneficiary.label }}
@@ -70,7 +73,7 @@
       <select formControlName="generatedById">
         <option value="">Tous les generateurs</option>
         <option
-          *ngFor="let generator of generatorOptions"
+          *ngFor="let generator of generatorOptions; trackBy: trackByGeneratorId"
           [value]="generator.id"
         >
           {{ generator.label }}
