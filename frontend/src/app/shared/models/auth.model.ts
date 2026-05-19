@@ -22,4 +22,11 @@ export interface AuthUser {
   role: 'supAdmin' | 'admin' | 'user' | string;
   profile?: string;
   moduleIds?: string[];
+  dataAccessRules?: Array<{
+    moduleId: string;
+    tableViewId: string;
+    tableName?: string | null;
+    field: string;
+    values: string[];
+  }>;
 }

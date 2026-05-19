@@ -1,3 +1,11 @@
+export interface UserDataAccessRule {
+  moduleId: string;
+  tableViewId: string;
+  tableName?: string | null;
+  field: string;
+  values: string[];
+}
+
 export interface PersonnelUser {
   id: number;
   name: string;
@@ -9,6 +17,7 @@ export interface PersonnelUser {
   accessAllYears: boolean;
   accessYearList?: string | null;
   moduleIds: string[];
+  dataAccessRules: UserDataAccessRule[];
   createdAt: string;
   isActive: boolean;
 }
@@ -24,6 +33,7 @@ export interface PersonnelCreateRequest {
   accessAllYears: boolean;
   accessYearList?: string | null;
   moduleIds: string[];
+  dataAccessRules: UserDataAccessRule[];
 }
 
 export interface PersonnelUpdateRequest extends Omit<PersonnelCreateRequest, "password"> {

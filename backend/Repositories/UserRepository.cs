@@ -18,6 +18,7 @@ namespace DocApi.Repositories
         public async Task<User?> GetByIdAsync(int id)
         {
             using var connection = _connectionFactory.CreateConnection();
+            await EnsureAccessColumnsAsync(connection);
             var sql = $"""
                 SELECT Id,
                        Name AS Username,
@@ -31,6 +32,7 @@ namespace DocApi.Repositories
                        AccessAllYears,
                        AccessYearList,
                        ModuleIds,
+                       DataAccessRules,
                        CAST(1 AS bit) AS IsActive
                 FROM {UserTable}
                 WHERE Id = @Id
@@ -41,6 +43,7 @@ namespace DocApi.Repositories
         public async Task<User?> GetByEmailAsync(string email)
         {
             using var connection = _connectionFactory.CreateConnection();
+            await EnsureAccessColumnsAsync(connection);
             var sql = $"""
                 SELECT Id,
                        Name AS Username,
@@ -54,6 +57,7 @@ namespace DocApi.Repositories
                        AccessAllYears,
                        AccessYearList,
                        ModuleIds,
+                       DataAccessRules,
                        CAST(1 AS bit) AS IsActive
                 FROM {UserTable}
                 WHERE Email = @Email
@@ -64,6 +68,7 @@ namespace DocApi.Repositories
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             using var connection = _connectionFactory.CreateConnection();
+            await EnsureAccessColumnsAsync(connection);
             var sql = $"""
                 SELECT Id,
                        Name AS Username,
@@ -77,6 +82,7 @@ namespace DocApi.Repositories
                        AccessAllYears,
                        AccessYearList,
                        ModuleIds,
+                       DataAccessRules,
                        CAST(1 AS bit) AS IsActive
                 FROM {UserTable}
                 ORDER BY AccountCreationDate DESC
@@ -87,6 +93,7 @@ namespace DocApi.Repositories
         public async Task<IEnumerable<User>> GetByOrganizationAsync(int organizationId)
         {
             using var connection = _connectionFactory.CreateConnection();
+            await EnsureAccessColumnsAsync(connection);
             var sql = $"""
                 SELECT Id,
                        Name AS Username,
@@ -100,6 +107,7 @@ namespace DocApi.Repositories
                        AccessAllYears,
                        AccessYearList,
                        ModuleIds,
+                       DataAccessRules,
                        CAST(1 AS bit) AS IsActive
                 FROM {UserTable}
                 WHERE IdOrganization = @OrganizationId
@@ -111,6 +119,7 @@ namespace DocApi.Repositories
         public async Task<User?> GetByIdInOrganizationAsync(int id, int organizationId)
         {
             using var connection = _connectionFactory.CreateConnection();
+            await EnsureAccessColumnsAsync(connection);
             var sql = $"""
                 SELECT Id,
                        Name AS Username,
@@ -124,6 +133,7 @@ namespace DocApi.Repositories
                        AccessAllYears,
                        AccessYearList,
                        ModuleIds,
+                       DataAccessRules,
                        CAST(1 AS bit) AS IsActive
                 FROM {UserTable}
                 WHERE Id = @Id AND IdOrganization = @OrganizationId
@@ -134,10 +144,11 @@ namespace DocApi.Repositories
         public async Task<int> CreateAsync(User user)
         {
             using var connection = _connectionFactory.CreateConnection();
+            await EnsureAccessColumnsAsync(connection);
             var sql = $"""
-                INSERT INTO {UserTable} (Name, Email, PassWord, IdOrganization, Role, AccountCreationDate, Profil, ProfilDetail, AccessAllYears, AccessYearList, ModuleIds)
+                INSERT INTO {UserTable} (Name, Email, PassWord, IdOrganization, Role, AccountCreationDate, Profil, ProfilDetail, AccessAllYears, AccessYearList, ModuleIds, DataAccessRules)
                 OUTPUT INSERTED.Id
-                VALUES (@Username, @Email, @PasswordHash, @OrganizationId, @Role, @CreatedAt, @Profile, @ProfileDetail, @AccessAllYears, @AccessYearList, @ModuleIds);
+                VALUES (@Username, @Email, @PasswordHash, @OrganizationId, @Role, @CreatedAt, @Profile, @ProfileDetail, @AccessAllYears, @AccessYearList, @ModuleIds, @DataAccessRules);
                 """;
 
             return await connection.QuerySingleAsync<int>(sql, user);
@@ -146,6 +157,7 @@ namespace DocApi.Repositories
         public async Task<bool> UpdateAsync(User user)
         {
             using var connection = _connectionFactory.CreateConnection();
+            await EnsureAccessColumnsAsync(connection);
             var sql = $"""
                 UPDATE {UserTable}
                 SET Name = @Username,
@@ -157,7 +169,8 @@ namespace DocApi.Repositories
                     ProfilDetail = @ProfileDetail,
                     AccessAllYears = @AccessAllYears,
                     AccessYearList = @AccessYearList,
-                    ModuleIds = @ModuleIds
+                    ModuleIds = @ModuleIds,
+                    DataAccessRules = @DataAccessRules
                 WHERE Id = @Id
                 """;
 
@@ -168,6 +181,7 @@ namespace DocApi.Repositories
         public async Task<bool> UpdateWithoutPasswordAsync(User user)
         {
             using var connection = _connectionFactory.CreateConnection();
+            await EnsureAccessColumnsAsync(connection);
             var sql = $"""
                 UPDATE {UserTable}
                 SET Name = @Username,
@@ -178,7 +192,8 @@ namespace DocApi.Repositories
                     ProfilDetail = @ProfileDetail,
                     AccessAllYears = @AccessAllYears,
                     AccessYearList = @AccessYearList,
-                    ModuleIds = @ModuleIds
+                    ModuleIds = @ModuleIds,
+                    DataAccessRules = @DataAccessRules
                 WHERE Id = @Id
                 """;
 
@@ -211,5 +226,15 @@ namespace DocApi.Repositories
         }
 
         private string UserTable => "[dbo].[User]";
+
+        private static async Task EnsureAccessColumnsAsync(System.Data.IDbConnection connection)
+        {
+            await connection.ExecuteAsync("""
+                IF COL_LENGTH('dbo.User', 'DataAccessRules') IS NULL
+                BEGIN
+                    ALTER TABLE [dbo].[User] ADD DataAccessRules NVARCHAR(MAX) NULL;
+                END
+                """);
+        }
     }
 }

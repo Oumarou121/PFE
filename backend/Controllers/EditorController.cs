@@ -116,7 +116,7 @@ namespace DocApi.Controllers
                 return BadRequest(new EditorApiResponse(false, Error: "sql is required"));   
             }
 
-            var rows = await _service.RunSelectQueryAsync(request.Sql, request.Params, SanitizeDatabaseName(request.DatabaseName));
+            var rows = await _service.RunSelectQueryAsync(request.Sql, request.Params, SanitizeDatabaseName(request.DatabaseName), CurrentUser());
             return Ok(new EditorApiResponse(true, Rows: rows));
         }
 
@@ -174,7 +174,7 @@ namespace DocApi.Controllers
                         beneficiarySql = $"SELECT {linkColumn} AS id, {labelExpr} AS libelle FROM {tableName}";
                     }
 
-                    rows = (await _service.RunSelectQueryAsync(beneficiarySql ?? string.Empty, parameters, SanitizeDatabaseName(request.DatabaseName))).ToArray();
+                    rows = (await _service.RunSelectQueryAsync(beneficiarySql ?? string.Empty, parameters, SanitizeDatabaseName(request.DatabaseName), CurrentUser())).ToArray();
                 }
 
                 return Ok(new EditorApiResponse(true, Rows: rows));
@@ -202,7 +202,7 @@ namespace DocApi.Controllers
                     if (Regex.IsMatch(request.BeneficiaryTable, "^[A-Za-z0-9_]+$"))
                     {
                         var sql = $"SELECT TOP (1) * FROM {request.BeneficiaryTable} WHERE id = @id";
-                        var rows = (await _service.RunSelectQueryAsync(sql, new Dictionary<string, object?> { ["id"] = request.BeneficiaryId }, SanitizeDatabaseName(request.DatabaseName))).ToArray();
+                        var rows = (await _service.RunSelectQueryAsync(sql, new Dictionary<string, object?> { ["id"] = request.BeneficiaryId }, SanitizeDatabaseName(request.DatabaseName), CurrentUser())).ToArray();
                         if (rows.Length > 0)
                         {
                             foreach (var (key, value) in rows[0])
@@ -312,35 +312,35 @@ namespace DocApi.Controllers
         public async Task<ActionResult> TableViewRows([FromBody] TableViewRowsRequest request)
         {
             request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
-            return Ok(new EditorApiResponse(true, Rows: await _service.GetTableViewRowsAsync(request)));
+            return Ok(new EditorApiResponse(true, Rows: await _service.GetTableViewRowsAsync(request, CurrentUser())));
         }
 
         [HttpPost("table-view/record")]
         public async Task<ActionResult> TableViewRecord([FromBody] TableViewRecordRequest request)
         {
             request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
-            return Ok(new EditorApiResponse(true, Record: await _service.GetTableViewRecordAsync(request)));
+            return Ok(new EditorApiResponse(true, Record: await _service.GetTableViewRecordAsync(request, CurrentUser())));
         }
 
         [HttpPut("table-view/record")]
         public async Task<ActionResult> UpdateTableViewRecord([FromBody] TableViewRecordRequest request)
         {
             request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
-            return Ok(new EditorApiResponse(true, Record: await _service.UpdateTableViewRecordAsync(request)));
+            return Ok(new EditorApiResponse(true, Record: await _service.UpdateTableViewRecordAsync(request, CurrentUser())));
         }
 
         [HttpPost("table-view/record/create")]
         public async Task<ActionResult> CreateTableViewRecord([FromBody] TableViewRecordRequest request)
         {
             request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
-            return Ok(new EditorApiResponse(true, Record: await _service.CreateTableViewRecordAsync(request)));
+            return Ok(new EditorApiResponse(true, Record: await _service.CreateTableViewRecordAsync(request, CurrentUser())));
         }
 
         [HttpDelete("table-view/record")]
         public async Task<ActionResult> DeleteTableViewRecord([FromBody] TableViewRecordRequest request)
         {
             request.DatabaseName = SanitizeDatabaseName(request.DatabaseName);
-            await _service.DeleteTableViewRecordAsync(request);
+            await _service.DeleteTableViewRecordAsync(request, CurrentUser());
             return Ok(new EditorApiResponse(true));
         }
 

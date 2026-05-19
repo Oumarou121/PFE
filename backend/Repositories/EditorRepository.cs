@@ -695,7 +695,7 @@ namespace DocApi.Repositories
 
         // ─── RunSelectQuery (TenantDB — données métier) ──────────────────────────
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters, string? databaseName = null)
+        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string sql, Dictionary<string, object?> parameters, string? databaseName = null, IEnumerable<UserDataAccessRuleDto>? accessRules = null)
         {
             var cleaned = NormalizeSelectQueryForSqlServer((sql ?? string.Empty).Trim().TrimEnd(';'));
             if (!IsSelectQuery(cleaned))
@@ -708,6 +708,7 @@ namespace DocApi.Repositories
             if (!parameters.ContainsKey("academicYear")) parameters["academicYear"] = _tenantProvider.GetAcademicYearCode();
             cleaned = CompileNamedParameters(cleaned, parameters, dynamicParameters);
             cleaned = await ApplyAutomaticAcademicYearFilterAsync(cleaned, dynamicParameters, parameters, databaseName);
+            cleaned = ApplyDataAccessRulesToQuery(cleaned, dynamicParameters, accessRules);
             _logger.LogInformation("Query final SQL after academic year injection. Sql: {Sql} Params: {Params}", cleaned, JsonSerializer.Serialize(dynamicParameters.ParameterNames.ToDictionary(name => name, name => dynamicParameters.Get<object?>(name))));
 
             using var connection = TenantConnection(databaseName);
@@ -718,7 +719,7 @@ namespace DocApi.Repositories
 
         // ─── GetTableViewRows (TenantDB — données métier) ────────────────────────
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null, int page = 1, int pageSize = 50)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(string? configId, string? search, TableViewConfigRequest? config, string? databaseName = null, Dictionary<string, List<string>>? selectedFilters = null, int page = 1, int pageSize = 50, IEnumerable<UserDataAccessRuleDto>? accessRules = null)
         {
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -767,6 +768,8 @@ namespace DocApi.Repositories
                 whereClauses.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
             }
 
+            ApplyDataAccessRules(whereClauses, parameters, tableView, allowed, accessRules);
+
             var where = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 200);
@@ -780,7 +783,7 @@ namespace DocApi.Repositories
             return rows.Select(row => (IDictionary<string, object?>)CleanRow(row)).ToArray();
         }
 
-        public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null)
+        public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null, IEnumerable<UserDataAccessRuleDto>? accessRules = null)
         {
             var tableView = await ResolveTableViewAsync(configId, null)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -806,6 +809,7 @@ namespace DocApi.Repositories
                 parameters.Add("academicYearCode", academicYearFilter.Value.YearCode);
                 where.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
             }
+            ApplyDataAccessRules(where, parameters, tableView, allowed, accessRules);
 
             using var connection = TenantConnection(databaseName);
             var row = await connection.QueryFirstOrDefaultAsync(
@@ -814,7 +818,7 @@ namespace DocApi.Repositories
             return row is null ? null : CleanRow(row);
         }
 
-        public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values, string? databaseName = null)
+        public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(string? configId, string? rowId, Dictionary<string, object?> values, string? databaseName = null, IEnumerable<UserDataAccessRuleDto>? accessRules = null)
         {
             var tableView = await ResolveTableViewAsync(configId, null)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -843,14 +847,16 @@ namespace DocApi.Repositories
                     parameters.Add("academicYearCode", academicYearFilter.Value.YearCode);
                     where.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
                 }
+                ValidateUpdateValuesAgainstDataAccess(tableView, values, accessRules);
+                ApplyDataAccessRules(where, parameters, tableView, tableColumns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase), accessRules);
                 await connection.ExecuteAsync(
                     $"UPDATE {Quote(tableView.TableName)} SET {string.Join(", ", columns.Select(c => $"{Quote(c.Name)} = @{c.Name}"))} WHERE {string.Join(" AND ", where)}",
                     parameters);
             }
-            return await GetTableViewRecordAsync(configId, normalizedRowId?.ToString(), databaseName);
+            return await GetTableViewRecordAsync(configId, normalizedRowId?.ToString(), databaseName, accessRules);
         }
 
-        public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config, string? databaseName = null)
+        public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(string? configId, Dictionary<string, object?> values, TableViewConfigRequest? config, string? databaseName = null, IEnumerable<UserDataAccessRuleDto>? accessRules = null)
         {
             var tableView = await ResolveTableViewAsync(configId, config)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -880,6 +886,8 @@ namespace DocApi.Repositories
                 normalizedValues[column.Name] = norm;
                 parameters.Add(column.Name, norm);
             }
+
+            ValidateCreateValuesAgainstDataAccess(tableView, normalizedValues, tableColumns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase), accessRules);
             var insertSql = columns.Count == 0
                 ? $"INSERT INTO {Quote(tableView.TableName)} OUTPUT INSERTED.{Quote(pk)} AS inserted_id DEFAULT VALUES"
                 : $"INSERT INTO {Quote(tableView.TableName)} ({string.Join(", ", columns.Select(c => Quote(c.Name)))}) OUTPUT INSERTED.{Quote(pk)} AS inserted_id VALUES ({string.Join(", ", columns.Select(c => "@" + c.Name))})";
@@ -888,10 +896,10 @@ namespace DocApi.Repositories
 
             using var connection = TenantConnection(databaseName);
             var insertedId = await connection.ExecuteScalarAsync<object>(insertSql, parameters);
-            return await GetTableViewRecordAsync(tableView.Id, insertedId?.ToString(), databaseName);
+            return await GetTableViewRecordAsync(tableView.Id, insertedId?.ToString(), databaseName, accessRules);
         }
 
-        public async Task DeleteTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null)
+        public async Task DeleteTableViewRecordAsync(string? configId, string? rowId, string? databaseName = null, IEnumerable<UserDataAccessRuleDto>? accessRules = null)
         {
             var tableView = await ResolveTableViewAsync(configId, null)
                 ?? throw new InvalidOperationException("Configuration introuvable.");
@@ -908,11 +916,143 @@ namespace DocApi.Repositories
                 parameters.Add("academicYearCode", academicYearFilter.Value.YearCode);
                 where.Add($"{Quote(academicYearFilter.Value.ColumnName)} = @academicYearCode");
             }
+            ApplyDataAccessRules(where, parameters, tableView, (await GetTenantColumnsAsync(tableView.TableName, databaseName)).Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase), accessRules);
             using var connection = TenantConnection(databaseName);
             await connection.ExecuteAsync(
                 $"DELETE FROM {Quote(tableView.TableName)} WHERE {string.Join(" AND ", where)}",
                 parameters);
         }
+
+        private static void ApplyDataAccessRules(
+            List<string> whereClauses,
+            DynamicParameters parameters,
+            TableViewConfigRequest tableView,
+            HashSet<string> allowedColumns,
+            IEnumerable<UserDataAccessRuleDto>? accessRules)
+        {
+            var rules = GetApplicableRules(tableView, allowedColumns, accessRules).ToArray();
+            for (var index = 0; index < rules.Length; index++)
+            {
+                var rule = rules[index];
+                var paramName = $"access_{SanitizeParameterName(rule.TableViewId)}_{SanitizeParameterName(rule.Field)}_{index}";
+                parameters.Add(paramName, rule.Values);
+                whereClauses.Add($"{Quote(rule.Field)} IN @{paramName}");
+            }
+        }
+
+        private static IEnumerable<UserDataAccessRuleDto> GetApplicableRules(
+            TableViewConfigRequest tableView,
+            HashSet<string> allowedColumns,
+            IEnumerable<UserDataAccessRuleDto>? accessRules)
+        {
+            if (accessRules is null) yield break;
+
+            foreach (var rule in accessRules)
+            {
+                if (string.IsNullOrWhiteSpace(rule.Field)
+                    || !allowedColumns.Contains(rule.Field)
+                    || rule.Values.Count == 0)
+                {
+                    continue;
+                }
+
+                var sameTableView = !string.IsNullOrWhiteSpace(rule.TableViewId)
+                    && string.Equals(rule.TableViewId, tableView.Id, StringComparison.OrdinalIgnoreCase);
+                var sameTable = !string.IsNullOrWhiteSpace(rule.TableName)
+                    && string.Equals(rule.TableName, tableView.TableName, StringComparison.OrdinalIgnoreCase);
+
+                if (sameTableView || sameTable) yield return rule;
+            }
+        }
+
+        private static void ValidateCreateValuesAgainstDataAccess(
+            TableViewConfigRequest tableView,
+            Dictionary<string, object?> values,
+            HashSet<string> allowedColumns,
+            IEnumerable<UserDataAccessRuleDto>? accessRules)
+        {
+            if (accessRules is null) return;
+
+            foreach (var rule in GetApplicableRules(tableView, allowedColumns, accessRules))
+            {
+                if (!values.TryGetValue(rule.Field, out var value))
+                {
+                    throw new UnauthorizedAccessException("Creation non autorisee sans valeur de filtre.");
+                }
+                var text = value?.ToString() ?? string.Empty;
+                if (!rule.Values.Contains(text, StringComparer.OrdinalIgnoreCase))
+                {
+                    throw new UnauthorizedAccessException("Creation non autorisee pour cette valeur de filtre.");
+                }
+            }
+        }
+
+        private static void ValidateUpdateValuesAgainstDataAccess(
+            TableViewConfigRequest tableView,
+            Dictionary<string, object?> values,
+            IEnumerable<UserDataAccessRuleDto>? accessRules)
+        {
+            if (accessRules is null) return;
+
+            var allowedColumns = values.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var rule in GetApplicableRules(tableView, allowedColumns, accessRules))
+            {
+                if (!values.TryGetValue(rule.Field, out var value)) continue;
+                var text = value?.ToString() ?? string.Empty;
+                if (!rule.Values.Contains(text, StringComparer.OrdinalIgnoreCase))
+                {
+                    throw new UnauthorizedAccessException("Modification non autorisee pour cette valeur de filtre.");
+                }
+            }
+        }
+
+        private static string ApplyDataAccessRulesToQuery(
+            string sql,
+            DynamicParameters parameters,
+            IEnumerable<UserDataAccessRuleDto>? accessRules)
+        {
+            var rules = (accessRules ?? Array.Empty<UserDataAccessRuleDto>())
+                .Where(rule =>
+                    !string.IsNullOrWhiteSpace(rule.TableName)
+                    && !string.IsNullOrWhiteSpace(rule.Field)
+                    && rule.Values.Count > 0
+                    && ContainsTableReference(sql, rule.TableName))
+                .GroupBy(rule => $"{rule.TableName}|{rule.Field}", StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .ToArray();
+
+            if (rules.Length == 0) return sql;
+
+            var clauses = new List<string>();
+            for (var index = 0; index < rules.Length; index++)
+            {
+                var rule = rules[index];
+                var paramName = $"qaccess_{SanitizeParameterName(rule.TableName)}_{SanitizeParameterName(rule.Field)}_{index}";
+                parameters.Add(paramName, rule.Values);
+                clauses.Add($"{Quote(rule.Field)} IN @{paramName}");
+            }
+
+            return InjectWhereClause(sql, string.Join(" AND ", clauses));
+        }
+
+        private static bool ContainsTableReference(string sql, string tableName)
+        {
+            var escaped = Regex.Escape(tableName.Trim());
+            return Regex.IsMatch(sql, $@"\b(FROM|JOIN)\s+(\[[^\]]+\]\.)?\[?{escaped}\]?\b", RegexOptions.IgnoreCase);
+        }
+
+        private static string InjectWhereClause(string sql, string clause)
+        {
+            if (string.IsNullOrWhiteSpace(clause)) return sql;
+            var boundaryMatch = Regex.Match(sql, @"\b(ORDER\s+BY|GROUP\s+BY|HAVING|OFFSET)\b", RegexOptions.IgnoreCase);
+            var head = boundaryMatch.Success ? sql[..boundaryMatch.Index].TrimEnd() : sql.TrimEnd();
+            var tail = boundaryMatch.Success ? " " + sql[boundaryMatch.Index..].TrimStart() : string.Empty;
+            var hasWhere = Regex.IsMatch(head, @"\bWHERE\b", RegexOptions.IgnoreCase);
+            return $"{head} {(hasWhere ? "AND" : "WHERE")} {clause}{tail}";
+        }
+
+        private static string SanitizeParameterName(string? value)
+            => Regex.Replace(value ?? string.Empty, "[^A-Za-z0-9_]", "_");
 
         public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(string? configId, string? fieldName, TableViewConfigRequest? config, string? databaseName = null)
         {

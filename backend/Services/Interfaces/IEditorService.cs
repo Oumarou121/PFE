@@ -33,12 +33,12 @@ namespace DocApi.Services.Interfaces
         Task<AcademicYearResponse> CreateAcademicYearAsync(AcademicYearCreateRequest request, AuthUserResponse? currentUser);
         Task CloseAcademicYearAsync(string code, AuthUserResponse? currentUser);
         Task ReplaceStateAsync(EditorStateResponse state, AuthUserResponse? currentUser);
-        Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters, string? databaseName = null);
-        Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request);
-        Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request);
-        Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(TableViewRecordRequest request);
-        Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(TableViewRecordRequest request);
-        Task DeleteTableViewRecordAsync(TableViewRecordRequest request);
+        Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters, string? databaseName = null, AuthUserResponse? currentUser = null);
+        Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request, AuthUserResponse? currentUser = null);
+        Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request, AuthUserResponse? currentUser = null);
+        Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(TableViewRecordRequest request, AuthUserResponse? currentUser = null);
+        Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(TableViewRecordRequest request, AuthUserResponse? currentUser = null);
+        Task DeleteTableViewRecordAsync(TableViewRecordRequest request, AuthUserResponse? currentUser = null);
         Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(TableViewLookupRequest request);
         Task<IEnumerable<DocumentResponse>> GetDocumentsAsync(DocumentListRequest request, AuthUserResponse? currentUser);
         Task<DocumentListResponse> GetDocumentsPagedAsync(DocumentListRequest request, AuthUserResponse? currentUser);

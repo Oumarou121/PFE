@@ -12,12 +12,14 @@ namespace DocApi.Services
         private readonly IEditorRepository _repository;
         private readonly IModuleRepository _moduleRepository;
         private readonly ITenantProvider _tenantProvider;
+        private readonly IUserRepository _userRepository;
 
-        public EditorService(IEditorRepository repository, IModuleRepository moduleRepository, ITenantProvider tenantProvider)
+        public EditorService(IEditorRepository repository, IModuleRepository moduleRepository, ITenantProvider tenantProvider, IUserRepository userRepository)
         {
             _repository = repository;
             _moduleRepository = moduleRepository;
             _tenantProvider = tenantProvider;
+            _userRepository = userRepository;
         }
 
         public async Task EnsureSchemaAsync()
@@ -246,40 +248,40 @@ namespace DocApi.Services
             await _repository.ReplaceStateAsync(state, currentUser?.OrganizationId, currentUser?.Role == "supAdmin");
         }
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters, string? databaseName = null)
+        public async Task<IEnumerable<IDictionary<string, object?>>> RunSelectQueryAsync(string? sql, Dictionary<string, object?>? parameters, string? databaseName = null, AuthUserResponse? currentUser = null)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.RunSelectQueryAsync(sql ?? string.Empty, parameters ?? [], databaseName);
+            return await _repository.RunSelectQueryAsync(sql ?? string.Empty, parameters ?? [], databaseName, await ResolveDataAccessRulesAsync(currentUser));
         }
 
-        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetTableViewRowsAsync(TableViewRowsRequest request, AuthUserResponse? currentUser = null)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Search, request.Config, request.DatabaseName, request.SelectedFilters, request.Page, request.PageSize);
+            return await _repository.GetTableViewRowsAsync(request.ConfigId, request.Search, request.Config, request.DatabaseName, request.SelectedFilters, request.Page, request.PageSize, await ResolveDataAccessRulesAsync(currentUser));
         }
 
-        public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request)
+        public async Task<IDictionary<string, object?>?> GetTableViewRecordAsync(TableViewRecordRequest request, AuthUserResponse? currentUser = null)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.GetTableViewRecordAsync(request.ConfigId, request.RowId, request.DatabaseName);
+            return await _repository.GetTableViewRecordAsync(request.ConfigId, request.RowId, request.DatabaseName, await ResolveDataAccessRulesAsync(currentUser));
         }
 
-        public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(TableViewRecordRequest request)
+        public async Task<IDictionary<string, object?>?> UpdateTableViewRecordAsync(TableViewRecordRequest request, AuthUserResponse? currentUser = null)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.UpdateTableViewRecordAsync(request.ConfigId, request.RowId, request.Values, request.DatabaseName);
+            return await _repository.UpdateTableViewRecordAsync(request.ConfigId, request.RowId, request.Values, request.DatabaseName, await ResolveDataAccessRulesAsync(currentUser));
         }
 
-        public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(TableViewRecordRequest request)
+        public async Task<IDictionary<string, object?>?> CreateTableViewRecordAsync(TableViewRecordRequest request, AuthUserResponse? currentUser = null)
         {
             await _repository.EnsureSchemaAsync();
-            return await _repository.CreateTableViewRecordAsync(request.ConfigId, request.Values, request.Config, request.DatabaseName);
+            return await _repository.CreateTableViewRecordAsync(request.ConfigId, request.Values, request.Config, request.DatabaseName, await ResolveDataAccessRulesAsync(currentUser));
         }
 
-        public async Task DeleteTableViewRecordAsync(TableViewRecordRequest request)
+        public async Task DeleteTableViewRecordAsync(TableViewRecordRequest request, AuthUserResponse? currentUser = null)
         {
             await _repository.EnsureSchemaAsync();
-            await _repository.DeleteTableViewRecordAsync(request.ConfigId, request.RowId, request.DatabaseName);
+            await _repository.DeleteTableViewRecordAsync(request.ConfigId, request.RowId, request.DatabaseName, await ResolveDataAccessRulesAsync(currentUser));
         }
 
         public async Task<IEnumerable<LookupOptionResponse>> GetLookupOptionsAsync(TableViewLookupRequest request)
@@ -395,6 +397,31 @@ namespace DocApi.Services
 
             return raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private async Task<List<UserDataAccessRuleDto>> ResolveDataAccessRulesAsync(AuthUserResponse? currentUser)
+        {
+            if (currentUser is null) return new List<UserDataAccessRuleDto>();
+            if (!string.Equals(currentUser.Role, "user", StringComparison.OrdinalIgnoreCase))
+            {
+                return new List<UserDataAccessRuleDto>();
+            }
+
+            var currentRules = currentUser.DataAccessRules ?? new List<UserDataAccessRuleDto>();
+            if (currentRules.Count > 0) return currentRules;
+            if (!int.TryParse(currentUser.Id, out var userId)) return new List<UserDataAccessRuleDto>();
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (string.IsNullOrWhiteSpace(user?.DataAccessRules)) return new List<UserDataAccessRuleDto>();
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<UserDataAccessRuleDto>>(user.DataAccessRules) ?? new List<UserDataAccessRuleDto>();
+            }
+            catch (JsonException)
+            {
+                return new List<UserDataAccessRuleDto>();
+            }
         }
 
     }

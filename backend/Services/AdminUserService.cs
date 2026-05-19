@@ -52,6 +52,7 @@ namespace DocApi.Services
                 AccessAllYears = request.AccessAllYears,
                 AccessYearList = NormalizeJsonArray(request.AccessYearList),
                 ModuleIds = SerializeModuleIds(request.ModuleIds),
+                DataAccessRules = SerializeDataAccessRules(request.DataAccessRules, request.ModuleIds),
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
@@ -80,6 +81,7 @@ namespace DocApi.Services
             existing.AccessAllYears = request.AccessAllYears;
             existing.AccessYearList = NormalizeJsonArray(request.AccessYearList);
             existing.ModuleIds = SerializeModuleIds(request.ModuleIds);
+            existing.DataAccessRules = SerializeDataAccessRules(request.DataAccessRules, request.ModuleIds);
             existing.IsActive = request.IsActive;
 
             var updated = string.IsNullOrWhiteSpace(request.Password)
@@ -169,6 +171,7 @@ namespace DocApi.Services
             AccessAllYears = user.AccessAllYears,
             AccessYearList = user.AccessYearList,
             ModuleIds = ParseModuleIds(user.ModuleIds),
+            DataAccessRules = ParseDataAccessRules(user.DataAccessRules),
             CreatedAt = user.CreatedAt,
             IsActive = user.IsActive
         };
@@ -190,6 +193,54 @@ namespace DocApi.Services
             catch (JsonException)
             {
                 return moduleIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+            }
+        }
+
+        private static string SerializeDataAccessRules(IEnumerable<UserDataAccessRuleDto>? rules, IEnumerable<string>? moduleIds)
+        {
+            var allowedModules = new HashSet<string>(
+                (moduleIds ?? Array.Empty<string>())
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .Select(id => id.Trim()),
+                StringComparer.OrdinalIgnoreCase);
+
+            var normalized = (rules ?? Array.Empty<UserDataAccessRuleDto>())
+                .Where(rule =>
+                    !string.IsNullOrWhiteSpace(rule.ModuleId)
+                    && !string.IsNullOrWhiteSpace(rule.TableViewId)
+                    && !string.IsNullOrWhiteSpace(rule.Field)
+                    && rule.Values.Any(value => !string.IsNullOrWhiteSpace(value))
+                    && (allowedModules.Count == 0 || allowedModules.Contains(rule.ModuleId.Trim())))
+                .Select(rule => new UserDataAccessRuleDto
+                {
+                    ModuleId = rule.ModuleId.Trim(),
+                    TableViewId = rule.TableViewId.Trim(),
+                    TableName = string.IsNullOrWhiteSpace(rule.TableName) ? null : rule.TableName.Trim(),
+                    Field = rule.Field.Trim(),
+                    Values = rule.Values
+                        .Where(value => !string.IsNullOrWhiteSpace(value))
+                        .Select(value => value.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList()
+                })
+                .Where(rule => rule.Values.Count > 0)
+                .GroupBy(rule => $"{rule.ModuleId}|{rule.TableViewId}|{rule.Field}", StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .ToList();
+
+            return JsonSerializer.Serialize(normalized);
+        }
+
+        private static List<UserDataAccessRuleDto> ParseDataAccessRules(string? rules)
+        {
+            if (string.IsNullOrWhiteSpace(rules)) return new List<UserDataAccessRuleDto>();
+            try
+            {
+                return JsonSerializer.Deserialize<List<UserDataAccessRuleDto>>(rules) ?? new List<UserDataAccessRuleDto>();
+            }
+            catch (JsonException)
+            {
+                return new List<UserDataAccessRuleDto>();
             }
         }
 

@@ -73,6 +73,7 @@ namespace DocApi.Services
                 AccessAllYears = true,
                 AccessYearList = "[]",
                 ModuleIds = "[]",
+                DataAccessRules = "[]",
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
@@ -116,6 +117,7 @@ namespace DocApi.Services
                 AccessAllYears = user.AccessAllYears,
                 AccessYearList = user.AccessYearList,
                 ModuleIds = ParseModuleIds(user.ModuleIds),
+                DataAccessRules = ParseDataAccessRules(user.DataAccessRules),
                 CreatedAt = user.CreatedAt,
                 IsActive = user.IsActive
             };
@@ -172,7 +174,8 @@ namespace DocApi.Services
             ProfileDetail = user.ProfileDetail,
             AccessAllYears = user.AccessAllYears,
             AccessYearList = user.AccessYearList,
-            ModuleIds = ParseModuleIds(user.ModuleIds)
+            ModuleIds = ParseModuleIds(user.ModuleIds),
+            DataAccessRules = ParseDataAccessRules(user.DataAccessRules)
         };
 
         private static List<string> ParseModuleIds(string? moduleIds)
@@ -188,6 +191,20 @@ namespace DocApi.Services
                 return moduleIds
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .ToList();
+            }
+        }
+
+        private static List<UserDataAccessRuleDto> ParseDataAccessRules(string? rules)
+        {
+            if (string.IsNullOrWhiteSpace(rules)) return new List<UserDataAccessRuleDto>();
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<UserDataAccessRuleDto>>(rules) ?? new List<UserDataAccessRuleDto>();
+            }
+            catch (JsonException)
+            {
+                return new List<UserDataAccessRuleDto>();
             }
         }
 

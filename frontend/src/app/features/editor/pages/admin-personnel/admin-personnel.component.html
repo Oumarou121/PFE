@@ -266,10 +266,12 @@
                 <div class="modules-picker__grid" *ngIf="moduleChoices.length">
                   <label
                     class="module-choice"
+                    [attr.for]="getModuleChoiceInputId(module.id)"
                     [class.module-choice--base]="module.isBase"
-                    *ngFor="let module of moduleChoices"
+                    *ngFor="let module of moduleChoices; trackBy: trackModule"
                   >
                     <input
+                      [id]="getModuleChoiceInputId(module.id)"
                       type="checkbox"
                       [checked]="isModuleSelected(module.id)"
                       (change)="
@@ -283,6 +285,121 @@
                 </div>
                 <div class="empty-state compact" *ngIf="!moduleChoices.length">
                   Aucun module actif disponible.
+                </div>
+              </div>
+
+              <div class="access-rules" *ngIf="selectedBusinessModules.length">
+                <div class="access-rules__head">
+                  <span>Limites des donnees</span>
+                  <small>Par module et valeur lookup</small>
+                </div>
+
+                <div
+                  class="access-module"
+                  *ngFor="
+                    let module of selectedBusinessModules;
+                    trackBy: trackModule
+                  "
+                >
+                  <div class="access-module__title">
+                    <i *ngIf="module.icon" class="{{ module.icon }}"></i>
+                    <strong>{{ module.name }}</strong>
+                  </div>
+
+                  <ng-container
+                    *ngFor="
+                      let view of getModuleTableViews(module);
+                      trackBy: trackView
+                    "
+                  >
+                    <div
+                      class="access-table"
+                      *ngIf="getRestrictableFields(view).length"
+                    >
+                      <div class="access-table__title">
+                        {{ view.label || view.tableName }}
+                      </div>
+
+                      <label
+                        class="field access-field"
+                        *ngFor="
+                          let field of getRestrictableFields(view);
+                          trackBy: trackField
+                        "
+                      >
+                        <span>{{ getFieldLabel(view, field) }}</span>
+                        <div class="allowed-values">
+                          <div class="allowed-values__head">
+                            <strong>Valeurs autorisees</strong>
+                            <small>Sous-ensemble choisi</small>
+                          </div>
+                          <p class="allowed-values__hint">
+                            Choisissez les valeurs autorisees pour cet
+                            utilisateur.
+                          </p>
+                          <button
+                            class="allowed-values__loader"
+                            type="button"
+                            *ngIf="
+                              !getLookupOptions(view.id, field).length &&
+                              !isLookupLoading(view.id, field)
+                            "
+                            (click)="ensureLookupOptions(view, field)"
+                            [disabled]="saving || deleting"
+                          >
+                            Charger les valeurs
+                          </button>
+                          <div
+                            class="allowed-values__message"
+                            *ngIf="isLookupLoading(view.id, field)"
+                          >
+                            Chargement...
+                          </div>
+                          <div
+                            class="allowed-values__message"
+                            *ngIf="isLookupTooLarge(view.id, field)"
+                          >
+                            Liste ignoree : plus de 50 valeurs disponibles.
+                          </div>
+                          <div
+                            class="allowed-values__list"
+                            *ngIf="shouldDisplayLookupOptions(view.id, field)"
+                          >
+                            <label
+                              class="allowed-value"
+                              *ngFor="
+                                let option of getLookupOptions(view.id, field);
+                                trackBy: trackOption
+                              "
+                            >
+                              <input
+                                type="checkbox"
+                                [checked]="
+                                  isRuleValueSelected(
+                                    module.id,
+                                    view.id,
+                                    field,
+                                    option.value
+                                  )
+                                "
+                                (change)="
+                                  toggleAccessRuleValue(
+                                    module.id,
+                                    view,
+                                    field,
+                                    option.value,
+                                    $any($event.target).checked
+                                  )
+                                "
+                                [disabled]="saving || deleting"
+                              />
+                              <span>{{ option.label }}</span>
+                            </label>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </ng-container>
                 </div>
               </div>
 

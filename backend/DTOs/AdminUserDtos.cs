@@ -14,8 +14,18 @@ namespace DocApi.DTOs
         public bool AccessAllYears { get; set; }
         public string? AccessYearList { get; set; }
         public List<string> ModuleIds { get; set; } = new();
+        public List<UserDataAccessRuleDto> DataAccessRules { get; set; } = new();
         public DateTime CreatedAt { get; set; }
         public bool IsActive { get; set; }
+    }
+
+    public class UserDataAccessRuleDto
+    {
+        public string ModuleId { get; set; } = string.Empty;
+        public string TableViewId { get; set; } = string.Empty;
+        public string? TableName { get; set; }
+        public string Field { get; set; } = string.Empty;
+        public List<string> Values { get; set; } = new();
     }
 
     public class AdminUserCreateRequest
@@ -39,6 +49,7 @@ namespace DocApi.DTOs
         public bool AccessAllYears { get; set; } = true;
         public string? AccessYearList { get; set; } = "[]";
         public List<string> ModuleIds { get; set; } = new();
+        public List<UserDataAccessRuleDto> DataAccessRules { get; set; } = new();
     }
 
     public class AdminUserUpdateRequest
@@ -61,6 +72,7 @@ namespace DocApi.DTOs
         public bool AccessAllYears { get; set; } = true;
         public string? AccessYearList { get; set; } = "[]";
         public List<string> ModuleIds { get; set; } = new();
+        public List<UserDataAccessRuleDto> DataAccessRules { get; set; } = new();
         public bool IsActive { get; set; } = true;
     }
 }

@@ -12,12 +12,16 @@ import {
   PersonnelCreateRequest,
   PersonnelUpdateRequest,
   PersonnelUser,
+  UserDataAccessRule,
 } from "../../models/personnel.model";
+import { TableViewConfig } from "../../models/table-view.model";
 import { EditorStateService } from "../../services/editor-state.service";
 import { OrganizationService } from "../../services/organization.service";
 import { PersonnelService } from "../../services/personnel.service";
+import { TableViewService } from "../../services/table-view.service";
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 import { ActiveAcademicYearPillComponent } from "../../../../shared/components/active-academic-year-pill/active-academic-year-pill.component";
+import { UnknownRecord } from "../../models/editor-common.model";
 
 type PersonnelForm = PersonnelUpdateRequest & {
   id?: number;
@@ -58,6 +62,8 @@ const BASE_MODULE_CHOICES: ModuleChoice[] = [
   },
 ];
 
+const MAX_ACCESS_LOOKUP_OPTIONS = 50;
+
 @Component({
   selector: "app-admin-personnel",
   standalone: true,
@@ -82,6 +88,9 @@ export class AdminPersonnelComponent implements OnInit {
   selectedUserId: number | null = null;
   creating = false;
   form: PersonnelForm = this.createEmptyForm();
+  accessLookupOptions: Record<string, Array<{ value: string; label: string }>> =
+    {};
+  accessLookupLoading: Record<string, boolean> = {};
 
   constructor(
     public router: Router,
@@ -89,6 +98,7 @@ export class AdminPersonnelComponent implements OnInit {
     private state: EditorStateService,
     private organizationsService: OrganizationService,
     private personnelService: PersonnelService,
+    private tableViewsService: TableViewService,
     private notifications: NotificationService,
     private dialog: MatDialog,
   ) {}
@@ -96,7 +106,11 @@ export class AdminPersonnelComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.loading = true;
     try {
-      await this.state.ensureResources(["organizations", "modules"]);
+      await this.state.ensureResources([
+        "organizations",
+        "modules",
+        "tableViews",
+      ]);
       const user = this.auth.getCurrentUser();
       const organization = user?.organizationId
         ? this.organizationsService.getOrganization(user.organizationId)
@@ -123,19 +137,21 @@ export class AdminPersonnelComponent implements OnInit {
   get modules(): ModuleRecord[] {
     const modules = (this.state.getState().modules || []) as ModuleRecord[];
     return modules
-      .filter((module) => module.isActive)
+      .filter((module) => this.isModuleActive(module))
       .slice()
-      .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      .sort((a, b) => this.getModuleOrder(a) - this.getModuleOrder(b));
   }
 
   get moduleChoices(): ModuleChoice[] {
     return [
       ...BASE_MODULE_CHOICES,
-      ...this.modules.map((module) => ({
-        id: module.id,
-        name: module.name,
-        icon: module.icon,
-      })),
+      ...this.modules
+        .map((module) => ({
+          id: this.getModuleId(module),
+          name: this.getModuleName(module),
+          icon: this.getModuleIcon(module),
+        }))
+        .filter((module) => !!module.id),
     ];
   }
 
@@ -180,6 +196,7 @@ export class AdminPersonnelComponent implements OnInit {
       accessYearList: user.accessYearList || "[]",
       accessYearsText: this.formatAccessYears(user.accessYearList),
       moduleIds: [...(user.moduleIds || [])],
+      dataAccessRules: this.cloneDataAccessRules(user.dataAccessRules),
       isActive: user.isActive,
     };
   }
@@ -213,6 +230,7 @@ export class AdminPersonnelComponent implements OnInit {
           accessAllYears: this.form.accessAllYears,
           accessYearList: accessYearList || "[]",
           moduleIds: this.form.moduleIds || [],
+          dataAccessRules: this.cleanedDataAccessRules(),
         };
         const created = await this.personnelService.create(payload);
         this.notifications.showSuccess("Personnel ajoute.");
@@ -230,6 +248,7 @@ export class AdminPersonnelComponent implements OnInit {
           accessAllYears: this.form.accessAllYears,
           accessYearList: accessYearList || "[]",
           moduleIds: this.form.moduleIds || [],
+          dataAccessRules: this.cleanedDataAccessRules(),
           isActive: this.form.isActive,
         };
         const updated = await this.personnelService.update(
@@ -298,7 +317,173 @@ export class AdminPersonnelComponent implements OnInit {
     }
     if (!checked) {
       this.form.moduleIds = this.form.moduleIds.filter((id) => id !== moduleId);
+      this.form.dataAccessRules = this.form.dataAccessRules.filter(
+        (rule) => rule.moduleId !== moduleId,
+      );
     }
+  }
+
+  get selectedBusinessModules(): ModuleRecord[] {
+    const selected = new Set(this.form.moduleIds || []);
+    return this.modules.filter((module) =>
+      selected.has(this.getModuleId(module)),
+    );
+  }
+
+  getModuleTableViews(module: ModuleRecord): TableViewConfig[] {
+    const linkedIds = this.getModuleTableViewLinks(module)
+      .slice()
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
+      .map((link) => this.getModuleTableViewConfigId(link))
+      .filter(Boolean);
+    const mainTableViewId = this.getModuleMainTableViewId(module);
+    const ids = linkedIds.length
+      ? linkedIds
+      : mainTableViewId
+        ? [mainTableViewId]
+        : [];
+    return ids
+      .map((id) => this.tableViewsService.getTableView(id))
+      .filter((view): view is TableViewConfig => !!view);
+  }
+
+  getRestrictableFields(view: TableViewConfig): string[] {
+    const fields = new Set([
+      ...(view.visibleFields || []),
+      ...(view.editableFields || []),
+      ...(view.previewFields || []),
+    ]);
+    return Array.from(fields).filter((field) => {
+      const setting = view.fieldSettings?.[field];
+      return (
+        setting?.displayMode === "lookup" &&
+        !!setting.lookupTable &&
+        !!setting.lookupValueColumn &&
+        !!setting.lookupLabelColumn
+      );
+    });
+  }
+
+  getFieldLabel(view: TableViewConfig, field: string): string {
+    return view.fieldLabels?.[field] || field;
+  }
+
+  lookupKey(viewId: string, field: string): string {
+    return `${viewId}::${field}`;
+  }
+
+  getLookupOptions(
+    viewId: string,
+    field: string,
+  ): Array<{ value: string; label: string }> {
+    return this.accessLookupOptions[this.lookupKey(viewId, field)] || [];
+  }
+
+  shouldDisplayLookupOptions(viewId: string, field: string): boolean {
+    const options = this.getLookupOptions(viewId, field);
+    return options.length > 0 && options.length <= MAX_ACCESS_LOOKUP_OPTIONS;
+  }
+
+  isLookupTooLarge(viewId: string, field: string): boolean {
+    return (
+      this.getLookupOptions(viewId, field).length > MAX_ACCESS_LOOKUP_OPTIONS
+    );
+  }
+
+  isLookupLoading(viewId: string, field: string): boolean {
+    return !!this.accessLookupLoading[this.lookupKey(viewId, field)];
+  }
+
+  async ensureLookupOptions(
+    view: TableViewConfig,
+    field: string,
+  ): Promise<void> {
+    const key = this.lookupKey(view.id, field);
+    if (this.accessLookupOptions[key] || this.accessLookupLoading[key]) return;
+    this.accessLookupLoading[key] = true;
+    try {
+      this.accessLookupOptions[key] =
+        await this.tableViewsService.getTableViewLookupOptions(
+          view.id,
+          field,
+          view,
+        );
+    } catch {
+      this.accessLookupOptions[key] = [];
+      this.notifications.showError(
+        `Impossible de charger les valeurs de ${this.getFieldLabel(view, field)}.`,
+      );
+    } finally {
+      this.accessLookupLoading[key] = false;
+    }
+  }
+
+  getRuleValues(moduleId: string, viewId: string, field: string): string[] {
+    return (
+      this.form.dataAccessRules.find(
+        (rule) =>
+          rule.moduleId === moduleId &&
+          rule.tableViewId === viewId &&
+          rule.field === field,
+      )?.values || []
+    );
+  }
+
+  updateAccessRuleValues(
+    moduleId: string,
+    view: TableViewConfig,
+    field: string,
+    values: string[],
+  ): void {
+    const normalized = Array.from(
+      new Set(
+        values.map((value) => String(value || "").trim()).filter(Boolean),
+      ),
+    );
+    this.form.dataAccessRules = this.form.dataAccessRules.filter(
+      (rule) =>
+        !(
+          rule.moduleId === moduleId &&
+          rule.tableViewId === view.id &&
+          rule.field === field
+        ),
+    );
+    if (!normalized.length) return;
+    this.form.dataAccessRules = [
+      ...this.form.dataAccessRules,
+      {
+        moduleId,
+        tableViewId: view.id,
+        tableName: view.tableName,
+        field,
+        values: normalized,
+      },
+    ];
+  }
+
+  isRuleValueSelected(
+    moduleId: string,
+    viewId: string,
+    field: string,
+    value: string,
+  ): boolean {
+    return this.getRuleValues(moduleId, viewId, field).includes(value);
+  }
+
+  toggleAccessRuleValue(
+    moduleId: string,
+    view: TableViewConfig,
+    field: string,
+    value: string,
+    checked: boolean,
+  ): void {
+    const current = new Set(this.getRuleValues(moduleId, view.id, field));
+    checked ? current.add(value) : current.delete(value);
+    this.updateAccessRuleValues(moduleId, view, field, Array.from(current));
+  }
+
+  getModuleChoiceInputId(moduleId: string): string {
+    return `personnel-module-${moduleId.replace(/[^A-Za-z0-9_-]/g, "_")}`;
   }
 
   getModuleNames(user: PersonnelUser): string {
@@ -345,8 +530,39 @@ export class AdminPersonnelComponent implements OnInit {
       accessYearList: "[]",
       accessYearsText: "",
       moduleIds: [],
+      dataAccessRules: [],
       isActive: true,
     };
+  }
+
+  private cleanedDataAccessRules(): UserDataAccessRule[] {
+    const selectedModules = new Set(this.form.moduleIds || []);
+    return this.cloneDataAccessRules(this.form.dataAccessRules).filter(
+      (rule) => selectedModules.has(rule.moduleId) && rule.values.length,
+    );
+  }
+
+  private cloneDataAccessRules(
+    rules: UserDataAccessRule[] = [],
+  ): UserDataAccessRule[] {
+    return (rules || [])
+      .map((rule) => ({
+        moduleId: String(rule.moduleId || "").trim(),
+        tableViewId: String(rule.tableViewId || "").trim(),
+        tableName: rule.tableName ? String(rule.tableName).trim() : null,
+        field: String(rule.field || "").trim(),
+        values: Array.from(
+          new Set(
+            (rule.values || [])
+              .map((value) => String(value || "").trim())
+              .filter(Boolean),
+          ),
+        ),
+      }))
+      .filter(
+        (rule) =>
+          rule.moduleId && rule.tableViewId && rule.field && rule.values.length,
+      );
   }
 
   private buildAccessYearList(): string | null {
@@ -376,5 +592,74 @@ export class AdminPersonnelComponent implements OnInit {
         .map((year) => year.trim())
         .filter(Boolean);
     }
+  }
+
+  private getModuleId(module: ModuleRecord): string {
+    const raw = module as ModuleRecord & UnknownRecord;
+    return String(raw["id"] ?? raw["Id"] ?? "").trim();
+  }
+
+  private getModuleName(module: ModuleRecord): string {
+    const raw = module as ModuleRecord & UnknownRecord;
+    return String(
+      raw["name"] ?? raw["Name"] ?? this.getModuleId(module),
+    ).trim();
+  }
+
+  private getModuleIcon(module: ModuleRecord): string | undefined {
+    const raw = module as ModuleRecord & UnknownRecord;
+    const icon = String(raw["icon"] ?? raw["Icon"] ?? "").trim();
+    return icon || undefined;
+  }
+
+  private getModuleOrder(module: ModuleRecord): number {
+    const raw = module as ModuleRecord & UnknownRecord;
+    const value = Number(raw["displayOrder"] ?? raw["DisplayOrder"] ?? 0);
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  private isModuleActive(module: ModuleRecord): boolean {
+    const raw = module as ModuleRecord & UnknownRecord;
+    const value = raw["isActive"] ?? raw["IsActive"];
+    return value === undefined || value === null ? true : value !== false;
+  }
+
+  private getModuleMainTableViewId(module: ModuleRecord): string {
+    const raw = module as ModuleRecord & UnknownRecord;
+    return String(
+      raw["mainTableViewId"] ?? raw["MainTableViewId"] ?? "",
+    ).trim();
+  }
+
+  private getModuleTableViewLinks(
+    module: ModuleRecord,
+  ): Array<UnknownRecord & { orderIndex?: number }> {
+    const raw = module as ModuleRecord & UnknownRecord;
+    const links = raw["tableViews"] ?? raw["TableViews"] ?? [];
+    return Array.isArray(links)
+      ? (links as Array<UnknownRecord & { orderIndex?: number }>)
+      : [];
+  }
+
+  private getModuleTableViewConfigId(link: UnknownRecord): string {
+    return String(
+      link["tableViewConfigId"] ?? link["TableViewConfigId"] ?? "",
+    ).trim();
+  }
+
+  trackModule(index: number, module: any): string {
+    return module.id || module.Id;
+  }
+
+  trackView(index: number, view: TableViewConfig): string {
+    return view.id;
+  }
+
+  trackField(index: number, field: string): string {
+    return field;
+  }
+
+  trackOption(index: number, option: { value: string; label: string }): string {
+    return option.value;
   }
 }
