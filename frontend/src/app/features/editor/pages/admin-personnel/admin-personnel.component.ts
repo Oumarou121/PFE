@@ -88,6 +88,9 @@ export class AdminPersonnelComponent implements OnInit {
   selectedUserId: number | null = null;
   creating = false;
   form: PersonnelForm = this.createEmptyForm();
+  moduleSearch = "";
+  expandedAccessModuleIds = new Set<string>();
+  expandedAccessTableIds = new Set<string>();
   accessLookupOptions: Record<string, Array<{ value: string; label: string }>> =
     {};
   accessLookupLoading: Record<string, boolean> = {};
@@ -155,6 +158,16 @@ export class AdminPersonnelComponent implements OnInit {
     ];
   }
 
+  get filteredModuleChoices(): ModuleChoice[] {
+    const query = this.moduleSearch.trim().toLowerCase();
+    if (!query) return this.moduleChoices;
+    return this.moduleChoices.filter((module) =>
+      [module.id, module.name]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query)),
+    );
+  }
+
   goBack(): void {
     this.router.navigate(["/admin"]);
   }
@@ -199,6 +212,7 @@ export class AdminPersonnelComponent implements OnInit {
       dataAccessRules: this.cloneDataAccessRules(user.dataAccessRules),
       isActive: user.isActive,
     };
+    this.syncExpandedAccessPanels();
   }
 
   async saveUser(): Promise<void> {
@@ -313,6 +327,7 @@ export class AdminPersonnelComponent implements OnInit {
   toggleModule(moduleId: string, checked: boolean): void {
     if (checked && !this.form.moduleIds.includes(moduleId)) {
       this.form.moduleIds = [...this.form.moduleIds, moduleId];
+      this.expandedAccessModuleIds.add(moduleId);
       return;
     }
     if (!checked) {
@@ -320,6 +335,7 @@ export class AdminPersonnelComponent implements OnInit {
       this.form.dataAccessRules = this.form.dataAccessRules.filter(
         (rule) => rule.moduleId !== moduleId,
       );
+      this.expandedAccessModuleIds.delete(moduleId);
     }
   }
 
@@ -328,6 +344,51 @@ export class AdminPersonnelComponent implements OnInit {
     return this.modules.filter((module) =>
       selected.has(this.getModuleId(module)),
     );
+  }
+
+  getModuleKey(module: ModuleRecord | ModuleChoice): string {
+    const raw = module as ModuleChoice & ModuleRecord & UnknownRecord;
+    return String(raw["id"] ?? raw["Id"] ?? "").trim();
+  }
+
+  isAccessModuleExpanded(moduleId: string): boolean {
+    return this.expandedAccessModuleIds.has(moduleId);
+  }
+
+  toggleAccessModule(moduleId: string): void {
+    if (this.expandedAccessModuleIds.has(moduleId)) {
+      this.expandedAccessModuleIds.delete(moduleId);
+      return;
+    }
+    this.expandedAccessModuleIds.add(moduleId);
+  }
+
+  isAccessTableExpanded(viewId: string): boolean {
+    return this.expandedAccessTableIds.has(viewId);
+  }
+
+  toggleAccessTable(viewId: string): void {
+    if (this.expandedAccessTableIds.has(viewId)) {
+      this.expandedAccessTableIds.delete(viewId);
+      return;
+    }
+    this.expandedAccessTableIds.add(viewId);
+  }
+
+  getModuleRestrictionCount(module: ModuleRecord): number {
+    const moduleId = this.getModuleId(module);
+    return this.form.dataAccessRules
+      .filter((rule) => rule.moduleId === moduleId)
+      .reduce((total, rule) => total + rule.values.length, 0);
+  }
+
+  getTableRestrictionCount(module: ModuleRecord, view: TableViewConfig): number {
+    const moduleId = this.getModuleId(module);
+    return this.form.dataAccessRules
+      .filter(
+        (rule) => rule.moduleId === moduleId && rule.tableViewId === view.id,
+      )
+      .reduce((total, rule) => total + rule.values.length, 0);
   }
 
   getModuleTableViews(module: ModuleRecord): TableViewConfig[] {
@@ -514,6 +575,9 @@ export class AdminPersonnelComponent implements OnInit {
     this.creating = false;
     this.selectedUserId = null;
     this.form = this.createEmptyForm();
+    this.moduleSearch = "";
+    this.expandedAccessModuleIds.clear();
+    this.expandedAccessTableIds.clear();
   }
 
   private createEmptyForm(): PersonnelForm {
@@ -563,6 +627,15 @@ export class AdminPersonnelComponent implements OnInit {
         (rule) =>
           rule.moduleId && rule.tableViewId && rule.field && rule.values.length,
       );
+  }
+
+  private syncExpandedAccessPanels(): void {
+    this.expandedAccessModuleIds = new Set(
+      (this.form.dataAccessRules || []).map((rule) => rule.moduleId),
+    );
+    this.expandedAccessTableIds = new Set(
+      (this.form.dataAccessRules || []).map((rule) => rule.tableViewId),
+    );
   }
 
   private buildAccessYearList(): string | null {

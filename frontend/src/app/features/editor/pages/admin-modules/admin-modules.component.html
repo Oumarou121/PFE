@@ -213,7 +213,10 @@
         </div>
       </div>
 
-      <div class="import-panel" *ngIf="importMode && selectedDataView as view">
+      <div
+        class="import-panel import-wizard"
+        *ngIf="importMode && selectedDataView as view"
+      >
         <input
           #importFileInput
           type="file"
@@ -222,7 +225,7 @@
           (change)="handleImportFileSelected($event)"
         />
 
-        <div class="export-panel-head">
+        <div class="export-panel-head import-wizard__head">
           <div>
             <h4>Import Excel</h4>
             <p>
@@ -241,21 +244,6 @@
             <button
               class="action-btn"
               type="button"
-              (click)="selectAllImportFields()"
-            >
-              Auto-mapper
-            </button>
-            <button
-              class="action-btn primary"
-              type="button"
-              (click)="runImport()"
-              [disabled]="!importRows.length || importing"
-            >
-              {{ importing ? "Import en cours..." : "Lancer l'import" }}
-            </button>
-            <button
-              class="action-btn"
-              type="button"
               (click)="cancelImportMode()"
             >
               Annuler
@@ -266,6 +254,64 @@
         <div class="import-meta" *ngIf="importFileName">
           Fichier: {{ importFileName }} · Lignes: {{ importRows.length }}
         </div>
+
+        <div class="import-steps">
+          <div
+            class="import-step"
+            [class.is-active]="!importFileName"
+            [class.is-done]="!!importFileName"
+          >
+            <span class="import-step__index">1</span>
+            <div>
+              <strong>Fichier</strong>
+              <small>{{ importFileName || "Aucun fichier" }}</small>
+            </div>
+          </div>
+          <div
+            class="import-step"
+            [class.is-active]="!!importRows.length"
+            [class.is-disabled]="!importRows.length"
+          >
+            <span class="import-step__index">2</span>
+            <div>
+              <strong>Mapping</strong>
+              <small>{{ importHeaders.length }} colonne(s)</small>
+            </div>
+          </div>
+          <div
+            class="import-step"
+            [class.is-active]="!!importRows.length"
+            [class.is-disabled]="!importRows.length"
+          >
+            <span class="import-step__index">3</span>
+            <div>
+              <strong>Doublons</strong>
+              <small>{{ importUniqueFields.length }} champ(s)</small>
+            </div>
+          </div>
+          <div
+            class="import-step"
+            [class.is-active]="importing"
+            [class.is-disabled]="!importRows.length"
+          >
+            <span class="import-step__index">4</span>
+            <div>
+              <strong>Resultat</strong>
+              <small>{{ importProgress.processed }}/{{ importProgress.total }}</small>
+            </div>
+          </div>
+        </div>
+
+        <section
+          class="import-step-panel import-step-panel--duplicates"
+          [class.is-disabled]="!importRows.length"
+        >
+          <div class="import-step-panel__head">
+            <div>
+              <h5>3. Detection des doublons</h5>
+              <p>Choisissez les champs qui identifient une ligne existante.</p>
+            </div>
+          </div>
 
         <div class="import-controls">
           <label class="import-control">
@@ -311,6 +357,36 @@
             </select>
           </label>
         </div>
+        </section>
+
+        <section
+          class="import-step-panel import-step-panel--mapping"
+          [class.is-disabled]="!importRows.length"
+        >
+          <div class="import-step-panel__head">
+            <div>
+              <h5>2. Mapping des colonnes</h5>
+              <p>Associez chaque champ cible a une colonne du fichier.</p>
+            </div>
+            <div class="import-step-panel__actions">
+              <button
+                class="action-btn"
+                type="button"
+                (click)="selectAllImportFields()"
+                [disabled]="!importHeaders.length"
+              >
+                Auto-mapper
+              </button>
+              <button
+                class="action-btn"
+                type="button"
+                (click)="clearImportFieldMappings()"
+                [disabled]="!importHeaders.length"
+              >
+                Vider
+              </button>
+            </div>
+          </div>
 
         <div class="import-fields">
           <div class="import-field-header">
@@ -336,6 +412,26 @@
             </select>
           </div>
         </div>
+        </section>
+
+        <section
+          class="import-step-panel import-step-panel--result"
+          [class.is-disabled]="!importRows.length"
+        >
+          <div class="import-step-panel__head">
+            <div>
+              <h5>4. Controle et resultat</h5>
+              <p>Apercu des premieres lignes et progression de l'import.</p>
+            </div>
+            <button
+              class="action-btn primary"
+              type="button"
+              (click)="runImport()"
+              [disabled]="!importRows.length || importing"
+            >
+              {{ importing ? "Import en cours..." : "Lancer l'import" }}
+            </button>
+          </div>
 
         <div class="import-preview" *ngIf="importRows.length">
           <div class="import-preview-title">Aperçu des premières lignes</div>
@@ -368,6 +464,7 @@
           <span>Ignorées: {{ importProgress.skipped }}</span>
           <span>Erreurs: {{ importProgress.failed }}</span>
         </div>
+        </section>
       </div>
 
       <div class="empty-state large" *ngIf="!selectedDataView">
