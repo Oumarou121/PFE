@@ -3602,7 +3602,7 @@
       >
         <div
           class="card"
-          *ngIf="!selectedSchemaDatabaseName"
+          *ngIf="!selectedSchemaDatabaseName && !selectedTableView"
           style="
             padding: 24px;
             text-align: center;
@@ -3617,7 +3617,7 @@
           </p>
         </div>
 
-        <ng-container *ngIf="selectedSchemaDatabaseName">
+        <ng-container>
           <div class="card" *ngIf="selectedTableView as view">
             <div class="card-header">
               <div>
@@ -3661,13 +3661,25 @@
                 </div>
                 <div class="form-row" style="margin: 0">
                   <label class="form-label">Table SQL</label>
+                  <p
+                    class="text-muted"
+                    *ngIf="!selectedSchemaDatabaseName"
+                    style="margin-bottom: 8px"
+                  >
+                    Cochez au moins une organisation ci-dessous pour charger les
+                    tables disponibles.
+                  </p>
                   <select
                     class="form-input"
                     [value]="view.tableName"
                     (change)="
                       setSelectedTableViewTable($any($event.target).value)
                     "
+                    [disabled]="!selectedSchemaDatabaseName"
                   >
+                    <option value="" *ngIf="!selectedSchemaDatabaseName">
+                      Sélectionnez d'abord une organisation
+                    </option>
                     <option
                       *ngFor="let table of tableViewSchemaTables()"
                       [value]="table.name"

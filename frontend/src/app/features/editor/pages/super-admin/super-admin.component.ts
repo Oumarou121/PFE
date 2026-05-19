@@ -5389,10 +5389,14 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   private async newTableViewConfig(): Promise<void> {
-    await this.useSchemaForOrganizationIds([]);
-    const schema = this.tableViewSchemaCache || (await this.ensureSchemaMeta());
-    this.tableViewSchemaCache = schema;
-    if (!this.schemaMetaCache) this.schemaMetaCache = schema;
+    const schema =
+      this.selectedSchemaDatabaseName || this.tableViewSchemaCache
+        ? this.tableViewSchemaCache || (await this.ensureSchemaMeta())
+        : null;
+    if (schema) {
+      this.tableViewSchemaCache = schema;
+      if (!this.schemaMetaCache) this.schemaMetaCache = schema;
+    }
     const defaultTable = this.getAllowedTableViewTables(schema)[0]?.name || "";
     const columns = this.getTableViewColumns(schema, defaultTable);
     const item: TableViewConfig = {
@@ -5421,7 +5425,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.renderLeftPanel();
     this.renderTableViewsContent();
     this.toast(
-      "Vue creee localement. Cochez une organisation puis choisissez la table SQL.",
+      "Brouillon de vue cree. Cochez une organisation puis choisissez la table SQL.",
       "success",
     );
     /*
@@ -5844,6 +5848,9 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.tableViewLookupOptionsCache = {};
     this.renderLeftPanel();
     this.renderTableViewsContent();
+    if (item.tableName && (item.visibleFields || []).length) {
+      this.saveTableViewConfig(item.id);
+    }
     void this.reloadTableViewRows();
   }
 
