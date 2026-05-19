@@ -48,20 +48,22 @@
 
     <div class="filter-divider"></div>
 
-    <label class="filter-label">
-      <i class="fa fa-id-card filter-icon"></i>
-      <select formControlName="beneficiaryKey">
-        <option value="">Tous les beneficiaires</option>
-        <option
-          *ngFor="let beneficiary of beneficiaryOptions"
-          [value]="beneficiary.key"
-        >
-          {{ beneficiary.label }}
-        </option>
-      </select>
-    </label>
+    <ng-container *ngIf="shouldShowBeneficiaryFilter">
+      <label class="filter-label">
+        <i class="fa fa-id-card filter-icon"></i>
+        <select formControlName="beneficiaryKey">
+          <option value="">Tous les beneficiaires</option>
+          <option
+            *ngFor="let beneficiary of beneficiaryOptions"
+            [value]="beneficiary.key"
+          >
+            {{ beneficiary.label }}
+          </option>
+        </select>
+      </label>
 
-    <div class="filter-divider"></div>
+      <div class="filter-divider"></div>
+    </ng-container>
 
     <label class="filter-label" *ngIf="isAdminArchive">
       <i class="fa fa-user filter-icon"></i>

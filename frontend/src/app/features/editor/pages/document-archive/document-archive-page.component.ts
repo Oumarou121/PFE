@@ -88,6 +88,9 @@ export class DocumentArchivePageComponent implements OnInit {
     this.loading = true;
     try {
       const filters = this.filterForm.value;
+      const beneficiaryKey = this.shouldShowBeneficiaryFilter
+        ? filters.beneficiaryKey
+        : "";
       const response = await this.documentService.getDocumentsPaged({
         page: 1,
         familyId: filters.familyId || undefined,
@@ -200,6 +203,9 @@ export class DocumentArchivePageComponent implements OnInit {
 
   private applyClientFilters(rows: DocumentListItem[]): DocumentListItem[] {
     const { query, dateFrom, dateTo, beneficiaryKey } = this.filterForm.value;
+    const activeBeneficiaryKey = this.shouldShowBeneficiaryFilter
+      ? beneficiaryKey
+      : "";
     const search = String(query || "")
       .trim()
       .toLowerCase();
@@ -211,7 +217,10 @@ export class DocumentArchivePageComponent implements OnInit {
       const generatedAt = this.getDocumentDate(doc.generatedAt);
       if (from && generatedAt && generatedAt < from) return false;
       if (to && generatedAt && generatedAt > to) return false;
-      if (beneficiaryKey && this.getBeneficiaryKey(doc) !== beneficiaryKey) {
+      if (
+        activeBeneficiaryKey &&
+        this.getBeneficiaryKey(doc) !== activeBeneficiaryKey
+      ) {
         return false;
       }
       if (!search) return true;
@@ -302,10 +311,27 @@ export class DocumentArchivePageComponent implements OnInit {
         this.isAdminArchive && filters.generatedById
           ? filters.generatedById
           : null,
-      beneficiaryKey: filters.beneficiaryKey || null,
+      beneficiaryKey: this.shouldShowBeneficiaryFilter
+        ? filters.beneficiaryKey || null
+        : null,
       query: filters.query || null,
       dateFrom: filters.dateFrom || null,
       dateTo: filters.dateTo || null,
     };
+  }
+
+  get selectedFamily(): FamilyRecord | null {
+    const familyId = this.filterForm.value.familyId;
+    if (!familyId) return null;
+    return this.families.find((family) => family.id === familyId) || null;
+  }
+
+  get shouldShowBeneficiaryFilter(): boolean {
+    const family = this.selectedFamily;
+    if (!family) return true;
+    return !(
+      family.beneficiaryMode === "organization" ||
+      (family.organizationIds?.length || 0) > 0
+    );
   }
 }
