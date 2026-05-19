@@ -109,17 +109,9 @@ La page de connexion constitue le premier point d'entrée de SIRH-Doc. Elle perm
 
 Après authentification, l'utilisateur sélectionne l'année universitaire active. Ce choix est important, car certaines données RH et pédagogiques doivent être consultées selon la période concernée.
 
-\screenshotplaceholder{sprint1/home-by-role.png}{Interface d'accueil selon le rôle}{Accueil de l'utilisateur après authentification}
-
-L'interface d'accueil oriente l'utilisateur vers les fonctionnalités qui correspondent à son rôle. Cette étape montre que l'accès n'est pas uniquement lié à la connexion, mais aussi au profil attribué.
-
-\screenshotplaceholder{sprint1/organizations.png}{Gestion des organisations}{Interface de gestion des organisations}
-
-La gestion des organisations permet au super administrateur de consulter et maintenir les établissements utilisant la plateforme. Elle participe directement à la mise en place du fonctionnement multi-tenant.
-
 \screenshotplaceholder{sprint1/users-roles.png}{Gestion des utilisateurs et des rôles}{Interface de gestion des comptes utilisateurs}
 
-La gestion des utilisateurs et des rôles permet de contrôler les accès aux différentes parties de l'application. Elle complète le mécanisme d'authentification en associant chaque utilisateur à un profil et à un périmètre d'action.
+La gestion des utilisateurs, des rôles et des organisations permet de contrôler les accès aux différentes parties de l'application. Elle complète le mécanisme d'authentification en associant chaque utilisateur à un profil, à une organisation et à un périmètre d'action.
 
 \section{Sprint 2 : Moteur de données et entités métiers}
 
@@ -217,8 +209,6 @@ La réalisation du Sprint 2 a porté sur les interfaces de configuration et d'ex
 
 \screenshotplaceholder{sprint2/config-module1.png}{Gestion des modules}{Interface de configuration des modules}
 
-\screenshotplaceholder{sprint2/config-module2.png}{Détail d'un module}{Paramétrage d'un module métier}
-
 \screenshotplaceholder{sprint2/personnel-management-module.png}{Module de gestion du personnel}{Interface du module de gestion du personnel}
 
 \screenshotplaceholder{sprint2/module-access-users.png}{Gestion des accès aux modules}{Affectation des utilisateurs aux modules}
@@ -227,13 +217,9 @@ La gestion des modules permet de définir les entrées fonctionnelles disponible
 
 \screenshotplaceholder{sprint2/config-tableview1.png}{Configuration d'une TableView}{Paramétrage général d'une vue dynamique}
 
-\screenshotplaceholder{sprint2/config-tableview2.png}{Configuration des colonnes}{Choix des colonnes et des libellés affichés}
-
-\screenshotplaceholder{sprint2/config-tableview3.png}{Configuration avancée de la vue}{Paramétrage des options d'affichage de la TableView}
-
 \screenshotplaceholder{sprint2/config-filter-tableview.png}{Configuration des filtres}{Paramétrage des filtres associés à une vue dynamique}
 
-La configuration des TableViews constitue le coeur du moteur de données dynamique. Elle permet de choisir les colonnes visibles, les libellés, les options d'affichage et les filtres sans créer un écran spécifique pour chaque table. Cette approche rend la plateforme plus adaptable aux différentes structures de données des établissements.
+La configuration des TableViews constitue le coeur du moteur de données dynamique. Elle permet de choisir les colonnes visibles, les libellés et les filtres sans créer un écran spécifique pour chaque table. Cette approche rend la plateforme plus adaptable aux différentes structures de données des établissements.
 
 \screenshotplaceholder{sprint2/vue-module.png}{Consultation dynamique d'un module}{Affichage paginé et filtrable des données métier}
 
@@ -241,9 +227,7 @@ La consultation dynamique montre le résultat de la configuration précédente c
 
 \screenshotplaceholder{sprint2/import1.png}{Importation intelligente}{Sélection et préparation du fichier à importer}
 
-\screenshotplaceholder{sprint2/import2.png}{Résultat de l'importation}{Bilan de l'importation des données}
-
-L'importation intelligente complète le moteur de données en facilitant l'alimentation des tables métier. Le fichier est contrôlé avant l'insertion et le résultat de l'opération permet d'identifier les données importées ainsi que les éventuelles erreurs.
+L'importation intelligente complète le moteur de données en facilitant l'alimentation des tables métier. Le fichier est contrôlé avant l'insertion, ce qui permet d'identifier les données importées ainsi que les éventuelles erreurs.
 
 \section{Conclusion Release 1}
 

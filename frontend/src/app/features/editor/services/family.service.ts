@@ -116,11 +116,6 @@ export class FamilyService {
       tableName,
     );
     if (family.beneficiarySql) {
-      console.log("Using custom beneficiary SQL for family", family.sql);
-      console.log("Beneficiary SQL:", family.beneficiarySql, "Params:", {
-        organizationId,
-        ...filterParams,
-      });
       const rows = await this.query.runSelect(family.beneficiarySql, {
         organizationId,
         ...filterParams,
@@ -168,10 +163,6 @@ export class FamilyService {
              src.${quoteSqlIdentifier(pk)} AS id${labelSqlExpr ? `,\n             ${labelSqlExpr} AS libelle` : ""}
            FROM ${quoteSqlIdentifier(tableName)} src${whereClauses.length ? `\n           WHERE ${whereClauses.join("\n             AND ")}` : ""}
            ORDER BY src.${quoteSqlIdentifier(defaultOrderColumn)} ASC`;
-    console.log("Beneficiary SQL:", sql, "Params:", {
-      organizationId,
-      ...filterParams,
-    });
     const rows = await this.query.runSelect(sql, {
       organizationId,
       ...filterParams,

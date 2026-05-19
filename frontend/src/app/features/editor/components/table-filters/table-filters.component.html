@@ -1,7 +1,8 @@
-<!-- <div class="table-filters-container">
+<div class="table-filters-container">
   <form [formGroup]="filterForm" class="filters-form">
     <div class="filters-topbar">
-      <button type="button" class="btn-link reset-btn" (click)="resetFilters()">
+      <span class="filters-title">Filtres</span>
+      <button type="button" class="reset-btn" (click)="resetFilters()">
         Réinitialiser
       </button>
     </div>
@@ -28,12 +29,16 @@
                   class="filter-select"
                   [formControl]="getControl(filter.id)"
                   [disabled]="isLoading(filter.id)"
+                  (click)="$event.stopPropagation()"
                 >
                   <option value="">
                     {{ isLoading(filter.id) ? "Chargement..." : "Tous" }}
                   </option>
                   <option
-                    *ngFor="let option of getFilterOptions(filter.id)"
+                    *ngFor="
+                      let option of getFilterOptions(filter.id);
+                      trackBy: trackByOptionValue
+                    "
                     [value]="option.value"
                   >
                     {{ option.label }}
@@ -53,84 +58,7 @@
                 <select
                   class="filter-select"
                   [formControl]="getControl(filter.id)"
-                >
-                  <option value="">Tous</option>
-                  <option
-                    *ngFor="let option of getFilterOptions(filter.id)"
-                    [value]="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </select>
-              </div>
-            </ng-container>
-          </div>
-        </ng-container>
-      </ng-container>
-    </div>
-
-    <div *ngIf="!filters || filters.length === 0" class="empty-message">
-      Aucun filtre disponible
-    </div>
-  </form>
-</div> -->
-
-<div class="table-filters-container">
-  <form [formGroup]="filterForm" class="filters-form">
-    <div class="filters-topbar">
-      <span class="filters-title">Filtres</span>
-      <button type="button" class="reset-btn" (click)="resetFilters()">
-        Réinitialiser
-      </button>
-    </div>
-
-    <div class="filters-grid">
-      <ng-container *ngFor="let filter of filters">
-        <ng-container *ngIf="filter.enabled">
-          <div class="filter-group">
-            <label class="filter-label">
-              <span class="label-text">{{ filter.name }}</span>
-              <span
-                *ngIf="filter.helpText"
-                class="help-badge"
-                [title]="filter.helpText"
-                >?</span
-              >
-            </label>
-
-            <ng-container
-              *ngIf="filter.sourceType === TableFilterSourceType.Table"
-            >
-              <div class="filter-dynamic">
-                <select
-                  class="filter-select"
-                  [formControl]="getControl(filter.id)"
-                  [disabled]="isLoading(filter.id)"
-                >
-                  <option value="">
-                    {{ isLoading(filter.id) ? "Chargement..." : "Tous" }}
-                  </option>
-                  <option
-                    *ngFor="let option of getFilterOptions(filter.id)"
-                    [value]="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </select>
-
-                <div *ngIf="getErrorMessage(filter.id)" class="field-error">
-                  {{ getErrorMessage(filter.id) }}
-                </div>
-              </div>
-            </ng-container>
-
-            <ng-container
-              *ngIf="filter.sourceType === TableFilterSourceType.Static"
-            >
-              <div class="filter-options static-options">
-                <select
-                  class="filter-select"
-                  [formControl]="getControl(filter.id)"
+                  (click)="$event.stopPropagation()"
                 >
                   <option value="">Tous</option>
                   <option

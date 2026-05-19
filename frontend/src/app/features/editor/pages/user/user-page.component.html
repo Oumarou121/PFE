@@ -316,6 +316,42 @@
                 (ngModelChange)="onBeneficiarySearchChange()"
               />
             </div>
+            <div
+              class="bulk-toolbar"
+              *ngIf="!beneficiariesLoading && filteredBeneficiaries.length"
+            >
+              <button
+                class="bulk-link"
+                type="button"
+                [disabled]="documentBusy"
+                (click)="toggleCurrentPageSelection()"
+              >
+                {{
+                  allPagedBeneficiariesSelected
+                    ? "Deselectionner la page"
+                    : "Selectionner la page"
+                }}
+              </button>
+              <span class="bulk-count">
+                {{ selectedBulkCount }} selectionne(s)
+              </span>
+              <button
+                class="bulk-link"
+                type="button"
+                [disabled]="documentBusy || !selectedBulkCount"
+                (click)="clearBulkSelection()"
+              >
+                Effacer
+              </button>
+              <button
+                class="bulk-primary"
+                type="button"
+                [disabled]="documentBusy || !selectedBulkCount"
+                (click)="generateBulkDocuments()"
+              >
+                Generer la selection
+              </button>
+            </div>
             <div class="person-list">
               <div class="inline-loading" *ngIf="beneficiariesLoading">
                 <span class="mini-spinner"></span>
@@ -327,26 +363,40 @@
               >
                 Aucun beneficiaire disponible
               </div>
-              <button
-                class="person-item"
-                type="button"
+              <div
+                class="person-row"
                 *ngFor="let beneficiary of pagedBeneficiaries"
-                [class.sel]="selectedBeneficiaryId === beneficiary.id"
-                [disabled]="documentBusy"
-                (click)="selectBeneficiary(beneficiary.id)"
               >
-                <div class="p-av">
-                  {{ getInitials(getBeneficiaryLabel(beneficiary)) }}
-                </div>
-                <div>
-                  <div class="p-name">
-                    {{ getBeneficiaryLabel(beneficiary) }}
+                <button
+                  class="bulk-check"
+                  type="button"
+                  [class.checked]="isBeneficiarySelected(beneficiary.id)"
+                  [disabled]="documentBusy"
+                  (click)="toggleBeneficiarySelection($event, beneficiary.id)"
+                  title="Selectionner pour generation en masse"
+                >
+                  {{ isBeneficiarySelected(beneficiary.id) ? "✓" : "" }}
+                </button>
+                <button
+                  class="person-item"
+                  type="button"
+                  [class.sel]="selectedBeneficiaryId === beneficiary.id"
+                  [disabled]="documentBusy"
+                  (click)="selectBeneficiary(beneficiary.id)"
+                >
+                  <div class="p-av">
+                    {{ getInitials(getBeneficiaryLabel(beneficiary)) }}
                   </div>
-                  <div class="p-meta">
-                    {{ getBeneficiarySubtitle(beneficiary) }}
+                  <div>
+                    <div class="p-name">
+                      {{ getBeneficiaryLabel(beneficiary) }}
+                    </div>
+                    <div class="p-meta">
+                      {{ getBeneficiarySubtitle(beneficiary) }}
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+              </div>
             </div>
             <div
               class="pager beneficiary-pager"
@@ -378,6 +428,15 @@
         <div class="doc-ph">
           <span class="doc-pt">Apercu A4</span>
           <div class="doc-actions" *ngIf="previewHtml">
+            <button
+              class="btn ghost"
+              type="button"
+              [disabled]="documentBusy || !selectedBulkCount"
+              (click)="generateBulkDocuments()"
+              title="Generer un document pour chaque beneficiaire selectionne"
+            >
+              Generer en masse
+            </button>
             <button
               class="btn primary"
               type="button"
@@ -542,7 +601,7 @@
         <div class="doc-pb">
           <div class="panel-loading" *ngIf="documentBusy">
             <span class="mini-spinner"></span>
-            {{ documentBusyMessage || "Chargement..." }}
+            {{ bulkGenerationProgress || documentBusyMessage || "Chargement..." }}
           </div>
           <div class="doc-wait" *ngIf="!previewHtml">
             <svg

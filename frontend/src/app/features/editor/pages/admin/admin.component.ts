@@ -1140,14 +1140,10 @@ export class AdminComponent
       actionType: "delete",
     });
     if (!confirmed) return;
-    const nextCharters = (org.graphicCharters || []).filter(
-      (item) => item.id !== charter.id,
+    await this.graphicCharters.deleteOrganizationGraphicCharter(
+      org.id,
+      charter.id,
     );
-    await this.organizationsService.saveOrganization({
-      ...org,
-      graphicCharters: nextCharters,
-      updatedAt: new Date().toISOString(),
-    } as OrganizationRecord);
     this.refreshCollections();
     this.selectedGraphicCharterId = this.resolveDefaultGraphicCharterId();
     this.applyGraphicCharterToCurrentState(false);

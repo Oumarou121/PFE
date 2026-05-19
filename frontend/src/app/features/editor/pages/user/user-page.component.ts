@@ -20,7 +20,10 @@ import { EditorStateService } from "../../services/editor-state.service";
 import { FamilyService } from "../../services/family.service";
 import { FilterRuntimeService } from "../../services/filter-runtime.service";
 import { DocumentDataService } from "../../services/document-data.service";
-import { DocumentRenderService } from "../../services/document-render.service";
+import {
+  DocumentPrintJob,
+  DocumentRenderService,
+} from "../../services/document-render.service";
 import { OrganizationService } from "../../services/organization.service";
 import { TableViewService } from "../../services/table-view.service";
 import { TemplateService } from "../../services/template.service";
@@ -58,6 +61,7 @@ export class UserPageComponent implements OnInit {
   selectedFamilyId: string | null = null;
   selectedTemplateId: string | null = null;
   selectedBeneficiaryId: string | null = null;
+  selectedBeneficiaryIds = new Set<string>();
   beneficiaries: BeneficiaryRecord[] = [];
   beneficiaryPage = 1;
   readonly beneficiaryPageSize = 50;
@@ -77,6 +81,7 @@ export class UserPageComponent implements OnInit {
   documentBusy = false;
   documentBusyMessage = "";
   beneficiariesLoading = false;
+  bulkGenerationProgress = "";
 
   selectedDataViewId: string | null = null;
   selectedModuleId: string | null = null;
@@ -309,6 +314,7 @@ export class UserPageComponent implements OnInit {
     this.selectedFamilyId = familyId;
     this.selectedTemplateId = null;
     this.selectedBeneficiaryId = null;
+    this.selectedBeneficiaryIds.clear();
     this.beneficiaries = [];
     this.beneficiaryPage = 1;
     this.runtimeFilters = [];
@@ -323,6 +329,7 @@ export class UserPageComponent implements OnInit {
     if (this.documentBusy) return;
     this.selectedTemplateId = templateId;
     this.selectedBeneficiaryId = null;
+    this.selectedBeneficiaryIds.clear();
     this.beneficiaries = [];
     this.beneficiaryPage = 1;
     this.beneficiarySearch = "";
@@ -361,6 +368,7 @@ export class UserPageComponent implements OnInit {
     if (this.documentBusy) return;
     this.filterValues = { ...this.filterValues, [filterId]: value || null };
     this.selectedBeneficiaryId = null;
+    this.selectedBeneficiaryIds.clear();
     this.beneficiaryPage = 1;
     this.documentBusy = true;
     this.beneficiariesLoading = true;
@@ -399,6 +407,63 @@ export class UserPageComponent implements OnInit {
     this.selectedBeneficiaryId = beneficiaryId;
     this.openSteps[3] = false;
     await this.generateDocument();
+  }
+
+  isBeneficiarySelected(beneficiaryId: string | null | undefined): boolean {
+    return !!beneficiaryId && this.selectedBeneficiaryIds.has(String(beneficiaryId));
+  }
+
+  toggleBeneficiarySelection(
+    event: Event,
+    beneficiaryId: string | null | undefined,
+  ): void {
+    event.stopPropagation();
+    if (this.documentBusy || !beneficiaryId) return;
+    const id = String(beneficiaryId);
+    if (this.selectedBeneficiaryIds.has(id)) {
+      this.selectedBeneficiaryIds.delete(id);
+    } else {
+      this.selectedBeneficiaryIds.add(id);
+    }
+  }
+
+  toggleCurrentPageSelection(): void {
+    if (this.documentBusy || !this.pagedBeneficiaries.length) return;
+    const pageIds = this.pagedBeneficiaries
+      .map((beneficiary) => String(beneficiary.id || ""))
+      .filter(Boolean);
+    const allSelected = pageIds.every((id) => this.selectedBeneficiaryIds.has(id));
+    pageIds.forEach((id) => {
+      if (allSelected) {
+        this.selectedBeneficiaryIds.delete(id);
+      } else {
+        this.selectedBeneficiaryIds.add(id);
+      }
+    });
+  }
+
+  clearBulkSelection(): void {
+    if (this.documentBusy) return;
+    this.selectedBeneficiaryIds.clear();
+  }
+
+  get selectedBulkBeneficiaries(): BeneficiaryRecord[] {
+    return this.beneficiaries.filter((beneficiary) =>
+      this.selectedBeneficiaryIds.has(String(beneficiary.id)),
+    );
+  }
+
+  get selectedBulkCount(): number {
+    return this.selectedBeneficiaryIds.size;
+  }
+
+  get allPagedBeneficiariesSelected(): boolean {
+    return (
+      this.pagedBeneficiaries.length > 0 &&
+      this.pagedBeneficiaries.every((beneficiary) =>
+        this.selectedBeneficiaryIds.has(String(beneficiary.id)),
+      )
+    );
   }
 
   async generateDocument(): Promise<void> {
@@ -452,6 +517,7 @@ export class UserPageComponent implements OnInit {
     this.selectedFamilyId = null;
     this.selectedTemplateId = null;
     this.selectedBeneficiaryId = null;
+    this.selectedBeneficiaryIds.clear();
     this.beneficiaries = [];
     this.runtimeFilters = [];
     this.filterValues = {};
@@ -467,10 +533,83 @@ export class UserPageComponent implements OnInit {
     if (!this.previewTemplate || !this.previewPerson) return;
 
     await this.persistGeneratedDocument();
-    this.documentRender.printDocPaginated(
+    await this.documentRender.printDocPaginatedAsync(
       this.previewTemplate,
       this.previewPerson,
     );
+  }
+
+  async generateBulkDocuments(): Promise<void> {
+    if (
+      !this.selectedFamilyId ||
+      !this.selectedTemplateId ||
+      this.hasMissingRequiredFilters()
+    ) {
+      this.notifications.showError("Completez les filtres obligatoires.");
+      return;
+    }
+    const template = this.selectedTemplate;
+    const family = this.selectedFamily;
+    const beneficiaries = this.selectedBulkBeneficiaries;
+    if (!template || !family || !beneficiaries.length) {
+      this.notifications.showError("Selectionnez au moins un beneficiaire.");
+      return;
+    }
+
+    const renderTemplate = this.withActiveOrganization(template);
+    const printJobs: DocumentPrintJob[] = [];
+    let successCount = 0;
+    let failedCount = 0;
+
+    this.documentBusy = true;
+    this.bulkGenerationProgress = "";
+    try {
+      for (const [index, beneficiary] of beneficiaries.entries()) {
+        this.documentBusyMessage = `Generation ${index + 1}/${beneficiaries.length}...`;
+        this.bulkGenerationProgress = this.documentBusyMessage;
+        try {
+          const person = await this.documentData.getDocumentDataForFamily(
+            this.selectedFamilyId,
+            beneficiary.id,
+            this.organizationId,
+            this.filterValues,
+          );
+          if (!person) {
+            failedCount += 1;
+            continue;
+          }
+          await this.persistGeneratedDocumentFor(
+            renderTemplate,
+            person,
+            beneficiary,
+            String(beneficiary.id || ""),
+          );
+          printJobs.push({ template: renderTemplate, person });
+          successCount += 1;
+        } catch {
+          failedCount += 1;
+        }
+      }
+
+      if (!successCount) {
+        this.notifications.showError("Aucun document n'a pu etre genere.");
+        return;
+      }
+
+      await this.documentRender.printDocsPaginatedAsync(printJobs);
+      this.notifications.showSuccess(
+        `${successCount} document(s) genere(s) et archive(s).`,
+      );
+      if (failedCount) {
+        this.notifications.showWarning(
+          `${failedCount} document(s) n'ont pas pu etre generes.`,
+        );
+      }
+    } finally {
+      this.documentBusy = false;
+      this.documentBusyMessage = "";
+      this.bulkGenerationProgress = "";
+    }
   }
 
   setZoom(delta: number): void {
@@ -900,6 +1039,12 @@ export class UserPageComponent implements OnInit {
       this.organizationId,
       this.filterValues,
     );
+    const validIds = new Set(
+      this.beneficiaries.map((beneficiary) => String(beneficiary.id || "")),
+    );
+    Array.from(this.selectedBeneficiaryIds).forEach((id) => {
+      if (!validIds.has(id)) this.selectedBeneficiaryIds.delete(id);
+    });
     this.beneficiaryPage = 1;
   }
 
@@ -932,52 +1077,64 @@ export class UserPageComponent implements OnInit {
     }
 
     const selectedBeneficiary = this.getSelectedBeneficiary();
-    const family = this.selectedFamily;
-    if (!family) return;
-
-    const printPages = this.documentRender.renderDocumentPages(
-      this.withActiveOrganization(this.previewTemplate),
-      this.previewPerson,
-      { mode: "print" },
-    );
-    const printableHtml = await this.documentRender.buildStandaloneDocumentHtml(
-      this.withActiveOrganization(this.previewTemplate),
-      printPages,
-      "document-page",
-      { mode: "print" },
-    );
-
-    const templateTitle =
-      this.getTemplateName(this.previewTemplate) || "Document";
-    const beneficiaryLabel = this.getBeneficiaryLabel(selectedBeneficiary);
-    const title = `${templateTitle} - ${beneficiaryLabel}`;
 
     try {
-      await this.documentsService.createDocument({
-        familyId: this.selectedFamilyId,
-        templateId: this.selectedTemplateId,
-        graphicCharterId: this.previewTemplate.graphicCharterId || null,
-        beneficiaryId: this.selectedBeneficiaryId,
-        beneficiaryMode: family.beneficiaryMode,
-        beneficiaryTable: family.beneficiaryTable,
-        beneficiaryTableLabel:
-          family.beneficiaryTableLabel || family.beneficiaryTable || null,
-        beneficiaryLinkColumn: family.beneficiaryLinkColumn,
-        beneficiaryDisplayColumn1: family.beneficiaryDisplayColumn1,
-        beneficiaryDisplayColumn2: family.beneficiaryDisplayColumn2,
-        beneficiaryDisplayValue1: beneficiaryLabel,
-        beneficiaryDisplayValue2:
-          this.getBeneficiarySubtitle(selectedBeneficiary),
-        title,
-        fullHtml: printableHtml,
-        mimeType: "text/html",
-        status: "generated",
-      });
+      await this.persistGeneratedDocumentFor(
+        this.withActiveOrganization(this.previewTemplate),
+        this.previewPerson,
+        selectedBeneficiary,
+        this.selectedBeneficiaryId,
+      );
     } catch {
       this.notifications.showWarning(
         "Impression lancee mais la sauvegarde du document a echoue.",
       );
     }
+  }
+
+  private async persistGeneratedDocumentFor(
+    template: TemplateRecord,
+    person: Record<string, any>,
+    beneficiary: BeneficiaryRecord | null,
+    beneficiaryId: string | null,
+  ): Promise<void> {
+    if (!this.selectedFamilyId || !this.selectedTemplateId) return;
+    const family = this.selectedFamily;
+    if (!family) return;
+
+    const printPages = this.documentRender.renderDocumentPages(template, person, {
+      mode: "print",
+    });
+    const printableHtml = await this.documentRender.buildStandaloneDocumentHtml(
+      template,
+      printPages,
+      "document-page",
+      { mode: "print" },
+    );
+
+    const templateTitle = this.getTemplateName(template) || "Document";
+    const beneficiaryLabel = this.getBeneficiaryLabel(beneficiary);
+    const title = `${templateTitle} - ${beneficiaryLabel}`;
+
+    await this.documentsService.createDocument({
+      familyId: this.selectedFamilyId,
+      templateId: this.selectedTemplateId,
+      graphicCharterId: template.graphicCharterId || null,
+      beneficiaryId,
+      beneficiaryMode: family.beneficiaryMode,
+      beneficiaryTable: family.beneficiaryTable,
+      beneficiaryTableLabel:
+        family.beneficiaryTableLabel || family.beneficiaryTable || null,
+      beneficiaryLinkColumn: family.beneficiaryLinkColumn,
+      beneficiaryDisplayColumn1: family.beneficiaryDisplayColumn1,
+      beneficiaryDisplayColumn2: family.beneficiaryDisplayColumn2,
+      beneficiaryDisplayValue1: beneficiaryLabel,
+      beneficiaryDisplayValue2: this.getBeneficiarySubtitle(beneficiary),
+      title,
+      fullHtml: printableHtml,
+      mimeType: "text/html",
+      status: "generated",
+    });
   }
 
   private async ensureLookupOptions(view: TableViewConfig): Promise<void> {

@@ -25,6 +25,11 @@ export interface RenderedDocumentPage {
   hasFooter?: boolean;
 }
 
+export interface DocumentPrintJob {
+  template: TemplateRecord;
+  person: UnknownRecord;
+}
+
 type RenderMode = "preview" | "print";
 type ObjectColumn = {
   key: string;
@@ -157,8 +162,51 @@ export class DocumentRenderService {
 
   printDocPaginated(template: TemplateRecord, person: UnknownRecord): void {
     if (!template || !person) return;
-    const orientation = this.getTemplateOrientation(template);
-    const pages = this.renderDocumentPages(template, person, { mode: "print" });
+    void this.printDocPaginatedAsync(template, person);
+  }
+
+  async printDocPaginatedAsync(
+    template: TemplateRecord,
+    person: UnknownRecord,
+  ): Promise<void> {
+    if (!template || !person) return;
+    await this.printDocsPaginatedAsync([{ template, person }]);
+  }
+
+  printDocsPaginated(jobs: DocumentPrintJob[]): void {
+    void this.printDocsPaginatedAsync(jobs);
+  }
+
+  async printDocsPaginatedAsync(jobs: DocumentPrintJob[]): Promise<void> {
+    const validJobs = (jobs || []).filter((job) => job.template && job.person);
+    if (!validJobs.length) return;
+    const firstTemplate = validJobs[0].template;
+    const orientation = this.getTemplateOrientation(firstTemplate);
+    const printAreaHtml = (
+      await Promise.all(
+        validJobs.map(async (job) => {
+        const pages = this.renderDocumentPages(job.template, job.person, {
+          mode: "print",
+        });
+          return await this.buildDocumentPagesHtmlWithInlinedAssets(
+          job.template,
+          pages,
+          "sirh-print-page",
+          { mode: "print" },
+        );
+        }),
+      )
+    )
+      .join("");
+
+    this.printHtml(firstTemplate, orientation, printAreaHtml);
+  }
+
+  private printHtml(
+    template: TemplateRecord,
+    orientation: string,
+    printAreaHtml: string,
+  ): void {
     const printCSS = `
       @page { size: A4 ${orientation}; margin: 0; }
       html, body {
@@ -186,12 +234,7 @@ export class DocumentRenderService {
     area.id = "sirh-print-area";
     area.style.display = "none";
     area.style.cssText += `;${this.getDocumentThemeStyleDeclarations(template)}`;
-    area.innerHTML = this.buildDocumentPagesHtml(
-      template,
-      pages,
-      "sirh-print-page",
-      { mode: "print" },
-    );
+    area.innerHTML = printAreaHtml;
     document.body.appendChild(style);
     document.body.appendChild(hideStyle);
     document.body.appendChild(area);
@@ -235,6 +278,27 @@ export class DocumentRenderService {
     });
     const inlinedPagesHtml = await this.inlineHtmlAssetUrls(pagesHtml);
     return `<div class="document-snapshot" data-sirh-document-snapshot="true"><style data-sirh-document-snapshot-style="true">${this.getDocumentPrintCss()}</style><div class="document-pages" style="${themeStyleAttr}">${inlinedPagesHtml}</div></div>`;
+  }
+
+  private async buildDocumentPagesHtmlWithInlinedAssets(
+    template: TemplateRecord,
+    pages: RenderedDocumentPage[],
+    className = "document-page",
+    options: { mode?: RenderMode } = {},
+  ): Promise<string> {
+    const themeVars = this.getDocumentThemeVars(template);
+    themeVars["--doc-page-bg-image"] = await this.inlineCssUrlValue(
+      themeVars["--doc-page-bg-image"],
+    );
+    const themeStyle = Object.entries(themeVars)
+      .map(([key, value]) => `${key}:${value}`)
+      .join(";");
+    const themeStyleAttr = this.escapeHtmlAttr(themeStyle);
+    const pagesHtml = this.buildDocumentPagesHtml(template, pages, className, {
+      ...options,
+      themeStyle: themeStyleAttr,
+    });
+    return await this.inlineHtmlAssetUrls(pagesHtml);
   }
 
   getDocumentPrintCss(options: { preview?: boolean } = {}): string {
@@ -1215,7 +1279,7 @@ export class DocumentRenderService {
     const browserSafeUrl = this.toBrowserSafeAssetUrl(raw);
     try {
       if (!/^https?:/i.test(browserSafeUrl)) return browserSafeUrl;
-      const response = await fetch(browserSafeUrl, { credentials: "include" });
+      const response = await fetch(browserSafeUrl, { credentials: "omit" });
       if (!response.ok) return browserSafeUrl;
       const blob = await response.blob();
       return await new Promise<string>((resolve) => {

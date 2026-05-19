@@ -6,6 +6,7 @@ import {
   FormGroup,
   FormControl,
 } from "@angular/forms";
+import { debounceTime } from "rxjs/operators";
 import {
   TableFiltersService,
   TableViewFilter,
@@ -13,9 +14,6 @@ import {
   TableFilterSourceType,
 } from "../../../../services/table-filters.service";
 
-/**
- * Composant pour afficher et gérer les filtres d'une TableViewConfig
- */
 @Component({
   selector: "app-table-filters",
   standalone: true,
@@ -43,6 +41,10 @@ export class TableFiltersComponent implements OnInit {
     this.filterForm = this.fb.group({});
   }
 
+  trackByOptionValue(_index: number, option: TableFilterOption): string {
+    return option.value;
+  }
+
   ngOnInit(): void {
     this.initializeFilterForm();
     this.loadDynamicFilterOptions();
@@ -66,8 +68,10 @@ export class TableFiltersComponent implements OnInit {
       }
     });
 
-    // Émettre les changements de filtre
-    this.filterForm.valueChanges.subscribe((values) => {
+    // Émettre les changements de filtre (avec debounce pour éviter
+    // le rechargement immédiat qui ré-render le parent et ferme
+    // les listes déroulantes)
+    this.filterForm.valueChanges.pipe(debounceTime(250)).subscribe((values) => {
       const filterParams: { [key: string]: string[] } = {};
       Object.keys(values).forEach((key) => {
         const val = values[key];
