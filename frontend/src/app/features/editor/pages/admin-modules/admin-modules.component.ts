@@ -1005,7 +1005,7 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
       .join(" - ");
   }
 
-  private async ensureLookupOptions(view: TableViewConfig): Promise<void> {
+  protected async ensureLookupOptions(view: TableViewConfig): Promise<void> {
     const lookupFields = Object.entries(view.fieldSettings || {})
       .filter(([, config]) => config?.displayMode === "lookup")
       .map(([field]) => field);

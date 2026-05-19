@@ -10,6 +10,7 @@ import { ActiveAcademicYearPillComponent } from "../../../../shared/components/a
 import { UserMenuComponent } from "../../../../shared/components/user-menu/user-menu.component";
 import { TableFiltersComponent } from "../../components/table-filters/table-filters.component";
 import { ModuleRecord } from "../../models/module.model";
+import { TableViewConfig } from "../../models/table-view.model";
 import { EditorStateService } from "../../services/editor-state.service";
 import { OrganizationService } from "../../services/organization.service";
 import { TableViewService } from "../../services/table-view.service";
@@ -74,5 +75,33 @@ export class UserModulesComponent extends AdminModulesComponent {
 
   override goBack(): void {
     this.router.navigate(["/user"]);
+  }
+
+  protected override async ensureLookupOptions(
+    view: TableViewConfig,
+  ): Promise<void> {
+    await super.ensureLookupOptions(view);
+    this.applyLookupRestrictions(view);
+  }
+
+  private applyLookupRestrictions(view: TableViewConfig): void {
+    const rules = this.auth.getCurrentUser()?.dataAccessRules || [];
+    const applicableRules = rules.filter((rule) => {
+      const sameTableView = rule.tableViewId === view.id;
+      const sameTable =
+        !!rule.tableName &&
+        rule.tableName.toLowerCase() === view.tableName.toLowerCase();
+      return (sameTableView || sameTable) && rule.values?.length;
+    });
+
+    applicableRules.forEach((rule) => {
+      const key = `${view.id}::${rule.field}`;
+      const options = this.lookupOptions[key];
+      if (!options) return;
+      const allowedValues = new Set(rule.values.map((value) => String(value)));
+      this.lookupOptions[key] = options.filter((option) =>
+        allowedValues.has(String(option.value)),
+      );
+    });
   }
 }
