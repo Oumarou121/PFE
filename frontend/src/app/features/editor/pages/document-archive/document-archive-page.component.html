@@ -38,7 +38,7 @@
   <div class="bottomnav archive-filters" [formGroup]="filterForm">
     <label class="filter-label">
       <i class="fa fa-th-large filter-icon"></i>
-      <select formControlName="familyId" (change)="onFilterChange()">
+      <select formControlName="familyId">
         <option value="">Toutes les familles</option>
         <option *ngFor="let family of families" [value]="family.id">
           {{ family.nom || family.name || family.id }}
@@ -50,7 +50,7 @@
 
     <label class="filter-label">
       <i class="fa fa-id-card filter-icon"></i>
-      <select formControlName="beneficiaryKey" (change)="onFilterChange()">
+      <select formControlName="beneficiaryKey">
         <option value="">Tous les beneficiaires</option>
         <option
           *ngFor="let beneficiary of beneficiaryOptions"
@@ -65,7 +65,7 @@
 
     <label class="filter-label" *ngIf="isAdminArchive">
       <i class="fa fa-user filter-icon"></i>
-      <select formControlName="generatedById" (change)="onFilterChange()">
+      <select formControlName="generatedById">
         <option value="">Tous les generateurs</option>
         <option
           *ngFor="let generator of generatorOptions"
@@ -83,7 +83,6 @@
       <input
         formControlName="query"
         placeholder="Archive, bénéficiaire, table..."
-        (input)="onFilterChange()"
       />
     </label>
 
@@ -91,17 +90,13 @@
 
     <label class="filter-label">
       <i class="fa fa-calendar filter-icon"></i>
-      <input
-        type="date"
-        formControlName="dateFrom"
-        (change)="onFilterChange()"
-      />
+      <input type="date" formControlName="dateFrom" />
     </label>
 
     <span class="filter-range-sep">à</span>
 
     <label class="filter-label">
-      <input type="date" formControlName="dateTo" (change)="onFilterChange()" />
+      <input type="date" formControlName="dateTo" />
     </label>
 
     <div class="filter-divider"></div>

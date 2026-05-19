@@ -2,6 +2,7 @@ import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { FormBuilder, FormGroup, ReactiveFormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
+import { debounceTime } from "rxjs/operators";
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
 import { DocumentListItem } from "../../models/document.model";
@@ -69,6 +70,9 @@ export class DocumentArchivePageComponent implements OnInit {
       this.loadOrganization();
       this.loadFamilies();
       this.readQueryParams();
+      this.filterForm.valueChanges.pipe(debounceTime(200)).subscribe(() => {
+        void this.loadDocuments();
+      });
       await this.loadDocuments();
     } catch (error) {
       console.error("Error initializing document archive page", error);
@@ -164,14 +168,17 @@ export class DocumentArchivePageComponent implements OnInit {
 
   private readQueryParams(): void {
     const params = this.route.snapshot.queryParamMap;
-    this.filterForm.patchValue({
-      familyId: params.get("familyId") || "",
-      generatedById: params.get("generatedById") || "",
-      beneficiaryKey: params.get("beneficiaryKey") || "",
-      query: params.get("query") || "",
-      dateFrom: params.get("dateFrom") || "",
-      dateTo: params.get("dateTo") || "",
-    });
+    this.filterForm.patchValue(
+      {
+        familyId: params.get("familyId") || "",
+        generatedById: params.get("generatedById") || "",
+        beneficiaryKey: params.get("beneficiaryKey") || "",
+        query: params.get("query") || "",
+        dateFrom: params.get("dateFrom") || "",
+        dateTo: params.get("dateTo") || "",
+      },
+      { emitEvent: false },
+    );
   }
 
   private loadOrganization(): void {
