@@ -5,35 +5,6 @@
   font-family: "DM Sans", sans-serif;
 }
 
-.topnav {
-  height: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  background: #ffffff;
-  border-bottom: 1px solid rgba(51, 122, 183, 0.14);
-}
-
-.tlogo-text {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.tlogo-text span {
-  color: #337ab7;
-}
-
-.nav-org-pill {
-  display: inline-flex;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: #e8f1f9;
-  color: #275f91;
-  font-weight: 700;
-  border: 1px solid #c2d9ee;
-}
-
 .year-shell {
   display: block;
   max-width: 980px;
@@ -133,6 +104,12 @@ p {
   cursor: pointer;
 }
 
+.year-row:focus {
+  outline: none;
+  border-color: #337ab7;
+  box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.12);
+}
+
 .year-row.selected {
   border-color: #337ab7;
   box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.12);
@@ -213,6 +190,27 @@ input {
   border-radius: 7px;
   padding: 0 10px;
   background: #f6f9fc;
+}
+
+.data-search {
+  position: relative;
+  margin-bottom: 12px;
+}
+.data-search i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aa6b6;
+}
+.data-search input {
+  padding-left: 36px;
+}
+
+.field-error {
+  color: #b91c1c;
+  font-size: 0.86rem;
+  margin-top: 6px;
 }
 
 .loading-box,

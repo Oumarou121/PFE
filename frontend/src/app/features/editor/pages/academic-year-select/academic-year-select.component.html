@@ -1,17 +1,4 @@
 <div class="academic-year-page">
-  <!-- <nav class="topnav">
-    <div class="nav-logo">
-      <div class="tlogo-text">SIRH-<span>Doc</span></div>
-    </div>
-    <div class="nav-center">
-      <span class="nav-org-pill">Annee universitaire</span>
-      <app-active-academic-year-pill></app-active-academic-year-pill>
-    </div>
-    <div class="nav-right">
-      <app-user-menu></app-user-menu>
-    </div>
-  </nav> -->
-
   <nav class="topnav">
     <div class="nav-logo">
       <svg
@@ -69,6 +56,12 @@
           Code
           <input [(ngModel)]="createForm.code" placeholder="2026-2027" />
         </label>
+        <div
+          class="field-error"
+          *ngIf="createForm.code && !isValidCode(createForm.code)"
+        >
+          Format attendu : 2026-2027
+        </div>
         <label>
           Date debut
           <input [(ngModel)]="createForm.startDate" type="date" />
@@ -98,13 +91,33 @@
         Aucune annee universitaire disponible pour votre compte.
       </div>
 
-      <div class="year-list" *ngIf="!loading && years.length">
+      <div class="data-search" *ngIf="!loading && years.length">
+        <i class="fa fa-search"></i>
+        <input
+          type="text"
+          placeholder="Rechercher une année..."
+          [(ngModel)]="searchTerm"
+        />
+      </div>
+
+      <div
+        class="empty-box"
+        *ngIf="!loading && years.length && !filteredYears.length"
+      >
+        Aucun résultat pour « {{ searchTerm }} ».
+      </div>
+
+      <div class="year-list" *ngIf="!loading && filteredYears.length">
         <button
           type="button"
           class="year-row"
-          *ngFor="let year of years"
+          *ngFor="let year of filteredYears"
           [class.selected]="selectedCode === year.code"
+          role="radio"
+          [attr.aria-checked]="selectedCode === year.code ? 'true' : 'false'"
           (click)="selectYear(year)"
+          (keydown.enter)="selectYear(year)"
+          (keydown.space)="$event.preventDefault(); selectYear(year)"
         >
           <div>
             <strong>{{ year.code }}</strong>
@@ -119,6 +132,7 @@
               class="ghost-btn"
               type="button"
               (click)="closeYear(year, $event)"
+              [attr.aria-label]="'Cloturer ' + year.code"
             >
               Cloturer
             </button>

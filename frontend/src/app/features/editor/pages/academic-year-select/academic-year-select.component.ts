@@ -28,6 +28,8 @@ export class AcademicYearSelectComponent implements OnInit {
   creating = false;
   showCreateForm = false;
   createForm = { code: "", startDate: "", endDate: "" };
+  searchTerm = "";
+  organizationName = "";
 
   constructor(
     private academicYears: AcademicYearService,
@@ -48,12 +50,30 @@ export class AcademicYearSelectComponent implements OnInit {
     this.loading = true;
     try {
       this.years = await this.academicYears.listYears();
-      this.selectedCode = this.auth.getActiveAcademicYear() || this.years[0]?.code || "";
+      this.selectedCode =
+        this.auth.getActiveAcademicYear() || this.years[0]?.code || "";
     } catch {
-      this.notifications.showError("Impossible de charger les annees universitaires.");
+      this.notifications.showError(
+        "Impossible de charger les annees universitaires.",
+      );
     } finally {
       this.loading = false;
     }
+  }
+
+  get filteredYears(): AcademicYear[] {
+    const q = this.searchTerm?.trim().toLowerCase();
+    if (!q) return this.years;
+    return this.years.filter(
+      (y) =>
+        (y.code || "").toLowerCase().includes(q) ||
+        (y.startDate || "").toLowerCase().includes(q) ||
+        (y.endDate || "").toLowerCase().includes(q),
+    );
+  }
+
+  isValidCode(code: string): boolean {
+    return /^\d{4}-\d{4}$/.test(code);
   }
 
   selectYear(year: AcademicYear): void {
@@ -72,7 +92,11 @@ export class AcademicYearSelectComponent implements OnInit {
   }
 
   async createYear(): Promise<void> {
-    if (!this.createForm.code.trim()) return;
+    if (
+      !this.createForm.code.trim() ||
+      !this.isValidCode(this.createForm.code.trim())
+    )
+      return;
     this.creating = true;
     try {
       const created = await this.academicYears.createYear({
@@ -87,9 +111,18 @@ export class AcademicYearSelectComponent implements OnInit {
       this.showCreateForm = false;
       this.notifications.showSuccess("Annee universitaire creee.");
     } catch {
-      this.notifications.showError("Creation de l'annee universitaire impossible.");
+      this.notifications.showError(
+        "Creation de l'annee universitaire impossible.",
+      );
     } finally {
       this.creating = false;
+    }
+  }
+
+  onYearKeydown(year: AcademicYear, event: KeyboardEvent): void {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.selectYear(year);
     }
   }
 
@@ -101,7 +134,9 @@ export class AcademicYearSelectComponent implements OnInit {
       await this.loadYears();
       this.notifications.showSuccess("Annee universitaire cloturee.");
     } catch {
-      this.notifications.showError("Cloture de l'annee universitaire impossible.");
+      this.notifications.showError(
+        "Cloture de l'annee universitaire impossible.",
+      );
     }
   }
 
