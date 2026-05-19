@@ -2,6 +2,8 @@ import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { FormBuilder, FormGroup, ReactiveFormsModule } from "@angular/forms";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
+import { firstValueFrom } from "rxjs";
+import { ConfirmDialogComponent } from "../../../../shared/components/confirm-dialog/confirm-dialog.component";
 import { ActivatedRoute, Router } from "@angular/router";
 import { AuthService } from "../../../../core/services/auth.service";
 import { NotificationService } from "../../../../core/services/notification.service";
@@ -222,7 +224,12 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
   }
 
   async deleteDocument(document: DocumentListItem): Promise<void> {
-    const confirmed = confirm(`Supprimer le document "${document.title}" ?`);
+    const confirmed = await this.confirmAction({
+      title: "Supprimer le document ?",
+      message: `Le document "${document.title}" sera supprimé.`,
+      confirmText: "Supprimer",
+      actionType: "delete",
+    });
     if (!confirmed) return;
     try {
       await this.documentService.deleteDocument(document.id);
@@ -252,6 +259,18 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
       globalThis.document.body.removeChild(link);
       URL.revokeObjectURL(url);
     });
+  }
+
+  private async confirmAction(data: {
+    title: string;
+    message: string;
+    confirmText?: string;
+    actionType?: "delete" | "warning" | "success" | "info" | "error";
+  }): Promise<boolean> {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data: { cancelText: "Annuler", ...data },
+    });
+    return firstValueFrom(ref.afterClosed());
   }
 
   getFamilyName(familyId: string | undefined): string {
