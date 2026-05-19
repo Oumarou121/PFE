@@ -84,8 +84,7 @@
         <div class="panel-header">
           <h2>1. Choisissez une famille de documents</h2>
           <p>
-            Sélectionnez la catégorie du document que vous souhaitez
-            générer.
+            Sélectionnez la catégorie du document que vous souhaitez générer.
           </p>
         </div>
         <div class="data-search">
@@ -134,19 +133,24 @@
             [(ngModel)]="templateSearch"
           />
         </div>
-        <div class="tpl-list">
+        <div class="tpl-modern-list">
           <div class="empty-message" *ngIf="!templates.length">
             Aucun modèle trouvé
           </div>
           <button
-            class="tpl-card"
+            class="tpl-row"
             type="button"
             *ngFor="let template of templates"
             [class.sel]="selectedTemplateId === template.id"
             [disabled]="documentBusy"
             (click)="selectTemplate(template.id)"
           >
-            <div class="tpl-icon"><i class="fa fa-file-text"></i></div>
+            <div class="tpl-radio">
+              <div class="tpl-radio-inner"></div>
+            </div>
+            <div class="tpl-icon-wrap">
+              <i class="fa fa-file-text-o"></i>
+            </div>
             <div class="tpl-copy">
               <div class="tpl-name">{{ getTemplateName(template) }}</div>
               <div class="tpl-meta">
@@ -158,7 +162,6 @@
                 }}
               </div>
             </div>
-            <div class="tpl-chk"><i class="fa fa-check"></i></div>
           </button>
         </div>
         <div class="panel-actions">
@@ -237,9 +240,7 @@
                 : "Sélectionner la page"
             }}
           </button>
-          <span class="bulk-count"
-            >{{ selectedBulkCount }} sélectionné(s)</span
-          >
+          <span class="bulk-count">{{ selectedBulkCount }} sélectionné(s)</span>
           <button
             class="bulk-link"
             type="button"
@@ -342,9 +343,7 @@
 
       <!-- ETAPE 4 : Aperçu & Génération -->
       <div class="wizard-panel" *ngIf="currentStep === 4">
-        <div
-          class="panel-header panel-header--split"
-        >
+        <div class="panel-header panel-header--split">
           <div>
             <h2>4. Aperçu & Génération</h2>
             <p *ngIf="!documentBusy">

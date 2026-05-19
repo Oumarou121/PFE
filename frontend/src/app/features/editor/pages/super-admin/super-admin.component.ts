@@ -6014,6 +6014,13 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       ? this.tableViews.find((tv) => tv.id === this.selectedTableViewId)
       : null;
     if (!item) return;
+    if (!String(item.tableName || "").trim()) {
+      this.tableViewRowsCache = [];
+      this.selectedTableViewRowId = null;
+      this.selectedTableViewRecord = null;
+      this.isCreatingTableViewRow = false;
+      return;
+    }
     try {
       const response = await firstValueFrom(
         this.tableViewService.getRows({

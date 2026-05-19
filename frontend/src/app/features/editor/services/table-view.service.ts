@@ -68,10 +68,11 @@ export class TableViewService {
     options: TableViewRowsOptions = {},
     databaseName?: string | null,
   ): Promise<UnknownRecord[]> {
+    const config = this.getRowsRequestConfig(options.config || null);
     const payload = await firstValueFrom(
       this.api.post<TableViewRowsResponse>("table-view/rows", {
         configId,
-        config: options.config || null,
+        config,
         search: String(options.search || "").trim(),
         databaseName,
         selectedFilters: options.selectedFilters || null,
@@ -238,5 +239,24 @@ export class TableViewService {
         options.databaseName,
       ),
     );
+  }
+
+  private getRowsRequestConfig(
+    config: TableViewConfig | null,
+  ): TableViewConfig | null {
+    if (!config?.tableName?.trim() || !config?.label?.trim()) return null;
+    return {
+      ...config,
+      filters: (config.filters || []).filter(
+        (filter: any) =>
+          !!String(filter?.id || "").trim() &&
+          !!String(filter?.name || "").trim() &&
+          !!String(filter?.linkColumn || "").trim() &&
+          (String(filter?.sourceType || "").toLowerCase() !== "table" ||
+            (!!String(filter?.sqlBuilder?.tableName || "").trim() &&
+              !!String(filter?.sqlBuilder?.valueColumn || "").trim() &&
+              !!String(filter?.sqlBuilder?.labelColumn || "").trim())),
+      ),
+    };
   }
 }
