@@ -343,12 +343,7 @@
       <!-- ETAPE 4 : Aperçu & Génération -->
       <div class="wizard-panel" *ngIf="currentStep === 4">
         <div
-          class="panel-header"
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-          "
+          class="panel-header panel-header--split"
         >
           <div>
             <h2>4. Aperçu & Génération</h2>
@@ -364,7 +359,7 @@
               Nouvelle demande
             </button>
             <button class="btn primary" (click)="generateFinalDocument()">
-              Générer Format Word/PDF
+              Générer le document
             </button>
           </div>
         </div>
@@ -383,19 +378,17 @@
           <div class="zoom-bar" *ngIf="previewHtml">
             <span>ZOOM</span>
             <button
-              class="btn xs ghost"
+              class="btn xs ghost zoom-btn"
               type="button"
               (click)="setZoom(-10)"
-              style="font-size: 14px; width: 22px; padding: 0"
             >
               -
             </button>
             <span class="zoom-lbl">{{ zoom }}%</span>
             <button
-              class="btn xs ghost"
+              class="btn xs ghost zoom-btn"
               type="button"
               (click)="setZoom(10)"
-              style="font-size: 14px; width: 22px; padding: 0"
             >
               +
             </button>
