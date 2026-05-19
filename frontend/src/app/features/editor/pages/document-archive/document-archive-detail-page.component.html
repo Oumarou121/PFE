@@ -52,7 +52,10 @@
       <i class="fa fa-id-card filter-icon"></i>
       <select formControlName="beneficiaryKey" (change)="onFilterChange()">
         <option value="">Tous les beneficiaires</option>
-        <option *ngFor="let beneficiary of beneficiaryOptions" [value]="beneficiary.key">
+        <option
+          *ngFor="let beneficiary of beneficiaryOptions"
+          [value]="beneficiary.key"
+        >
           {{ beneficiary.label }}
         </option>
       </select>
@@ -64,7 +67,10 @@
       <i class="fa fa-user filter-icon"></i>
       <select formControlName="generatedById" (change)="onFilterChange()">
         <option value="">Tous les generateurs</option>
-        <option *ngFor="let generator of generatorOptions" [value]="generator.id">
+        <option
+          *ngFor="let generator of generatorOptions"
+          [value]="generator.id"
+        >
           {{ generator.label }}
         </option>
       </select>

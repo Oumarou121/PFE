@@ -78,10 +78,12 @@ export class DocumentArchiveGroupingService {
       const group = map.get(key) || {
         key,
         beneficiaryId: document.beneficiaryId || null,
-        title: this.getBeneficiaryTitle(document),
-        subtitle: document.beneficiaryId
-          ? `ID ${document.beneficiaryId}`
-          : "Bénéficiaire non renseigné",
+        // title: this.getBeneficiaryTitle(document),
+        // subtitle: document.beneficiaryId
+        //   ? `ID ${document.beneficiaryId}`
+        //   : "Bénéficiaire non renseigné",
+        title: document.beneficiaryDisplayValue1 || "Bénéficiaire",
+        subtitle: document.beneficiaryTableLabel || "",
         documents: [],
         familyIds: [],
       };

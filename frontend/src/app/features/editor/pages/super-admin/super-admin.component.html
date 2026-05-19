@@ -436,9 +436,12 @@
         <div class="card">
           <div class="card-header">
             <div>
-              <div class="card-title">Tables filtrees par annee universitaire</div>
+              <div class="card-title">
+                Tables filtrees par annee universitaire
+              </div>
               <div class="card-subtitle">
-                La liste des annees est lue dans ANNEEUNIV de la DB organisation.
+                La liste des annees est lue dans ANNEEUNIV de la DB
+                organisation.
               </div>
             </div>
             <button
@@ -532,7 +535,9 @@
                 <select class="form-input" [(ngModel)]="item.yearColumn">
                   <option value="">Colonne annee</option>
                   <option
-                    *ngFor="let column of academicYearColumnsFor(item.tableName)"
+                    *ngFor="
+                      let column of academicYearColumnsFor(item.tableName)
+                    "
                     [value]="column.name"
                   >
                     {{ column.name }}
@@ -4428,7 +4433,11 @@
       >
       <select class="form-input" [(ngModel)]="adminDraft.organizationId">
         <option value="">-- Choisir --</option>
-        <option *ngFor="let org of organizations" [value]="org.id">
+        <option
+          *ngFor="let org of organizations"
+          [value]="org.id"
+          [selected]="org.id === adminDraft.organizationId"
+        >
           {{ org.nom || org.id }}
         </option>
       </select>

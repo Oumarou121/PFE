@@ -648,7 +648,6 @@ namespace DocApi.Repositories
         public async Task ReplaceStateAsync(EditorStateResponse state, int? scopedOrganizationId, bool isSuperAdmin)
         {
             using var connection = ConfigConnection();
-            connection.Open();
             using var transaction = connection.BeginTransaction();
             try
             {
