@@ -293,6 +293,10 @@ export class AdminModulesComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  hasEnabledFilters(view: TableViewConfig | null | undefined): boolean {
+    return !!view?.filters?.some((filter) => filter.enabled);
+  }
+
   async goToPreviousDataPage(): Promise<void> {
     if (this.dataPage <= 1 || this.dataRowsLoading) return;
     this.dataPage -= 1;

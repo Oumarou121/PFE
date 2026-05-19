@@ -65,7 +65,7 @@
       </section>
 
       <ng-container *ngIf="selectedDataView as view">
-        <div class="filters-panel">
+        <div *ngIf="hasEnabledFilters(view)" class="filters-panel">
           <app-table-filters
             [filters]="view.filters"
             [databaseName]="organizationDatabaseName || undefined"
