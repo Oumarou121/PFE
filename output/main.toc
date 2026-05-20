@@ -1,0 +1,67 @@
+\babel@toc {french}{}\relax 
+\contentsline {chapter}{Liste des abréviations}{iii}{chapter*.1}%
+\contentsline {chapter}{Liste des figures}{viii}{chapter*.3}%
+\contentsline {chapter}{Liste des tableaux}{ix}{chapter*.4}%
+\contentsline {chapter}{Introduction générale}{1}{chapter*.5}%
+\contentsline {chapter}{\numberline {1}Cadre général du projet}{2}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Introduction}{2}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Présentation de l'organisme d'accueil}{2}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Présentation générale}{2}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Domaines d'activités}{2}{subsection.1.2.2}%
+\contentsline {section}{\numberline {1.3}Présentation du projet}{3}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Cadre du projet}{3}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Problématique}{3}{subsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.3.3}Étude de l'existant}{4}{subsection.1.3.3}%
+\contentsline {subsection}{\numberline {1.3.4}Solution proposée}{4}{subsection.1.3.4}%
+\contentsline {section}{\numberline {1.4}Méthodologies adoptées}{5}{section.1.4}%
+\contentsline {subsection}{\numberline {1.4.1}Langage de Modélisation Unifié UML}{7}{subsection.1.4.1}%
+\contentsline {section}{\numberline {1.5}Architecture globale de l'application}{7}{section.1.5}%
+\contentsline {subsection}{\numberline {1.5.1}Architecture physique}{7}{subsection.1.5.1}%
+\contentsline {subsection}{\numberline {1.5.2}Architecture logique}{8}{subsection.1.5.2}%
+\contentsline {section}{\numberline {1.6}Environnement de développement}{8}{section.1.6}%
+\contentsline {subsection}{\numberline {1.6.1}Environnement matériel}{8}{subsection.1.6.1}%
+\contentsline {subsection}{\numberline {1.6.2}Environnement logiciel}{8}{subsection.1.6.2}%
+\contentsline {section}{\numberline {1.7}Choix technologiques}{9}{section.1.7}%
+\contentsline {section}{\numberline {1.8}Conclusion}{11}{section.1.8}%
+\contentsline {chapter}{\numberline {2}Analyse et spécification des besoins}{12}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Introduction}{12}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Identification des acteurs}{12}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Clarification du vocabulaire métier}{12}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Spécification des besoins}{13}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}Besoins fonctionnels}{13}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}Besoins non fonctionnels}{14}{subsection.2.4.2}%
+\contentsline {subsection}{\numberline {2.4.3}Backlog du produit}{15}{subsection.2.4.3}%
+\contentsline {subsection}{\numberline {2.4.4}Diagramme de cas d'utilisation global}{17}{subsection.2.4.4}%
+\contentsline {subsection}{\numberline {2.4.5}Diagramme de classes global}{18}{subsection.2.4.5}%
+\contentsline {subsection}{\numberline {2.4.6}Planification des sprints}{19}{subsection.2.4.6}%
+\contentsline {section}{\numberline {2.5}Conclusion}{20}{section.2.5}%
+\contentsline {chapter}{\numberline {3}Release 1 : Socle technique et moteur de données}{21}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Introduction}{21}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Sprint 1 : Socle technique, Multi-Tenancy et isolation temporelle}{21}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Objectif du sprint}{21}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Backlog du sprint}{21}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}Conception du sprint}{22}{subsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.2.4}Réalisation du sprint}{25}{subsection.3.2.4}%
+\contentsline {section}{\numberline {3.3}Sprint 2 : Moteur de données et entités métiers}{28}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Objectif du sprint}{28}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Backlog du sprint}{28}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Conception du sprint}{28}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Réalisation du sprint}{31}{subsection.3.3.4}%
+\contentsline {section}{\numberline {3.4}Conclusion Release 1}{34}{section.3.4}%
+\contentsline {chapter}{\numberline {4}Release 2 : Studio documentaire, production et archivage}{35}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Introduction}{35}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Sprint 3 : Studio d'édition et intelligence documentaire}{35}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Objectif du sprint}{35}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Backlog du sprint}{35}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Conception du sprint}{36}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Réalisation du sprint}{39}{subsection.4.2.4}%
+\contentsline {section}{\numberline {4.3}Sprint 4 : Automatisation de la production et archivage RH}{41}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Objectif du sprint}{41}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}Backlog du sprint}{41}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Analyse du sprint}{42}{subsection.4.3.3}%
+\contentsline {subsection}{\numberline {4.3.4}Conception du sprint}{42}{subsection.4.3.4}%
+\contentsline {subsection}{\numberline {4.3.5}Réalisation du sprint}{45}{subsection.4.3.5}%
+\contentsline {section}{\numberline {4.4}Conclusion Release 2}{47}{section.4.4}%
+\contentsline {chapter}{Conclusion générale et perspectives}{48}{chapter*.42}%
+\contentsline {section}{Perspectives}{48}{section*.43}%
+\contentsline {section}{Conclusion générale}{48}{section*.44}%

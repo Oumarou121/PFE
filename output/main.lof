@@ -1,0 +1,38 @@
+\babel@toc {french}{}\relax 
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces Méthodologie SCRUM}}{6}{figure.caption.6}%
+\contentsline {figure}{\numberline {1.2}{\ignorespaces Architecture physique de l'application}}{7}{figure.caption.7}%
+\contentsline {figure}{\numberline {1.3}{\ignorespaces Architecture logique basée sur Clean Architecture}}{8}{figure.caption.8}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Diagramme de cas d'utilisation global}}{18}{figure.caption.12}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Diagramme de classes global}}{19}{figure.caption.13}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Planification des sprints}}{20}{figure.caption.14}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Diagramme de cas d'utilisation du Sprint 1}}{23}{figure.caption.15}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Diagramme de séquence d’authentification JWT}}{24}{figure.caption.16}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Diagramme de séquence de résolution dynamique du tenant}}{25}{figure.caption.17}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Interface de connexion à la plateforme}}{26}{figure.caption.18}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Choix du contexte académique actif}}{26}{figure.caption.19}%
+\contentsline {figure}{\numberline {3.6}{\ignorespaces Écran d’accueil principal}}{27}{figure.caption.20}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces Interface de gestion des comptes utilisateurs}}{27}{figure.caption.21}%
+\contentsline {figure}{\numberline {3.8}{\ignorespaces Diagramme de cas d'utilisation du Sprint 2}}{29}{figure.caption.22}%
+\contentsline {figure}{\numberline {3.9}{\ignorespaces Diagramme de séquence de chargement d'une vue dynamique}}{30}{figure.caption.23}%
+\contentsline {figure}{\numberline {3.10}{\ignorespaces Diagramme de séquence d’importation intelligente}}{31}{figure.caption.24}%
+\contentsline {figure}{\numberline {3.11}{\ignorespaces Interface de configuration des modules}}{32}{figure.caption.25}%
+\contentsline {figure}{\numberline {3.12}{\ignorespaces Paramétrage général d'une vue dynamique}}{32}{figure.caption.26}%
+\contentsline {figure}{\numberline {3.13}{\ignorespaces Affichage paginé et filtrable des données métier}}{33}{figure.caption.27}%
+\contentsline {figure}{\numberline {3.14}{\ignorespaces Sélection et préparation du fichier à importer}}{33}{figure.caption.28}%
+\contentsline {figure}{\numberline {3.15}{\ignorespaces Affectation des utilisateurs aux modules}}{34}{figure.caption.29}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Diagramme de cas d'utilisation du Sprint 3}}{37}{figure.caption.30}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Diagramme de séquence d’enregistrement d’un template}}{38}{figure.caption.31}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Diagramme de séquence de prévisualisation avec fusion dynamique}}{39}{figure.caption.32}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Interface de configuration d'une famille documentaire}}{40}{figure.caption.33}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Interface principale de conception du document}}{40}{figure.caption.34}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Aperçu du document après fusion des données}}{41}{figure.caption.35}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Diagramme de cas d'utilisation du Sprint 4}}{43}{figure.caption.36}%
+\contentsline {figure}{\numberline {4.8}{\ignorespaces Diagramme de séquence de génération et archivage en masse}}{44}{figure.caption.37}%
+\contentsline {figure}{\numberline {4.9}{\ignorespaces Diagramme de séquence d’audit et suppression logique}}{45}{figure.caption.38}%
+\contentsline {figure}{\numberline {4.10}{\ignorespaces Generation d'un document}}{46}{figure.caption.39}%
+\contentsline {figure}{\numberline {4.11}{\ignorespaces Consultation des documents générés}}{46}{figure.caption.40}%
+\contentsline {figure}{\numberline {4.12}{\ignorespaces Informations de génération du document archivé}}{47}{figure.caption.41}%

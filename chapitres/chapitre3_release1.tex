@@ -74,7 +74,7 @@ L'objectif du sprint 1 était de construire un socle fiable : authentification J
 
     \item \textbf{Diagramme de séquence : Authentification JWT}
 
-    Cette séquence suit le parcours d'authentification depuis la saisie des identifiants jusqu'à la création de la session côté interface. Les échanges sont volontairement regroupés par couches : la présentation contrôle le formulaire, la couche applicative orchestre la demande, le domaine vérifie l'état du compte et le mot de passe, puis l'infrastructure charge l'utilisateur. Le fragment \texttt{alt} distingue le cas d'échec, qui renvoie une erreur, du cas de succès, où le jeton JWT est généré puis mémorisé.
+    Ce diagramme présente le processus d'authentification de l'utilisateur et la génération du jeton JWT permettant d'accéder à l'application.
 
     \begin{figure}[H]
         \centering
@@ -85,7 +85,7 @@ L'objectif du sprint 1 était de construire un socle fiable : authentification J
 
     \item \textbf{Diagramme de séquence : Résolution dynamique du tenant}
 
-    Cette séquence montre ce qui se produit lorsqu'un utilisateur demande une ressource protégée. Après la réception de la requête API et du jeton JWT, l'application vérifie les informations portées par les claims, charge l'organisation associée et initialise le contexte tenant. Le fragment \texttt{alt} permet de séparer le cas d'un tenant invalide, qui arrête le traitement, du cas valide où la requête peut continuer dans le bon périmètre de données.
+    Ce diagramme illustre le mécanisme de résolution du tenant basé sur le jeton JWT lors de l'accès aux ressources protégées de la plateforme.
 
     \begin{figure}[H]
         \centering
@@ -188,7 +188,7 @@ Le sprint 2 avait pour objectif de rendre l'application capable de gérer des do
 
     \item \textbf{Diagramme de séquence : Chargement d'une vue dynamique}
 
-    Cette séquence décrit la lecture d'une TableView depuis l'ouverture du module jusqu'à l'affichage des lignes. Le scénario est placé dans un fragment \texttt{loop}, car il se répète lorsque l'utilisateur change de page ou modifie un filtre. Après le chargement de la configuration, la couche domaine valide les critères puis un fragment \texttt{alt} distingue les tables affectées par l'année universitaire de celles qui ne le sont pas. L'infrastructure exécute ensuite la requête paginée et retourne les lignes à afficher.
+    Ce diagramme illustre le processus de chargement des données métier pour l'affichage dynamique des vues configurables.
 
     \begin{figure}[H]
         \centering
@@ -199,7 +199,8 @@ Le sprint 2 avait pour objectif de rendre l'application capable de gérer des do
 
     \item \textbf{Diagramme de séquence : Importation intelligente}
 
-    Cette séquence présente l'importation d'un fichier de données après authentification et résolution du tenant. La présentation vérifie d'abord l'extension, puis l'application transmet le fichier et le mapping pour contrôle. Le fragment \texttt{break} représente l'arrêt du traitement lorsque le fichier est invalide. Lorsque la structure est exploitable, le fragment \texttt{loop} traite les lignes valides une par une, tandis que le fragment \texttt{opt} ajoute au rapport les éventuelles erreurs partielles détectées pendant l'importation.
+    Ce diagramme présente le fonctionnement de l'importation de fichiers de données avec contrôle de structure et validation métier.
+
 
     \begin{figure}[H]
         \centering
