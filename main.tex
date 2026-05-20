@@ -90,33 +90,66 @@
 % PLACEHOLDER CAPTURES D'ÉCRAN
 %==================================
 
-\newcommand{\screenshotplaceholder}[3]{
+\NewDocumentCommand{\screenshotplaceholder}
+{ O{0.78\textwidth} O{0.42\textheight} m m m }{
+
 \begin{figure}[H]
     \centering
-    \IfFileExists{images/#1}{
-        \includegraphics[width=0.78\textwidth,height=0.42\textheight,keepaspectratio]{images/#1}
+
+    \IfFileExists{images/#3}{
+        \includegraphics[
+            width=#1,
+            height=#2,
+            keepaspectratio
+        ]{images/#3}
     }{
         \fbox{
             \begin{minipage}[c][3.6cm][c]{0.74\textwidth}
                 \centering
-                \textbf{[Insérer ici la capture d'écran : #2]}\\[0.25cm]
-                Fichier attendu : \texttt{images/\detokenize{#1}}
+                \textbf{[Insérer ici la capture d'écran : #4]}\\[0.25cm]
+                Fichier attendu : \texttt{images/\detokenize{#3}}
             \end{minipage}
         }
     }
-    \caption{#3}
+
+    \caption{#5}
+
 \end{figure}
+
 }
 
 %==================================
 % PLACEHOLDER DIAGRAMMES
 %==================================
 
+% \newcommand{\diagramplaceholder}[3]{
+% \begin{figure}[H]
+%     \centering
+%     \IfFileExists{diagrammes/#1.png}{
+%         \includegraphics[width=1\textwidth][width=1\textheight]{diagrammes/#1.png}
+%     }{
+%         \fbox{
+%             \begin{minipage}[c][5.2cm][c]{0.88\textwidth}
+%                 \centering
+%                 \textbf{[Insérer ici le diagramme : #2]}\\[0.25cm]
+%                 Source Draw.io : \texttt{diagrammes/\detokenize{#1}.drawio}\\
+%                 Export PNG attendu : \texttt{diagrammes/\detokenize{#1}.png}
+%             \end{minipage}
+%         }
+%     }
+%     \caption{#3}
+% \end{figure}
+% }
+
 \newcommand{\diagramplaceholder}[3]{
 \begin{figure}[H]
     \centering
     \IfFileExists{diagrammes/#1.png}{
-        \includegraphics[width=0.95\textwidth]{diagrammes/#1.png}
+        \includegraphics[
+            width=\textwidth,
+            height=\textheight,
+            keepaspectratio
+        ]{diagrammes/#1.png}
     }{
         \fbox{
             \begin{minipage}[c][5.2cm][c]{0.88\textwidth}
@@ -130,7 +163,6 @@
     \caption{#3}
 \end{figure}
 }
-
 %==================================
 % DÉBUT DOCUMENT
 %==================================

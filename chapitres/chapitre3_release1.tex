@@ -61,16 +61,16 @@ L'objectif du sprint 1 était de construire un socle fiable : authentification J
         \label{fig:usecase-diagram-s1}
     \end{figure}
 
-    \item \textbf{Diagramme de classes}
+    % \item \textbf{Diagramme de classes}
 
-    Ce diagramme présente les principales entités persistantes du Sprint 1 ainsi que les relations qui structurent le socle technique de SIRH-Doc. Il met notamment en évidence la gestion des utilisateurs, des rôles, des organisations et du contexte académique nécessaires à l’isolation des accès et des données.
+    % Ce diagramme présente les principales entités persistantes du Sprint 1 ainsi que les relations qui structurent le socle technique de SIRH-Doc. Il met notamment en évidence la gestion des utilisateurs, des rôles, des organisations et du contexte académique nécessaires à l’isolation des accès et des données.
 
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.95\textwidth]{images/sprint1/class-diagram.png}
-        \caption{Diagramme de classes du Sprint 1}
-        \label{fig:class-diagram-s1}
-    \end{figure}
+    % \begin{figure}[H]
+    %     \centering
+    %     \includegraphics[width=0.95\textwidth]{images/sprint1/class-diagram.png}
+    %     \caption{Diagramme de classes du Sprint 1}
+    %     \label{fig:class-diagram-s1}
+    % \end{figure}
 
     \item \textbf{Diagramme de séquence : Authentification JWT}
 
@@ -105,13 +105,20 @@ La réalisation du Sprint 1 s'est concrétisée par les premières interfaces li
 
 La page de connexion constitue le premier point d'entrée de SIRH-Doc. Elle permet à l'utilisateur de saisir ses identifiants avant que le backend ne vérifie son compte, son rôle et son organisation.
 
-\screenshotplaceholder{sprint1/academic-year-select.png}{Sélection de l'année universitaire}{Choix du contexte académique actif}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint1/academic-year-select.png}{Sélection de l'année universitaire}{Choix du contexte académique actif}
 
 Après authentification, l'utilisateur sélectionne l'année universitaire active. Ce choix est important, car certaines données RH et pédagogiques doivent être consultées selon la période concernée.
 
-\screenshotplaceholder{sprint1/users-roles.png}{Gestion des utilisateurs et des rôles}{Interface de gestion des comptes utilisateurs}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint1/home-by-role.png}{Ecran d'accueil}{Écran d’accueil principal}
 
-La gestion des utilisateurs, des rôles et des organisations permet de contrôler les accès aux différentes parties de l'application. Elle complète le mécanisme d'authentification en associant chaque utilisateur à un profil, à une organisation et à un périmètre d'action.
+Écran principal permettant à l’utilisateur d’accéder aux différents modules.
+
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint1/users-roles.png}{Gestion des utilisateurs et des rôles}{Interface de gestion des comptes utilisateurs}
+
+La gestion des administrateurs et des organisations permet de définir des espaces dédiés à chacun. Elle vient compléter le dispositif d’authentification en rattachant chaque administrateur à un profil, à une organisation et à un périmètre d’intervention.
 
 \section{Sprint 2 : Moteur de données et entités métiers}
 
@@ -168,16 +175,16 @@ Le sprint 2 avait pour objectif de rendre l'application capable de gérer des do
         \label{fig:usecase-diagram-s2}
     \end{figure}
 
-    \item \textbf{Diagramme de classes}
+    % \item \textbf{Diagramme de classes}
 
-    Ce diagramme présente les principales entités introduites dans le Sprint 2 pour la gestion dynamique des données métier. Il met en évidence les configurations des modules, les vues dynamiques, les filtres ainsi que les structures utilisées pour l’importation et la consultation des données.
+    % Ce diagramme présente les principales entités introduites dans le Sprint 2 pour la gestion dynamique des données métier. Il met en évidence les configurations des modules, les vues dynamiques, les filtres ainsi que les structures utilisées pour l’importation et la consultation des données.
 
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.95\textwidth]{images/sprint2/class-diagram.png}
-        \caption{Diagramme de classes du Sprint 2}
-        \label{fig:class-diagram-s2}
-    \end{figure}
+    % \begin{figure}[H]
+    %     \centering
+    %     \includegraphics[width=0.95\textwidth]{images/sprint2/class-diagram.png}
+    %     \caption{Diagramme de classes du Sprint 2}
+    %     \label{fig:class-diagram-s2}
+    % \end{figure}
 
     \item \textbf{Diagramme de séquence : Chargement d'une vue dynamique}
 
@@ -185,7 +192,7 @@ Le sprint 2 avait pour objectif de rendre l'application capable de gérer des do
 
     \begin{figure}[H]
         \centering
-        \includegraphics[width=0.95\textwidth]{images/sprint2/sequence-diagram2.png}
+        \includegraphics[width=0.95\textwidth]{images/sprint2/sequence-diagram1.png}
         \caption{Diagramme de séquence de chargement d'une vue dynamique}
         \label{fig:dynamic-view-sequence-s2}
     \end{figure}
@@ -196,7 +203,7 @@ Le sprint 2 avait pour objectif de rendre l'application capable de gérer des do
 
     \begin{figure}[H]
         \centering
-        \includegraphics[width=0.95\textwidth]{images/sprint2/sequence-diagram1.png}
+        \includegraphics[width=0.95\textwidth]{images/sprint2/sequence-diagram2.png}
         \caption{Diagramme de séquence d’importation intelligente}
         \label{fig:import-sequence-s2}
     \end{figure}
@@ -205,29 +212,31 @@ Le sprint 2 avait pour objectif de rendre l'application capable de gérer des do
 
 \subsection{Réalisation du sprint}
 
-La réalisation du Sprint 2 a porté sur les interfaces de configuration et d'exploitation des données métier. L'objectif était de permettre au super administrateur de préparer les modules et les vues dynamiques, puis de laisser l'utilisateur consulter les données sous une forme claire, filtrable et paginée.
+Le Sprint 2 a été consacré aux interfaces de configuration et d’exploitation des données métier. L’objectif était de permettre au super administrateur de préparer les modules ainsi que les vues dynamiques, puis de laisser l’utilisateur consulter les données sous une forme claire, filtrable et paginée. Il s’agissait également de donner à l’administrateur la possibilité de restreindre l’accès à certaines données pour les utilisateurs non concernés.
 
-\screenshotplaceholder{sprint2/config-module1.png}{Gestion des modules}{Interface de configuration des modules}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint2/config-module.png}{Gestion des modules}{Interface de configuration des modules}
 
-\screenshotplaceholder{sprint2/personnel-management-module.png}{Module de gestion du personnel}{Interface du module de gestion du personnel}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint2/config-tableview.png}{Configuration d'une TableView}{Paramétrage général d'une vue dynamique}
 
-\screenshotplaceholder{sprint2/module-access-users.png}{Gestion des accès aux modules}{Affectation des utilisateurs aux modules}
+Ces interfaces donnent la possibilité au super administrateur de configurer l’approche metadata-driven.
 
-La gestion des modules permet de définir les entrées fonctionnelles disponibles dans la plateforme. Le module de gestion du personnel illustre ensuite l'utilisation concrète d'un module métier par l'organisation. L'administrateur d'organisation peut enfin attribuer l'accès aux utilisateurs concernés, afin que chaque profil voie uniquement les modules liés à ses responsabilités.
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint2/module-vue.png}{Consultation dynamique d'un module}{Affichage paginé et filtrable des données métier}
 
-\screenshotplaceholder{sprint2/config-tableview1.png}{Configuration d'une TableView}{Paramétrage général d'une vue dynamique}
+La consultation et la manupulation dynamique montre le résultat de la configuration précédente côté utilisateur.
 
-\screenshotplaceholder{sprint2/config-filter-tableview.png}{Configuration des filtres}{Paramétrage des filtres associés à une vue dynamique}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint2/import.png}{Importation intelligente}{Sélection et préparation du fichier à importer}
 
-La configuration des TableViews constitue le coeur du moteur de données dynamique. Elle permet de choisir les colonnes visibles, les libellés et les filtres sans créer un écran spécifique pour chaque table. Cette approche rend la plateforme plus adaptable aux différentes structures de données des établissements.
+L'importation intelligente enrichit le moteur de données en facilitant l’alimentation des tables métier.
 
-\screenshotplaceholder{sprint2/vue-module.png}{Consultation dynamique d'un module}{Affichage paginé et filtrable des données métier}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint2/personnel-management-module.png}{Gestion des accès aux modules}{Affectation des utilisateurs aux modules}
 
-La consultation dynamique montre le résultat de la configuration précédente côté utilisateur. Les données sont affichées sous forme de tableau, avec des libellés lisibles, des filtres et une pagination adaptée aux volumes importants.
+Le module de gestion du personnel illustre ensuite l'utilisation concrète d'un module métier par l'organisation. L'administrateur d'organisation peut enfin attribuer l'accès aux utilisateurs concernés, afin que chaque profil voie uniquement les modules liés à ses responsabilités et les données qu'il a l'acces.
 
-\screenshotplaceholder{sprint2/import1.png}{Importation intelligente}{Sélection et préparation du fichier à importer}
-
-L'importation intelligente complète le moteur de données en facilitant l'alimentation des tables métier. Le fichier est contrôlé avant l'insertion, ce qui permet d'identifier les données importées ainsi que les éventuelles erreurs.
 
 \section{Conclusion Release 1}
 

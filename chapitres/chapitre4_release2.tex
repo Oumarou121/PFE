@@ -51,26 +51,20 @@ Le sprint 3 avait pour objectif de permettre aux administrateurs de concevoir de
 
 \end{longtable}
 
-\subsection{Analyse du sprint}
-
-Le studio documentaire a été la partie la plus délicate du projet. Le document final doit paraître simple pour l'utilisateur, presque comme un document bureautique classique, alors qu'il dépend d'un assemblage assez dense : données SQL, modèle HTML, charte graphique, sections, variables et pagination. Pendant les tests, les problèmes les plus visibles n'étaient pas toujours les plus difficiles techniquement : un alignement d'image ou un tableau mal rendu suffit à faire perdre confiance dans tout le document. Le choix d'un éditeur riche devait donc rester compatible avec une génération contrôlée. L'application stocke les sections du modèle sous forme de HTML, mais la fusion est pilotée par des services spécialisés.
-
-Une autre difficulté concerne les variables de type tableau. Elles ne représentent pas une valeur unique, mais une collection de lignes provenant d'une requête. Le moteur doit donc produire un tableau lisible dans le document final, conserver l'ordre des colonnes choisi et éviter de déformer la mise en page.
-
 \subsection{Conception du sprint}
 
 \begin{itemize}
 
-    \item \textbf{Diagramme de classes}
+    % \item \textbf{Diagramme de classes}
 
-    Ce diagramme présente les principales entités utilisées dans le module de génération documentaire. Il met en évidence les relations entre les templates, les familles documentaires, les chartes graphiques et les configurations nécessaires au moteur de fusion.
+    % Ce diagramme présente les principales entités utilisées dans le module de génération documentaire. Il met en évidence les relations entre les templates, les familles documentaires, les chartes graphiques et les configurations nécessaires au moteur de fusion.
 
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.95\textwidth]{images/sprint3/class-diagram.png}
-        \caption{Diagramme de classes du Sprint 3}
-        \label{fig:class-diagram-s3}
-    \end{figure}
+    % \begin{figure}[H]
+    %     \centering
+    %     \includegraphics[width=0.95\textwidth]{images/sprint3/class-diagram.png}
+    %     \caption{Diagramme de classes du Sprint 3}
+    %     \label{fig:class-diagram-s3}
+    % \end{figure}
 
     \item \textbf{Diagramme de cas d'utilisation}
 
@@ -111,21 +105,18 @@ Une autre difficulté concerne les variables de type tableau. Elles ne représen
 
 La réalisation du Sprint 3 s'est concentrée sur le studio documentaire. Les interfaces développées permettent de configurer les familles documentaires, de construire les templates, de gérer la charte graphique et de vérifier le rendu final avant la génération.
 
-\screenshotplaceholder{sprint3/config-family1.png}{Configuration des familles documentaires}{Interface de configuration d'une famille documentaire}
-
-\screenshotplaceholder{sprint3/config-family3.png}{Variables documentaires}{Préparation des variables simples et des variables tableau}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint3/config-family.png}{Configuration des familles documentaires}{Interface de configuration d'une famille documentaire}
 
 La configuration des familles documentaires permet de relier les modèles aux données réelles. Ces écrans servent à définir les sources SQL, les variables disponibles et les informations nécessaires pour alimenter les templates lors de la fusion.
 
-\screenshotplaceholder{sprint3/editor-vue.png}{Éditeur de template}{Interface principale de conception du document}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint3/editor-vue.png}{Éditeur de template}{Interface principale de conception du document}
 
 L'éditeur de template permet de construire la structure du document à partir de sections modifiables. L'administrateur peut préparer le contenu, organiser l'en-tête et le pied de page, puis tester le modèle dans un contexte proche de l'utilisation réelle.
 
-\screenshotplaceholder{sprint3/edit-graphic-charte.png}{Configuration de la charte graphique}{Interface de personnalisation de l'identité visuelle}
-
-La charte graphique regroupe les éléments visuels de l'établissement, notamment le logo et les informations institutionnelles. Elle permet d'appliquer une identité cohérente aux différents modèles sans répéter la même configuration dans chaque template.
-
-\screenshotplaceholder{sprint3/preview-document.png}{Prévisualisation du document}{Aperçu du document après fusion des données}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint3/preview-document.png}{Prévisualisation du document}{Aperçu du document après fusion des données}
 
 La prévisualisation permet de contrôler le résultat avant la génération définitive. Elle vérifie la fusion des variables, l'affichage des tableaux, la disposition des images et la cohérence générale de la mise en page.
 
@@ -185,16 +176,16 @@ Le filtrage des archives est également un point sensible. Un administrateur peu
 
 \begin{itemize}
 
-    \item \textbf{Diagramme de classes}
+    % \item \textbf{Diagramme de classes}
 
-    Ce diagramme présente les entités liées à la génération, à l’archivage et au suivi des documents produits par le système. Il met notamment en évidence la gestion des documents générés, des historiques et des traces d’audit.
+    % Ce diagramme présente les entités liées à la génération, à l’archivage et au suivi des documents produits par le système. Il met notamment en évidence la gestion des documents générés, des historiques et des traces d’audit.
 
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.95\textwidth]{images/sprint4/class-diagram.png}
-        \caption{Diagramme de classes du Sprint 4}
-        \label{fig:class-diagram-s4}
-    \end{figure}
+    % \begin{figure}[H]
+    %     \centering
+    %     \includegraphics[width=0.95\textwidth]{images/sprint4/class-diagram.png}
+    %     \caption{Diagramme de classes du Sprint 4}
+    %     \label{fig:class-diagram-s4}
+    % \end{figure}
 
     \item \textbf{Diagramme de cas d'utilisation}
 
@@ -235,17 +226,18 @@ Le filtrage des archives est également un point sensible. Un administrateur peu
 
 La réalisation du Sprint 4 correspond au passage du modèle documentaire vers un usage administratif complet. Les interfaces développées permettent de générer un document à partir d'un bénéficiaire, de contrôler son rendu, puis de conserver une trace exploitable dans les archives.
 
-\screenshotplaceholder{sprint4/generation-select-template.png}{Sélection du modèle documentaire}{Choix du template à utiliser pour la génération}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint4/generation-select-beneficiaire.png}{Generation d'un document}{Generation d'un document}
 
-\screenshotplaceholder{sprint4/generation-preview.png}{Prévisualisation avant génération}{Aperçu du document après fusion des données}
 
 La génération documentaire regroupe le choix du modèle, la sélection du bénéficiaire et la prévisualisation du résultat. Ces interfaces permettent à l'utilisateur de vérifier le document avant son impression ou son archivage. Le document produit repose sur les données du bénéficiaire, le template sélectionné et la charte graphique associée.
 
-\screenshotplaceholder{sprint4/archive-list.png}{Liste des archives}{Consultation des documents générés}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint4/archive-list.png}{Liste des archives}{Consultation des documents générés}
 
-\screenshotplaceholder{sprint4/archive-detail.png}{Détail d'une archive}{Informations de génération du document archivé}
+\screenshotplaceholder[1\textwidth]
+[1\textheight]{sprint4/archive-detail.png}{Détail d'une archive}{Informations de génération du document archivé}
 
-\screenshotplaceholder{sprint4/archive-soft-delete.png}{Suppression logique d'une archive}{Masquage d'un document archivé avec conservation de sa trace}
 
 La gestion des archives permet de retrouver les documents produits, de les filtrer et de consulter leur détail. L'administrateur dispose d'une vision plus large sur les documents de son organisation, tandis que l'utilisateur métier retrouve principalement ses propres productions. La suppression logique permet de masquer une archive sans effacer définitivement les informations nécessaires à la traçabilité.
 
