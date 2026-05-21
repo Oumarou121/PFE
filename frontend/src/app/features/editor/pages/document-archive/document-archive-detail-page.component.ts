@@ -132,8 +132,11 @@ export class DocumentArchiveDetailPageComponent implements OnInit {
   }
 
   get isAdminArchive(): boolean {
-    const role = this.authService.getCurrentUser()?.role;
-    return role === "admin" || role === "supAdmin";
+    const user = this.authService.getCurrentUser();
+    const role = user?.role;
+    const hasArchiveAccess =
+      user?.moduleIds?.includes("base.documentArchive") || false;
+    return role === "admin" || role === "supAdmin" || hasArchiveAccess;
   }
 
   async loadDocuments(): Promise<void> {

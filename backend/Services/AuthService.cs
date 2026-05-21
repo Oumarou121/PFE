@@ -39,7 +39,7 @@ namespace DocApi.Services
                 throw new ServiceException("Account is deactivated");
             }
 
-            var token = GenerateJwtToken(user.Id, user.Username, user.Role, user.OrganizationId, user.Email);
+            var token = GenerateJwtToken(user.Id, user.Username, user.Role, user.OrganizationId, user.Email, user.ModuleIds);
             var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes);
 
             return new AuthResponse
@@ -81,7 +81,7 @@ namespace DocApi.Services
             var userId = await _userRepository.CreateAsync(user);
             user.Id = userId;
 
-            var token = GenerateJwtToken(user.Id, user.Username, user.Role, user.OrganizationId, user.Email);
+            var token = GenerateJwtToken(user.Id, user.Username, user.Role, user.OrganizationId, user.Email, user.ModuleIds);
             var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes);
 
             return new AuthResponse
@@ -125,10 +125,10 @@ namespace DocApi.Services
 
         public string GenerateJwtToken(int userId, string username, string role, int? organizationId = null)
         {
-            return GenerateJwtToken(userId, username, role, organizationId, null);
+            return GenerateJwtToken(userId, username, role, organizationId, null, null);
         }
 
-        private string GenerateJwtToken(int userId, string username, string role, int? organizationId, string? email)
+        private string GenerateJwtToken(int userId, string username, string role, int? organizationId, string? email, string? moduleIds)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -145,6 +145,11 @@ namespace DocApi.Services
             if (!string.IsNullOrWhiteSpace(email))
             {
                 claims.Add(new Claim(ClaimTypes.Email, email));
+            }
+
+            if (!string.IsNullOrWhiteSpace(moduleIds))
+            {
+                claims.Add(new Claim("moduleIds", moduleIds));
             }
 
             if (organizationId.HasValue)

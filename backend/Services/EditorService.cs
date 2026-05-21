@@ -307,8 +307,9 @@ namespace DocApi.Services
             await _repository.EnsureSchemaAsync();
             var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
             var isAdmin = string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase);
+            var hasArchiveAccess = currentUser?.ModuleIds?.Contains("base.documentArchive") == true;
             var organizationId = isSuperAdmin ? request.OrganizationId : currentUser?.OrganizationId;
-            var generatedById = isSuperAdmin || isAdmin
+            var generatedById = isSuperAdmin || isAdmin || hasArchiveAccess
                 ? request.GeneratedById
                 : currentUser?.Id;
             return await _repository.LoadDocumentsAsync(organizationId, request.FamilyId, request.BeneficiaryTable, request.BeneficiaryId, generatedById);
@@ -319,8 +320,9 @@ namespace DocApi.Services
             await _repository.EnsureSchemaAsync();
             var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
             var isAdmin = string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase);
+            var hasArchiveAccess = currentUser?.ModuleIds?.Contains("base.documentArchive") == true;
             var organizationId = isSuperAdmin ? request.OrganizationId : currentUser?.OrganizationId;
-            var generatedById = isSuperAdmin || isAdmin
+            var generatedById = isSuperAdmin || isAdmin || hasArchiveAccess
                 ? request.GeneratedById
                 : currentUser?.Id;
             
@@ -348,8 +350,9 @@ namespace DocApi.Services
 
             var isSuperAdmin = string.Equals(currentUser?.Role, "supAdmin", StringComparison.OrdinalIgnoreCase);
             var isAdmin = string.Equals(currentUser?.Role, "admin", StringComparison.OrdinalIgnoreCase);
+            var hasArchiveAccess = currentUser?.ModuleIds?.Contains("base.documentArchive") == true;
             if (!isSuperAdmin && currentUser?.OrganizationId != document.OrganizationId) return null;
-            if (!isSuperAdmin && !isAdmin && document.GeneratedById != currentUser?.Id) return null;
+            if (!isSuperAdmin && !isAdmin && !hasArchiveAccess && document.GeneratedById != currentUser?.Id) return null;
             return document;
         }
 

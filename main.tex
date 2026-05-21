@@ -123,25 +123,6 @@
 % PLACEHOLDER DIAGRAMMES
 %==================================
 
-% \newcommand{\diagramplaceholder}[3]{
-% \begin{figure}[H]
-%     \centering
-%     \IfFileExists{diagrammes/#1.png}{
-%         \includegraphics[width=1\textwidth][width=1\textheight]{diagrammes/#1.png}
-%     }{
-%         \fbox{
-%             \begin{minipage}[c][5.2cm][c]{0.88\textwidth}
-%                 \centering
-%                 \textbf{[Insérer ici le diagramme : #2]}\\[0.25cm]
-%                 Source Draw.io : \texttt{diagrammes/\detokenize{#1}.drawio}\\
-%                 Export PNG attendu : \texttt{diagrammes/\detokenize{#1}.png}
-%             \end{minipage}
-%         }
-%     }
-%     \caption{#3}
-% \end{figure}
-% }
-
 \newcommand{\diagramplaceholder}[3]{
 \begin{figure}[H]
     \centering
@@ -208,18 +189,47 @@
 % TITRE PERSONNALISÉ TABLE DES MATIÈRES
 %==================================
 
-\vspace*{0.5cm}
+% \vspace*{0.5cm}
+
+% \noindent
+% \begin{tikzpicture}
+
+% % Rectangle noir
+% \fill[black] (0,0) rectangle (0.9,1.8);
+
+% % Ligne horizontale
+% \draw[line width=0.5pt] (1.2,0.9) -- (14.8,0.9);
+
+% % Titre
+% \node[
+% anchor=west,
+% font=\fontsize{24}{28}\bfseries
+% ] at (1.2,0.25)
+% {TABLE DES MATIÈRES};
+
+% \end{tikzpicture}
+
+% \vspace{1.2cm}
+
+% \renewcommand{\contentsname}{}
+
+% \tableofcontents
+% \clearpage
+
+%==================================
+% TABLE DES MATIÈRES
+%==================================
+
+\renewcommand{\contentsname}{
+\vspace*{-1cm}
 
 \noindent
 \begin{tikzpicture}
 
-% Rectangle noir
 \fill[black] (0,0) rectangle (0.9,1.8);
 
-% Ligne horizontale
 \draw[line width=0.5pt] (1.2,0.9) -- (14.8,0.9);
 
-% Titre
 \node[
 anchor=west,
 font=\fontsize{24}{28}\bfseries
@@ -228,9 +238,8 @@ font=\fontsize{24}{28}\bfseries
 
 \end{tikzpicture}
 
-\vspace{1.2cm}
-
-\renewcommand{\contentsname}{}
+% \vspace{1cm}
+}
 
 \tableofcontents
 \clearpage
@@ -260,6 +269,7 @@ font=\fontsize{24}{28}\bfseries
 %==================================
 % INTRODUCTION GÉNÉRALE
 %==================================
+
 
 \input{chapitres/introduction_generale}
 

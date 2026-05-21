@@ -404,6 +404,13 @@ namespace DocApi.Controllers
 
         private AuthUserResponse? CurrentUser()        {
             if (User.Identity?.IsAuthenticated != true) return null;
+            var moduleIdsRaw = User.FindFirstValue("moduleIds");
+            var moduleIds = new List<string>();
+            if (!string.IsNullOrWhiteSpace(moduleIdsRaw))
+            {
+                try { moduleIds = System.Text.Json.JsonSerializer.Deserialize<List<string>>(moduleIdsRaw) ?? new(); }
+                catch { moduleIds = new(); }
+            }
             return new AuthUserResponse
             {
                 Id = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
@@ -414,7 +421,8 @@ namespace DocApi.Controllers
                 Profile = string.Empty,
                 ProfileDetail = null,
                 AccessAllYears = false,
-                AccessYearList = null
+                AccessYearList = null,
+                ModuleIds = moduleIds
             };
         }
 

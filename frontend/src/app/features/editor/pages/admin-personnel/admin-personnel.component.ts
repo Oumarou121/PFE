@@ -44,7 +44,7 @@ const BASE_MODULE_CHOICES: ModuleChoice[] = [
   },
   {
     id: "base.documentArchive",
-    name: "Archives",
+    name: "Administration des archives",
     icon: "fa fa-archive",
     isBase: true,
   },
@@ -382,7 +382,10 @@ export class AdminPersonnelComponent implements OnInit {
       .reduce((total, rule) => total + rule.values.length, 0);
   }
 
-  getTableRestrictionCount(module: ModuleRecord, view: TableViewConfig): number {
+  getTableRestrictionCount(
+    module: ModuleRecord,
+    view: TableViewConfig,
+  ): number {
     const moduleId = this.getModuleId(module);
     return this.form.dataAccessRules
       .filter(
